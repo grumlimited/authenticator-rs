@@ -4,6 +4,19 @@ version = "0.1.0"
 authors = ["Romain Gallet <romain.gallet@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+totp-rs = "0.2.5"
+digest = "0.8.1"
+hex = "0.4.2"
+base32 = "0.4.0"
+iced = { version = "0.1.1", features = ["async-std", "image"] }
+#iced = { path = "../iced/", features = ["canvas", "async-std"] }
+iced_futures = "0.1.2"
+async-std = {version ="1.6.0", features = ["unstable"] }
+pin-utils = "0.1.0"
+job_scheduler = "1.2.1"
+chrono = "0.4.11"
+clipboard = "0.5.0"
+serde = { version = "1.0.111", features = ["derive"] }
+serde_json = "1.0.53"
+directories = "2.0"

@@ -1,3 +1,8 @@
+use crate::ui::authenticator::*;
+
+mod helpers;
+mod ui;
+
 fn main() {
-    println!("Hello, world!");
+    run_application();
 }
