@@ -29,7 +29,7 @@ impl AccountGroup {
     pub fn view(&mut self) -> Column<Message> {
         let name = self.name.clone();
         let group_title = Column::new().spacing(20).push(
-            Text::new(name.to_owned())
+            Text::new(name)
                 .font(INCONSOLATA_EXPANDED_BLACK)
                 .size(24));
 

@@ -43,7 +43,7 @@ impl Account {
             .as_secs();
 
         let b32 = decode(RFC4648 { padding: false }, key).unwrap();
-        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32.clone());
+        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32);
 
         totp_sha1.generate(time)
     }

@@ -13,8 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build
-          run: apt-get update && apt-get install -y libxcb-shape0-dev
+      - name: Update
+        run: apt-get update
+
+      - name: Update
+        run: apt-get install -y libxcb-shape0-dev
 
       - uses: actions-rs/toolchain@v1
         with:
