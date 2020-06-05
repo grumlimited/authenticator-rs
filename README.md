@@ -16,6 +16,8 @@ Thanks @ecrj and the iced team.
 
 <kbd>![authenticator-rs](./authenticator-rs.png "Authenticator RS")</kbd>
 
+## License
+
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
 ## State of affairs
@@ -36,7 +38,7 @@ Well, pretty much everything else ;-)
 
 ## Configuring
 
-Create a file `$HOME/.local/share/authenticator-rs/authenticator.json`, with the following content:
+Create the file `$HOME/.local/share/authenticator-rs/authenticator.json`, with the following content:
 
     {
       "groups": [
@@ -74,3 +76,14 @@ The labels and group names are free copy. The secrets are your service-issued sh
 _Note: the secret values are in plain text, not base32 or anything._
 
 Suffice to say you have to keep that file safe.
+
+## Building
+
+    cargo build
+    
+## Installing
+
+    cargo install --path=.
+    
+    $HOME/.cargo/bin/authenticator-rust
+    
