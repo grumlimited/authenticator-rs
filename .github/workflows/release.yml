@@ -33,7 +33,7 @@ jobs:
 
       - name: Debug
         run: |
-          echo ${{ github.event.release.upload_url }}
+          echo '${{ github.event.release.upload_url }}'
 
 #      - name: Rust toolchain
 #        uses: actions-rs/toolchain@v1
@@ -55,7 +55,6 @@ jobs:
 #          args: --path=.
 #
 #      - name: Upload Release Asset
-#        id: upload-release-asset
 #        uses: actions/upload-release-asset@v1
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
