@@ -1,7 +1,7 @@
 on:
-  push:
-    tags:
-      - ''
+  release:
+    types:
+      - created
 
 name: Continuous integration
 
@@ -21,6 +21,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
+            ~/.cargo/release
             ~/.cargo/registry
             ~/.cargo/git
             target
@@ -30,6 +31,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
+
+          mkdir ~/.cargo/release
 
       - name: Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -44,19 +47,20 @@ jobs:
         with:
           command: build
 
-      - name: Tests
+      - name: Create binary
         uses: actions-rs/cargo@v1
+        env:
+          CARGO_TARGET_DIR: ~/.cargo
         with:
-          command: test
+          command: install
+          args: --path=. --root=.
 
-      - name: Formatting
-        uses: actions-rs/cargo@v1
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          command: fmt
-          args: --all -- --check
-
-      - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          upload_url: '${{ github.event.release.upload_url }}'
+          asset_path: ./bin/authenticator-rust
+          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64'
+          asset_content_type: application/octet-stream
