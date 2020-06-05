@@ -15,10 +15,12 @@ pub enum LoadError {
 
 impl ConfigManager {
     fn path() -> std::path::PathBuf {
-        let mut path = if let Some(project_dirs) = directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs") {
+        let mut path = if let Some(project_dirs) =
+            directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+        {
             project_dirs.data_dir().into()
         } else {
-            std::env::current_dir().unwrap_or(std::path::PathBuf::new())
+            std::env::current_dir().unwrap_or_default()
         };
 
         path.push("authenticator.json");
@@ -27,7 +29,9 @@ impl ConfigManager {
     }
 
     pub async fn load() -> Result<ConfigManager, LoadError> {
-        let accounts = async_std::fs::read_to_string(Self::path()).await.map_err(|_| LoadError::FileError)?;
+        let accounts = async_std::fs::read_to_string(Self::path())
+            .await
+            .map_err(|_| LoadError::FileError)?;
 
         serde_json::from_str(&accounts).map_err(|_| LoadError::FormatError)
     }

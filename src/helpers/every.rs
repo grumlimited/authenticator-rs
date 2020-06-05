@@ -5,8 +5,8 @@ use iced_futures::subscription::Recipe;
 pub struct Every(pub std::time::Duration);
 
 impl<H, E> Recipe<H, E> for Every
-    where
-        H: std::hash::Hasher,
+where
+    H: std::hash::Hasher,
 {
     type Output = ();
 

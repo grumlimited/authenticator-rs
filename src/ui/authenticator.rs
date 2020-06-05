@@ -1,9 +1,14 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use iced::{Application, Column, Command, Element, ProgressBar, Row, Settings, Subscription, Text, Length, Container, window, scrollable, Scrollable};
+use iced::{
+    scrollable, window, Application, Column, Command, Container, Element, Length, ProgressBar, Row,
+    Scrollable, Settings, Subscription, Text,
+};
 
 use crate::helpers::{ConfigManager, Every, LoadError};
 use crate::ui::AccountGroup;
+
+use std::f32::EPSILON;
 
 pub fn run_application() {
     let settings = Settings {
@@ -32,7 +37,7 @@ pub struct AuthenticatorRs {
 }
 
 impl AuthenticatorRs {
-    fn update_accounts_totp(&mut self) -> () {
+    fn update_accounts_totp(&mut self) {
         self.groups.iter_mut().for_each(|x| x.update())
     }
 }
@@ -81,34 +86,32 @@ impl Application for AuthenticatorRs {
 
                     Message::LoadAccounts(Err(_)) => Command::none(),
 
-                    _ => panic!()
+                    _ => panic!(),
                 }
             }
-            AuthenticatorRsState::DisplayAccounts => {
-                match message {
-                    Message::UpdateTime(current_second) => {
-                        self.progressbar_value = 30.0 - current_second % 30.0;
+            AuthenticatorRsState::DisplayAccounts => match message {
+                Message::UpdateTime(current_second) => {
+                    self.progressbar_value = 30.0 - current_second % 30.0;
 
-                        if current_second == 0.0 || current_second == 30.0 {
-                            self.update_accounts_totp();
-                        }
-
-                        Command::none()
+                    if current_second == 0.0 || (current_second - 30.0).abs() < EPSILON {
+                        self.update_accounts_totp();
                     }
 
-                    Message::Copy(totop) => {
-                        self.ctx.set_contents(totop).unwrap();
-                        Command::none()
-                    }
-
-                    Message::LoadAccounts(Ok(state)) => {
-                        self.groups = state.groups;
-                        Command::none()
-                    }
-
-                    Message::LoadAccounts(Err(_)) => Command::none(),
+                    Command::none()
                 }
-            }
+
+                Message::Copy(totop) => {
+                    self.ctx.set_contents(totop).unwrap();
+                    Command::none()
+                }
+
+                Message::LoadAccounts(Ok(state)) => {
+                    self.groups = state.groups;
+                    Command::none()
+                }
+
+                Message::LoadAccounts(Err(_)) => Command::none(),
+            },
         }
     }
 
@@ -119,13 +122,11 @@ impl Application for AuthenticatorRs {
 
     fn view(&mut self) -> Element<Message> {
         match self.state {
-            AuthenticatorRsState::Loading => {
-                Column::new()
-                    .push(Text::new("Loading1 ..."))
-                    .padding(10)
-                    .spacing(10)
-                    .into()
-            }
+            AuthenticatorRsState::Loading => Column::new()
+                .push(Text::new("Loading1 ..."))
+                .padding(10)
+                .spacing(10)
+                .into(),
             AuthenticatorRsState::DisplayAccounts => {
                 let accounts_group_col: Column<Message> = self.groups.iter_mut().fold(
                     Column::new().spacing(20),
@@ -135,11 +136,12 @@ impl Application for AuthenticatorRs {
                 );
 
                 let progress_bar = Container::new(
-                    ProgressBar::new(0.0..=30.0, self.progressbar_value).style(style::ProgressBar::Default))
-                    .height(Length::from(16))
-                    .width(Length::Fill)
-
-                    .padding(3);
+                    ProgressBar::new(0.0..=30.0, self.progressbar_value)
+                        .style(style::ProgressBar::Default),
+                )
+                .height(Length::from(16))
+                .width(Length::Fill)
+                .padding(3);
 
                 let main = Column::new()
                     .push(Row::new().push(accounts_group_col))
@@ -147,8 +149,7 @@ impl Application for AuthenticatorRs {
                     .spacing(10)
                     .width(Length::Fill);
 
-                let accounts_container = Container::new(main)
-                    .width(Length::from(290));
+                let accounts_container = Container::new(main).width(Length::from(290));
 
                 let scro = Scrollable::new(&mut self.scroll)
                     .width(Length::Fill)
@@ -156,11 +157,7 @@ impl Application for AuthenticatorRs {
                     .padding(3)
                     .push(accounts_container);
 
-                Container::new(
-                    Column::new()
-                        .push(progress_bar)
-                        .push(scro)
-                )
+                Container::new(Column::new().push(progress_bar).push(scro))
                     .width(Length::Fill)
                     .into()
             }
@@ -169,7 +166,7 @@ impl Application for AuthenticatorRs {
 }
 
 mod style {
-    use iced::{Background, Color, progress_bar};
+    use iced::{progress_bar, Background, Color};
 
     pub enum ProgressBar {
         Default,
