@@ -1,4 +1,4 @@
-n: push
+on: push
 
 name: Continuous integration
 
@@ -12,6 +12,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Build
+          run: apt-get update && apt-get install -y libxcb-shape0-dev
 
       - uses: actions-rs/toolchain@v1
         with:
