@@ -17,7 +17,7 @@ jobs:
         run: sudo apt-get update
 
       - name: Update
-        run: sudo apt-get install -y libxcb-shape0-dev
+        run: sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
 
       - uses: actions-rs/toolchain@v1
         with:

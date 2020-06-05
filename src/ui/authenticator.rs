@@ -5,6 +5,8 @@ use iced::{Application, Column, Command, Element, ProgressBar, Row, Settings, Su
 use crate::helpers::{ConfigManager, Every, LoadError};
 use crate::ui::AccountGroup;
 
+use std::f32::EPSILON;
+
 pub fn run_application() {
     let settings = Settings {
         window: window::Settings {
@@ -89,7 +91,7 @@ impl Application for AuthenticatorRs {
                     Message::UpdateTime(current_second) => {
                         self.progressbar_value = 30.0 - current_second % 30.0;
 
-                        if current_second == 0.0 || current_second == 30.0 {
+                        if current_second == 0.0 || (current_second - 30.0).abs() < EPSILON {
                             self.update_accounts_totp();
                         }
 
