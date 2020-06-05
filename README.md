@@ -6,13 +6,13 @@ This application is very much a work in progress.
 
 It is initially inspired from [authenticator](https://gitlab.gnome.org/World/Authenticator), which sadly sort of 
 [broke](https://aur.archlinux.org/packages/authenticator/) for me 
-in the latest versions of python shipped with [Arch Linux](https://www.archlinux.org/) 
+in the latest versions of python shipped with [Arch Linux](https://www.archlinux.org/).
 
 It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
 but definitely in the rough...
 
 Lastly, it is using this fantastic library: [iced](https://github.com/hecrj/iced) as the building blocks for its UI.
-Thanks @ecrj and the iced team.
+Thanks [@ecrj](https://github.com/hecrj) and the iced team.
 
 <kbd>![authenticator-rs](./authenticator-rs.png "Authenticator RS")</kbd>
 
