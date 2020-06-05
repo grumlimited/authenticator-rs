@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::ui::{Account, Message};
-use iced::{Text, Column, Container, Length};
+use iced::{Column, Container, Length, Text};
+use serde::{Deserialize, Serialize};
 
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
 
@@ -28,30 +28,29 @@ impl AccountGroup {
 
     pub fn view(&mut self) -> Column<Message> {
         let name = self.name.clone();
-        let group_title = Column::new().spacing(20).push(
-            Text::new(name)
-                .font(INCONSOLATA_EXPANDED_BLACK)
-                .size(24));
+        let group_title = Column::new()
+            .spacing(20)
+            .push(Text::new(name).font(INCONSOLATA_EXPANDED_BLACK).size(24));
 
-        let entries_column = self.entries
+        let entries_column = self
+            .entries
             .iter_mut()
             .fold(Column::new().padding(5), |accounts_col, account| {
                 accounts_col.push(account.view())
             });
 
-        let container =
-            Container::new(entries_column)
-                .width(Length::Fill)
-                .padding(5)
-                .style(style::AccountsContainer::Default);
+        let container = Container::new(entries_column)
+            .width(Length::Fill)
+            .padding(5)
+            .style(style::AccountsContainer::Default);
 
         group_title.push(container)
     }
 }
 
 mod style {
-    use iced::{Color, container, Background};
     use iced::widget::container::Style;
+    use iced::{container, Background, Color};
 
     pub enum AccountsContainer {
         Default,
