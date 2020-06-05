@@ -47,4 +47,5 @@ jobs:
       - name: Create binary
         uses: actions-rs/cargo@v1
         with:
-          command: install -- --path .
+          command: install
+          args: --path=.
