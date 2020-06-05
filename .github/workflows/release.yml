@@ -17,49 +17,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-#      - name: Cache
-#        uses: actions/cache@v2
-#        with:
-#          path: |
-#            ~/.cargo/registry
-#            ~/.cargo/git
-#            target
-#          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-#
-#      - name: System dependencies
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/release
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
+
+          mkdir ~/.cargo/release
 
       - name: Debug
         run: |
           echo '${{ github.event.release.upload_url }}'
 
-#      - name: Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: ${{ matrix.rust }}
-#          override: true
-#          components: rustfmt, clippy
-#
-#      - name: Build
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: build
-#
-#      - name: Create binary
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: install
-#          args: --path=.
-#
-#      - name: Upload Release Asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ github.event.release.upload_url }}
-#          asset_path: /home/runner/work/authenticator-rs/authenticator-rs
-#          asset_name: authenticator-rs
-#          asset_content_type: application/octet-stream
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
+      - name: Create binary
+        uses: actions-rs/cargo@v1
+        env:
+          GITHUB_TOKEN: ~/.cargo/release
+        with:
+          command: install
+          args: --path=. --root=.
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: '${{ github.event.release.upload_url }}'
+          asset_path: ./bin/authenticator-rust
+          asset_name: authenticator-rs
+          asset_content_type: application/octet-stream
