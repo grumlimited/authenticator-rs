@@ -34,10 +34,6 @@ jobs:
 
           mkdir ~/.cargo/release
 
-      - name: Debug
-        run: |
-          echo '${{ github.event.release.upload_url }}'
-
       - name: Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -59,12 +55,16 @@ jobs:
           command: install
           args: --path=. --root=.
 
+      - name: Rename binary
+        run: |
+          mv ./bin/authenticator-rust{,-x86_64-'${{ github.event.release.name }}'}
+
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: ./bin/authenticator-rust
+          asset_path: ./bin/authenticator-rust-x86_64-'${{ github.event.release.name }}'
           asset_name: authenticator-rs
           asset_content_type: application/octet-stream
