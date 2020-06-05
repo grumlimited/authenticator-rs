@@ -14,7 +14,7 @@ but definitely in the rough...
 Lastly, it is using this fantastic library: [iced](https://github.com/hecrj/iced) as the building blocks for it UI.
 Thanks @ecrj and the iced team.
 
-![authenticator-rs](./authenticator-rs.png "Authenticator RS")
+<kbd>![authenticator-rs](./authenticator-rs.png "Authenticator RS")</kbd>
 
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
