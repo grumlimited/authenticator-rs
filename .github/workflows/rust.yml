@@ -11,9 +11,11 @@ jobs:
           - 1.43.1  # MSRV
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - uses: actions/cache@v2
+      - name: Cache
+        uses: actions/cache@v2
         with:
           path: |
             ~/.cargo/registry
@@ -21,13 +23,13 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Update
-        run: sudo apt-get update
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
 
-      - name: Install system dependencies
-        run: sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
-
-      - uses: actions-rs/toolchain@v1
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
