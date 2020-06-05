@@ -1,6 +1,6 @@
 AUTHENTICATOR-RS
 ==================
-Authenticator-rs TOTP MFA application written in Rust.
+Authenticator-rs is TOTP-MFA application written in Rust.
 
 This application is very much a work in progress.
 
@@ -24,17 +24,18 @@ Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README
 
 ### What's working
 
-* generating totp tokens for multiple accounts
-* copy and pasting tokens to clipboard
-* only tested on Linux (Arch Linux to be specific)
+* Generating TOTP tokens for multiple accounts, every 30 seconds;
+* Copy and pasting tokens to clipboard.
+
+_Only tested on Linux (Arch Linux to be specific)._
 
 ### What's missing
 
 Well, pretty much everything else ;-)
 
-* in-app ability to edit accounts
-* multiple themes support
-* modal dialogs for imports/exports
+* In-app ability to edit accounts;
+* Multiple themes support;
+* Modal dialogs for imports/exports.
 
 ## Configuring
 
