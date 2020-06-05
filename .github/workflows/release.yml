@@ -55,10 +55,6 @@ jobs:
           command: install
           args: --path=. --root=.
 
-      - name: Rename binary
-        run: |
-          mv ./bin/authenticator-rust
-
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
