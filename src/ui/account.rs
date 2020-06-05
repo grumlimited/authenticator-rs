@@ -48,7 +48,7 @@ impl Account {
         totp_sha1.generate(time)
     }
 
-    pub fn update(&mut self) -> () {
+    pub fn update(&mut self) {
         self.totp = Some(self.generate_time_based_password(self.secret.as_str()));
     }
 

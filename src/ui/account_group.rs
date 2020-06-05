@@ -18,11 +18,11 @@ impl AccountGroup {
         }
     }
 
-    pub fn _add(&mut self, account: Account) -> () {
+    pub fn _add(&mut self, account: Account) {
         self.entries.push(account)
     }
 
-    pub fn update(&mut self) -> () {
+    pub fn update(&mut self) {
         self.entries.iter_mut().for_each(|x| x.update());
     }
 

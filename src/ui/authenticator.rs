@@ -37,7 +37,7 @@ pub struct AuthenticatorRs {
 }
 
 impl AuthenticatorRs {
-    fn update_accounts_totp(&mut self) -> () {
+    fn update_accounts_totp(&mut self) {
         self.groups.iter_mut().for_each(|x| x.update())
     }
 }

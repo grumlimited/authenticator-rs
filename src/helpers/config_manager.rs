@@ -20,7 +20,7 @@ impl ConfigManager {
         {
             project_dirs.data_dir().into()
         } else {
-            std::env::current_dir().unwrap_or(std::path::PathBuf::new())
+            std::env::current_dir().unwrap_or_default()
         };
 
         path.push("authenticator.json");
