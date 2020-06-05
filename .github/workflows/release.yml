@@ -54,7 +54,7 @@ jobs:
       - name: Create binary
         uses: actions-rs/cargo@v1
         env:
-          GITHUB_TOKEN: ~/.cargo/release
+          CARGO_TARGET_DIR: ~/.cargo
         with:
           command: install
           args: --path=. --root=.
