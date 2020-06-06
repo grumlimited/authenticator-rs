@@ -20,22 +20,21 @@ Thanks [@ecrj](https://github.com/hecrj) and the iced team.
 
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
-## State of affairs
+## Changelog
 
-### What's working
-
-* Generating TOTP tokens for multiple accounts, every 30 seconds;
-* Copy and pasting tokens to clipboard.
+### 0.0.1
 
 _Only tested on Linux (Arch Linux to be specific)._
 
-### What's missing
+* Initial release;
+* Generating TOTP tokens for multiple accounts, every 30 seconds;
+* Copy and pasting tokens to clipboard.
 
-Well, pretty much everything else ;-)
+## Running
 
-* In-app ability to edit accounts;
-* Multiple themes support;
-* Modal dialogs for imports/exports.
+Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
+
+* [0.0.1](https://github.com/grumlimited/authenticator-rs/releases/download/0.0.1/authenticator-rs-0.0.1-x86_64) 
 
 ## Configuring
 
@@ -82,8 +81,6 @@ Suffice to say you have to keep that file safe.
 
     cargo build
     
-## Installing
-
     cargo install --path=.
     
     $HOME/.cargo/bin/authenticator-rust
