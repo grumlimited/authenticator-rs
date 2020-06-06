@@ -11,7 +11,7 @@ pub struct AccountGroup {
 }
 
 impl AccountGroup {
-    pub fn _new(name: &str) -> Self {
+    pub fn new(name: &str) -> Self {
         AccountGroup {
             name: name.to_owned(),
             entries: vec![],
@@ -26,11 +26,18 @@ impl AccountGroup {
         self.entries.iter_mut().for_each(|x| x.update());
     }
 
+    pub fn sort(&mut self) {
+        self.entries
+            .sort_by(|a, b| a.label.to_lowercase().cmp(&b.label.to_lowercase()));
+    }
+
     pub fn view(&mut self) -> Column<Message> {
         let name = self.name.clone();
         let group_title = Column::new()
             .spacing(20)
             .push(Text::new(name).font(INCONSOLATA_EXPANDED_BLACK).size(24));
+
+        self.sort();
 
         let entries_column = self
             .entries

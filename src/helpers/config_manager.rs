@@ -12,6 +12,7 @@ pub struct ConfigManager {
 pub enum LoadError {
     FileError,
     FormatError,
+    SaveError,
 }
 
 impl ConfigManager {
@@ -38,13 +39,36 @@ impl ConfigManager {
             .await
             .map_err(|_| LoadError::FileError)?;
 
-        serde_json::from_str(&accounts).map_err(|_| LoadError::FormatError)
+        serde_json::from_str(&accounts)
+            .map(|mut cm: ConfigManager| {
+                // sort groups
+                cm.groups
+                    .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+                cm
+            })
+            .map(|mut cm: ConfigManager| {
+                // sort entries in each group
+                cm.groups.iter_mut().for_each(|account_group| {
+                    account_group
+                        .entries
+                        .sort_by(|a, b| a.label.to_lowercase().cmp(&b.label.to_lowercase()))
+                });
+
+                cm
+            })
+            .map_err(|_| LoadError::FormatError)
     }
 
-    pub async fn _write<C: ToString>(path: &Path, contents: C) -> Result<(), LoadError> {
+    pub async fn write<C: ToString>(path: &Path, contents: C) -> Result<(), LoadError> {
         async_std::fs::write(path, contents.to_string())
             .await
-            .map_err(|_| LoadError::FileError)
+            .map_err(|_| LoadError::SaveError)
+    }
+
+    pub async fn write_config(config_manager: ConfigManager) -> Result<(), LoadError> {
+        let value = serde_json::to_value(config_manager).unwrap();
+
+        Self::write(&Self::path(), value).await
     }
 }
 
@@ -61,9 +85,9 @@ mod tests {
 
     #[test]
     fn serializing_then_deserialazing_accounts() {
-        let account = Account::_new("label", "secret");
+        let account = Account::new("label", "secret");
 
-        let mut groups = AccountGroup::_new("name");
+        let mut groups = AccountGroup::new("name");
         groups._add(account);
 
         let config_manager = ConfigManager {

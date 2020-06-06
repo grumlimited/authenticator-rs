@@ -27,12 +27,15 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn _new(label: &str, secret: &str) -> Self {
-        Account {
+    pub fn new(label: &str, secret: &str) -> Self {
+        let mut a = Account {
             label: label.to_owned(),
             secret: secret.to_owned(),
             ..Account::default()
-        }
+        };
+
+        a.update();
+        a
     }
 
     fn generate_time_based_password(&self, key: &str) -> String {
