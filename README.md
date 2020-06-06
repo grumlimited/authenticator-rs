@@ -1,6 +1,6 @@
 AUTHENTICATOR-RS
 ==================
-Authenticator-rs is TOTP-MFA application written in Rust.
+Authenticator-rs is a TOTP-MFA application written in Rust and Iced.
 
 This application is very much a work in progress.
 
