@@ -17,7 +17,7 @@ pub enum LoadError {
 impl ConfigManager {
     fn path() -> std::path::PathBuf {
         let mut path = if let Some(project_dirs) =
-        directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+            directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
             project_dirs.data_dir().into()
         } else {
@@ -41,8 +41,10 @@ impl ConfigManager {
         serde_json::from_str(&accounts).map_err(|_| LoadError::FormatError)
     }
 
-    pub async fn _write<C: std::string::ToString>(path: &Path, contents: C) -> Result<(), LoadError> {
-        async_std::fs::write(path, contents.to_string()).await.map_err(|_| LoadError::FileError)
+    pub async fn _write<C: ToString>(path: &Path, contents: C) -> Result<(), LoadError> {
+        async_std::fs::write(path, contents.to_string())
+            .await
+            .map_err(|_| LoadError::FileError)
     }
 }
 
