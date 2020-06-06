@@ -4,21 +4,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AccountGroup {
     pub name: String,
     pub entries: Vec<Account>,
 }
 
 impl AccountGroup {
-    pub fn new(name: &str) -> Self {
+    pub fn _new(name: &str) -> Self {
         AccountGroup {
             name: name.to_owned(),
             entries: vec![],
         }
     }
 
-    pub fn add(&mut self, account: Account) {
+    pub fn _add(&mut self, account: Account) {
         self.entries.push(account)
     }
 
