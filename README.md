@@ -34,7 +34,9 @@ _Only tested on Linux (Arch Linux to be specific)._
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-* [0.0.1](https://github.com/grumlimited/authenticator-rs/releases/download/0.0.1/authenticator-rs-0.0.1-x86_64) 
+    chmod +x ./authenticator-rs-0.0.1-x86_64
+
+    ./authenticator-rs-0.0.1-x86_64
 
 ## Configuring
 
