@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AccountGroup {
     pub name: String,
     pub entries: Vec<Account>,

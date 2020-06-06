@@ -14,9 +14,9 @@ use crate::helpers::DEJAVU_SERIF;
 
 const EDIT_COPY_ICON: &[u8] = include_bytes!("../resources/icons/edit-copy.png");
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
-    label: String,
+    pub label: String,
     secret: String,
 
     #[serde(skip)]
@@ -27,12 +27,11 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn _new(label: String, secret: String) -> Self {
+    pub fn _new(label: &str, secret: &str) -> Self {
         Account {
-            label,
-            secret,
-            state: button::State::new(),
-            totp: None,
+            label: label.to_owned(),
+            secret: secret.to_owned(),
+            ..Account::default()
         }
     }
 
