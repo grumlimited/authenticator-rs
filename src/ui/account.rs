@@ -27,12 +27,11 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn _new(label: String, secret: String) -> Self {
+    pub fn new(label: &str, secret: &str) -> Self {
         Account {
-            label,
-            secret,
-            state: button::State::new(),
-            totp: None,
+            label: label.to_owned(),
+            secret: secret.to_owned(),
+            ..Account::default()
         }
     }
 

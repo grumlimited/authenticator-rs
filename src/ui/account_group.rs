@@ -11,14 +11,14 @@ pub struct AccountGroup {
 }
 
 impl AccountGroup {
-    pub fn _new(name: &str) -> Self {
+    pub fn new(name: &str) -> Self {
         AccountGroup {
             name: name.to_owned(),
             entries: vec![],
         }
     }
 
-    pub fn _add(&mut self, account: Account) {
+    pub fn add(&mut self, account: Account) {
         self.entries.push(account)
     }
 
