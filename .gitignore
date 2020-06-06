@@ -2,3 +2,5 @@
 .idea
 *.iml
 Cargo.lock
+
+test-serialisation.json
