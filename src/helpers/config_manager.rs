@@ -102,9 +102,10 @@ mod tests {
         let write_result = task::block_on(ConfigManager::write(&destination, value));
         assert_eq!(Ok(()), write_result);
 
-        let mut config_manager: ConfigManager = task::block_on(ConfigManager::load_from_path(&destination)).unwrap();
+        let mut config_manager: ConfigManager =
+            task::block_on(ConfigManager::load_from_path(&destination)).unwrap();
 
-        config_manager.groups.iter_mut().for_each(|x|x.update());
+        config_manager.groups.iter_mut().for_each(|x| x.update());
 
         assert_eq!(vec![groups], config_manager.groups);
     }

@@ -236,9 +236,15 @@ impl AuthenticatorRs {
                 if secret.is_empty() {
                     self.add_account_state.input_secret_error =
                         Some("Please enter a value".to_owned());
+                } else if Account::generate_time_based_password(secret.as_str()).is_err() {
+                    self.add_account_state.input_secret_error =
+                        Some("Could not generate TOTP from secret".to_owned());
                 }
 
-                if group_name != "" && label != "" && secret != "" {
+                if self.add_account_state.input_group_error.is_none()
+                    && self.add_account_state.input_label_error.is_none()
+                    && self.add_account_state.input_secret_error.is_none()
+                {
                     let group_name = self.add_account_state.input_group_value.to_owned();
 
                     let account = Account::new(
@@ -277,9 +283,14 @@ impl AuthenticatorRs {
                 Command::none()
             }
 
+            Message::DisplayAccounts => {
+                self.reset_add_account_state();
+                self.state = AuthenticatorRsState::DisplayAccounts;
+                Command::none()
+            }
+
             Message::AddAccount => unreachable!(),
             Message::Copy(_) => unreachable!(),
-            Message::DisplayAccounts => unreachable!(),
             Message::LoadAccounts(_) => unreachable!(),
         }
     }
