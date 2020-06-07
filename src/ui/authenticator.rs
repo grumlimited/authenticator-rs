@@ -277,13 +277,7 @@ impl AuthenticatorRs {
 
             Message::AddAccountSaved(Err(_)) => panic!("could not save account"),
 
-            Message::AddAccountSaved(Ok(())) => {
-                self.reset_add_account_state();
-                self.state = AuthenticatorRsState::DisplayAccounts;
-                Command::none()
-            }
-
-            Message::DisplayAccounts => {
+            Message::AddAccountSaved(Ok(())) | Message::DisplayAccounts => {
                 self.reset_add_account_state();
                 self.state = AuthenticatorRsState::DisplayAccounts;
                 Command::none()
