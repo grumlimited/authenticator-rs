@@ -1,9 +1,6 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use iced::{
-    button, scrollable, text_input, window, Align, Application, Button, Column, Command, Container,
-    Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text, TextInput,
-};
+use iced::{button, scrollable, text_input, window, Align, Application, Button, Column, Command, Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text, TextInput, Color};
 
 use crate::helpers::{ConfigManager, Every, LoadError};
 use crate::ui::{Account, AccountGroup};
@@ -99,7 +96,7 @@ impl AuthenticatorRs {
                     Column::new()
                         .push(Text::new(label).font(DEJAVU_SERIF))
                         .push(Space::new(Length::Fill, Length::from(8)))
-                        .push(Text::new(error.unwrap_or("")).font(DEJAVU_SERIF).size(11))
+                        .push(Text::new(error.unwrap_or("")).font(DEJAVU_SERIF).color(Color::from_rgb8(204,20,33)).size(11))
                         .push(Space::new(
                             Length::Fill,
                             Length::from(error.map(|_| 8).unwrap_or(0)),
@@ -217,17 +214,17 @@ impl AuthenticatorRs {
                     self.add_account_state.input_secret_value.to_owned(),
                 );
 
-                if group_name == "" {
+                if group_name.is_empty() {
                     self.add_account_state.input_group_error =
                         Some("Please enter a value".to_owned());
                 }
 
-                if label == "" {
+                if label.is_empty() {
                     self.add_account_state.input_label_error =
                         Some("Please enter a value".to_owned());
                 }
 
-                if secret == "" {
+                if secret.is_empty() {
                     self.add_account_state.input_secret_error =
                         Some("Please enter a value".to_owned());
                 }
