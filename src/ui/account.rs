@@ -42,6 +42,10 @@ impl Account {
             .unwrap()
             .as_secs();
 
+        Self::generate_time_based_password_with_time(time, key)
+    }
+
+    fn generate_time_based_password_with_time(time: u64, key: &str) -> Result<String, String> {
         if let Some(b32) = decode(RFC4648 { padding: false }, key) {
             let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32);
             totp_sha1.generate(time);
@@ -151,5 +155,16 @@ mod style {
                 ..button::Style::default()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ui::Account;
+
+    #[test]
+    fn totp_generation() {
+        let totp = Account::generate_time_based_password_with_time(0, "xxxxxxxxxxxxxx");
+        assert_eq!(Ok("622067".to_owned()), totp);
     }
 }
