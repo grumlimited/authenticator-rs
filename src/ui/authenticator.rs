@@ -1,6 +1,10 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use iced::{button, scrollable, text_input, window, Align, Application, Button, Column, Command, Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text, TextInput, Color};
+use iced::{
+    button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
+    Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text,
+    TextInput,
+};
 
 use crate::helpers::{ConfigManager, Every, LoadError};
 use crate::ui::{Account, AccountGroup};
@@ -96,7 +100,12 @@ impl AuthenticatorRs {
                     Column::new()
                         .push(Text::new(label).font(DEJAVU_SERIF))
                         .push(Space::new(Length::Fill, Length::from(8)))
-                        .push(Text::new(error.unwrap_or("")).font(DEJAVU_SERIF).color(Color::from_rgb8(204,20,33)).size(11))
+                        .push(
+                            Text::new(error.unwrap_or(""))
+                                .font(DEJAVU_SERIF)
+                                .color(Color::from_rgb8(204, 20, 33))
+                                .size(11),
+                        )
                         .push(Space::new(
                             Length::Fill,
                             Length::from(error.map(|_| 8).unwrap_or(0)),
@@ -242,11 +251,11 @@ impl AuthenticatorRs {
                         .iter_mut()
                         .find(|group| group.name == group_name)
                     {
-                        account_group._add(account);
+                        account_group.add(account);
                     } else {
                         let mut group =
                             AccountGroup::new(self.add_account_state.input_group_value.as_str());
-                        group._add(account);
+                        group.add(account);
                         self.groups.push(group);
                     };
 
@@ -272,7 +281,6 @@ impl AuthenticatorRs {
             Message::Copy(_) => unreachable!(),
             Message::DisplayAccounts => unreachable!(),
             Message::LoadAccounts(_) => unreachable!(),
-
         }
     }
 }

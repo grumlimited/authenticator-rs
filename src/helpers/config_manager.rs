@@ -88,7 +88,7 @@ mod tests {
         let account = Account::new("label", "secret");
 
         let mut groups = AccountGroup::new("name");
-        groups._add(account);
+        groups.add(account);
 
         let config_manager = ConfigManager {
             groups: vec![groups.clone()], //cloning to helping with assert_eq! on itself further down
@@ -99,10 +99,12 @@ mod tests {
 
         let destination = Path::new("test-serialisation.json");
 
-        let write_result = task::block_on(ConfigManager::_write(&destination, value));
+        let write_result = task::block_on(ConfigManager::write(&destination, value));
         assert_eq!(Ok(()), write_result);
 
-        let config_manager = task::block_on(ConfigManager::load_from_path(&destination)).unwrap();
+        let mut config_manager: ConfigManager = task::block_on(ConfigManager::load_from_path(&destination)).unwrap();
+
+        config_manager.groups.iter_mut().for_each(|x|x.update());
 
         assert_eq!(vec![groups], config_manager.groups);
     }
