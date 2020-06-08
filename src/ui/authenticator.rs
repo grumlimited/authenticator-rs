@@ -29,26 +29,31 @@ pub fn run_application() {
     AuthenticatorRs::run(settings);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum AuthenticatorRsState {
     Loading,
     DisplayAccounts,
+    DisplayGroup(u32),
     DisplayAddAccount,
+    DisplayEditAccount(Account),
 }
 
+#[derive(Debug, Clone)]
 pub struct AuthenticatorRs {
     groups: Vec<AccountGroup>,
     progressbar_value: f32,
-    ctx: ClipboardContext,
     state: AuthenticatorRsState,
     scroll: scrollable::State,
     add_account: button::State,
-    add_account_state: AddAccountState,
+    edit_account_state: EditAccountState, //add or create account
     connection: Arc<Mutex<Box<Connection>>>,
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct AddAccountState {
+pub struct EditAccountState {
+    group_id_value: Option<u32>,
+    account_id_value: Option<u32>,
+
     input_name_state: text_input::State,
     input_label_value: String,
     input_label_error: Option<String>,
@@ -68,11 +73,13 @@ pub struct AddAccountState {
 #[derive(Debug, Clone)]
 pub enum Message {
     AddAccount,
+    EditAccount(u32),
     LoadAccounts(Result<Vec<AccountGroup>, LoadError>),
     UpdateTime(f32),
     Copy(String),
 
     DisplayAccounts,
+    DisplayGroup(u32),
 
     AccountInputLabelChanged(String),
     AccountInputSecretChanged(String),
@@ -84,6 +91,26 @@ pub enum Message {
 impl AuthenticatorRs {
     fn update_accounts_totp(&mut self) {
         self.groups.iter_mut().for_each(|x| x.update())
+    }
+
+    fn view_group(&mut self, group_id: u32) -> Element<Message> {
+        let accounts_group_col = Container::new(
+            self.groups
+                .iter_mut()
+                .find(|x| x.id == group_id)
+                .unwrap()
+                .view_group(),
+        );
+
+        let main = Column::new()
+            .push(Row::new().push(accounts_group_col))
+            .padding(13)
+            .spacing(10)
+            .width(Length::Fill);
+
+        Container::new(Column::new().push(main))
+            .width(Length::Fill)
+            .into()
     }
 
     fn view_accounts(&mut self) -> Element<Message> {
@@ -132,10 +159,23 @@ impl AuthenticatorRs {
         .into()
     }
 
+    fn view_edit_account(&mut self, account: Account) -> Element<Message> {
+        self.view_add_account_(Some(account))
+    }
+
     fn view_add_account(&mut self) -> Element<Message> {
-        let title = Container::new(Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK))
-            .width(Length::Fill)
-            .padding(3);
+        self.view_add_account_(None)
+    }
+
+    fn view_add_account_(&mut self, account: Option<Account>) -> Element<Message> {
+        let title = match account {
+            Some(_) => Container::new(Text::new("Edit account").font(INCONSOLATA_EXPANDED_BLACK))
+                .width(Length::Fill)
+                .padding(3),
+            None => Container::new(Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK))
+                .width(Length::Fill)
+                .padding(3),
+        };
 
         fn row<'a>(
             label: &str,
@@ -168,27 +208,30 @@ impl AuthenticatorRs {
         let secret_input = row(
             "Secret",
             "secret",
-            &self.add_account_state.input_secret_value,
-            self.add_account_state.input_secret_error.as_deref(),
-            &mut self.add_account_state.input_secret_state,
+            &self.edit_account_state.input_secret_value,
+            self.edit_account_state.input_secret_error.as_deref(),
+            &mut self.edit_account_state.input_secret_state,
             Message::AccountInputSecretChanged,
         );
 
-        let group_input = row(
-            "Group",
-            "group name",
-            &self.add_account_state.input_group_value,
-            self.add_account_state.input_group_error.as_deref(),
-            &mut self.add_account_state.input_group_state,
-            Message::AccountInputGroupChanged,
-        );
+        let group_input = match account {
+            Some(_) => Row::new(), // upon editing an existing account, we cannot change the group for now, so no display
+            None => row(
+                "Group",
+                "group name",
+                &self.edit_account_state.input_group_value,
+                self.edit_account_state.input_group_error.as_deref(),
+                &mut self.edit_account_state.input_group_state,
+                Message::AccountInputGroupChanged,
+            ),
+        };
 
         let label_input = row(
             "Label",
             "label",
-            &self.add_account_state.input_label_value,
-            self.add_account_state.input_label_error.as_deref(),
-            &mut self.add_account_state.input_name_state,
+            &self.edit_account_state.input_label_value,
+            self.edit_account_state.input_label_error.as_deref(),
+            &mut self.edit_account_state.input_name_state,
             Message::AccountInputLabelChanged,
         );
 
@@ -197,7 +240,7 @@ impl AuthenticatorRs {
                 Column::new()
                     .push(
                         Button::new(
-                            &mut self.add_account_state.back_button_state,
+                            &mut self.edit_account_state.back_button_state,
                             Text::new("Back"),
                         )
                         .on_press(Message::DisplayAccounts),
@@ -208,7 +251,7 @@ impl AuthenticatorRs {
                 Column::new()
                     .push(
                         Button::new(
-                            &mut self.add_account_state.save_button_state,
+                            &mut self.edit_account_state.save_button_state,
                             Text::new("Save"),
                         )
                         .on_press(Message::AddAccountSave),
@@ -230,12 +273,12 @@ impl AuthenticatorRs {
     }
 
     fn reset_add_account_errors(&mut self) {
-        let mut state = self.add_account_state.clone();
+        let mut state = self.edit_account_state.clone();
         state.input_label_error = None;
         state.input_group_error = None;
         state.input_secret_error = None;
 
-        self.add_account_state = state;
+        self.edit_account_state = state;
     }
 
     fn sort_groups(&mut self) {
@@ -244,7 +287,7 @@ impl AuthenticatorRs {
     }
 
     fn reset_add_account_state(&mut self) {
-        self.add_account_state = AddAccountState::default();
+        self.edit_account_state = EditAccountState::default();
     }
 
     fn update_accounts(&mut self, message: self::Message) -> Command<Message> {
@@ -260,7 +303,8 @@ impl AuthenticatorRs {
             }
 
             Message::Copy(totp) => {
-                self.ctx.set_contents(totp).unwrap();
+                let mut ctx = ClipboardContext::new().unwrap();
+                ctx.set_contents(totp).unwrap();
                 Command::none()
             }
 
@@ -273,6 +317,10 @@ impl AuthenticatorRs {
                 self.state = AuthenticatorRsState::DisplayAddAccount;
                 Command::none()
             }
+            Message::DisplayGroup(group_id) => {
+                self.state = AuthenticatorRsState::DisplayGroup(group_id);
+                Command::none()
+            }
 
             Message::LoadAccounts(Err(_)) => Command::none(),
             Message::DisplayAccounts => Command::none(),
@@ -282,6 +330,76 @@ impl AuthenticatorRs {
             Message::AccountInputSecretChanged(_) => unreachable!(),
             Message::AccountInputGroupChanged(_) => unreachable!(),
             Message::AddAccountSave => unreachable!(),
+            Message::EditAccount(_) => unreachable!(),
+        }
+    }
+
+    fn update_edit_account(
+        &mut self,
+        message: self::Message,
+        account: Account,
+    ) -> Command<Message> {
+        match message {
+            Message::AddAccountSave => {
+                let conn = self.connection.clone();
+                let conn = conn.lock().unwrap();
+
+                self.reset_add_account_errors();
+
+                let (account_id, group_id, label, secret) = (
+                    self.edit_account_state.account_id_value,
+                    self.edit_account_state.group_id_value,
+                    self.edit_account_state.input_label_value.to_owned(),
+                    self.edit_account_state.input_secret_value.to_owned(),
+                );
+
+                if account_id.is_none() {
+                    panic!("account_id should not have been empty");
+                }
+
+                if group_id.is_none() {
+                    panic!("group_id should not have been empty");
+                }
+
+                if label.is_empty() {
+                    self.edit_account_state.input_label_error =
+                        Some("Please enter a value".to_owned());
+                }
+
+                if secret.is_empty() {
+                    self.edit_account_state.input_secret_error =
+                        Some("Please enter a value".to_owned());
+                } else if Account::generate_time_based_password(secret.as_str()).is_err() {
+                    self.edit_account_state.input_secret_error =
+                        Some("Could not generate TOTP from secret".to_owned());
+                }
+
+                if self.edit_account_state.input_label_error.is_none()
+                    && self.edit_account_state.input_secret_error.is_none()
+                {
+                    let mut account = account;
+
+                    account.label = label;
+                    account.secret = secret;
+
+                    match ConfigManager::update_account(&conn, &mut account) {
+                        Ok(_) => Command::perform(
+                            ConfigManager::async_load_account_groups(self.connection.clone()),
+                            Message::AddAccountSaved,
+                        ),
+                        Err(e) => panic!(e),
+                    }
+                } else {
+                    Command::none()
+                }
+            }
+            // back button pressed
+            Message::DisplayAccounts => Command::perform(
+                ConfigManager::async_load_account_groups(self.connection.clone()),
+                Message::AddAccountSaved,
+            ),
+
+            _ => self.update_add_account(message),
         }
     }
 
@@ -290,15 +408,15 @@ impl AuthenticatorRs {
             Message::UpdateTime(_) => Command::none(), //nothing to do, just the timer kicking in...
 
             Message::AccountInputLabelChanged(value) => {
-                self.add_account_state.input_label_value = value;
+                self.edit_account_state.input_label_value = value;
                 Command::none()
             }
             Message::AccountInputGroupChanged(value) => {
-                self.add_account_state.input_group_value = value;
+                self.edit_account_state.input_group_value = value;
                 Command::none()
             }
             Message::AccountInputSecretChanged(value) => {
-                self.add_account_state.input_secret_value = value;
+                self.edit_account_state.input_secret_value = value;
                 Command::none()
             }
 
@@ -309,39 +427,39 @@ impl AuthenticatorRs {
                 self.reset_add_account_errors();
 
                 let (group_name, label, secret) = (
-                    self.add_account_state.input_group_value.to_owned(),
-                    self.add_account_state.input_label_value.to_owned(),
-                    self.add_account_state.input_secret_value.to_owned(),
+                    self.edit_account_state.input_group_value.to_owned(),
+                    self.edit_account_state.input_label_value.to_owned(),
+                    self.edit_account_state.input_secret_value.to_owned(),
                 );
 
                 if group_name.is_empty() {
-                    self.add_account_state.input_group_error =
+                    self.edit_account_state.input_group_error =
                         Some("Please enter a value".to_owned());
                 }
 
                 if label.is_empty() {
-                    self.add_account_state.input_label_error =
+                    self.edit_account_state.input_label_error =
                         Some("Please enter a value".to_owned());
                 }
 
                 if secret.is_empty() {
-                    self.add_account_state.input_secret_error =
+                    self.edit_account_state.input_secret_error =
                         Some("Please enter a value".to_owned());
                 } else if Account::generate_time_based_password(secret.as_str()).is_err() {
-                    self.add_account_state.input_secret_error =
+                    self.edit_account_state.input_secret_error =
                         Some("Could not generate TOTP from secret".to_owned());
                 }
 
-                if self.add_account_state.input_group_error.is_none()
-                    && self.add_account_state.input_label_error.is_none()
-                    && self.add_account_state.input_secret_error.is_none()
+                if self.edit_account_state.input_group_error.is_none()
+                    && self.edit_account_state.input_label_error.is_none()
+                    && self.edit_account_state.input_secret_error.is_none()
                 {
-                    let group_name = self.add_account_state.input_group_value.to_owned();
+                    let group_name = self.edit_account_state.input_group_value.to_owned();
 
                     let mut account = Account::new(
                         0,
-                        self.add_account_state.input_label_value.as_str(),
-                        self.add_account_state.input_secret_value.as_str(),
+                        self.edit_account_state.input_label_value.as_str(),
+                        self.edit_account_state.input_secret_value.as_str(),
                     );
 
                     match ConfigManager::save_account(&conn, &mut account, &group_name) {
@@ -365,14 +483,43 @@ impl AuthenticatorRs {
                 Command::none()
             }
 
+            // back button pressed
             Message::DisplayAccounts => Command::perform(
                 ConfigManager::async_load_account_groups(self.connection.clone()),
                 Message::AddAccountSaved,
             ),
 
+            Message::DisplayGroup(_) => unreachable!(),
             Message::AddAccount => unreachable!(),
             Message::Copy(_) => unreachable!(),
             Message::LoadAccounts(_) => unreachable!(),
+            Message::EditAccount(_) => unreachable!(),
+        }
+    }
+
+    fn update_display_group(&mut self, message: self::Message) -> Command<Message> {
+        match message {
+            Message::DisplayAccounts => {
+                self.state = AuthenticatorRsState::DisplayAccounts;
+                Command::perform(
+                    ConfigManager::async_load_account_groups(self.connection.clone()),
+                    Message::LoadAccounts,
+                )
+            }
+            Message::EditAccount(account_id) => {
+                let conn = self.connection.clone();
+                let conn = conn.lock().unwrap();
+                let account = ConfigManager::get_account(&conn, account_id).unwrap();
+
+                self.edit_account_state.account_id_value = Some(account_id);
+                self.edit_account_state.group_id_value = Some(account.group_id);
+                self.edit_account_state.input_label_value = account.label.clone();
+                self.edit_account_state.input_secret_value = account.secret.clone();
+
+                self.state = AuthenticatorRsState::DisplayEditAccount(account);
+                Command::none()
+            }
+            _ => Command::none(),
         }
     }
 }
@@ -391,11 +538,10 @@ impl Application for AuthenticatorRs {
         let authenticator = AuthenticatorRs {
             groups: vec![],
             progressbar_value: Local::now().second() as f32,
-            ctx: ClipboardProvider::new().unwrap(),
             state: AuthenticatorRsState::Loading,
             scroll: scrollable::State::default(),
             add_account: button::State::default(),
-            add_account_state: AddAccountState::default(),
+            edit_account_state: EditAccountState::default(),
             connection: arc,
         };
 
@@ -413,7 +559,7 @@ impl Application for AuthenticatorRs {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
-        match self.state {
+        match &self.state {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
                 match message {
@@ -434,11 +580,19 @@ impl Application for AuthenticatorRs {
                     Message::AccountInputGroupChanged(_) => unreachable!(),
                     Message::AddAccountSave => unreachable!(),
                     Message::DisplayAccounts => unreachable!(),
+                    Message::DisplayGroup(_) => unreachable!(),
+                    Message::EditAccount(_) => unreachable!(),
                 }
             }
             AuthenticatorRsState::DisplayAccounts => self.update_accounts(message),
 
             AuthenticatorRsState::DisplayAddAccount => self.update_add_account(message),
+            AuthenticatorRsState::DisplayEditAccount(account) => {
+                let account = account.clone();
+                self.update_edit_account(message, account)
+            }
+
+            AuthenticatorRsState::DisplayGroup(_) => self.update_display_group(message),
         }
     }
 
@@ -448,14 +602,22 @@ impl Application for AuthenticatorRs {
     }
 
     fn view(&mut self) -> Element<Message> {
-        match self.state {
+        match &self.state {
             AuthenticatorRsState::Loading => Column::new()
                 .push(Text::new("Loading ..."))
                 .padding(10)
                 .spacing(10)
                 .into(),
             AuthenticatorRsState::DisplayAddAccount => self.view_add_account(),
+            AuthenticatorRsState::DisplayEditAccount(account) => {
+                let account = account.clone();
+                self.view_edit_account(account)
+            }
             AuthenticatorRsState::DisplayAccounts => self.view_accounts(),
+            AuthenticatorRsState::DisplayGroup(group_id) => {
+                let group_id = *group_id;
+                self.view_group(group_id)
+            }
         }
     }
 }
@@ -478,65 +640,44 @@ mod style {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     pub use super::*;
-//
-//     mod in_accounts {
-//         use super::*;
-//
-//         #[test]
-//         fn test_clipboard() {
-//             let mut authenticator = AuthenticatorRs {
-//                 groups: vec![],
-//                 progressbar_value: 0f32,
-//                 ctx: ClipboardContext::new().unwrap(),
-//                 state: AuthenticatorRsState::DisplayAccounts,
-//                 scroll: scrollable::State::default(),
-//                 add_account: button::State::default(),
-//                 add_account_state: AddAccountState::default(),
-//             };
-//
-//             authenticator.update_accounts(Message::Copy("totp".to_owned()));
-//             let mut clipboard = authenticator.ctx;
-//             assert_eq!("totp", clipboard.get_contents().unwrap());
-//         }
-//
-//         #[test]
-//         fn test_update_time() {
-//             let mut authenticator = AuthenticatorRs::new(()).0;
-//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
-//
-//             authenticator.update_accounts(Message::UpdateTime(15f32));
-//             assert_eq!(15f32, authenticator.progressbar_value);
-//
-//             authenticator.update_accounts(Message::UpdateTime(45f32));
-//             assert_eq!(15f32, authenticator.progressbar_value);
-//         }
-//
-//         #[test]
-//         fn test_load_accounts() {
-//             let mut authenticator = AuthenticatorRs::new(()).0;
-//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
-//
-//             let mut groups = Vec::new();
-//             groups.push(AccountGroup::new("group"));
-//
-//             let manager = Ok(ConfigManager {
-//                 groups: groups.clone(),
-//             });
-//
-//             authenticator.update_accounts(Message::LoadAccounts(manager));
-//             assert_eq!(groups, authenticator.groups);
-//         }
-//
-//         #[test]
-//         fn test_add_account() {
-//             let mut authenticator = AuthenticatorRs::new(()).0;
-//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
-//
-//             authenticator.update_accounts(Message::AddAccount);
-//             assert_eq!(AuthenticatorRsState::DisplayAddAccount, authenticator.state);
-//         }
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    pub use super::*;
+
+    mod in_accounts {
+        use super::*;
+
+        #[test]
+        fn test_update_time() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            authenticator.update_accounts(Message::UpdateTime(15f32));
+            assert_eq!(15f32, authenticator.progressbar_value);
+
+            authenticator.update_accounts(Message::UpdateTime(45f32));
+            assert_eq!(15f32, authenticator.progressbar_value);
+        }
+
+        #[test]
+        fn test_load_accounts() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            let mut groups = Vec::new();
+            groups.push(AccountGroup::new(0, "group", vec![]));
+
+            authenticator.update_accounts(Message::LoadAccounts(Ok(groups.clone())));
+            assert_eq!(groups, authenticator.groups);
+        }
+
+        #[test]
+        fn test_add_account() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            authenticator.update_accounts(Message::AddAccount);
+            assert_eq!(AuthenticatorRsState::DisplayAddAccount, authenticator.state);
+        }
+    }
+}
