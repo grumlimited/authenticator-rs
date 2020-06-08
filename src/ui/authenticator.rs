@@ -365,6 +365,11 @@ impl AuthenticatorRs {
                 Command::none()
             }
 
+            Message::DisplayAccounts => Command::perform(
+                ConfigManager::async_load_account_groups(self.connection.clone()),
+                Message::AddAccountSaved,
+            ),
+
             Message::AddAccount => unreachable!(),
             Message::Copy(_) => unreachable!(),
             Message::LoadAccounts(_) => unreachable!(),
@@ -412,8 +417,8 @@ impl Application for AuthenticatorRs {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
                 match message {
-                    Message::LoadAccounts(Ok(state)) => {
-                        self.groups = state.groups;
+                    Message::LoadAccounts(Ok(groups)) => {
+                        self.groups = groups;
                         self.update_accounts_totp();
                         Command::none()
                     }
