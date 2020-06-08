@@ -3,14 +3,12 @@ use std::time::SystemTime;
 
 use base32::decode;
 use base32::Alphabet::RFC4648;
-use iced::{button, Align, Button, Container, Image, Length, Row, Text};
+use iced::image::Handle;
+use iced::{button, Align, Button, Color, Container, Image, Length, Row, Text};
 use serde::{Deserialize, Serialize};
 
-use iced::image::Handle;
-
-use crate::ui::Message;
-
 use crate::helpers::DEJAVU_SERIF;
+use crate::ui::Message;
 
 const EDIT_COPY_ICON: &[u8] = include_bytes!("../resources/icons/edit-copy.png");
 
@@ -27,33 +25,59 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn _new(label: &str, secret: &str) -> Self {
-        Account {
+    pub fn new(label: &str, secret: &str) -> Self {
+        let mut a = Account {
             label: label.to_owned(),
             secret: secret.to_owned(),
             ..Account::default()
-        }
+        };
+
+        a.update();
+        a
     }
 
-    fn generate_time_based_password(&self, key: &str) -> String {
+    pub fn generate_time_based_password(key: &str) -> Result<String, String> {
         let time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_secs();
 
-        let b32 = decode(RFC4648 { padding: false }, key).unwrap();
-        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32);
+        Self::generate_time_based_password_with_time(time, key)
+    }
 
-        totp_sha1.generate(time)
+    fn generate_time_based_password_with_time(time: u64, key: &str) -> Result<String, String> {
+        if let Some(b32) = decode(RFC4648 { padding: false }, key) {
+            let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32);
+            totp_sha1.generate(time);
+            Ok(totp_sha1.generate(time))
+        } else {
+            Err("error!".to_owned())
+        }
     }
 
     pub fn update(&mut self) {
-        self.totp = Some(self.generate_time_based_password(self.secret.as_str()));
+        match Self::generate_time_based_password(self.secret.as_str()) {
+            Ok(totp) => self.totp = Some(totp),
+            Err(_) => self.totp = None,
+        }
     }
 
     pub fn view(&mut self) -> Row<Message> {
         let font_size = 16 as u16;
         let state = self.state.borrow_mut();
+
+        let row = Row::new()
+            .push(
+                Container::new(
+                    Text::new(format!("{}: ", self.label))
+                        .font(DEJAVU_SERIF)
+                        .size(font_size),
+                )
+                .width(Length::FillPortion(3)),
+            )
+            .width(Length::Fill)
+            .height(Length::from(40))
+            .align_items(Align::Center);
 
         match &self.totp {
             Some(totp) => {
@@ -70,27 +94,23 @@ impl Account {
                 .width(Length::FillPortion(1))
                 .align_x(Align::End);
 
-                Row::new()
-                    .push(
-                        Container::new(
-                            Text::new(format!("{}: ", self.label))
-                                .font(DEJAVU_SERIF)
-                                .size(font_size),
-                        )
-                        .width(Length::FillPortion(3)),
-                    )
-                    .push(
-                        Container::new(Text::new(format!("{} ", totp)).size(font_size))
-                            .width(Length::FillPortion(2))
-                            .align_x(Align::End),
-                    )
-                    .push(button)
-                    .width(Length::Fill)
-                    .height(Length::from(40))
-                    .align_items(Align::Center)
+                row.push(
+                    Container::new(Text::new(format!("{} ", totp)).size(font_size))
+                        .width(Length::FillPortion(2))
+                        .align_x(Align::End),
+                )
+                .push(button)
             }
 
-            None => panic!("Could not generate totp code"),
+            None => row.push(
+                Container::new(
+                    Text::new("error!")
+                        .size(font_size)
+                        .color(Color::from_rgb8(204, 20, 33)),
+                )
+                .width(Length::FillPortion(2))
+                .align_x(Align::End),
+            ),
         }
     }
 }
@@ -135,5 +155,16 @@ mod style {
                 ..button::Style::default()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ui::Account;
+
+    #[test]
+    fn totp_generation() {
+        let totp = Account::generate_time_based_password_with_time(0, "xxxxxxxxxxxxxx");
+        assert_eq!(Ok("622067".to_owned()), totp);
     }
 }

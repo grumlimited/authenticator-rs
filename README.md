@@ -14,13 +14,20 @@ but definitely in the rough...
 Lastly, it is using this fantastic library: [iced](https://github.com/hecrj/iced) as the building blocks for its UI.
 Thanks [@ecrj](https://github.com/hecrj) and the iced team.
 
-<kbd>![authenticator-rs](./authenticator-rs.png "Authenticator RS")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-main.png "Authenticator RS")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-add-account.png "Authenticator RS")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-main2.png "Authenticator RS")</kbd>
 
 ## License
 
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
 ## Changelog
+
+### 0.0.2
+
+* Adding new accounts
+* More error handling
 
 ### 0.0.1
 
