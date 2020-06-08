@@ -41,11 +41,11 @@ _Only tested on Linux (Arch Linux to be specific)._
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    chmod +x ./authenticator-rs-0.0.1-x86_64
+    chmod +x ./authenticator-rs-0.0.2-x86_64
 
-    ./authenticator-rs-0.0.1-x86_64
+    ./authenticator-rs-0.0.2-x86_64
 
-## Configuring
+## Configuring manually
 
 Create the file `$HOME/.local/share/authenticator-rs/authenticator.json`, with the following content:
 

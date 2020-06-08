@@ -4,3 +4,5 @@
 Cargo.lock
 
 test-serialisation.json
+.crates.toml
+.crates2.json

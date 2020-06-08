@@ -26,11 +26,11 @@ pub fn run_application() {
     AuthenticatorRs::run(settings);
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum AuthenticatorRsState {
     Loading,
     DisplayAccounts,
-    DisplayAddAccounts,
+    DisplayAddAccount,
 }
 
 pub struct AuthenticatorRs {
@@ -82,7 +82,53 @@ impl AuthenticatorRs {
         self.groups.iter_mut().for_each(|x| x.update())
     }
 
-    fn view_add_new_account(&mut self) -> Element<Message> {
+    fn view_accounts(&mut self) -> Element<Message> {
+        self.sort_groups();
+
+        let accounts_group_col: Column<Message> = self.groups.iter_mut().fold(
+            Column::new().spacing(20),
+            |accounts_group_col, account_group| accounts_group_col.push(account_group.view()),
+        );
+
+        let progress_bar = Container::new(
+            ProgressBar::new(0.0..=30.0, self.progressbar_value).style(style::ProgressBar::Default),
+        )
+        .height(Length::from(16))
+        .width(Length::Fill)
+        .padding(3);
+
+        let add_account = Container::new(
+            Button::new(&mut self.add_account, Text::new("Add account"))
+                .on_press(Message::AddAccount),
+        )
+        .padding(10)
+        .width(Length::Fill);
+
+        let main = Column::new()
+            .push(Row::new().push(accounts_group_col))
+            .padding(10)
+            .spacing(10)
+            .width(Length::Fill);
+
+        let accounts_container = Container::new(main).width(Length::from(290));
+
+        let main_scrollable = Scrollable::new(&mut self.scroll)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(3)
+            .push(accounts_container);
+
+        Container::new(
+            Column::new()
+                .push(progress_bar)
+                .push(add_account)
+                .push(main_scrollable),
+        )
+        .width(Length::Fill)
+        .into()
+    }
+
+    fn view_add_account(&mut self) -> Element<Message> {
         let title = Container::new(Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK))
             .width(Length::Fill)
             .padding(3);
@@ -197,7 +243,45 @@ impl AuthenticatorRs {
         self.add_account_state = AddAccountState::default();
     }
 
-    fn show_add_account(&mut self, message: self::Message) -> Command<Message> {
+    fn update_accounts(&mut self, message: self::Message) -> Command<Message> {
+        match message {
+            Message::UpdateTime(current_second) => {
+                self.progressbar_value = 30.0 - current_second % 30.0;
+
+                if current_second == 0.0 || (current_second - 30.0).abs() < EPSILON {
+                    self.update_accounts_totp();
+                }
+
+                Command::none()
+            }
+
+            Message::Copy(totp) => {
+                self.ctx.set_contents(totp).unwrap();
+                Command::none()
+            }
+
+            Message::LoadAccounts(Ok(state)) => {
+                self.groups = state.groups;
+                Command::none()
+            }
+
+            Message::AddAccount => {
+                self.state = AuthenticatorRsState::DisplayAddAccount;
+                Command::none()
+            }
+
+            Message::LoadAccounts(Err(_)) => Command::none(),
+            Message::DisplayAccounts => Command::none(),
+
+            Message::AccountInputLabelChanged(_) => unreachable!(),
+            Message::AccountInputSecretChanged(_) => unreachable!(),
+            Message::AccountInputGroupChanged(_) => unreachable!(),
+            Message::AddAccountSave => unreachable!(),
+            Message::AddAccountSaved(_) => unreachable!(),
+        }
+    }
+
+    fn update_add_account(&mut self, message: self::Message) -> Command<Message> {
         match message {
             Message::UpdateTime(_) => Command::none(), //nothing to do, just the timer kicking in...
 
@@ -340,43 +424,9 @@ impl Application for AuthenticatorRs {
                     Message::DisplayAccounts => unreachable!(),
                 }
             }
-            AuthenticatorRsState::DisplayAccounts => match message {
-                Message::UpdateTime(current_second) => {
-                    self.progressbar_value = 30.0 - current_second % 30.0;
+            AuthenticatorRsState::DisplayAccounts => self.update_accounts(message),
 
-                    if current_second == 0.0 || (current_second - 30.0).abs() < EPSILON {
-                        self.update_accounts_totp();
-                    }
-
-                    Command::none()
-                }
-
-                Message::Copy(totop) => {
-                    self.ctx.set_contents(totop).unwrap();
-                    Command::none()
-                }
-
-                Message::LoadAccounts(Ok(state)) => {
-                    self.groups = state.groups;
-                    Command::none()
-                }
-
-                Message::AddAccount => {
-                    self.state = AuthenticatorRsState::DisplayAddAccounts;
-                    Command::none()
-                }
-
-                Message::LoadAccounts(Err(_)) => Command::none(),
-                Message::DisplayAccounts => Command::none(),
-
-                Message::AccountInputLabelChanged(_) => unreachable!(),
-                Message::AccountInputSecretChanged(_) => unreachable!(),
-                Message::AccountInputGroupChanged(_) => unreachable!(),
-                Message::AddAccountSave => unreachable!(),
-                Message::AddAccountSaved(_) => unreachable!(),
-            },
-
-            AuthenticatorRsState::DisplayAddAccounts => self.show_add_account(message),
+            AuthenticatorRsState::DisplayAddAccount => self.update_add_account(message),
         }
     }
 
@@ -388,59 +438,12 @@ impl Application for AuthenticatorRs {
     fn view(&mut self) -> Element<Message> {
         match self.state {
             AuthenticatorRsState::Loading => Column::new()
-                .push(Text::new("Loading1 ..."))
+                .push(Text::new("Loading ..."))
                 .padding(10)
                 .spacing(10)
                 .into(),
-            AuthenticatorRsState::DisplayAddAccounts => self.view_add_new_account(),
-            AuthenticatorRsState::DisplayAccounts => {
-                self.sort_groups();
-
-                let accounts_group_col: Column<Message> = self.groups.iter_mut().fold(
-                    Column::new().spacing(20),
-                    |accounts_group_col, account_group| {
-                        accounts_group_col.push(account_group.view())
-                    },
-                );
-
-                let progress_bar = Container::new(
-                    ProgressBar::new(0.0..=30.0, self.progressbar_value)
-                        .style(style::ProgressBar::Default),
-                )
-                .height(Length::from(16))
-                .width(Length::Fill)
-                .padding(3);
-
-                let add_account = Container::new(
-                    Button::new(&mut self.add_account, Text::new("Add account"))
-                        .on_press(Message::AddAccount),
-                )
-                .padding(10)
-                .width(Length::Fill);
-
-                let main = Column::new()
-                    .push(Row::new().push(accounts_group_col))
-                    .padding(10)
-                    .spacing(10)
-                    .width(Length::Fill);
-
-                let accounts_container = Container::new(main).width(Length::from(290));
-
-                let main_scrollable = Scrollable::new(&mut self.scroll)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .padding(3)
-                    .push(accounts_container);
-
-                Container::new(
-                    Column::new()
-                        .push(progress_bar)
-                        .push(add_account)
-                        .push(main_scrollable),
-                )
-                .width(Length::Fill)
-                .into()
-            }
+            AuthenticatorRsState::DisplayAddAccount => self.view_add_account(),
+            AuthenticatorRsState::DisplayAccounts => self.view_accounts(),
         }
     }
 }
@@ -459,6 +462,69 @@ mod style {
                 bar: Background::Color(Color::from_rgb8(106, 177, 235)),
                 border_radius: 5,
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    pub use super::*;
+
+    mod in_accounts {
+        use super::*;
+
+        #[test]
+        fn test_clipboard() {
+            let mut authenticator = AuthenticatorRs {
+                groups: vec![],
+                progressbar_value: 0f32,
+                ctx: ClipboardContext::new().unwrap(),
+                state: AuthenticatorRsState::DisplayAccounts,
+                scroll: scrollable::State::default(),
+                add_account: button::State::default(),
+                add_account_state: AddAccountState::default(),
+            };
+
+            authenticator.update_accounts(Message::Copy("totp".to_owned()));
+            let mut clipboard = authenticator.ctx;
+            assert_eq!("totp", clipboard.get_contents().unwrap());
+        }
+
+        #[test]
+        fn test_update_time() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            authenticator.update_accounts(Message::UpdateTime(15f32));
+            assert_eq!(15f32, authenticator.progressbar_value);
+
+            authenticator.update_accounts(Message::UpdateTime(45f32));
+            assert_eq!(15f32, authenticator.progressbar_value);
+        }
+
+        #[test]
+        fn test_load_accounts() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            let mut groups = Vec::new();
+            groups.push(AccountGroup::new("group"));
+
+            let manager = Ok(ConfigManager {
+                groups: groups.clone(),
+            });
+
+            authenticator.update_accounts(Message::LoadAccounts(manager));
+            assert_eq!(groups, authenticator.groups);
+        }
+
+        #[test]
+        fn test_add_account() {
+            let mut authenticator = AuthenticatorRs::new(()).0;
+            authenticator.state = AuthenticatorRsState::DisplayAccounts;
+
+            authenticator.update_accounts(Message::AddAccount);
+            assert_eq!(AuthenticatorRsState::DisplayAddAccount, authenticator.state);
         }
     }
 }
