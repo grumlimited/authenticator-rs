@@ -148,10 +148,10 @@ impl ConfigManager {
         conn.execute(
             "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
             params![account.label, group.id, account.secret],
-        ).unwrap();
+        )
+        .unwrap();
 
-        let mut stmt = conn
-            .prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
@@ -181,10 +181,10 @@ impl ConfigManager {
     }
 
     fn get_accounts(conn: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut _stmt =
+        let mut stmt =
             conn.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1")?;
 
-        let accounts_iter = _stmt.query_map(params![group_id], |row| {
+        stmt.query_map(params![group_id], |row| {
             let id: u32 = row.get(0)?;
             let group_id: u32 = group_id;
             let label: String = row.get(1)?;
@@ -193,9 +193,8 @@ impl ConfigManager {
             let mut account = Account::new(group_id, label.as_str(), secret.as_str());
             account.id = id;
             Ok(account)
-        })?;
-
-        Ok(accounts_iter.map(|x| x.unwrap()).collect())
+        })
+        .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
     pub async fn _deserialise(path: &Path) -> Result<ConfigManager, LoadError> {
