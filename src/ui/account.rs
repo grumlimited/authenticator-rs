@@ -14,6 +14,8 @@ const EDIT_COPY_ICON: &[u8] = include_bytes!("../resources/icons/edit-copy.png")
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
+    pub id: u32,
+    group_id: u32,
     pub label: String,
     secret: String,
 
@@ -25,8 +27,10 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn new(label: &str, secret: &str) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
         let mut a = Account {
+            id,
+            group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
             ..Account::default()

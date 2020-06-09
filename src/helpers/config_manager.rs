@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::ui::AccountGroup;
+use rusqlite::{params, Connection, MappedRows, OpenFlags, Result, Row, NO_PARAMS};
+
+use crate::ui::{Account, AccountGroup};
+use std::error::Error;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,6 +16,7 @@ pub enum LoadError {
     FileError,
     FormatError,
     SaveError,
+    DbError(String),
 }
 
 impl ConfigManager {
@@ -30,33 +34,80 @@ impl ConfigManager {
         path
     }
 
+    fn path2() -> std::path::PathBuf {
+        let mut path = if let Some(project_dirs) =
+            directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+        {
+            project_dirs.data_dir().into()
+        } else {
+            std::env::current_dir().unwrap_or_default()
+        };
+
+        path.push("authenticator.db");
+
+        path
+    }
+
     pub async fn load() -> Result<ConfigManager, LoadError> {
         Self::load_from_path(&Self::path()).await
     }
 
     pub async fn load_from_path(path: &Path) -> Result<ConfigManager, LoadError> {
-        let accounts = async_std::fs::read_to_string(path)
-            .await
-            .map_err(|_| LoadError::FileError)?;
+        let conn = Connection::open_with_flags(&Self::path2(), OpenFlags::default())
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
 
-        serde_json::from_str(&accounts)
-            .map(|mut cm: ConfigManager| {
-                // sort groups
-                cm.groups
-                    .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-                cm
-            })
-            .map(|mut cm: ConfigManager| {
-                // sort entries in each group
-                cm.groups.iter_mut().for_each(|account_group| {
-                    account_group
-                        .entries
-                        .sort_by(|a, b| a.label.to_lowercase().cmp(&b.label.to_lowercase()))
-                });
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS accounts (
+                  id              INTEGER PRIMARY KEY,
+                  label           TEXT NOT NULL,
+                  group_id        INTEGER NOT NULL,
+                  secret          TEXT NOT NULL
+                  )",
+            params![],
+        )
+        .and(conn.execute(
+            "CREATE TABLE IF NOT EXISTS groups (
+                  id             INTEGER PRIMARY KEY,
+                  name           TEXT NOT NULL)",
+            params![],
+        ))
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
 
-                cm
+            let mut _stmt = conn.prepare("SELECT id, name FROM groups").unwrap();
+
+            let groups_iter = _stmt
+                .query_map(params![], |row| {
+                    let id: u32 = row.get(0)?;
+                    let name: String = row.get(1)?;
+
+                    let mut _stmt = conn
+                        .prepare("SELECT id, label, group_id, secret FROM accounts")
+                        .unwrap();
+
+                    let accounts_iter = _stmt
+                        .query_map(params![], |row| {
+                            let id: u32 = row.get(0)?;
+                            let group_id: u32 = row.get(2)?;
+                            let label: String = row.get(1)?;
+                            let secret: String = row.get(3)?;
+
+                            Ok(Account::new(id, group_id, label.as_str(), secret.as_str()))
+                        })
+                        .unwrap();
+
+                    Ok(AccountGroup::new(
+                        id,
+                        name.as_str(),
+                        accounts_iter.map(|x| x.unwrap()).collect(),
+                    ))
+                })
+                .unwrap();
+
+            let groups: Vec<AccountGroup> = groups_iter.map(|x| x.unwrap()).collect();
+
+            Ok(ConfigManager {
+                groups
             })
-            .map_err(|_| LoadError::FormatError)
     }
 
     pub async fn write<C: ToString>(path: &Path, contents: C) -> Result<(), LoadError> {

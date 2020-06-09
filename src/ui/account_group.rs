@@ -6,15 +6,17 @@ use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AccountGroup {
+    pub id: u32,
     pub name: String,
     pub entries: Vec<Account>,
 }
 
 impl AccountGroup {
-    pub fn new(name: &str) -> Self {
+    pub fn new(id: u32, name: &str, entries: Vec<Account>) -> Self {
         AccountGroup {
+            id,
             name: name.to_owned(),
-            entries: vec![],
+            entries,
         }
     }
 

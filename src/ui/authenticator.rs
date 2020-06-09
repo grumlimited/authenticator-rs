@@ -332,6 +332,8 @@ impl AuthenticatorRs {
                     let group_name = self.add_account_state.input_group_value.to_owned();
 
                     let account = Account::new(
+                        0,
+                        0,
                         self.add_account_state.input_label_value.as_str(),
                         self.add_account_state.input_secret_value.as_str(),
                     );
@@ -343,8 +345,11 @@ impl AuthenticatorRs {
                     {
                         account_group.add(account);
                     } else {
-                        let mut group =
-                            AccountGroup::new(self.add_account_state.input_group_value.as_str());
+                        let mut group = AccountGroup::new(
+                            0u32,
+                            self.add_account_state.input_group_value.as_str(),
+                            vec![],
+                        );
                         group.add(account);
                         self.groups.push(group);
                     };
