@@ -20,7 +20,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn add(&mut self, account: Account) {
+    pub fn _add(&mut self, account: Account) {
         self.entries.push(account)
     }
 

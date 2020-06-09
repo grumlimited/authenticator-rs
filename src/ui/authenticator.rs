@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
+
 use iced::{
     button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
     Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text,
@@ -12,7 +13,9 @@ use crate::ui::{Account, AccountGroup};
 use crate::helpers::DEJAVU_SERIF;
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
 
+use rusqlite::Connection;
 use std::f32::EPSILON;
+use std::sync::{Arc, Mutex};
 
 pub fn run_application() {
     let settings = Settings {
@@ -41,6 +44,7 @@ pub struct AuthenticatorRs {
     scroll: scrollable::State,
     add_account: button::State,
     add_account_state: AddAccountState,
+    connection: Arc<Mutex<Box<Connection>>>,
 }
 
 #[derive(Default, Debug, Clone)]
@@ -64,7 +68,7 @@ pub struct AddAccountState {
 #[derive(Debug, Clone)]
 pub enum Message {
     AddAccount,
-    LoadAccounts(Result<ConfigManager, LoadError>),
+    LoadAccounts(Result<Vec<AccountGroup>, LoadError>),
     UpdateTime(f32),
     Copy(String),
 
@@ -74,7 +78,7 @@ pub enum Message {
     AccountInputSecretChanged(String),
     AccountInputGroupChanged(String),
     AddAccountSave,
-    AddAccountSaved(Result<(), LoadError>),
+    AddAccountSaved(Result<Vec<AccountGroup>, LoadError>),
 }
 
 impl AuthenticatorRs {
@@ -260,8 +264,8 @@ impl AuthenticatorRs {
                 Command::none()
             }
 
-            Message::LoadAccounts(Ok(state)) => {
-                self.groups = state.groups;
+            Message::LoadAccounts(Ok(groups)) => {
+                self.groups = groups;
                 Command::none()
             }
 
@@ -272,12 +276,13 @@ impl AuthenticatorRs {
 
             Message::LoadAccounts(Err(_)) => Command::none(),
             Message::DisplayAccounts => Command::none(),
+            Message::AddAccountSaved(_) => Command::none(), //may happen if someone is brutally murdering the save button
+
 
             Message::AccountInputLabelChanged(_) => unreachable!(),
             Message::AccountInputSecretChanged(_) => unreachable!(),
             Message::AccountInputGroupChanged(_) => unreachable!(),
             Message::AddAccountSave => unreachable!(),
-            Message::AddAccountSaved(_) => unreachable!(),
         }
     }
 
@@ -299,6 +304,9 @@ impl AuthenticatorRs {
             }
 
             Message::AddAccountSave => {
+                let conn = self.connection.clone();
+                let conn = conn.lock().unwrap();
+
                 self.reset_add_account_errors();
 
                 let (group_name, label, secret) = (
@@ -331,34 +339,20 @@ impl AuthenticatorRs {
                 {
                     let group_name = self.add_account_state.input_group_value.to_owned();
 
-                    let account = Account::new(
-                        0,
+                    let mut account = Account::new(
                         0,
                         self.add_account_state.input_label_value.as_str(),
                         self.add_account_state.input_secret_value.as_str(),
                     );
 
-                    if let Some(account_group) = self
-                        .groups
-                        .iter_mut()
-                        .find(|group| group.name == group_name)
-                    {
-                        account_group.add(account);
-                    } else {
-                        let mut group = AccountGroup::new(
-                            0u32,
-                            self.add_account_state.input_group_value.as_str(),
-                            vec![],
-                        );
-                        group.add(account);
-                        self.groups.push(group);
-                    };
-
-                    let write_config = crate::helpers::ConfigManager::write_config(ConfigManager {
-                        groups: self.groups.clone(),
-                    });
-
-                    Command::perform(write_config, Message::AddAccountSaved)
+                    match ConfigManager::save_account(&conn, &mut account, &group_name) {
+                        Ok(_) => {
+                            Command::perform(
+                            ConfigManager::async_load_account_groups(self.connection.clone()),
+                            Message::AddAccountSaved,
+                        )},
+                        Err(e) => panic!(e),
+                    }
                 } else {
                     Command::none()
                 }
@@ -366,11 +360,17 @@ impl AuthenticatorRs {
 
             Message::AddAccountSaved(Err(_)) => panic!("could not save account"),
 
-            Message::AddAccountSaved(Ok(())) | Message::DisplayAccounts => {
+            Message::AddAccountSaved(Ok(account_groups)) => {
                 self.reset_add_account_state();
                 self.state = AuthenticatorRsState::DisplayAccounts;
+                self.groups = account_groups;
                 Command::none()
             }
+
+            Message::DisplayAccounts => Command::perform(
+                ConfigManager::async_load_account_groups(self.connection.clone()),
+                Message::AddAccountSaved,
+            ),
 
             Message::AddAccount => unreachable!(),
             Message::Copy(_) => unreachable!(),
@@ -385,6 +385,10 @@ impl Application for AuthenticatorRs {
     type Flags = ();
 
     fn new(_flags: ()) -> (AuthenticatorRs, Command<Message>) {
+        let arc = Arc::new(Mutex::new(Box::new(
+            ConfigManager::create_connection().unwrap(),
+        )));
+        let arc2 = arc.clone();
         let authenticator = AuthenticatorRs {
             groups: vec![],
             progressbar_value: Local::now().second() as f32,
@@ -393,11 +397,17 @@ impl Application for AuthenticatorRs {
             scroll: scrollable::State::default(),
             add_account: button::State::default(),
             add_account_state: AddAccountState::default(),
+            connection: arc2,
         };
+
+        let arc3: Arc<Mutex<Box<Connection>>> = arc.clone();
 
         (
             authenticator,
-            Command::perform(ConfigManager::load(), Message::LoadAccounts),
+            Command::perform(
+                ConfigManager::async_load_account_groups(arc3),
+                Message::LoadAccounts,
+            ),
         )
     }
 
@@ -410,8 +420,8 @@ impl Application for AuthenticatorRs {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
                 match message {
-                    Message::LoadAccounts(Ok(state)) => {
-                        self.groups = state.groups;
+                    Message::LoadAccounts(Ok(groups)) => {
+                        self.groups = groups;
                         self.update_accounts_totp();
                         Command::none()
                     }
@@ -443,7 +453,7 @@ impl Application for AuthenticatorRs {
     fn view(&mut self) -> Element<Message> {
         match self.state {
             AuthenticatorRsState::Loading => Column::new()
-                .push(Text::new("Loading ..."))
+                .push(Text::new("Loading1 ..."))
                 .padding(10)
                 .spacing(10)
                 .into(),
