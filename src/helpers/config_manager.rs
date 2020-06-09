@@ -45,26 +45,22 @@ impl ConfigManager {
     }
 
     fn load_account_groups(conn: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
-        Self::init_tables(&conn).map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+        Self::init_tables(&conn).unwrap();
 
         let mut stmt = conn.prepare("SELECT id, name FROM groups").unwrap();
 
-        let groups_iter = stmt
-            .query_map(params![], |row| {
-                let id: u32 = row.get(0)?;
-                let name: String = row.get(1)?;
+        stmt.query_map(params![], |row| {
+            let id: u32 = row.get(0)?;
+            let name: String = row.get(1)?;
 
-                Ok(AccountGroup::new(
-                    id,
-                    name.as_str(),
-                    Self::get_accounts(&conn, id)?,
-                ))
-            })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
-
-        let groups: Vec<AccountGroup> = groups_iter.map(|g| g.unwrap()).collect();
-
-        Ok(groups)
+            Ok(AccountGroup::new(
+                id,
+                name.as_str(),
+                Self::get_accounts(&conn, id)?,
+            ))
+        })
+        .map(|rows| rows.map(|each| each.unwrap()).collect())
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
@@ -77,10 +73,9 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
             .unwrap();
 
-       let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
-        stmt
-            .query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| AccountGroup {
                 id,
                 name: group_name.to_owned(),
