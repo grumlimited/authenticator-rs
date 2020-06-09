@@ -278,7 +278,6 @@ impl AuthenticatorRs {
             Message::DisplayAccounts => Command::none(),
             Message::AddAccountSaved(_) => Command::none(), //may happen if someone is brutally murdering the save button
 
-
             Message::AccountInputLabelChanged(_) => unreachable!(),
             Message::AccountInputSecretChanged(_) => unreachable!(),
             Message::AccountInputGroupChanged(_) => unreachable!(),
