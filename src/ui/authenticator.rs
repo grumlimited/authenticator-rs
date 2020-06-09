@@ -386,7 +386,8 @@ impl Application for AuthenticatorRs {
         let arc = Arc::new(Mutex::new(Box::new(
             ConfigManager::create_connection().unwrap(),
         )));
-        let arc2 = arc.clone();
+        let arc_clone = arc.clone();
+
         let authenticator = AuthenticatorRs {
             groups: vec![],
             progressbar_value: Local::now().second() as f32,
@@ -395,15 +396,13 @@ impl Application for AuthenticatorRs {
             scroll: scrollable::State::default(),
             add_account: button::State::default(),
             add_account_state: AddAccountState::default(),
-            connection: arc2,
+            connection: arc,
         };
-
-        let arc3: Arc<Mutex<Box<Connection>>> = arc.clone();
 
         (
             authenticator,
             Command::perform(
-                ConfigManager::async_load_account_groups(arc3),
+                ConfigManager::async_load_account_groups(arc_clone),
                 Message::LoadAccounts,
             ),
         )
