@@ -24,6 +24,10 @@ Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README
 
 ## Changelog
 
+### 0.0.3
+
+* SQLite backend! _(deleting/updating accounts coming soon! )_
+
 ### 0.0.2
 
 * Adding new accounts
@@ -41,50 +45,9 @@ _Only tested on Linux (Arch Linux to be specific)._
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    chmod +x ./authenticator-rs-0.0.2-x86_64
+    chmod +x ./authenticator-rs-0.0.3-x86_64
 
-    ./authenticator-rs-0.0.2-x86_64
-
-## Configuring manually
-
-Create the file `$HOME/.local/share/authenticator-rs/authenticator.json`, with the following content:
-
-    {
-      "groups": [
-        {
-          "name": "AWS",
-          "entries": [
-            {
-              "label": "CTM",
-              "secret": "verysecret"
-            },
-            {
-              "label": "Grum",
-              "secret": "same level of secrecy"
-            }
-          ]
-        },
-        {
-          "name": "Accounting",
-          "entries": [
-            {
-              "label": "Xero",
-              "secret": "this one is more obvious"
-            },
-            {
-              "label": "Receipt Bank",
-              "secret": "and this last one is obviously fake"
-            }
-          ]
-        }
-      ]
-    }
-
-The labels and group names are free copy. The secrets are your service-issued shared secrets. 
-
-_Note: the secret values are in plain text, not base32 or anything._
-
-Suffice to say you have to keep that file safe.
+    ./authenticator-rs-0.0.3-x86_64
 
 ## Building
 
