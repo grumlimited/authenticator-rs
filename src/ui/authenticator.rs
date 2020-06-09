@@ -346,11 +346,10 @@ impl AuthenticatorRs {
                     );
 
                     match ConfigManager::save_account(&conn, &mut account, &group_name) {
-                        Ok(_) => {
-                            Command::perform(
+                        Ok(_) => Command::perform(
                             ConfigManager::async_load_account_groups(self.connection.clone()),
                             Message::AddAccountSaved,
-                        )},
+                        ),
                         Err(e) => panic!(e),
                     }
                 } else {

@@ -77,17 +77,16 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
             .unwrap();
 
-        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+       let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
-        let id = stmt
+        stmt
             .query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
-            .unwrap();
-
-        Ok(AccountGroup {
-            id,
-            name: group_name.to_owned(),
-            entries: vec![],
-        })
+            .map(|id| AccountGroup {
+                id,
+                name: group_name.to_owned(),
+                entries: vec![],
+            })
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn get_or_create_group(
