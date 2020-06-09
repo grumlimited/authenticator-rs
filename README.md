@@ -4,7 +4,7 @@ Authenticator-rs is a TOTP-MFA application written in Rust and Iced.
 
 This application is very much a work in progress.
 
-It is initially inspired from [authenticator](https://gitlab.gnome.org/World/Authenticator), which sadly sort of 
+It is initially inspired by [authenticator](https://gitlab.gnome.org/World/Authenticator), which sadly sort of 
 [broke](https://aur.archlinux.org/packages/authenticator/) for me 
 in the latest versions of python shipped with [Arch Linux](https://www.archlinux.org/).
 
