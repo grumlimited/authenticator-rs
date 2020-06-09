@@ -90,7 +90,7 @@ impl ConfigManager {
     ) -> Result<AccountGroup, LoadError> {
         let mut stmt = conn
             .prepare("SELECT id FROM groups WHERE name = :name")
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+            .unwrap();
 
         let group = stmt
             .query_row_named(
@@ -104,13 +104,12 @@ impl ConfigManager {
                         .prepare(
                             "SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1",
                         )
-                        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
                         .unwrap();
 
                     let accounts = stmt
                         .query_map(params![group_id], |row| {
-                            let label = row.get::<usize, String>(1).unwrap();
-                            let secret = row.get::<usize, String>(3).unwrap();
+                            let label = row.get_unwrap::<usize, String>(1);
+                            let secret = row.get_unwrap::<usize, String>(3);
                             let mut account =
                                 Account::new(group_id, label.as_str(), secret.as_str());
                             account.id = row.get(0)?;
@@ -136,7 +135,6 @@ impl ConfigManager {
         group_name: &str,
     ) -> Result<&'a mut Account, LoadError> {
         let conn = conn.lock().unwrap();
-
         Self::save_account(&conn, account, group_name)
     }
 
@@ -150,12 +148,10 @@ impl ConfigManager {
         conn.execute(
             "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
             params![account.label, group.id, account.secret],
-        )
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+        ).unwrap();
 
         let mut stmt = conn
-            .prepare("SELECT last_insert_rowid()")
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+            .prepare("SELECT last_insert_rowid()").unwrap();
 
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
