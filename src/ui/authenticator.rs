@@ -365,11 +365,6 @@ impl AuthenticatorRs {
                 Command::none()
             }
 
-            Message::DisplayAccounts => Command::perform(
-                ConfigManager::async_load_account_groups(self.connection.clone()),
-                Message::AddAccountSaved,
-            ),
-
             Message::AddAccount => unreachable!(),
             Message::Copy(_) => unreachable!(),
             Message::LoadAccounts(_) => unreachable!(),
@@ -417,8 +412,8 @@ impl Application for AuthenticatorRs {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
                 match message {
-                    Message::LoadAccounts(Ok(groups)) => {
-                        self.groups = groups;
+                    Message::LoadAccounts(Ok(state)) => {
+                        self.groups = state.groups;
                         self.update_accounts_totp();
                         Command::none()
                     }
@@ -450,7 +445,7 @@ impl Application for AuthenticatorRs {
     fn view(&mut self) -> Element<Message> {
         match self.state {
             AuthenticatorRsState::Loading => Column::new()
-                .push(Text::new("Loading1 ..."))
+                .push(Text::new("Loading ..."))
                 .padding(10)
                 .spacing(10)
                 .into(),
@@ -477,3 +472,66 @@ mod style {
         }
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     pub use super::*;
+//
+//     mod in_accounts {
+//         use super::*;
+//
+//         #[test]
+//         fn test_clipboard() {
+//             let mut authenticator = AuthenticatorRs {
+//                 groups: vec![],
+//                 progressbar_value: 0f32,
+//                 ctx: ClipboardContext::new().unwrap(),
+//                 state: AuthenticatorRsState::DisplayAccounts,
+//                 scroll: scrollable::State::default(),
+//                 add_account: button::State::default(),
+//                 add_account_state: AddAccountState::default(),
+//             };
+//
+//             authenticator.update_accounts(Message::Copy("totp".to_owned()));
+//             let mut clipboard = authenticator.ctx;
+//             assert_eq!("totp", clipboard.get_contents().unwrap());
+//         }
+//
+//         #[test]
+//         fn test_update_time() {
+//             let mut authenticator = AuthenticatorRs::new(()).0;
+//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
+//
+//             authenticator.update_accounts(Message::UpdateTime(15f32));
+//             assert_eq!(15f32, authenticator.progressbar_value);
+//
+//             authenticator.update_accounts(Message::UpdateTime(45f32));
+//             assert_eq!(15f32, authenticator.progressbar_value);
+//         }
+//
+//         #[test]
+//         fn test_load_accounts() {
+//             let mut authenticator = AuthenticatorRs::new(()).0;
+//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
+//
+//             let mut groups = Vec::new();
+//             groups.push(AccountGroup::new("group"));
+//
+//             let manager = Ok(ConfigManager {
+//                 groups: groups.clone(),
+//             });
+//
+//             authenticator.update_accounts(Message::LoadAccounts(manager));
+//             assert_eq!(groups, authenticator.groups);
+//         }
+//
+//         #[test]
+//         fn test_add_account() {
+//             let mut authenticator = AuthenticatorRs::new(()).0;
+//             authenticator.state = AuthenticatorRsState::DisplayAccounts;
+//
+//             authenticator.update_accounts(Message::AddAccount);
+//             assert_eq!(AuthenticatorRsState::DisplayAddAccount, authenticator.state);
+//         }
+//     }
+// }
