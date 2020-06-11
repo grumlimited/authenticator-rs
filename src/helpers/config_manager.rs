@@ -79,7 +79,7 @@ impl ConfigManager {
             .map(|id| AccountGroup {
                 id,
                 name: group_name.to_owned(),
-                entries: vec![],
+                ..Default::default()
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
@@ -162,6 +162,18 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub fn update_account<'a>(
+        conn: &Connection,
+        account: &'a mut Account,
+    ) -> Result<&'a mut Account, LoadError> {
+        conn.execute(
+            "UPDATE accounts SET label = ?2, secret = ?3 WHERE id = ?1",
+            params![account.id, account.label, account.secret],
+        )
+        .map(|_| account)
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     fn init_tables(conn: &Connection) -> Result<usize, rusqlite::Error> {
         conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
@@ -178,6 +190,24 @@ impl ConfigManager {
                   name           TEXT NOT NULL)",
             params![],
         ))
+    }
+
+    pub fn get_account(conn: &Connection, account_id: u32) -> Result<Account, LoadError> {
+        let mut stmt = conn
+            .prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1")
+            .unwrap();
+
+        stmt.query_row(params![account_id], |row| {
+            let id: u32 = row.get(0)?;
+            let group_id: u32 = row.get(1)?;
+            let label: String = row.get(2)?;
+            let secret: String = row.get(3)?;
+
+            let mut account = Account::new(group_id, label.as_str(), secret.as_str());
+            account.id = id;
+            Ok(account)
+        })
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     fn get_accounts(conn: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
@@ -260,6 +290,17 @@ mod tests {
         assert!(result.id > 0);
         assert!(result.group_id > 0);
         assert_eq!("label", result.label);
+
+        let account_reloaded = ConfigManager::get_account(&conn, account.id).unwrap();
+        assert_eq!(account, account_reloaded);
+
+        let mut account_reloaded = account_reloaded.clone();
+        account_reloaded.label = "new label".to_owned();
+        account_reloaded.secret = "new secret".to_owned();
+        let account_reloaded = ConfigManager::update_account(&conn, &mut account_reloaded).unwrap();
+
+        assert_eq!("new label", account_reloaded.label);
+        assert_eq!("new secret", account_reloaded.secret);
     }
 
     #[test]

@@ -14,15 +14,20 @@ but definitely in the rough...
 Lastly, it is using this fantastic library: [iced](https://github.com/hecrj/iced) as the building blocks for its UI.
 Thanks [@ecrj](https://github.com/hecrj) and the iced team.
 
-<kbd>![authenticator-rs](./authenticator-rs-main.png "Authenticator RS")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-add-account.png "Authenticator RS")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-main2.png "Authenticator RS")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-main2.png "Main view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-add-account.png "Adding account")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-group-view.png "Group view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-account-edit.png "Edit account")</kbd>
 
 ## License
 
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
 ## Changelog
+
+### 0.0.4
+
+* Editing existing accounts
 
 ### 0.0.3
 
@@ -45,9 +50,9 @@ _Only tested on Linux (Arch Linux to be specific)._
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    chmod +x ./authenticator-rs-0.0.3-x86_64
+    chmod +x ./authenticator-rs-0.0.4-x86_64
 
-    ./authenticator-rs-0.0.3-x86_64
+    ./authenticator-rs-0.0.4-x86_64
 
 ## Building
 

@@ -1,16 +1,17 @@
-use std::borrow::BorrowMut;
 use std::time::SystemTime;
 
 use base32::decode;
 use base32::Alphabet::RFC4648;
 use iced::image::Handle;
-use iced::{button, Align, Button, Color, Container, Image, Length, Row, Text};
+use iced::{button, Align, Button, Container, Image, Length, Row, Text};
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::DEJAVU_SERIF;
 use crate::ui::Message;
 
 const EDIT_COPY_ICON: &[u8] = include_bytes!("../resources/icons/edit-copy.png");
+
+const EDIT_ICON: &[u8] = include_bytes!("../resources/icons/document-properties.png");
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
@@ -20,7 +21,7 @@ pub struct Account {
     pub secret: String,
 
     #[serde(skip)]
-    state: button::State,
+    edit_copy_state: button::State,
 
     #[serde(skip)]
     totp: Option<String>,
@@ -65,64 +66,86 @@ impl Account {
         }
     }
 
+    pub fn view_for_edit(&mut self) -> Row<Message> {
+        let id = self.id;
+        self.view_(
+            |_, state| {
+                Button::new(state, Image::new(Handle::from_memory(EDIT_ICON.to_owned())))
+                    .style(style::Button::Default)
+                    .width(Length::from(28))
+                    .height(Length::from(28))
+                    .on_press(Message::EditAccount(id))
+            },
+            |_| {
+                let font_size = 16 as u16;
+
+                Text::new("".to_owned()).size(font_size)
+            },
+        )
+    }
+
     pub fn view(&mut self) -> Row<Message> {
+        self.view_(
+            |s, state| {
+                Button::new(
+                    state,
+                    Image::new(Handle::from_memory(EDIT_COPY_ICON.to_owned())),
+                )
+                .style(style::Button::Default)
+                .width(Length::from(28))
+                .height(Length::from(28))
+                .on_press(Message::Copy(s))
+            },
+            |t| {
+                let font_size = 16 as u16;
+
+                Text::new(t).size(font_size)
+            },
+        )
+    }
+
+    fn view_<B, T>(&mut self, render_button: B, render_totp: T) -> Row<Message>
+    where
+        B: Fn(String, &mut button::State) -> Button<Message>,
+        T: Fn(String) -> Text,
+    {
         let font_size = 16 as u16;
-        let state = self.state.borrow_mut();
+        let label = self.label.clone();
 
         let row = Row::new()
             .push(
-                Container::new(
-                    Text::new(format!("{}: ", self.label))
-                        .font(DEJAVU_SERIF)
-                        .size(font_size),
-                )
-                .width(Length::FillPortion(3)),
+                Container::new(Text::new(label).font(DEJAVU_SERIF).size(font_size))
+                    .width(Length::FillPortion(3)),
             )
             .width(Length::Fill)
             .height(Length::from(40))
             .align_items(Align::Center);
 
-        match &self.totp {
-            Some(totp) => {
-                let button = Container::new(
-                    Button::new(
-                        state,
-                        Image::new(Handle::from_memory(EDIT_COPY_ICON.to_owned())),
-                    )
-                    .style(style::Button::Icon)
-                    .width(Length::from(28))
-                    .height(Length::from(28))
-                    .on_press(Message::Copy(totp.to_owned())),
-                )
+        let totp = match &self.totp {
+            Some(totp) => Some(totp.to_owned()),
+            None => panic!("could not calculate totp value!"),
+        }
+        .unwrap();
+
+        let edit_copy_button =
+            Container::new(render_button(totp.clone(), &mut self.edit_copy_state))
                 .width(Length::FillPortion(1))
                 .align_x(Align::End);
 
-                row.push(
-                    Container::new(Text::new(format!("{} ", totp)).size(font_size))
-                        .width(Length::FillPortion(2))
-                        .align_x(Align::End),
-                )
-                .push(button)
-            }
-
-            None => row.push(
-                Container::new(
-                    Text::new("error!")
-                        .size(font_size)
-                        .color(Color::from_rgb8(204, 20, 33)),
-                )
+        row.push(
+            Container::new(render_totp(totp))
                 .width(Length::FillPortion(2))
                 .align_x(Align::End),
-            ),
-        }
+        )
+        .push(edit_copy_button)
     }
 }
 
-mod style {
+pub mod style {
     use iced::{button, Background, Color};
 
     pub enum Button {
-        Icon,
+        Default,
     }
 
     impl button::StyleSheet for Button {
