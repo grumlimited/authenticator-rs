@@ -37,7 +37,7 @@ impl Account {
             ..Account::default()
         };
 
-        a.update()
+        a.update();
         a
     }
 
