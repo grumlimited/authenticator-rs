@@ -84,12 +84,14 @@ pub struct EditAccountState {
 
     back_button_state: button::State,
     save_button_state: button::State,
+    delete_button_state: button::State,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Message {
     AddAccount,
     EditAccount(u32),
+    DeleteAccount(u32),
     LoadAccounts(Result<Vec<AccountGroup>, LoadError>),
     UpdateTime(f32),
     Copy(String),
@@ -270,11 +272,22 @@ impl AuthenticatorRs {
             .push(
                 Column::new()
                     .push(
-                        Button::new(
-                            &mut self.edit_account_state.save_button_state,
-                            Text::new("Save"),
-                        )
-                        .on_press(Message::AddAccountSave),
+                        Row::new()
+                            .push(
+                                Button::new(
+                                    &mut self.edit_account_state.delete_button_state,
+                                    Text::new("Delete"),
+                                )
+                                .on_press(Message::DeleteAccount(1)),
+                            )
+                            .push(Text::new("").width(Length::from(5)))
+                            .push(
+                                Button::new(
+                                    &mut self.edit_account_state.save_button_state,
+                                    Text::new("Save"),
+                                )
+                                .on_press(Message::AddAccountSave),
+                            ),
                     )
                     .width(Length::FillPortion(1))
                     .align_items(Align::End),
