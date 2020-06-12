@@ -504,6 +504,7 @@ impl Application for AuthenticatorRs {
         match &self.state {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
+
                 match message {
                     Message::LoadAccounts(Ok(groups)) => {
                         self.groups = groups;
