@@ -98,7 +98,7 @@ impl AccountGroup {
             Row::new()
                 .push(Text::new(name).font(INCONSOLATA_EXPANDED_BLACK).size(24))
                 .push(edit_button)
-                .push(Space::with_width(Length::from(10))), // some right hand-side padding to align with copy&paste buttons
+                .push(Space::with_width(Length::from(9))), // some right hand-side padding to align with copy&paste buttons
         ));
 
         let entries_column = self

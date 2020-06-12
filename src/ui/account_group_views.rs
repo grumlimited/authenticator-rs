@@ -65,6 +65,7 @@ impl ViewAccountGroupView {
         .width(Length::Fill);
 
         let main = Row::new()
+            .push(Space::with_width(Length::from(8)))
             .push(
                 Column::new()
                     .push(Row::new().push(accounts_group_col))
