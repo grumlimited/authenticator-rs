@@ -4,16 +4,12 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 use log::{debug, info};
 
 use iced::{
-    button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
-    Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text,
-    TextInput,
+    button, scrollable, text_input, window, Application, Button, Column, Command, Container,
+    Element, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
 };
 
 use crate::helpers::{ConfigManager, Every, LoadError};
-use crate::ui::{Account, AccountGroup};
-
-use crate::helpers::DEJAVU_SERIF;
-use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
+use crate::ui::{Account, AccountGroup, ViewAccount};
 
 use rusqlite::Connection;
 use std::f32::EPSILON;
@@ -70,21 +66,21 @@ pub struct EditAccountState {
     group_id_value: Option<u32>,
     account_id_value: Option<u32>,
 
-    input_name_state: text_input::State,
-    input_label_value: String,
-    input_label_error: Option<String>,
+    pub input_name_state: text_input::State,
+    pub input_label_value: String,
+    pub input_label_error: Option<String>,
 
-    input_group_state: text_input::State,
-    input_group_value: String,
-    input_group_error: Option<String>,
+    pub input_group_state: text_input::State,
+    pub input_group_value: String,
+    pub input_group_error: Option<String>,
 
-    input_secret_state: text_input::State,
-    input_secret_value: String,
-    input_secret_error: Option<String>,
+    pub input_secret_state: text_input::State,
+    pub input_secret_value: String,
+    pub input_secret_error: Option<String>,
 
-    back_button_state: button::State,
-    save_button_state: button::State,
-    delete_button_state: button::State,
+    pub back_button_state: button::State,
+    pub save_button_state: button::State,
+    pub delete_button_state: button::State,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -179,130 +175,6 @@ impl AuthenticatorRs {
         )
         .width(Length::Fill)
         .into()
-    }
-
-    fn view_edit_account(&mut self, account: Account) -> Element<Message> {
-        self.view_add_account_(Some(account))
-    }
-
-    fn view_add_account(&mut self) -> Element<Message> {
-        self.view_add_account_(None)
-    }
-
-    fn view_add_account_(&mut self, account: Option<Account>) -> Element<Message> {
-        let title = match account {
-            Some(_) => Container::new(Text::new("Edit account").font(INCONSOLATA_EXPANDED_BLACK))
-                .width(Length::Fill)
-                .padding(3),
-            None => Container::new(Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK))
-                .width(Length::Fill)
-                .padding(3),
-        };
-
-        fn row<'a>(
-            label: &str,
-            placeholder: &'a str,
-            value: &'a str,
-            error: Option<&'a str>,
-            state: &'a mut text_input::State,
-            f: fn(String) -> Message,
-        ) -> Row<'a, Message> {
-            Row::new()
-                .push(
-                    Column::new()
-                        .push(Text::new(label).font(DEJAVU_SERIF))
-                        .push(Space::new(Length::Fill, Length::from(8)))
-                        .push(
-                            Text::new(error.unwrap_or(""))
-                                .font(DEJAVU_SERIF)
-                                .color(Color::from_rgb8(204, 20, 33))
-                                .size(11),
-                        )
-                        .push(Space::new(
-                            Length::Fill,
-                            Length::from(error.map(|_| 8).unwrap_or(0)),
-                        ))
-                        .push(TextInput::new(state, placeholder, value, f).padding(8)),
-                )
-                .padding(8)
-        };
-
-        let secret_input = row(
-            "Secret",
-            "secret",
-            &self.edit_account_state.input_secret_value,
-            self.edit_account_state.input_secret_error.as_deref(),
-            &mut self.edit_account_state.input_secret_state,
-            Message::AccountInputSecretChanged,
-        );
-
-        let group_input = match account {
-            Some(_) => Row::new(), // upon editing an existing account, we cannot change the group for now, so no display
-            None => row(
-                "Group",
-                "group name",
-                &self.edit_account_state.input_group_value,
-                self.edit_account_state.input_group_error.as_deref(),
-                &mut self.edit_account_state.input_group_state,
-                Message::AccountInputGroupChanged,
-            ),
-        };
-
-        let label_input = row(
-            "Label",
-            "label",
-            &self.edit_account_state.input_label_value,
-            self.edit_account_state.input_label_error.as_deref(),
-            &mut self.edit_account_state.input_name_state,
-            Message::AccountInputLabelChanged,
-        );
-
-        let buttons = Row::new()
-            .push(
-                Column::new()
-                    .push(
-                        Button::new(
-                            &mut self.edit_account_state.back_button_state,
-                            Text::new("Back"),
-                        )
-                        .on_press(Message::DisplayAccounts),
-                    )
-                    .width(Length::FillPortion(1)),
-            )
-            .push(
-                Column::new()
-                    .push(
-                        Row::new()
-                            .push(
-                                Button::new(
-                                    &mut self.edit_account_state.delete_button_state,
-                                    Text::new("Delete"),
-                                )
-                                .on_press(Message::DeleteAccount(1)),
-                            )
-                            .push(Text::new("").width(Length::from(5)))
-                            .push(
-                                Button::new(
-                                    &mut self.edit_account_state.save_button_state,
-                                    Text::new("Save"),
-                                )
-                                .on_press(Message::AddAccountSave),
-                            ),
-                    )
-                    .width(Length::FillPortion(1))
-                    .align_items(Align::End),
-            )
-            .padding(8);
-
-        let form = Container::new(
-            Column::new()
-                .push(group_input)
-                .push(label_input)
-                .push(secret_input)
-                .push(buttons),
-        );
-
-        Column::new().push(title).push(form).into()
     }
 
     fn reset_add_account_errors(&mut self) {
@@ -642,10 +514,12 @@ impl Application for AuthenticatorRs {
                 .padding(10)
                 .spacing(10)
                 .into(),
-            AuthenticatorRsState::DisplayAddAccount => self.view_add_account(),
+            AuthenticatorRsState::DisplayAddAccount => {
+                ViewAccount::view_add_account(&mut self.edit_account_state)
+            }
             AuthenticatorRsState::DisplayEditAccount(account) => {
                 let account = account.clone();
-                self.view_edit_account(account)
+                ViewAccount::view_edit_account(account, &mut self.edit_account_state)
             }
             AuthenticatorRsState::DisplayAccounts => self.view_accounts(),
             AuthenticatorRsState::DisplayGroup(group_id) => {
