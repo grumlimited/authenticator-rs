@@ -274,6 +274,17 @@ impl ViewAccount {
             Message::AccountInputLabelChanged,
         );
 
+        let delete_button = match account {
+            Some(account) => Container::new(
+                Button::new(
+                    &mut edit_account_state.delete_button_state,
+                    Text::new("Delete"),
+                )
+                .on_press(Message::DeleteAccount(account.id)),
+            ),
+            None => Container::new(Space::with_width(Length::from(0))),
+        };
+
         let buttons = Row::new()
             .push(
                 Column::new()
@@ -287,14 +298,8 @@ impl ViewAccount {
                 Column::new()
                     .push(
                         Row::new()
-                            .push(
-                                Button::new(
-                                    &mut edit_account_state.delete_button_state,
-                                    Text::new("Delete"),
-                                )
-                                .on_press(Message::DeleteAccount(1)),
-                            )
-                            .push(Text::new("").width(Length::from(5)))
+                            .push(delete_button)
+                            .push(Space::with_width(Length::from(5)))
                             .push(
                                 Button::new(
                                     &mut edit_account_state.save_button_state,

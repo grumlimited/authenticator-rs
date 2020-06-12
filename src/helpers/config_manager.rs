@@ -444,7 +444,7 @@ mod tests {
             .unwrap()
             .clone();
 
-        assert!(result.id > 0);
+        assert_eq!(1, result.id);
 
         let result = ConfigManager::delete_account(&conn, account.id).unwrap();
         assert!(result > 0);
