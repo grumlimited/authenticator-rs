@@ -23,6 +23,20 @@ pub enum LoadError {
 }
 
 impl ConfigManager {
+    pub fn log4rs() -> std::path::PathBuf {
+        let mut path = if let Some(project_dirs) =
+        directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+        {
+            project_dirs.data_dir().into()
+        } else {
+            std::env::current_dir().unwrap_or_default()
+        };
+
+        path.push("log4rs.yaml");
+
+        path
+    }
+
     fn path() -> std::path::PathBuf {
         let mut path = if let Some(project_dirs) =
             directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")

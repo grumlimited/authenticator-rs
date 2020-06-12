@@ -1,6 +1,9 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
 
+use log::{debug, info};
+use log4rs;
+
 use iced::{
     button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
     Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text,
@@ -18,6 +21,11 @@ use std::f32::EPSILON;
 use std::sync::{Arc, Mutex};
 
 pub fn run_application() {
+    match log4rs::init_file(ConfigManager::log4rs(), Default::default()) {
+        Ok(_) =>{/* noting to do - all is good */},
+        Err(_) => println!("No logging configuration found. Drop a file in {} to configure logging.", ConfigManager::log4rs().display())
+    };
+
     let settings = Settings {
         window: window::Settings {
             size: (300, 800),
@@ -26,6 +34,9 @@ pub fn run_application() {
         },
         ..Default::default()
     };
+
+    info!("Starting authenticator-rs");
+
     AuthenticatorRs::run(settings);
 }
 
@@ -70,7 +81,7 @@ pub struct EditAccountState {
     save_button_state: button::State,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Message {
     AddAccount,
     EditAccount(u32),
@@ -565,6 +576,11 @@ impl Application for AuthenticatorRs {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
+        match message {
+            Message::UpdateTime(_) => {},
+            _ => debug!("update(): {:?} -> {:?}", self.state, message)
+        };
+
         match &self.state {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;
