@@ -398,6 +398,21 @@ impl AuthenticatorRs {
                 Message::AddAccountSaved,
             ),
 
+            Message::DeleteAccount(account_id) => {
+                async fn chain(
+                    conn: Arc<Mutex<Box<Connection>>>,
+                    account_id: u32,
+                ) -> Result<Vec<AccountGroup>, LoadError> {
+                    let _ = ConfigManager::async_delete_account(conn.clone(), account_id).await;
+                    ConfigManager::async_load_account_groups(conn.clone()).await
+                };
+
+                let conn = self.connection.clone();
+
+                self.state = AuthenticatorRsState::DisplayAccounts;
+                Command::perform(chain(conn, account_id), Message::LoadAccounts)
+            }
+
             m => unreachable!(format!("{:?}", m)),
         }
     }

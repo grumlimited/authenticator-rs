@@ -247,7 +247,7 @@ impl ViewAccount {
         let secret_input = row(
             "Secret",
             "secret",
-            &mut edit_account_state.input_secret_value,
+            &edit_account_state.input_secret_value,
             edit_account_state.input_secret_error.as_deref(),
             &mut edit_account_state.input_secret_state,
             Message::AccountInputSecretChanged,

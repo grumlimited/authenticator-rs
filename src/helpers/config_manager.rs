@@ -262,7 +262,7 @@ impl ConfigManager {
         Self::delete_account(&conn, account_id)
     }
 
-    pub fn delete_account<'a>(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
+    pub fn delete_account(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
         let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
         stmt.execute(params![account_id])
