@@ -1,6 +1,9 @@
 use crate::ui::{AccountGroup, Message};
-use iced::{button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable, Space, Image};
 use iced::image::Handle;
+use iced::{
+    button, scrollable, Button, Column, Container, Element, Image, Length, ProgressBar, Row,
+    Scrollable, Space,
+};
 
 const LIST_ADD_ICON: &[u8] = include_bytes!("../resources/icons/list-add.png");
 
@@ -52,7 +55,11 @@ impl ViewAccountGroupView {
         .padding(3);
 
         let add_account = Container::new(
-            Button::new(add_account, Image::new(Handle::from_memory(LIST_ADD_ICON.to_owned()))).on_press(Message::AddAccount),
+            Button::new(
+                add_account,
+                Image::new(Handle::from_memory(LIST_ADD_ICON.to_owned())),
+            )
+            .on_press(Message::AddAccount),
         )
         .padding(10)
         .width(Length::Fill);
@@ -87,12 +94,11 @@ impl ViewAccountGroupView {
 }
 
 mod style {
-    use iced::{Background, Color, progress_bar};
+    use iced::{progress_bar, Background, Color};
 
     pub enum ProgressBar {
         Default,
     }
-
 
     impl progress_bar::StyleSheet for ProgressBar {
         fn style(&self) -> progress_bar::Style {

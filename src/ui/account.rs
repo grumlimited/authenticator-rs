@@ -90,7 +90,7 @@ impl Account {
             |s, state| {
                 Button::new(
                     state,
-                    Image::new(Handle::from_memory(EDIT_COPY_ICON.to_owned()))
+                    Image::new(Handle::from_memory(EDIT_COPY_ICON.to_owned())),
                 )
                 .style(style::Button::Default)
                 .width(Length::from(28))
@@ -116,7 +116,7 @@ impl Account {
         let row = Row::new()
             .push(
                 Container::new(Text::new(label).font(DEJAVU_SERIF).size(font_size))
-                    .width(Length::FillPortion(3))
+                    .width(Length::FillPortion(3)),
             )
             .width(Length::Fill)
             .height(Length::from(40))
