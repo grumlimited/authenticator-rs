@@ -1,5 +1,5 @@
 use crate::ui::{Account, Message};
-use iced::{button, Align, Button, Column, Container, Image, Length, Row, Text};
+use iced::{button, Align, Button, Column, Container, Image, Length, Row, Text, Space};
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
@@ -99,7 +99,7 @@ impl AccountGroup {
             Row::new()
                 .push(Text::new(name).font(INCONSOLATA_EXPANDED_BLACK).size(24))
                 .push(edit_button)
-                .push(Text::new("").width(Length::from(10))), // some right hand-side padding to align with copy&paste buttons
+                .push(Space::with_width(Length::from(10))), // some right hand-side padding to align with copy&paste buttons
         ));
 
         let entries_column = self

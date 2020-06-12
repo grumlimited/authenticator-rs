@@ -1,8 +1,5 @@
 use crate::ui::{AccountGroup, Message};
-use iced::{
-    button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable,
-    Text,
-};
+use iced::{button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable, Text, Space};
 
 pub struct ViewAccountGroupView {}
 
@@ -65,7 +62,7 @@ impl ViewAccountGroupView {
                     .spacing(10)
                     .width(Length::Fill),
             )
-            .push(Text::new("").width(Length::from(1))); //just a 1px padding to the right so the box is not stuck to the scrollbar
+            .push(Space::with_width(Length::from(1))); //just a 1px padding to the right so the box is not stuck to the scrollbar
 
         let accounts_container = Container::new(main).width(Length::Fill);
 
