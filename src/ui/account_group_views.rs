@@ -1,8 +1,8 @@
 use crate::ui::{AccountGroup, Message};
-use iced::{
-    button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable,
-    Space, Text,
-};
+use iced::{button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable, Space, Image};
+use iced::image::Handle;
+
+const LIST_ADD_ICON: &[u8] = include_bytes!("../resources/icons/list-add.png");
 
 pub struct ViewAccountGroupView {}
 
@@ -44,7 +44,7 @@ impl ViewAccountGroupView {
             |accounts_group_col, account_group| accounts_group_col.push(account_group.view()),
         );
 
-        let progress_bar = Container::new(
+        let progress_bar: Container<Message> = Container::new(
             ProgressBar::new(0.0..=30.0, progressbar_value).style(style::ProgressBar::Default),
         )
         .height(Length::from(16))
@@ -52,7 +52,7 @@ impl ViewAccountGroupView {
         .padding(3);
 
         let add_account = Container::new(
-            Button::new(add_account, Text::new("Add account")).on_press(Message::AddAccount),
+            Button::new(add_account, Image::new(Handle::from_memory(LIST_ADD_ICON.to_owned()))).on_press(Message::AddAccount),
         )
         .padding(10)
         .width(Length::Fill);
@@ -61,11 +61,11 @@ impl ViewAccountGroupView {
             .push(
                 Column::new()
                     .push(Row::new().push(accounts_group_col))
-                    .padding(10)
-                    .spacing(10)
+                    .padding(0)
+                    .spacing(0)
                     .width(Length::Fill),
             )
-            .push(Space::with_width(Length::from(1))); //just a 1px padding to the right so the box is not stuck to the scrollbar
+            .push(Space::with_width(Length::from(12))); //just a 1px padding to the right so the box is not stuck to the scrollbar
 
         let accounts_container = Container::new(main).width(Length::Fill);
 
@@ -87,11 +87,12 @@ impl ViewAccountGroupView {
 }
 
 mod style {
-    use iced::{progress_bar, Background, Color};
+    use iced::{Background, Color, progress_bar};
 
     pub enum ProgressBar {
         Default,
     }
+
 
     impl progress_bar::StyleSheet for ProgressBar {
         fn style(&self) -> progress_bar::Style {
