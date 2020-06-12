@@ -326,11 +326,7 @@ impl AuthenticatorRs {
             Message::DisplayAccounts => Command::none(),
             Message::AddAccountSaved(_) => Command::none(), //may happen if someone is brutally murdering the save button
 
-            Message::AccountInputLabelChanged(_) => unreachable!(),
-            Message::AccountInputSecretChanged(_) => unreachable!(),
-            Message::AccountInputGroupChanged(_) => unreachable!(),
-            Message::AddAccountSave => unreachable!(),
-            Message::EditAccount(_) => unreachable!(),
+            m => unreachable!(format!("{:?}", m)),
         }
     }
 
@@ -489,11 +485,7 @@ impl AuthenticatorRs {
                 Message::AddAccountSaved,
             ),
 
-            Message::DisplayGroup(_) => unreachable!(),
-            Message::AddAccount => unreachable!(),
-            Message::Copy(_) => unreachable!(),
-            Message::LoadAccounts(_) => unreachable!(),
-            Message::EditAccount(_) => unreachable!(),
+            m => unreachable!(format!("{:?}", m)),
         }
     }
 
@@ -571,17 +563,7 @@ impl Application for AuthenticatorRs {
 
                     Message::LoadAccounts(Err(_)) => Command::none(),
 
-                    Message::AddAccount => unreachable!(),
-                    Message::UpdateTime(_) => unreachable!(),
-                    Message::Copy(_) => unreachable!(),
-                    Message::AddAccountSaved(_) => unreachable!(),
-                    Message::AccountInputLabelChanged(_) => unreachable!(),
-                    Message::AccountInputSecretChanged(_) => unreachable!(),
-                    Message::AccountInputGroupChanged(_) => unreachable!(),
-                    Message::AddAccountSave => unreachable!(),
-                    Message::DisplayAccounts => unreachable!(),
-                    Message::DisplayGroup(_) => unreachable!(),
-                    Message::EditAccount(_) => unreachable!(),
+                    m => unreachable!(format!("{:?}", m)),
                 }
             }
             AuthenticatorRsState::DisplayAccounts => self.update_accounts(message),
