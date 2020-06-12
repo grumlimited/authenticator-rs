@@ -27,6 +27,11 @@ Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README
 
 ## Changelog
 
+### 0.0.5
+
+* Deleting existing accounts
+
+
 ### 0.0.4
 
 * Editing existing accounts
