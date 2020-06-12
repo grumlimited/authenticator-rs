@@ -76,6 +76,11 @@ impl AccountGroup {
     pub fn view(&mut self) -> Column<Message> {
         Self::sort(&mut self.entries);
 
+        if self.entries.is_empty() {
+            //TODO: add ability to delete (empty) groups and display such groups then
+            return Column::new();
+        }
+
         let edit_button = Container::new(
             Button::new(
                 &mut self.edit_copy_state,

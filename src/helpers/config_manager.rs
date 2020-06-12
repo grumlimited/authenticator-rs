@@ -254,6 +254,21 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub async fn async_delete_account<'a>(
+        conn: Arc<Mutex<Box<Connection>>>,
+        account_id: u32,
+    ) -> Result<usize, LoadError> {
+        let conn = conn.lock().unwrap();
+        Self::delete_account(&conn, account_id)
+    }
+
+    pub fn delete_account(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
+        let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
+
+        stmt.execute(params![account_id])
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     fn get_accounts(conn: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
         let mut stmt =
             conn.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1")?;
@@ -415,5 +430,23 @@ mod tests {
         config_manager.groups.iter_mut().for_each(|x| x.update());
 
         assert_eq!(vec![groups], config_manager.groups);
+    }
+
+    #[test]
+    fn delete_account() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        let _ = ConfigManager::init_tables(&conn);
+
+        let mut account = Account::new(0, "label", "secret");
+
+        let result = ConfigManager::save_account(&conn, &mut account, "group name")
+            .unwrap()
+            .clone();
+
+        assert_eq!(1, result.id);
+
+        let result = ConfigManager::delete_account(&conn, account.id).unwrap();
+        assert!(result > 0);
     }
 }
