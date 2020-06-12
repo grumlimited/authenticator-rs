@@ -5,7 +5,7 @@ use iced::{
     Scrollable, Space,
 };
 
-const LIST_ADD_ICON: &[u8] = include_bytes!("../resources/icons/list-add.png");
+use crate::helpers::LIST_ADD_ICON;
 
 pub struct ViewAccountGroupView {}
 

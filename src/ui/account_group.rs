@@ -3,11 +3,10 @@ use iced::{button, Align, Button, Column, Container, Image, Length, Row, Space, 
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::INCONSOLATA_EXPANDED_BLACK;
+use crate::helpers::EDIT_ICON;
 use iced::image::Handle;
 
 pub use super::account::style::Button::Default as ButtonDefault;
-
-const EDIT_ICON: &[u8] = include_bytes!("../resources/icons/document-properties.png");
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AccountGroup {

@@ -7,12 +7,9 @@ use iced::{button, Align, Button, Container, Image, Length, Row, Text};
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::DEJAVU_SERIF;
-
+use crate::helpers::EDIT_ICON;
+use crate::helpers::EDIT_COPY_ICON;
 use crate::ui::Message;
-
-const EDIT_COPY_ICON: &[u8] = include_bytes!("../resources/icons/edit-copy.png");
-
-const EDIT_ICON: &[u8] = include_bytes!("../resources/icons/document-properties.png");
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
