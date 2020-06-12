@@ -319,18 +319,17 @@ impl AuthenticatorRs {
             }
             Message::DisplayGroup(group_id) => {
                 self.state = AuthenticatorRsState::DisplayGroup(group_id);
-                Command::none()
+
+                let conn = self.connection.clone();
+                let group = ConfigManager::async_load_account_groups(conn);
+                Command::perform(group, Message::LoadAccounts)
             }
 
             Message::LoadAccounts(Err(_)) => Command::none(),
             Message::DisplayAccounts => Command::none(),
             Message::AddAccountSaved(_) => Command::none(), //may happen if someone is brutally murdering the save button
 
-            Message::AccountInputLabelChanged(_) => unreachable!(),
-            Message::AccountInputSecretChanged(_) => unreachable!(),
-            Message::AccountInputGroupChanged(_) => unreachable!(),
-            Message::AddAccountSave => unreachable!(),
-            Message::EditAccount(_) => unreachable!(),
+            m => unreachable!(format!("{:?}", m)),
         }
     }
 
@@ -394,10 +393,15 @@ impl AuthenticatorRs {
                 }
             }
             // back button pressed
-            Message::DisplayAccounts => Command::perform(
-                ConfigManager::async_load_account_groups(self.connection.clone()),
-                Message::AddAccountSaved,
-            ),
+            Message::DisplayAccounts if self.edit_account_state.group_id_value.is_some() => {
+                self.state = AuthenticatorRsState::DisplayGroup(
+                    self.edit_account_state.group_id_value.unwrap(),
+                );
+
+                let conn = self.connection.clone();
+                let group = ConfigManager::async_load_account_groups(conn);
+                Command::perform(group, Message::LoadAccounts)
+            }
 
             _ => self.update_add_account(message),
         }
@@ -489,11 +493,7 @@ impl AuthenticatorRs {
                 Message::AddAccountSaved,
             ),
 
-            Message::DisplayGroup(_) => unreachable!(),
-            Message::AddAccount => unreachable!(),
-            Message::Copy(_) => unreachable!(),
-            Message::LoadAccounts(_) => unreachable!(),
-            Message::EditAccount(_) => unreachable!(),
+            m => unreachable!(format!("{:?}", m)),
         }
     }
 
@@ -519,6 +519,12 @@ impl AuthenticatorRs {
                 self.state = AuthenticatorRsState::DisplayEditAccount(account);
                 Command::none()
             }
+
+            Message::LoadAccounts(Ok(groups)) => {
+                self.groups = groups;
+                Command::none()
+            }
+
             _ => Command::none(),
         }
     }
@@ -571,17 +577,7 @@ impl Application for AuthenticatorRs {
 
                     Message::LoadAccounts(Err(_)) => Command::none(),
 
-                    Message::AddAccount => unreachable!(),
-                    Message::UpdateTime(_) => unreachable!(),
-                    Message::Copy(_) => unreachable!(),
-                    Message::AddAccountSaved(_) => unreachable!(),
-                    Message::AccountInputLabelChanged(_) => unreachable!(),
-                    Message::AccountInputSecretChanged(_) => unreachable!(),
-                    Message::AccountInputGroupChanged(_) => unreachable!(),
-                    Message::AddAccountSave => unreachable!(),
-                    Message::DisplayAccounts => unreachable!(),
-                    Message::DisplayGroup(_) => unreachable!(),
-                    Message::EditAccount(_) => unreachable!(),
+                    m => unreachable!(format!("{:?}", m)),
                 }
             }
             AuthenticatorRsState::DisplayAccounts => self.update_accounts(message),

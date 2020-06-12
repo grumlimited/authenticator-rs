@@ -84,6 +84,40 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub async fn _async_get_group(
+        conn: Arc<Mutex<Box<Connection>>>,
+        group_id: u32,
+    ) -> Result<AccountGroup, LoadError> {
+        let conn = conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM groups WHERE id = ?1")
+            .unwrap();
+
+        stmt.query_row(params![group_id], |group_row| {
+            let group_name: String = group_row.get_unwrap(1);
+
+            let mut stmt = conn
+                .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
+                .unwrap();
+
+            let accounts = stmt
+                .query_map(params![group_id], |row| {
+                    let label = row.get_unwrap::<usize, String>(1);
+                    let secret = row.get_unwrap::<usize, String>(3);
+                    let mut account = Account::new(group_id, label.as_str(), secret.as_str());
+                    account.id = row.get(0)?;
+
+                    Ok(account)
+                })
+                .unwrap()
+                .map(|e| e.unwrap())
+                .collect();
+
+            Ok(AccountGroup::new(group_id, group_name.as_str(), accounts))
+        })
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     pub fn get_or_create_group(
         conn: &Connection,
         group_name: &str,
@@ -274,6 +308,7 @@ mod tests {
     use std::path::Path;
 
     use async_std::task;
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -333,6 +368,13 @@ mod tests {
         let _ = ConfigManager::init_tables(&conn);
 
         let group = ConfigManager::get_or_create_group(&conn, "existing_group2").unwrap();
+
+        assert!(group.id > 0);
+        assert_eq!("existing_group2", group.name);
+
+        let conn = Arc::new(Mutex::new(Box::new(conn)));
+        let group: AccountGroup =
+            task::block_on(ConfigManager::_async_get_group(conn, group.id)).unwrap();
 
         assert!(group.id > 0);
         assert_eq!("existing_group2", group.name);
