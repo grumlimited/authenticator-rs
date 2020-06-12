@@ -397,7 +397,10 @@ impl AuthenticatorRs {
                 self.state = AuthenticatorRsState::DisplayGroup(
                     self.edit_account_state.group_id_value.unwrap(),
                 );
-                Command::none()
+
+                let conn = self.connection.clone();
+                let group = ConfigManager::async_load_account_groups(conn);
+                Command::perform(group, Message::LoadAccounts)
             }
 
             _ => self.update_add_account(message),
