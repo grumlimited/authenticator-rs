@@ -1,6 +1,8 @@
 use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
 
+use log::{debug, info};
+
 use iced::{
     button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
     Container, Element, Length, ProgressBar, Row, Scrollable, Settings, Space, Subscription, Text,
@@ -17,15 +19,29 @@ use rusqlite::Connection;
 use std::f32::EPSILON;
 use std::sync::{Arc, Mutex};
 
+const WIDTH: u32 = 300;
+const HEIGHT: u32 = 800;
+
 pub fn run_application() {
+    match log4rs::init_file(ConfigManager::log4rs(), Default::default()) {
+        Ok(_) => { /* noting to do - all is good */ }
+        Err(_) => println!(
+            "No logging configuration found. Drop a file in {} to configure logging.",
+            ConfigManager::log4rs().display()
+        ),
+    };
+
     let settings = Settings {
         window: window::Settings {
-            size: (300, 800),
+            size: (WIDTH, HEIGHT),
             resizable: true,
             decorations: true,
         },
         ..Default::default()
     };
+
+    info!("Starting authenticator-rs");
+
     AuthenticatorRs::run(settings);
 }
 
@@ -70,7 +86,7 @@ pub struct EditAccountState {
     save_button_state: button::State,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Message {
     AddAccount,
     EditAccount(u32),
@@ -135,13 +151,17 @@ impl AuthenticatorRs {
         .padding(10)
         .width(Length::Fill);
 
-        let main = Column::new()
-            .push(Row::new().push(accounts_group_col))
-            .padding(10)
-            .spacing(10)
-            .width(Length::Fill);
+        let main = Row::new()
+            .push(
+                Column::new()
+                    .push(Row::new().push(accounts_group_col))
+                    .padding(10)
+                    .spacing(10)
+                    .width(Length::Fill),
+            )
+            .push(Text::new("").width(Length::from(1))); //just a 1px padding to the right so the box is not stuck to the scrollbar
 
-        let accounts_container = Container::new(main).width(Length::from(290));
+        let accounts_container = Container::new(main).width(Length::Fill);
 
         let main_scrollable = Scrollable::new(&mut self.scroll)
             .width(Length::Fill)
@@ -565,6 +585,11 @@ impl Application for AuthenticatorRs {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
+        match message {
+            Message::UpdateTime(_) => {}
+            _ => debug!("update(): {:?} -> {:?}", self.state, message),
+        };
+
         match &self.state {
             AuthenticatorRsState::Loading => {
                 self.state = AuthenticatorRsState::DisplayAccounts;

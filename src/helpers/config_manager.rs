@@ -23,18 +23,28 @@ pub enum LoadError {
 }
 
 impl ConfigManager {
+    pub fn log4rs() -> std::path::PathBuf {
+        let mut path = ConfigManager::path();
+        path.push("log4rs.yaml");
+
+        path
+    }
+
+    fn db_path() -> std::path::PathBuf {
+        let mut path = ConfigManager::path();
+        path.push("authenticator.db");
+
+        path
+    }
+
     fn path() -> std::path::PathBuf {
-        let mut path = if let Some(project_dirs) =
+        if let Some(project_dirs) =
             directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
             project_dirs.data_dir().into()
         } else {
             std::env::current_dir().unwrap_or_default()
-        };
-
-        path.push("authenticator.db");
-
-        path
+        }
     }
 
     pub async fn async_load_account_groups(
@@ -64,7 +74,7 @@ impl ConfigManager {
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
-        Connection::open_with_flags(Self::path(), OpenFlags::default())
+        Connection::open_with_flags(Self::db_path(), OpenFlags::default())
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
@@ -295,7 +305,7 @@ impl ConfigManager {
     pub async fn _write_config(config_manager: ConfigManager) -> Result<(), LoadError> {
         let value = serde_json::to_value(config_manager).unwrap();
 
-        Self::_write(&Self::path(), value).await
+        Self::_write(&Self::db_path(), value).await
     }
 }
 

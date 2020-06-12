@@ -1,5 +1,7 @@
 AUTHENTICATOR-RS
 ==================
+![Continuous integration](https://github.com/grumlimited/authenticator-rs/workflows/Continuous%20integration/badge.svg?branch=master)
+
 Authenticator-rs is a TOTP-MFA application written in Rust and Iced.
 
 This application is very much a work in progress.
