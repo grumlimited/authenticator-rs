@@ -254,6 +254,14 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub async fn async_delete_account<'a>(
+        conn: Arc<Mutex<Box<Connection>>>,
+        account_id: u32,
+    ) -> Result<usize, LoadError> {
+        let conn = conn.lock().unwrap();
+        Self::delete_account(&conn, account_id)
+    }
+
     pub fn delete_account<'a>(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
         let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
