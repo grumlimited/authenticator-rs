@@ -1,5 +1,8 @@
 use crate::ui::{AccountGroup, Message};
-use iced::{button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable, Text, Space};
+use iced::{
+    button, scrollable, Button, Column, Container, Element, Length, ProgressBar, Row, Scrollable,
+    Space, Text,
+};
 
 pub struct ViewAccountGroupView {}
 

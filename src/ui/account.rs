@@ -21,7 +21,7 @@ pub struct Account {
     pub label: String,
     pub secret: String,
 
-    #[serde(skip)
+    #[serde(skip)]
     edit_copy_state: button::State,
 
     #[serde(skip)]
@@ -37,7 +37,7 @@ impl Account {
             ..Account::default()
         };
 
-        a.update();
+        a.update()
         a
     }
 
