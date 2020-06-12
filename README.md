@@ -19,7 +19,6 @@ Thanks [@ecrj](https://github.com/hecrj) and the iced team.
 <kbd>![authenticator-rs](./authenticator-rs-main2.png "Main view")</kbd>
 <kbd>![authenticator-rs](./authenticator-rs-add-account.png "Adding account")</kbd>
 <kbd>![authenticator-rs](./authenticator-rs-group-view.png "Group view")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-account-edit.png "Edit account")</kbd>
 
 ## License
 
