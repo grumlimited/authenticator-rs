@@ -25,14 +25,11 @@ impl ViewAccount {
         account: Option<Account>,
         edit_account_state: &mut EditAccountState,
     ) -> Element<Message> {
-        let title = match account {
-            Some(_) => Container::new(Text::new("Edit account").font(INCONSOLATA_EXPANDED_BLACK))
-                .width(Length::Fill)
-                .padding(3),
-            None => Container::new(Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK))
-                .width(Length::Fill)
-                .padding(3),
-        };
+        let title = Container::new(match account {
+            Some(_) => Text::new("Edit account").font(INCONSOLATA_EXPANDED_BLACK).size(24),
+            None => Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK).size(24),
+        })
+        .width(Length::Fill);
 
         fn row<'a>(
             label: &str,
@@ -42,24 +39,22 @@ impl ViewAccount {
             state: &'a mut text_input::State,
             f: fn(String) -> Message,
         ) -> Row<'a, Message> {
-            Row::new()
-                .push(
-                    Column::new()
-                        .push(Text::new(label).font(DEJAVU_SERIF))
-                        .push(Space::new(Length::Fill, Length::from(8)))
-                        .push(
-                            Text::new(error.unwrap_or(""))
-                                .font(DEJAVU_SERIF)
-                                .color(Color::from_rgb8(204, 20, 33))
-                                .size(11),
-                        )
-                        .push(Space::new(
-                            Length::Fill,
-                            Length::from(error.map(|_| 8).unwrap_or(0)),
-                        ))
-                        .push(TextInput::new(state, placeholder, value, f).padding(8)),
-                )
-                .padding(8)
+            Row::new().push(
+                Column::new()
+                    .push(Text::new(label).font(DEJAVU_SERIF))
+                    .push(Space::new(Length::Fill, Length::from(8)))
+                    .push(
+                        Text::new(error.unwrap_or(""))
+                            .font(DEJAVU_SERIF)
+                            .color(Color::from_rgb8(204, 20, 33))
+                            .size(11),
+                    )
+                    .push(Space::new(
+                        Length::Fill,
+                        Length::from(error.map(|_| 8).unwrap_or(0)),
+                    ))
+                    .push(TextInput::new(state, placeholder, value, f).padding(8)),
+            )
         };
 
         let secret_input = row(
@@ -129,16 +124,27 @@ impl ViewAccount {
                     .width(Length::FillPortion(1))
                     .align_items(Align::End),
             )
-            .padding(8);
+            .padding(0);
 
         let form = Container::new(
             Column::new()
+                .push(Space::new(Length::Fill, Length::from(20)))
                 .push(group_input)
+                .push(Space::new(Length::Fill, Length::from(12)))
                 .push(label_input)
+                .push(Space::new(Length::Fill, Length::from(12)))
                 .push(secret_input)
+                .push(Space::new(Length::Fill, Length::from(12)))
                 .push(buttons),
         );
 
-        Column::new().push(title).push(form).into()
+        Column::new()
+            .padding(10)
+            .push(Container::new(
+                Row::new()
+                    .push(Column::new().push(title).push(form))
+                    .padding(3),
+            ))
+            .into()
     }
 }
