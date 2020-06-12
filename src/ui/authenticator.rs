@@ -391,9 +391,11 @@ impl AuthenticatorRs {
             }
             // back button pressed
             Message::DisplayAccounts if self.edit_account_state.group_id_value.is_some() => {
-                self.state = AuthenticatorRsState::DisplayGroup(self.edit_account_state.group_id_value.unwrap());
+                self.state = AuthenticatorRsState::DisplayGroup(
+                    self.edit_account_state.group_id_value.unwrap(),
+                );
                 Command::none()
-            },
+            }
 
             _ => self.update_add_account(message),
         }
