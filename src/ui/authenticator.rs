@@ -193,6 +193,11 @@ impl AuthenticatorRs {
 
     fn reset_add_account_state(&mut self) {
         self.edit_account_state = EditAccountState::default();
+        self.edit_account_state.group_id_value = None;
+        self.edit_account_state.account_id_value = None;
+        self.edit_account_state.input_secret_value = "".to_owned();
+        self.edit_account_state.input_label_value = "".to_owned();
+        self.edit_account_state.input_group_value = "".to_owned();
     }
 
     fn update_accounts(&mut self, message: self::Message) -> Command<Message> {
@@ -219,6 +224,8 @@ impl AuthenticatorRs {
             }
 
             Message::AddAccount => {
+                self.reset_add_account_errors();
+                self.reset_add_account_state();
                 self.state = AuthenticatorRsState::DisplayAddAccount;
                 Command::none()
             }
@@ -231,7 +238,11 @@ impl AuthenticatorRs {
             }
 
             Message::LoadAccounts(Err(_)) => Command::none(),
-            Message::DisplayAccounts => Command::none(),
+            Message::DisplayAccounts => {
+                self.reset_add_account_state();
+                self.reset_add_account_errors();
+                Command::none()
+            }
             Message::AddAccountSaved(_) => Command::none(), //may happen if someone is brutally murdering the save button
 
             m => unreachable!(format!("{:?}", m)),
