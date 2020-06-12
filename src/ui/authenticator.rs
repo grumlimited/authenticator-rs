@@ -319,7 +319,10 @@ impl AuthenticatorRs {
             }
             Message::DisplayGroup(group_id) => {
                 self.state = AuthenticatorRsState::DisplayGroup(group_id);
-                Command::none()
+
+                let conn = self.connection.clone();
+                let group = ConfigManager::async_load_account_groups(conn);
+                Command::perform(group, Message::LoadAccounts)
             }
 
             Message::LoadAccounts(Err(_)) => Command::none(),
@@ -513,6 +516,12 @@ impl AuthenticatorRs {
                 self.state = AuthenticatorRsState::DisplayEditAccount(account);
                 Command::none()
             }
+
+            Message::LoadAccounts(Ok(groups)) => {
+                self.groups = groups;
+                Command::none()
+            }
+
             _ => Command::none(),
         }
     }

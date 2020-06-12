@@ -84,7 +84,7 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub async fn async_get_group(
+    pub async fn _async_get_group(
         conn: Arc<Mutex<Box<Connection>>>,
         group_id: u32,
     ) -> Result<AccountGroup, LoadError> {
@@ -374,7 +374,7 @@ mod tests {
 
         let conn = Arc::new(Mutex::new(Box::new(conn)));
         let group: AccountGroup =
-            task::block_on(ConfigManager::async_get_group(conn, group.id)).unwrap();
+            task::block_on(ConfigManager::_async_get_group(conn, group.id)).unwrap();
 
         assert!(group.id > 0);
         assert_eq!("existing_group2", group.name);
