@@ -38,15 +38,13 @@ impl ConfigManager {
     }
 
     fn path() -> std::path::PathBuf {
-        let path = if let Some(project_dirs) =
-        directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+        if let Some(project_dirs) =
+            directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
             project_dirs.data_dir().into()
         } else {
             std::env::current_dir().unwrap_or_default()
-        };
-
-        path
+        }
     }
 
     pub async fn async_load_account_groups(

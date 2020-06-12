@@ -2,7 +2,6 @@ use chrono::prelude::*;
 use clipboard::{ClipboardContext, ClipboardProvider};
 
 use log::{debug, info};
-use log4rs;
 
 use iced::{
     button, scrollable, text_input, window, Align, Application, Button, Color, Column, Command,
@@ -22,8 +21,11 @@ use std::sync::{Arc, Mutex};
 
 pub fn run_application() {
     match log4rs::init_file(ConfigManager::log4rs(), Default::default()) {
-        Ok(_) =>{/* noting to do - all is good */},
-        Err(_) => println!("No logging configuration found. Drop a file in {} to configure logging.", ConfigManager::log4rs().display())
+        Ok(_) => { /* noting to do - all is good */ }
+        Err(_) => println!(
+            "No logging configuration found. Drop a file in {} to configure logging.",
+            ConfigManager::log4rs().display()
+        ),
     };
 
     let settings = Settings {
@@ -577,8 +579,8 @@ impl Application for AuthenticatorRs {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
-            Message::UpdateTime(_) => {},
-            _ => debug!("update(): {:?} -> {:?}", self.state, message)
+            Message::UpdateTime(_) => {}
+            _ => debug!("update(): {:?} -> {:?}", self.state, message),
         };
 
         match &self.state {
