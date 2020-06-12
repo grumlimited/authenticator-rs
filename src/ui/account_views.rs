@@ -26,8 +26,12 @@ impl ViewAccount {
         edit_account_state: &mut EditAccountState,
     ) -> Element<Message> {
         let title = Container::new(match account {
-            Some(_) => Text::new("Edit account").font(INCONSOLATA_EXPANDED_BLACK).size(24),
-            None => Text::new("Add new account").font(INCONSOLATA_EXPANDED_BLACK).size(24),
+            Some(_) => Text::new("Edit account")
+                .font(INCONSOLATA_EXPANDED_BLACK)
+                .size(24),
+            None => Text::new("Add new account")
+                .font(INCONSOLATA_EXPANDED_BLACK)
+                .size(24),
         })
         .width(Length::Fill);
 
