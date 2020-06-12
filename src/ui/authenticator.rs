@@ -4,12 +4,12 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 use log::{debug, info};
 
 use iced::{
-    button, scrollable, text_input, window, Application, Button, Column, Command, Container,
-    Element, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
+    button, scrollable, text_input, window, Application, Column, Command, Element, Settings,
+    Subscription, Text,
 };
 
 use crate::helpers::{ConfigManager, Every, LoadError};
-use crate::ui::{Account, AccountGroup, ViewAccount};
+use crate::ui::{Account, AccountGroup, ViewAccount, ViewAccountGroupView};
 
 use rusqlite::Connection;
 use std::f32::EPSILON;
@@ -107,76 +107,6 @@ impl AuthenticatorRs {
         self.groups.iter_mut().for_each(|x| x.update())
     }
 
-    fn view_group(&mut self, group_id: u32) -> Element<Message> {
-        let accounts_group_col = Container::new(
-            self.groups
-                .iter_mut()
-                .find(|x| x.id == group_id)
-                .unwrap()
-                .view_group(),
-        );
-
-        let main = Column::new()
-            .push(Row::new().push(accounts_group_col))
-            .padding(13)
-            .spacing(10)
-            .width(Length::Fill);
-
-        Container::new(Column::new().push(main))
-            .width(Length::Fill)
-            .into()
-    }
-
-    fn view_accounts(&mut self) -> Element<Message> {
-        self.sort_groups();
-
-        let accounts_group_col: Column<Message> = self.groups.iter_mut().fold(
-            Column::new().spacing(20),
-            |accounts_group_col, account_group| accounts_group_col.push(account_group.view()),
-        );
-
-        let progress_bar = Container::new(
-            ProgressBar::new(0.0..=30.0, self.progressbar_value).style(style::ProgressBar::Default),
-        )
-        .height(Length::from(16))
-        .width(Length::Fill)
-        .padding(3);
-
-        let add_account = Container::new(
-            Button::new(&mut self.add_account, Text::new("Add account"))
-                .on_press(Message::AddAccount),
-        )
-        .padding(10)
-        .width(Length::Fill);
-
-        let main = Row::new()
-            .push(
-                Column::new()
-                    .push(Row::new().push(accounts_group_col))
-                    .padding(10)
-                    .spacing(10)
-                    .width(Length::Fill),
-            )
-            .push(Text::new("").width(Length::from(1))); //just a 1px padding to the right so the box is not stuck to the scrollbar
-
-        let accounts_container = Container::new(main).width(Length::Fill);
-
-        let main_scrollable = Scrollable::new(&mut self.scroll)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .padding(3)
-            .push(accounts_container);
-
-        Container::new(
-            Column::new()
-                .push(progress_bar)
-                .push(add_account)
-                .push(main_scrollable),
-        )
-        .width(Length::Fill)
-        .into()
-    }
-
     fn reset_add_account_errors(&mut self) {
         let mut state = self.edit_account_state.clone();
         state.input_label_error = None;
@@ -184,11 +114,6 @@ impl AuthenticatorRs {
         state.input_secret_error = None;
 
         self.edit_account_state = state;
-    }
-
-    fn sort_groups(&mut self) {
-        self.groups
-            .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
     }
 
     fn reset_add_account_state(&mut self) {
@@ -548,28 +473,15 @@ impl Application for AuthenticatorRs {
                 let account = account.clone();
                 ViewAccount::view_edit_account(account, &mut self.edit_account_state)
             }
-            AuthenticatorRsState::DisplayAccounts => self.view_accounts(),
+            AuthenticatorRsState::DisplayAccounts => ViewAccountGroupView::view_accounts(
+                &mut self.groups,
+                &mut self.add_account,
+                &mut self.scroll,
+                self.progressbar_value,
+            ),
             AuthenticatorRsState::DisplayGroup(group_id) => {
                 let group_id = *group_id;
-                self.view_group(group_id)
-            }
-        }
-    }
-}
-
-mod style {
-    use iced::{progress_bar, Background, Color};
-
-    pub enum ProgressBar {
-        Default,
-    }
-
-    impl progress_bar::StyleSheet for ProgressBar {
-        fn style(&self) -> progress_bar::Style {
-            progress_bar::Style {
-                background: Background::Color(Color::from_rgb(0.6, 0.6, 0.6)),
-                bar: Background::Color(Color::from_rgb8(106, 177, 235)),
-                border_radius: 5,
+                ViewAccountGroupView::view_group(group_id, &mut self.groups)
             }
         }
     }
