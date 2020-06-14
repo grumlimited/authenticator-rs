@@ -6,16 +6,20 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 
+use gdk::EventType;
 use glib::Sender;
+use gtk::Orientation;
 use std::time::Duration;
 use std::{thread, time};
-use gdk::EventType;
+use pango::Weight;
+
 
 pub struct MainWindow {
     state: State,
-    window: gtk::Window,
+    window: gtk::ApplicationWindow,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
+    accounts_container: gtk::Box,
 }
 
 impl MainWindow {
@@ -25,21 +29,11 @@ impl MainWindow {
         let builder = gtk::Builder::new_from_string(glade_src);
 
         // Get handles for the various controls we need to use.
-        let window: gtk::Window = builder.get_object("main_window").unwrap();
+        let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
-        // let label: gtk::Label = builder.get_object("label1").unwrap();
+        let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
-        let quit: gtk::Widget = builder.get_object("quit").unwrap();
-
-        quit.connect_event(|_,b| {
-            match b.get_event_type() {
-                EventType::ButtonRelease => gtk::main_quit(),
-                _ => {},
-            }
-
-            Inhibit(false)
-        });
 
         progress_bar.set_fraction(progress_bar_fraction());
 
@@ -48,16 +42,43 @@ impl MainWindow {
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
+            accounts_container
         }
     }
 
+    pub fn add_group(&self, group_name: &str) -> gtk::Box {
+        let group = gtk::Box::new(Orientation::Horizontal, 0i32);
+        // group.set_child_pack_type();
+        group.set_vexpand(true);
+        group.set_hexpand(true);
+
+        let group_label = gtk::Label::new(Some(group_name));
+        gtk::WidgetExt::set_widget_name(&group_label, "label1");
+        // group_label.set_hexpand(true);
+        // // let f = pango::FontDescription::from_string("Sans Bold 14");
+        // let attrs = pango::AttrList::new();
+        // let attr = pango::Attribute::new_background(255,0,0).unwrap();
+        // let attr2 = pango::Attribute::new_foreground(0,0,512).unwrap();
+        // // attrs.insert(attr);
+        // attrs.insert(attr2);
+        //
+        // group_label.set_attributes(Some(&attrs));
+        group.add(&group_label);
+
+        self.accounts_container.add(&group);
+
+        group
+    }
+
     // Set up naming for the window and show it to the user.
-    pub fn start(&self) {
-        glib::set_application_name("Authenticator-rs");
+    pub fn start(&self, application: &gtk::Application) {
+        self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
         });
+
+        self.add_group("dqsddsq");
 
         self.window.show_all();
 
@@ -76,14 +97,15 @@ impl MainWindow {
 
             glib::Continue(true)
         });
+
+        self.window.show_all();
     }
 }
 
 async fn progress_bar_interval(tx: Sender<f64>) {
     loop {
         thread::sleep(time::Duration::from_secs(1));
-        tx.send(1f64)
-            .expect("Couldn't send data to channel");
+        tx.send(1f64).expect("Couldn't send data to channel");
     }
 }
 
