@@ -1,16 +1,14 @@
 use crate::state::State;
 use gtk::prelude::*;
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::cell::RefCell;
 
-use futures::executor;
 use glib::Sender;
 use std::time::Duration;
 use std::{thread, time};
-use std::borrow::BorrowMut;
 
 pub struct MainWindow {
+
     window: gtk::Window,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
