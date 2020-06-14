@@ -1,4 +1,5 @@
 use crate::state::State;
+
 use gtk::prelude::*;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -8,6 +9,7 @@ use chrono::prelude::*;
 use glib::Sender;
 use std::time::Duration;
 use std::{thread, time};
+use gdk::EventType;
 
 pub struct MainWindow {
     state: State,
@@ -27,6 +29,17 @@ impl MainWindow {
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
         // let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
+        let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
+        let quit: gtk::Widget = builder.get_object("quit").unwrap();
+
+        quit.connect_event(|_,b| {
+            match b.get_event_type() {
+                EventType::ButtonRelease => gtk::main_quit(),
+                _ => {},
+            }
+
+            Inhibit(false)
+        });
 
         progress_bar.set_fraction(progress_bar_fraction());
 
@@ -64,34 +77,6 @@ impl MainWindow {
             glib::Continue(true)
         });
     }
-}
-
-fn build_system_menu(application: &gtk::Application) {
-    let menu = gio::Menu::new();
-    let menu_bar = gio::Menu::new();
-    let more_menu = gio::Menu::new();
-    let switch_menu = gio::Menu::new();
-    let settings_menu = gio::Menu::new();
-    let submenu = gio::Menu::new();
-
-    // The first argument is the label of the menu item whereas the second is the action name. It'll
-    // makes more sense when you'll be reading the "add_actions" function.
-    menu.append(Some("Quit"), Some("app.quit"));
-
-    switch_menu.append(Some("Switch"), Some("app.switch"));
-    menu_bar.append_submenu(Some("_Switch"), &switch_menu);
-
-    settings_menu.append(Some("Sub another"), Some("app.sub_another"));
-    submenu.append(Some("Sub sub another"), Some("app.sub_sub_another"));
-    submenu.append(Some("Sub sub another2"), Some("app.sub_sub_another2"));
-    settings_menu.append_submenu(Some("Sub menu"), &submenu);
-    menu_bar.append_submenu(Some("_Another"), &settings_menu);
-
-    more_menu.append(Some("About"), Some("app.about"));
-    menu_bar.append_submenu(Some("?"), &more_menu);
-
-    application.set_app_menu(Some(&menu));
-    application.set_menubar(Some(&menu_bar));
 }
 
 async fn progress_bar_interval(tx: Sender<f64>) {
