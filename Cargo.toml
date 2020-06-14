@@ -7,7 +7,7 @@ readme = "README.md"
 homepage = "https://github.com/grumlimited/authenticator-rs/"
 repository = "https://github.com/grumlimited/authenticator-rs/"
 authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
-edition = "2020"
+edition = "2018"
 
 [package.metadata.deb]
 maintainer = "Romain Gallet <rgallet@grumlimited.co.uk>"

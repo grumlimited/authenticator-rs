@@ -1,13 +1,19 @@
 use crate::state::State;
 use gtk::prelude::*;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+
+use futures::executor;
+use glib::Sender;
+use std::time::Duration;
+use std::{thread, time};
+use std::borrow::BorrowMut;
+
 pub struct MainWindow {
     window: gtk::Window,
-    result: gtk::Label,
-    popover: gtk::Popover,
-    error_label: gtk::Label,
-    user_spec_entry: gtk::Entry,
-    buttons: HashMap<String, gtk::Button>,
+    progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
+    main_box: Arc<Mutex<RefCell<gtk::Box>>>,
 }
 
 impl MainWindow {
@@ -17,80 +23,53 @@ impl MainWindow {
         let builder = gtk::Builder::new_from_string(glade_src);
 
         // Get handles for the various controls we need to use.
-        let window: gtk::Window = builder.get_object("mainWindow").unwrap();
-        let result: gtk::Label = builder.get_object("resultLabel").unwrap();
-        let popover: gtk::Popover = builder.get_object("errorPopover").unwrap();
-        let error_label: gtk::Label = builder.get_object("errorLabel").unwrap();
-        let user_spec_entry: gtk::Entry = builder.get_object("userSpecEntry").unwrap();
+        let window: gtk::Window = builder.get_object("main_window").unwrap();
+        let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
+        let label: gtk::Label = builder.get_object("label").unwrap();
+        let main_box: gtk::Box = builder.get_object("box").unwrap();
 
-        
-        
-
-        // Get handles for all the buttons.
-        let mut buttons: HashMap<String, gtk::Button> = HashMap::new();
-        for name in &[
-            "rollD4",
-            "rollD6",
-            "rollD8",
-            "rollD10",
-            "rollD12",
-            "rollD20",
-            "rollD100",
-            "clearResult",
-            "halveUpResult",
-            "halveDownResult",
-            "rollUser",
-        ] {
-            buttons.insert(
-                name.to_string(),
-                builder
-                    .get_object(name)
-                    .expect(&format!("Could not get button {}", name)),
-            );
-        }
+        progress_bar.set_fraction(0.5f64);
 
         MainWindow {
             window,
-            result,
-            popover,
-            error_label,
-            user_spec_entry,
-            buttons,
+            progress_bar: Arc::new( Mutex::new(RefCell::new(progress_bar))),
+            main_box: Arc::new( Mutex::new(RefCell::new(main_box)))
         }
     }
 
     // Set up naming for the window and show it to the user.
     pub fn start(&self) {
-        glib::set_application_name("gDiceRoller");
-        self.window.set_wmclass("Dice Roller", "Dice Roller");
+        glib::set_application_name("Authenticator-rs");
+        self.window.set_wmclass("Authenticator-rs", "Authenticator-rs");
         self.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
         });
         self.window.show_all();
-    }
 
-    pub fn update_from(&self, state: &State) {
-        if let Some(ref err) = state.error {
-            self.error_label.set_text(&format!(
-                "The dice expression entered is not valid:\n{}",
-                err
-            ));
-            self.popover.show_all();
-        } else {
-            // The popover will hide itself anyway when the user clicks
-            // outside of it, but we shouldn't leave an error indicator in it.
-            self.error_label.set_text("");
-        }
 
-        self.result.set_text(&format!("{}", state.value));
-    }
+        let (tx, rx) = glib::MainContext::channel::<f64>(glib::PRIORITY_DEFAULT);
+        let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
 
-    pub fn button(&self, name: &str) -> &gtk::Button {
-        self.buttons.get(name).expect("Could not get button.")
-    }
+        pool.spawn_ok(test(tx));
 
-    pub fn user_spec_entry(&self) -> &gtk::Entry {
-        &self.user_spec_entry
+        let pb = self.progress_bar.clone();
+
+        rx.attach(None, move |i| {
+            pb.lock().unwrap().get_mut().set_fraction(i);
+            glib::Continue(true)
+        });
     }
+}
+
+
+async fn test(tx: Sender<f64>) {
+    println!("{}", "dddqsdd");
+    let ten_millis = time::Duration::from_secs(1);
+    thread::sleep(ten_millis);
+    for i in 0..100 {
+        thread::sleep(Duration::from_millis(50));
+        tx.send((i as f64) / 100f64).expect("Couldn't send data to channel");
+    }
+    println!("{}", "54546546");
 }
