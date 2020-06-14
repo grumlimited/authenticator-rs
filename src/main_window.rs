@@ -3,6 +3,8 @@ use gtk::prelude::*;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
+use chrono::prelude::*;
+
 use glib::Sender;
 use std::time::Duration;
 use std::{thread, time};
@@ -26,7 +28,7 @@ impl MainWindow {
         let label: gtk::Label = builder.get_object("label").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
 
-        progress_bar.set_fraction(0.5f64);
+        progress_bar.set_fraction(progress_bar_fraction());
 
         MainWindow {
             state: State::new(),
@@ -48,25 +50,43 @@ impl MainWindow {
         let (tx, rx) = glib::MainContext::channel::<f64>(glib::PRIORITY_DEFAULT);
         let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
 
-        pool.spawn_ok(test(tx));
+        pool.spawn_ok(progress_bar_interval(tx));
 
         let pb = self.progress_bar.clone();
 
-        rx.attach(None, move |i| {
-            pb.lock().unwrap().get_mut().set_fraction(i);
+        rx.attach(None, move |interval| {
+            let mut guard = pb.lock().unwrap();
+            let progress_bar = guard.get_mut();
+
+            progress_bar.set_fraction(progress_bar_fraction());
+
             glib::Continue(true)
         });
     }
 }
 
-async fn test(tx: Sender<f64>) {
-    println!("{}", "dddqsdd");
-    let ten_millis = time::Duration::from_secs(1);
-    thread::sleep(ten_millis);
-    for i in 0..100 {
-        thread::sleep(Duration::from_millis(50));
-        tx.send((i as f64) / 100f64)
+async fn progress_bar_interval(tx: Sender<f64>) {
+    loop {
+        thread::sleep(time::Duration::from_secs(1));
+        tx.send(1f64)
             .expect("Couldn't send data to channel");
     }
-    println!("{}", "54546546");
+}
+
+fn progress_bar_fraction() -> f64 {
+    progress_bar_fraction_for(Local::now().second())
+}
+
+fn progress_bar_fraction_for(second: u32) -> f64 {
+    (1_f64 - ((second % 30) as f64 / 30_f64)) as f64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn progress_bar_fraction() {
+        assert_eq!(0.5333333333333333_f64, progress_bar_fraction_for(14));
+    }
 }
