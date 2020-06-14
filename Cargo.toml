@@ -1,0 +1,41 @@
+[package]
+name = "authenticator-rs"
+version = "0.0.1"
+license = "GPL-3,0-or-later"
+description = "authenticator-rs"
+readme = "README.md"
+homepage = "https://github.com/grumlimited/authenticator-rs/"
+repository = "https://github.com/grumlimited/authenticator-rs/"
+authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
+edition = "2020"
+
+[package.metadata.deb]
+maintainer = "Romain Gallet <rgallet@grumlimited.co.uk>"
+copyright = "Copyright (c) 2020 Grum Limited"
+license-file = ["COPYING", "3"]
+depends = "$auto"
+extended-description = '''
+authenticator-rs
+'''
+section = "GNOME"
+priority = "optional"
+assets = [
+   ["data/uk.co.grumlimited.authenticator-rs.svg", "usr/share/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg", "644"],
+   ["data/uk.co.grumlimited.authenticator-rs.64.png", "usr/share/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png", "644"],
+   ["data/uk.co.grumlimited.authenticator-rs.128.png", "usr/share/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png", "644"],
+   ["data/uk.co.grumlimited.authenticator-rs.appdata.xml", "usr/share/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml", "644"],
+   ["data/uk.co.grumlimited.authenticator-rs.desktop", "usr/share/applications/uk.co.grumlimited.authenticator-rs.desktop", "644"]
+]
+
+[dependencies]
+gio = "0.8.1"
+futures = {version = "0.3.5", features = ["thread-pool"]}
+futures-executor = "0.3.5"
+
+[dependencies.gtk]
+version = "0.8.1"
+features = ["v3_22"]
+
+[dependencies.glib]
+version = "0.9.3"
+
