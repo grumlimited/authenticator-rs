@@ -25,7 +25,7 @@ impl MainWindow {
         // Get handles for the various controls we need to use.
         let window: gtk::Window = builder.get_object("main_window").unwrap();
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
-        let label: gtk::Label = builder.get_object("label").unwrap();
+        // let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
 
         progress_bar.set_fraction(progress_bar_fraction());
@@ -45,6 +45,7 @@ impl MainWindow {
             gtk::main_quit();
             Inhibit(false)
         });
+
         self.window.show_all();
 
         let (tx, rx) = glib::MainContext::channel::<f64>(glib::PRIORITY_DEFAULT);
@@ -63,6 +64,34 @@ impl MainWindow {
             glib::Continue(true)
         });
     }
+}
+
+fn build_system_menu(application: &gtk::Application) {
+    let menu = gio::Menu::new();
+    let menu_bar = gio::Menu::new();
+    let more_menu = gio::Menu::new();
+    let switch_menu = gio::Menu::new();
+    let settings_menu = gio::Menu::new();
+    let submenu = gio::Menu::new();
+
+    // The first argument is the label of the menu item whereas the second is the action name. It'll
+    // makes more sense when you'll be reading the "add_actions" function.
+    menu.append(Some("Quit"), Some("app.quit"));
+
+    switch_menu.append(Some("Switch"), Some("app.switch"));
+    menu_bar.append_submenu(Some("_Switch"), &switch_menu);
+
+    settings_menu.append(Some("Sub another"), Some("app.sub_another"));
+    submenu.append(Some("Sub sub another"), Some("app.sub_sub_another"));
+    submenu.append(Some("Sub sub another2"), Some("app.sub_sub_another2"));
+    settings_menu.append_submenu(Some("Sub menu"), &submenu);
+    menu_bar.append_submenu(Some("_Another"), &settings_menu);
+
+    more_menu.append(Some("About"), Some("app.about"));
+    menu_bar.append_submenu(Some("?"), &more_menu);
+
+    application.set_app_menu(Some(&menu));
+    application.set_menubar(Some(&menu_bar));
 }
 
 async fn progress_bar_interval(tx: Sender<f64>) {
