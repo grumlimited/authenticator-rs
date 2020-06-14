@@ -40,13 +40,11 @@ impl MainWindow {
     // Set up naming for the window and show it to the user.
     pub fn start(&self) {
         glib::set_application_name("Authenticator-rs");
-        self.window.set_wmclass("Authenticator-rs", "Authenticator-rs");
         self.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
         });
         self.window.show_all();
-
 
         let (tx, rx) = glib::MainContext::channel::<f64>(glib::PRIORITY_DEFAULT);
         let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
