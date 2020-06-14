@@ -1,14 +1,14 @@
 use crate::state::State;
 use gtk::prelude::*;
-use std::sync::{Arc, Mutex};
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use glib::Sender;
 use std::time::Duration;
 use std::{thread, time};
 
 pub struct MainWindow {
-
+    state: State,
     window: gtk::Window,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
@@ -29,9 +29,10 @@ impl MainWindow {
         progress_bar.set_fraction(0.5f64);
 
         MainWindow {
+            state: State::new(),
             window,
-            progress_bar: Arc::new( Mutex::new(RefCell::new(progress_bar))),
-            main_box: Arc::new( Mutex::new(RefCell::new(main_box)))
+            progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
+            main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
         }
     }
 
@@ -58,14 +59,14 @@ impl MainWindow {
     }
 }
 
-
 async fn test(tx: Sender<f64>) {
     println!("{}", "dddqsdd");
     let ten_millis = time::Duration::from_secs(1);
     thread::sleep(ten_millis);
     for i in 0..100 {
         thread::sleep(Duration::from_millis(50));
-        tx.send((i as f64) / 100f64).expect("Couldn't send data to channel");
+        tx.send((i as f64) / 100f64)
+            .expect("Couldn't send data to channel");
     }
     println!("{}", "54546546");
 }

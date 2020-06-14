@@ -1,16 +1,14 @@
-use std;
-
 #[derive(Debug, PartialEq)]
 pub struct State {
     pub error: Option<String>,
-    pub value: i32
+    pub value: i32,
 }
 
 impl State {
     pub fn new() -> Self {
-        return Self {
+        Self {
             error: None,
-            value: 0
+            value: 0,
         }
     }
 }

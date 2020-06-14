@@ -1,6 +1,6 @@
-extern crate gtk;
-extern crate glib;
 extern crate gio;
+extern crate glib;
+extern crate gtk;
 
 use std::rc::Rc;
 
