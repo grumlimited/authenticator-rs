@@ -11,8 +11,6 @@ use glib::Sender;
 use gtk::{Orientation, Align};
 use std::time::Duration;
 use std::{thread, time};
-use pango::{Weight, Style};
-
 
 pub struct MainWindow {
     state: State,
