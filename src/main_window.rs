@@ -8,10 +8,10 @@ use chrono::prelude::*;
 
 use gdk::EventType;
 use glib::Sender;
-use gtk::Orientation;
+use gtk::{Orientation, Align};
 use std::time::Duration;
 use std::{thread, time};
-use pango::Weight;
+use pango::{Weight, Style};
 
 
 pub struct MainWindow {
@@ -20,6 +20,7 @@ pub struct MainWindow {
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
+    copy_and_paste: gtk::Image,
 }
 
 impl MainWindow {
@@ -34,6 +35,7 @@ impl MainWindow {
         let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
+        let copy_and_paste: gtk::Image = builder.get_object("copy_and_paste").unwrap();
 
         progress_bar.set_fraction(progress_bar_fraction());
 
@@ -42,33 +44,34 @@ impl MainWindow {
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
-            accounts_container
+            accounts_container,
+            copy_and_paste,
         }
     }
 
     pub fn add_group(&self, group_name: &str) -> gtk::Box {
         let group = gtk::Box::new(Orientation::Horizontal, 0i32);
-        // group.set_child_pack_type();
-        group.set_vexpand(true);
-        group.set_hexpand(true);
 
-        let group_label = gtk::Label::new(Some(group_name));
-        gtk::WidgetExt::set_widget_name(&group_label, "label1");
-        // group_label.set_hexpand(true);
-        // // let f = pango::FontDescription::from_string("Sans Bold 14");
-        // let attrs = pango::AttrList::new();
-        // let attr = pango::Attribute::new_background(255,0,0).unwrap();
-        // let attr2 = pango::Attribute::new_foreground(0,0,512).unwrap();
-        // // attrs.insert(attr);
-        // attrs.insert(attr2);
-        //
-        // group_label.set_attributes(Some(&attrs));
+        let mut group_label = gtk::LabelBuilder::new()
+            .label(group_name)
+            .build();
+
+        group_label.set_hexpand(true);
+        group_label.set_halign(Align::Start);
+        group_label.set_margin_start(15);
+        group_label.set_margin_top(5);
+        group_label.set_margin_bottom(20);
+
+        let style_context = group_label.get_style_context();
+        style_context.add_class("account_group_label");
+
         group.add(&group_label);
 
         self.accounts_container.add(&group);
 
         group
     }
+
 
     // Set up naming for the window and show it to the user.
     pub fn start(&self, application: &gtk::Application) {
@@ -78,7 +81,7 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        self.add_group("dqsddsq");
+        let g = self.add_group("Amazon Web services");
 
         self.window.show_all();
 
