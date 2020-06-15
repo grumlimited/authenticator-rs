@@ -77,7 +77,7 @@ impl MainWindow {
 
         self.window.show_all();
 
-        let (tx, rx) = glib::MainContext::channel::<f64>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
         let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
 
         pool.spawn_ok(progress_bar_interval(tx));
@@ -86,15 +86,19 @@ impl MainWindow {
 
         let s = self.state.clone();
 
-        rx.attach(None, move |_| {
+        rx.attach(None, move |second| {
             let mut guard = pb.lock().unwrap();
             let progress_bar = guard.get_mut();
 
-            progress_bar.set_fraction(progress_bar_fraction());
+            let fraction = progress_bar_fraction();
+            progress_bar.set_fraction(fraction);
 
-            let mut state = s.lock().unwrap();
-            let mut state = state.get_mut();
-            state.groups.iter_mut().for_each(|t|t.update());
+            if second == 29 || second == 0 {
+                let mut state = s.lock().unwrap();
+                let mut state = state.get_mut();
+                state.groups.iter_mut().for_each(|t|t.update());
+            }
+
             glib::Continue(true)
         });
 
@@ -102,10 +106,10 @@ impl MainWindow {
     }
 }
 
-async fn progress_bar_interval(tx: Sender<f64>) {
+async fn progress_bar_interval(tx: Sender<u8>) {
     loop {
         thread::sleep(time::Duration::from_secs(1));
-        tx.send(1f64).expect("Couldn't send data to channel");
+        tx.send(chrono::Local::now().second() as u8).expect("Couldn't send data to channel");
     }
 }
 
