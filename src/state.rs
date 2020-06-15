@@ -1,14 +1,19 @@
-#[derive(Debug, PartialEq)]
+use crate::model::AccountGroup;
+use crate::helpers::LoadError;
+
+#[derive(Debug, PartialEq, Default)]
 pub struct State {
-    pub error: Option<String>,
-    pub value: i32,
+    pub groups: Vec<AccountGroup>,
 }
 
 impl State {
     pub fn new() -> Self {
         Self {
-            error: None,
-            value: 0,
+            ..State::default()
         }
+    }
+
+    pub fn add_groups(&mut self, _groups: Vec<AccountGroup>)  {
+        self.groups = _groups
     }
 }

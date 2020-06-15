@@ -37,7 +37,7 @@ fn main() {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
 
-        let gui = Rc::new(MainWindow::new());
+        let mut gui = MainWindow::new();
         gui.start(&app);
     });
 

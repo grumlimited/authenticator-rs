@@ -51,7 +51,7 @@ impl ConfigManager {
         Self::load_account_groups(&conn)
     }
 
-    fn load_account_groups(conn: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(conn: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
         Self::init_tables(&conn).unwrap();
 
         let mut stmt = conn.prepare("SELECT id, name FROM groups").unwrap();

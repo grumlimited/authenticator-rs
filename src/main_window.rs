@@ -10,6 +10,9 @@ use gdk::EventType;
 use glib::Sender;
 use gtk::{Orientation, Align};
 use std::{thread, time};
+use crate::helpers::{ConfigManager, LoadError};
+use rusqlite::Connection;
+use crate::model::AccountGroup;
 
 pub struct MainWindow {
     state: State,
@@ -18,6 +21,7 @@ pub struct MainWindow {
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
     copy_and_paste: gtk::Image,
+    connection: Arc<Mutex<Connection>>,
 }
 
 impl MainWindow {
@@ -36,6 +40,8 @@ impl MainWindow {
 
         progress_bar.set_fraction(progress_bar_fraction());
 
+        let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
+
         MainWindow {
             state: State::new(),
             window,
@@ -43,7 +49,17 @@ impl MainWindow {
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
             copy_and_paste,
+            connection
         }
+    }
+
+    pub fn add_groups(&mut self) {
+        let conn = self.connection.clone();
+        let conn = conn.lock().unwrap();
+        let groups = ConfigManager::load_account_groups(&conn).unwrap();
+        println!("{:?}", groups);
+
+        self.state.add_groups(groups);
     }
 
     pub fn add_group(&self, group_name: &str) -> gtk::Box {
@@ -71,14 +87,17 @@ impl MainWindow {
 
 
     // Set up naming for the window and show it to the user.
-    pub fn start(&self, application: &gtk::Application) {
+    pub fn start(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
         });
 
-        let g = self.add_group("Amazon Web services");
+
+        self.add_groups();
+
+        // let g = self.add_group("Amazon Web services");
 
         self.window.show_all();
 
