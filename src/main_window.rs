@@ -58,36 +58,12 @@ impl MainWindow {
         let conn = conn.lock().unwrap();
         let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
 
-        groups.iter_mut().for_each(|e| {
-            self.add_group(e);
-        });
+        let widgets: Vec<gtk::Box> = groups.iter().map(|v| v.widget()).collect();
+
+        widgets.iter().for_each(|w| self.accounts_container.add(w));
 
         self.state.add_groups(groups);
     }
-
-    pub fn add_group(&self, account_group: &mut AccountGroup) -> gtk::Box {
-        let group = gtk::Box::new(Orientation::Horizontal, 0i32);
-
-        let mut group_label = gtk::LabelBuilder::new()
-            .label(account_group.name.as_str())
-            .build();
-
-        group_label.set_hexpand(true);
-        group_label.set_halign(Align::Start);
-        group_label.set_margin_start(15);
-        group_label.set_margin_top(5);
-        group_label.set_margin_bottom(20);
-
-        let style_context = group_label.get_style_context();
-        style_context.add_class("account_group_label");
-
-        group.add(&group_label);
-
-        self.accounts_container.add(&group);
-
-        group
-    }
-
 
     // Set up naming for the window and show it to the user.
     pub fn start(&mut self, application: &gtk::Application) {
@@ -99,8 +75,6 @@ impl MainWindow {
 
 
         self.add_groups();
-
-        // let g = self.add_group("Amazon Web services");
 
         self.window.show_all();
 
