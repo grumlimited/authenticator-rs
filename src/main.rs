@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 mod state;
 
 mod main_window;

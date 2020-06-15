@@ -6,13 +6,10 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 
-use gdk::EventType;
 use glib::Sender;
-use gtk::{Orientation, Align};
 use std::{thread, time};
-use crate::helpers::{ConfigManager, LoadError};
+use crate::helpers::{ConfigManager};
 use rusqlite::Connection;
-use crate::model::AccountGroup;
 
 pub struct MainWindow {
     state: State,
@@ -33,7 +30,7 @@ impl MainWindow {
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
-        let label: gtk::Label = builder.get_object("label1").unwrap();
+        // let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
         let copy_and_paste: gtk::Image = builder.get_object("copy_and_paste").unwrap();
@@ -56,7 +53,7 @@ impl MainWindow {
     pub fn add_groups(&mut self) {
         let conn = self.connection.clone();
         let conn = conn.lock().unwrap();
-        let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
+        let groups = ConfigManager::load_account_groups(&conn).unwrap();
 
         let widgets: Vec<gtk::Box> = groups.iter().map(|v| v.widget()).collect();
 
@@ -85,7 +82,7 @@ impl MainWindow {
 
         let pb = self.progress_bar.clone();
 
-        rx.attach(None, move |interval| {
+        rx.attach(None, move |_| {
             let mut guard = pb.lock().unwrap();
             let progress_bar = guard.get_mut();
 

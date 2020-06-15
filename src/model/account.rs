@@ -25,6 +25,11 @@ impl Account {
         a
     }
 
+    pub fn widget(&self) -> gtk::Grid {
+
+        todo!()
+    }
+
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {
         let time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)

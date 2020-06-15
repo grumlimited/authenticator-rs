@@ -20,9 +20,9 @@ impl AccountGroup {
     }
 
     pub fn widget(&self) -> gtk::Box {
-        let group = gtk::Box::new(Orientation::Horizontal, 0i32);
+        let group = gtk::Box::new(Orientation::Vertical, 0i32);
 
-        let mut group_label = gtk::LabelBuilder::new()
+        let group_label = gtk::LabelBuilder::new()
             .label(self.name.as_str())
             .build();
 
@@ -36,6 +36,16 @@ impl AccountGroup {
         style_context.add_class("account_group_label");
 
         group.add(&group_label);
+
+        let accounts = gtk::Box::new(Orientation::Vertical, 0i32);
+        accounts.set_margin_start(5);
+        accounts.set_margin_end(5);
+
+        for account in &self.entries {
+            accounts.add(&account.widget());
+        }
+
+        group.add(&accounts);
 
         group
     }
