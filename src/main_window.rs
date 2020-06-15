@@ -84,7 +84,7 @@ impl MainWindow {
 
         let pb = self.progress_bar.clone();
 
-        let s = self.state.clone();
+        let state = self.state.clone();
 
         rx.attach(None, move |second| {
             let mut guard = pb.lock().unwrap();
@@ -94,9 +94,9 @@ impl MainWindow {
             progress_bar.set_fraction(fraction);
 
             if second == 29 || second == 0 {
-                let mut state = s.lock().unwrap();
+                let mut state = state.lock().unwrap();
                 let mut state = state.get_mut();
-                state.groups.iter_mut().for_each(|t|t.update());
+                state.groups.iter_mut().for_each(|group| group.update());
             }
 
             glib::Continue(true)
