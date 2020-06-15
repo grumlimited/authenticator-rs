@@ -42,6 +42,7 @@ impl AccountGroup {
         accounts.set_margin_end(5);
 
         for account in &self.entries {
+            println!("{:?}", account);
             accounts.add(&account.widget());
         }
 
