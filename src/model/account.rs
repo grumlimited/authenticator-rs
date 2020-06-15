@@ -5,28 +5,38 @@ use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone,  PartialEq)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,
     pub label: String,
     pub secret: String,
+    gtk_label: gtk::Label,
 }
 
 impl Account {
     pub fn new(group_id: u32, label: &str, secret: &str) -> Self {
         let mut a = Account {
+            id: 0,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            ..Account::default()
+            gtk_label: gtk::LabelBuilder::new()
+                .label(Self::generate_time_based_password(secret).unwrap().as_str())
+                .width_chars(8)
+                .single_line_mode(true)
+                .build()
         };
         a
     }
 
+    pub fn update(&mut self) {
+        let key = self.secret.as_str();
+        let totp = Self::generate_time_based_password(key).unwrap();
+        self.gtk_label.set_label(totp.as_str());
+    }
+
     pub fn widget(&self) -> gtk::Grid {
-        // self.update();
-        // let totp = self.totp.unwrap().clone().as_ref();
 
         let grid = gtk::GridBuilder::new()
             .visible(true)
@@ -45,14 +55,14 @@ impl Account {
             .xalign(0.05000000074505806_f32)
             .build();
 
-        let totp = gtk::LabelBuilder::new()
-            .label(Self::generate_time_based_password(self.secret.as_str()).unwrap().as_str())
-            .width_chars(8)
-            .single_line_mode(true)
-            .build();
+        // let totp = gtk::LabelBuilder::new()
+        //     .label(Self::generate_time_based_password(self.secret.as_str()).unwrap().as_str())
+        //     .width_chars(8)
+        //     .single_line_mode(true)
+        //     .build();
 
         grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(&totp, 1, 0, 1, 1);
+        grid.attach(&self.gtk_label, 1, 0, 1, 1);
 
         grid
     }
