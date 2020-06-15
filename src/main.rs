@@ -16,13 +16,7 @@ use gtk::prelude::*;
 mod helpers;
 mod model;
 
-const STYLE: &str = "
-.account_group_label {
-    font-family: Sans Bold;
-    font-size: 14pt;
-    font-weight: bold;
-}
-";
+const STYLE: &str = include_str!("resources/style.css");
 
 fn main() {
     let application = gtk::Application::new(
