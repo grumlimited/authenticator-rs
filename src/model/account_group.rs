@@ -19,6 +19,10 @@ impl AccountGroup {
         }
     }
 
+    pub fn update(&mut self) {
+        self.entries.iter_mut().for_each(|x| x.update());
+    }
+
     pub fn widget(&self) -> gtk::Box {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
 

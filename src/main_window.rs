@@ -12,7 +12,7 @@ use crate::helpers::{ConfigManager};
 use rusqlite::Connection;
 
 pub struct MainWindow {
-    state: State,
+    state: Arc<Mutex<RefCell<State>>>,
     window: gtk::ApplicationWindow,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
@@ -40,7 +40,7 @@ impl MainWindow {
         let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
         MainWindow {
-            state: State::new(),
+            state: Arc::new(Mutex::new(RefCell::new(State::new()))),
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
@@ -59,7 +59,9 @@ impl MainWindow {
 
         widgets.iter().for_each(|w| self.accounts_container.add(w));
 
-        self.state.add_groups(groups);
+        let mut state = self.state.lock().unwrap();
+        let mut state = state.get_mut();
+        state.add_groups(groups);
     }
 
     // Set up naming for the window and show it to the user.
@@ -82,12 +84,17 @@ impl MainWindow {
 
         let pb = self.progress_bar.clone();
 
+        let s = self.state.clone();
+
         rx.attach(None, move |_| {
             let mut guard = pb.lock().unwrap();
             let progress_bar = guard.get_mut();
 
             progress_bar.set_fraction(progress_bar_fraction());
 
+            let mut state = s.lock().unwrap();
+            let mut state = state.get_mut();
+            state.groups.iter_mut().for_each(|t|t.update());
             glib::Continue(true)
         });
 

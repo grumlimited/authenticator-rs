@@ -16,7 +16,7 @@ pub struct Account {
 
 impl Account {
     pub fn new(group_id: u32, label: &str, secret: &str) -> Self {
-        let mut a = Account {
+        Account {
             id: 0,
             group_id,
             label: label.to_owned(),
@@ -26,8 +26,7 @@ impl Account {
                 .width_chars(8)
                 .single_line_mode(true)
                 .build()
-        };
-        a
+        }
     }
 
     pub fn update(&mut self) {
@@ -54,12 +53,6 @@ impl Account {
             .max_width_chars(50)
             .xalign(0.05000000074505806_f32)
             .build();
-
-        // let totp = gtk::LabelBuilder::new()
-        //     .label(Self::generate_time_based_password(self.secret.as_str()).unwrap().as_str())
-        //     .width_chars(8)
-        //     .single_line_mode(true)
-        //     .build();
 
         grid.attach(&label, 0, 0, 1, 1);
         grid.attach(&self.gtk_label, 1, 0, 1, 1);
