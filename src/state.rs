@@ -13,7 +13,7 @@ impl State {
         }
     }
 
-    pub fn add_groups(&mut self, _groups: Vec<AccountGroup>)  {
-        self.groups = _groups
+    pub fn add_groups(&mut self, groups: Vec<AccountGroup>)  {
+        self.groups = groups
     }
 }

@@ -56,17 +56,20 @@ impl MainWindow {
     pub fn add_groups(&mut self) {
         let conn = self.connection.clone();
         let conn = conn.lock().unwrap();
-        let groups = ConfigManager::load_account_groups(&conn).unwrap();
-        println!("{:?}", groups);
+        let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
+
+        groups.iter_mut().for_each(|e| {
+            self.add_group(e);
+        });
 
         self.state.add_groups(groups);
     }
 
-    pub fn add_group(&self, group_name: &str) -> gtk::Box {
+    pub fn add_group(&self, account_group: &mut AccountGroup) -> gtk::Box {
         let group = gtk::Box::new(Orientation::Horizontal, 0i32);
 
         let mut group_label = gtk::LabelBuilder::new()
-            .label(group_name)
+            .label(account_group.name.as_str())
             .build();
 
         group_label.set_hexpand(true);
