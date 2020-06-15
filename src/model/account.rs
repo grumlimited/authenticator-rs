@@ -11,7 +11,6 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
-    totp: Option<String>,
 }
 
 impl Account {
@@ -22,8 +21,6 @@ impl Account {
             secret: secret.to_owned(),
             ..Account::default()
         };
-
-        a.update();
         a
     }
 
@@ -49,7 +46,7 @@ impl Account {
             .build();
 
         let totp = gtk::LabelBuilder::new()
-            .label("123456")
+            .label(Self::generate_time_based_password(self.secret.as_str()).unwrap().as_str())
             .width_chars(8)
             .single_line_mode(true)
             .build();
@@ -76,13 +73,6 @@ impl Account {
             Ok(totp_sha1.generate(time))
         } else {
             Err("error!".to_owned())
-        }
-    }
-
-    pub fn update(&mut self) {
-        match Self::generate_time_based_password(self.secret.as_str()) {
-            Ok(totp) => self.totp = Some(totp),
-            Err(_) => self.totp = None,
         }
     }
 }

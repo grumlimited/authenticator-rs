@@ -51,10 +51,6 @@ impl AccountGroup {
         group
     }
 
-    pub fn update(&mut self) {
-        self.entries.iter_mut().for_each(|x| x.update());
-    }
-
     pub fn sort(entries: &mut Vec<Account>) {
         entries.sort_by(|a, b| a.label.to_lowercase().cmp(&b.label.to_lowercase()));
     }
