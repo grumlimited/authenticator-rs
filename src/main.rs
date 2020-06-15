@@ -10,15 +10,11 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
-use std::env::args;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-
 use gio::prelude::*;
-use glib::clone;
 use gtk::prelude::*;
-use gtk::Builder;
+
+mod helpers;
+mod model;
 
 const STYLE: &str = "
 .account_group_label {

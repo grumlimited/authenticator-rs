@@ -9,7 +9,6 @@ use chrono::prelude::*;
 use gdk::EventType;
 use glib::Sender;
 use gtk::{Orientation, Align};
-use std::time::Duration;
 use std::{thread, time};
 
 pub struct MainWindow {
