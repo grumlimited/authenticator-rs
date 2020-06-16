@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex};
-use std::cell::RefCell;
-use gtk::prelude::*;
-use gtk::Builder;
+use crate::main_window::MainWindow;
 use chrono::prelude::*;
 use chrono::Local;
-use crate::main_window::MainWindow;
+use gtk::prelude::*;
+use gtk::Builder;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 pub struct AccountsWindow {
     pub main_box: gtk::Box,
@@ -15,7 +15,6 @@ pub struct AccountsWindow {
 }
 
 impl AccountsWindow {
-
     pub fn new(builder: Builder) -> AccountsWindow {
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
         let main_box: gtk::Box = builder.get_object("main_box").unwrap();
@@ -52,7 +51,6 @@ impl AccountsWindow {
         }
     }
 
-
     pub fn progress_bar_fraction() -> f64 {
         Self::progress_bar_fraction_for(Local::now().second())
     }
@@ -62,14 +60,15 @@ impl AccountsWindow {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn progress_bar_fraction() {
-        assert_eq!(0.5333333333333333_f64, AccountsWindow::progress_bar_fraction_for(14));
+        assert_eq!(
+            0.5333333333333333_f64,
+            AccountsWindow::progress_bar_fraction_for(14)
+        );
     }
 }

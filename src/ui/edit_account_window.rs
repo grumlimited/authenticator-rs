@@ -1,6 +1,6 @@
-use gtk::prelude::*;
-use gtk::{Builder};
 use crate::main_window::MainWindow;
+use gtk::prelude::*;
+use gtk::Builder;
 
 pub struct EditAccountWindow {
     pub edit_account: gtk::Box,
@@ -26,10 +26,16 @@ impl EditAccountWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: &mut MainWindow) {
-
         fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
-            where
-                F: 'static + Fn(gtk::Entry, gtk::Entry, gtk::Entry, gtk::Box, gtk::Box) -> Box<dyn Fn(&gtk::Button)>,
+        where
+            F: 'static
+                + Fn(
+                    gtk::Entry,
+                    gtk::Entry,
+                    gtk::Entry,
+                    gtk::Box,
+                    gtk::Box,
+                ) -> Box<dyn Fn(&gtk::Button)>,
         {
             let main_box = gui.accounts_window.main_box.clone();
             let edit_account = gui.accounts_window.edit_account.clone();
@@ -38,7 +44,8 @@ impl EditAccountWindow {
             let name = gui.edit_account_window.edit_account_input_name.clone();
             let secret = gui.edit_account_window.edit_account_input_secret.clone();
 
-            let button_closure = Box::new(button_closure(group, name, secret, main_box, edit_account));
+            let button_closure =
+                Box::new(button_closure(group, name, secret, main_box, edit_account));
 
             b.connect_clicked(button_closure);
         }

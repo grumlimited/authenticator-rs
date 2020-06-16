@@ -11,7 +11,7 @@ use rusqlite::Connection;
 use std::{thread, time};
 
 use crate::ui;
-use crate::ui::{EditAccountWindow, AccountsWindow};
+use crate::ui::{AccountsWindow, EditAccountWindow};
 
 pub struct MainWindow {
     window: gtk::ApplicationWindow,

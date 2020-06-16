@@ -10,11 +10,11 @@ extern crate gtk;
 
 use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
+use crate::ui::{AccountsWindow, EditAccountWindow};
 use gio::prelude::*;
 use gtk::prelude::*;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-use crate::ui::{EditAccountWindow, AccountsWindow};
 
 mod helpers;
 mod model;
@@ -66,4 +66,3 @@ fn main() {
 
     application.run(&[]);
 }
-
