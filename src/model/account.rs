@@ -5,11 +5,6 @@ use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
 use gtk::Orientation;
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
-
-use glib::clone;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Account {
@@ -37,10 +32,7 @@ impl Account {
 
         let clone = self.gtk_label.clone();
 
-        match clone {
-            Some(gtk_label) => gtk_label.set_label(totp.as_str()),
-            None => {}
-        }
+        if let Some(gtk_label) = clone { gtk_label.set_label(totp.as_str()) }
     }
 
     pub fn widget(&mut self) -> gtk::Grid {
@@ -58,7 +50,7 @@ impl Account {
             .width_chars(19)
             .single_line_mode(true)
             .max_width_chars(50)
-            .xalign(0.05000000074505806_f32)
+            .xalign(0.05_f32)
             .build();
 
         let image = gtk::ImageBuilder::new().icon_name("edit-copy").build();
@@ -92,7 +84,7 @@ impl Account {
             .popover(&popover)
             .build();
 
-        menu.connect_clicked(move |menu_button| {
+        menu.connect_clicked(move |_| {
             popover.show_all();
         });
 
@@ -114,10 +106,7 @@ impl Account {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             let option = totp_label_clone.get_label();
 
-            match option {
-                Some(v) => clipboard.set_text(v.as_str()),
-                None => {}
-            }
+            if let Some(v) = option { clipboard.set_text(v.as_str()) }
         });
 
         grid.attach(&label, 0, 0, 1, 1);

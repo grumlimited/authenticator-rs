@@ -14,8 +14,7 @@ impl AccountGroup {
         AccountGroup {
             id,
             name: name.to_owned(),
-            entries,
-            ..Default::default()
+            entries
         }
     }
 

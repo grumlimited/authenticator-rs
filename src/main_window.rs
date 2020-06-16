@@ -47,7 +47,7 @@ impl MainWindow {
         }
     }
 
-    pub fn add_groups(&mut self) {
+    pub fn fetch_accounts(&mut self) {
         let conn = self.connection.clone();
         let conn = conn.lock().unwrap();
         let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
@@ -57,7 +57,7 @@ impl MainWindow {
         widgets.iter().for_each(|w| self.accounts_container.add(w));
 
         let mut state = self.state.lock().unwrap();
-        let mut state = state.get_mut();
+        let state = state.get_mut();
         state.add_groups(groups);
     }
 
@@ -69,11 +69,8 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        self.add_groups();
-
-        self.window.show_all();
-
         self.start_progress_bar();
+        self.fetch_accounts();
 
         self.window.show_all();
     }
