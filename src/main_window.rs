@@ -76,12 +76,11 @@ impl MainWindow {
             .map(|account_group| account_group.widget())
             .collect();
 
-        self.widgets = widgets;
-
-        self.widgets
+        widgets
             .iter()
             .for_each(|w| self.accounts_container.add(&w.container));
 
+        self.widgets = widgets;
         self.accounts_container.show_all();
     }
 
