@@ -58,29 +58,32 @@ fn main() {
 
         gui.set_application(&app);
 
-        for group_widgets in &mut gui.widgets {
-            for account_widgets in &mut group_widgets.account_widgets {
-                let id = account_widgets.id.clone();
-                let popover = account_widgets.popover.clone();
-
-                let mut main_box = gui.main_box.clone();
-                let mut edit_account = gui.edit_account.clone();
-
-                account_widgets.edit_button.connect_clicked(move |x| {
-                    let mut main_box = main_box.lock().unwrap();
-                    let main_box = main_box.get_mut();
-
-                    let mut edit_account = edit_account.lock().unwrap();
-                    let edit_account = edit_account.get_mut();
-
-                    popover.hide();
-                    main_box.set_visible(false);
-                    edit_account.set_visible(true);
-                });
-            }
-        }
-
+        edit_buttons_actions(&mut gui);
     });
 
     application.run(&[]);
+}
+
+fn edit_buttons_actions(gui: &mut MainWindow) {
+    for group_widgets in &mut gui.widgets {
+        for account_widgets in &mut group_widgets.account_widgets {
+            let id = account_widgets.id.clone();
+            let popover = account_widgets.popover.clone();
+
+            let mut main_box = gui.main_box.clone();
+            let mut edit_account = gui.edit_account.clone();
+
+            account_widgets.edit_button.connect_clicked(move |x| {
+                let mut main_box = main_box.lock().unwrap();
+                let main_box = main_box.get_mut();
+
+                let mut edit_account = edit_account.lock().unwrap();
+                let edit_account = edit_account.get_mut();
+
+                popover.hide();
+                main_box.set_visible(false);
+                edit_account.set_visible(true);
+            });
+        }
+    }
 }
