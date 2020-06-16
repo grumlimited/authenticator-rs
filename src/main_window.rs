@@ -50,9 +50,9 @@ impl MainWindow {
     pub fn add_groups(&mut self) {
         let conn = self.connection.clone();
         let conn = conn.lock().unwrap();
-        let groups = ConfigManager::load_account_groups(&conn).unwrap();
+        let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
 
-        let widgets: Vec<gtk::Box> = groups.iter().map(|v| v.widget()).collect();
+        let widgets: Vec<gtk::Box> = groups.iter_mut().map(|v| v.widget()).collect();
 
         widgets.iter().for_each(|w| self.accounts_container.add(w));
 

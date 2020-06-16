@@ -23,7 +23,7 @@ impl AccountGroup {
         self.entries.iter_mut().for_each(|x| x.update());
     }
 
-    pub fn widget(&self) -> gtk::Box {
+    pub fn widget(&mut self) -> gtk::Box {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
 
         let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
@@ -43,8 +43,7 @@ impl AccountGroup {
         accounts.set_margin_start(5);
         accounts.set_margin_end(5);
 
-        for account in &self.entries {
-            println!("{:?}", account);
+        for account in &mut self.entries {
             accounts.add(&account.widget());
         }
 

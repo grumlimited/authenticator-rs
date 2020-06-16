@@ -17,24 +17,17 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
-    gtk_label: gtk::Label,
+    gtk_label: Option<gtk::Label>,
 }
 
 impl Account {
     pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
-        let string = Self::generate_time_based_password(secret).unwrap();
-        let totp = string.as_str();
-
         Account {
             id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            gtk_label: gtk::LabelBuilder::new()
-                .label(totp)
-                .width_chars(8)
-                .single_line_mode(true)
-                .build(),
+            gtk_label: None,
         }
     }
 
@@ -42,10 +35,15 @@ impl Account {
         let key = self.secret.as_str();
         let totp = Self::generate_time_based_password(key).unwrap();
 
-        self.gtk_label.set_label(totp.as_str());
+        let clone = self.gtk_label.clone();
+
+        match clone {
+            Some(gtk_label) => gtk_label.set_label(totp.as_str()),
+            None => {}
+        }
     }
 
-    pub fn widget(&self) -> gtk::Grid {
+    pub fn widget(&mut self) -> gtk::Grid {
         let grid = gtk::GridBuilder::new()
             .visible(true)
             .margin_start(10)
@@ -98,23 +96,32 @@ impl Account {
             popover.show_all();
         });
 
-        let totp_label_clone = self.gtk_label.clone();
+        let string = Self::generate_time_based_password(self.secret.as_str()).unwrap();
+        let totp = string.as_str();
+
+        let gtk_label = gtk::LabelBuilder::new()
+            .label(totp)
+            .width_chars(8)
+            .single_line_mode(true)
+            .build();
+
+        let totp_label_clone = gtk_label.clone();
+        let totp_label_clone2 = gtk_label.clone();
+
+        self.gtk_label = Some(totp_label_clone2);
 
         copy_button.connect_clicked(move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             let option = totp_label_clone.get_label();
 
             match option {
-                Some(v) =>{
-                    clipboard.set_text(v.as_str())
-                },
-                None =>{},
+                Some(v) => clipboard.set_text(v.as_str()),
+                None => {}
             }
-
         });
 
         grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(&self.gtk_label, 1, 0, 1, 1);
+        grid.attach(&gtk_label, 1, 0, 1, 1);
         grid.attach(&copy_button, 2, 0, 1, 1);
         grid.attach(&menu, 3, 0, 1, 1);
 
