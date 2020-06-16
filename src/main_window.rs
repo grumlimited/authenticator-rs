@@ -66,6 +66,17 @@ impl MainWindow {
         self.window.show();
     }
 
+    pub fn edit_buttons(&mut self) -> Vec<gtk::Button> {
+        let mut buttons = Vec::new();
+
+        for group_widgets in &mut self.widgets {
+            for account_widgets in &mut group_widgets.account_widgets {
+                buttons.push(account_widgets.edit_button.clone())
+            }
+        }
+        buttons
+    }
+
     pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
         let groups = groups.clone();
         let mut guard = groups.lock().unwrap();
