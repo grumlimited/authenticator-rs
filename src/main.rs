@@ -67,7 +67,7 @@ fn main() {
 }
 
 fn edit_account_buttons_actions(gui: &mut MainWindow) {
-    fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, f: F)
+    fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
     where
         F: 'static
             + Fn(
@@ -75,7 +75,7 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
                 Entry,
                 Entry,
                 gtk::Box,
-                Arc<Mutex<RefCell<gtk::Box>>>,
+            gtk::Box,
             ) -> Box<dyn Fn(&gtk::Button)>,
     {
         let mut main_box = gui.main_box.clone();
@@ -85,9 +85,9 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
         let name = gui.edit_account_window.edit_account_input_name.clone();
         let secret = gui.edit_account_window.edit_account_input_secret.clone();
 
-        let f2 = Box::new(f(group, name, secret, main_box, edit_account));
+        let button_closure = Box::new(button_closure(group, name, secret, main_box, edit_account));
 
-        b.connect_clicked(f2);
+        b.connect_clicked(button_closure);
     }
 
     let edit_account_cancel = gui.edit_account_window.edit_account_cancel.clone();
@@ -96,10 +96,6 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
         edit_account_cancel,
         |group, name, secret, main_box, edit_account| {
             Box::new(move |_| {
-
-                let mut edit_account = edit_account.lock().unwrap();
-                let edit_account = edit_account.get_mut();
-
                 main_box.set_visible(true);
                 edit_account.set_visible(false);
             })
@@ -112,9 +108,6 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
         edit_account_save,
         |group, name, secret, main_box, edit_account| {
             Box::new(move |_| {
-                let mut edit_account = edit_account.lock().unwrap();
-                let edit_account = edit_account.get_mut();
-
                 let entry = group.get_buffer().get_text();
                 println!("{:?}", entry);
             })
@@ -132,9 +125,6 @@ fn edit_buttons_actions(gui: &mut MainWindow) {
             let mut edit_account = gui.edit_account.clone();
 
             account_widgets.edit_button.connect_clicked(move |x| {
-                let mut edit_account = edit_account.lock().unwrap();
-                let edit_account = edit_account.get_mut();
-
                 popover.hide();
                 main_box.set_visible(false);
                 edit_account.set_visible(true);
