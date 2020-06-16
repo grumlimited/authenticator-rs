@@ -69,14 +69,7 @@ fn main() {
 fn edit_account_buttons_actions(gui: &mut MainWindow) {
     fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
     where
-        F: 'static
-            + Fn(
-                Entry,
-                Entry,
-                Entry,
-                gtk::Box,
-            gtk::Box,
-            ) -> Box<dyn Fn(&gtk::Button)>,
+        F: 'static + Fn(Entry, Entry, Entry, gtk::Box, gtk::Box) -> Box<dyn Fn(&gtk::Button)>,
     {
         let mut main_box = gui.main_box.clone();
         let mut edit_account = gui.edit_account.clone();
