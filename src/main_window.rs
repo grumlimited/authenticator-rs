@@ -63,7 +63,6 @@ impl MainWindow {
         &state.groups
     }
 
-    // Set up naming for the window and show it to the user.
     pub fn start(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| {
@@ -75,9 +74,7 @@ impl MainWindow {
 
         let state = self.state.clone();
         let mut state = state.lock().unwrap();
-        let mut state = state.get_mut();
-
-
+        let state = state.get_mut();
 
         match state.state_rs {
             StateRs::MainAccounts => {
@@ -88,9 +85,9 @@ impl MainWindow {
         }
 
         let mut main_box = self.main_box.lock().unwrap();
-        let mut main_box = main_box.get_mut();
+        let main_box = main_box.get_mut();
         let mut progress_bar = self.progress_bar.lock().unwrap();
-        let mut progress_bar = progress_bar.get_mut();
+        let progress_bar = progress_bar.get_mut();
 
         main_box.show();
         progress_bar.show();
