@@ -1,11 +1,11 @@
 use crate::main_window::MainWindow;
+use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
 use gtk::Builder;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-use crate::model::AccountGroupWidgets;
 
 pub struct AccountsWindow {
     pub main_box: gtk::Box,
