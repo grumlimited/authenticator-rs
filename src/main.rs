@@ -73,8 +73,8 @@ fn edit_buttons_actions(gui: &mut MainWindow) {
             let id = account_widgets.id.clone();
             let popover = account_widgets.popover.clone();
 
-            let mut main_box = gui.main_box.clone();
-            let mut edit_account = gui.edit_account.clone();
+            let main_box = gui.main_box.clone();
+            let edit_account = gui.edit_account.clone();
 
             account_widgets.edit_button.connect_clicked(move |x| {
                 popover.hide();

@@ -31,8 +31,8 @@ impl EditAccountWindow {
             where
                 F: 'static + Fn(gtk::Entry, gtk::Entry, gtk::Entry, gtk::Box, gtk::Box) -> Box<dyn Fn(&gtk::Button)>,
         {
-            let mut main_box = gui.main_box.clone();
-            let mut edit_account = gui.edit_account.clone();
+            let main_box = gui.main_box.clone();
+            let edit_account = gui.edit_account.clone();
 
             let group = gui.edit_account_window.edit_account_input_group.clone();
             let name = gui.edit_account_window.edit_account_input_name.clone();
