@@ -10,7 +10,6 @@ use std::sync::{Arc, Mutex};
 
 use std::collections::HashMap;
 
-// Declare a new thread local storage key
 thread_local!(
     static GLOBAL: RefCell<HashMap<u32, Option<String>>> = RefCell::new(HashMap::new())
 );
@@ -21,7 +20,7 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
-    gtk_label: Arc<Mutex<RefCell<gtk::Label>>>,
+    gtk_label: gtk::Label,
 }
 
 impl Account {
@@ -40,13 +39,11 @@ impl Account {
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            gtk_label: Arc::new(Mutex::new(RefCell::new(
-                gtk::LabelBuilder::new()
-                    .label(totp)
-                    .width_chars(8)
-                    .single_line_mode(true)
-                    .build(),
-            ))),
+            gtk_label: gtk::LabelBuilder::new()
+                .label(totp)
+                .width_chars(8)
+                .single_line_mode(true)
+                .build(),
         }
     }
 
@@ -55,17 +52,13 @@ impl Account {
         let totp = Self::generate_time_based_password(key).unwrap();
         let totp2 = totp.clone();
 
-        let l = self.gtk_label.clone();
-        let mut l = l.lock().unwrap();
-        let mut l = l.get_mut();
-
         GLOBAL.with(|global| {
             println!("{:?}", global);
             let mut r = global.borrow_mut();
             r.insert(self.id.clone(), Some(totp2));
         });
 
-        l.set_label(totp.as_str());
+        self.gtk_label.set_label(totp.as_str());
     }
 
     pub fn widget(&self) -> gtk::Grid {
@@ -121,20 +114,23 @@ impl Account {
             popover.show_all();
         });
 
+        let id = self.id;
+
         copy_button.connect_clicked(move |copy_button| {
-            GLOBAL.with(|global| println!("{:?}", global));
+            GLOBAL.with(|global| {
+                println!("{:?}", global);
+                let mut r = global.borrow_mut();
 
-            // let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-
-            // clipboard.set_text(self.gtk_label.get_label());
+                let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+                let option = r.get(&id).clone();
+                let x1 = option.unwrap().clone();
+                let x = x1.unwrap();
+                clipboard.set_text(x.as_str());
+            });
         });
 
-        let l = self.gtk_label.clone();
-        let mut l = l.lock().unwrap();
-        let mut l = l.get_mut();
-
         grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(l, 1, 0, 1, 1);
+        grid.attach(&self.gtk_label, 1, 0, 1, 1);
         grid.attach(&copy_button, 2, 0, 1, 1);
         grid.attach(&menu, 3, 0, 1, 1);
 
