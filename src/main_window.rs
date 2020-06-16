@@ -73,6 +73,12 @@ impl MainWindow {
 
         self.window.show_all();
 
+        self.start_progress_bar();
+
+        self.window.show_all();
+    }
+
+    fn start_progress_bar(&mut self) {
         let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
         let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
 
@@ -97,8 +103,6 @@ impl MainWindow {
 
             glib::Continue(true)
         });
-
-        self.window.show_all();
     }
 }
 
