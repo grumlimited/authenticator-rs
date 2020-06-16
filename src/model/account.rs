@@ -20,6 +20,7 @@ pub struct AccountWidgets {
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
+    pub popover: gtk::PopoverMenu,
 }
 
 impl Account {
@@ -73,10 +74,6 @@ impl Account {
 
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
-        edit_button.connect_clicked(move |x| {
-            println!("{:?}", x);
-        });
-
         let delete_button = gtk::ButtonBuilder::new().label("Delete").build();
 
         let buttons_container = gtk::BoxBuilder::new()
@@ -87,6 +84,7 @@ impl Account {
         buttons_container.pack_start(&delete_button, false, false, 0);
 
         let popover = gtk::PopoverMenuBuilder::new().build();
+        let popover_clone = popover.clone();
 
         popover.add(&buttons_container);
 
@@ -134,6 +132,7 @@ impl Account {
             grid: grid.clone(),
             edit_button: edit_button.clone(),
             delete_button: delete_button.clone(),
+            popover: popover_clone,
         }
     }
 

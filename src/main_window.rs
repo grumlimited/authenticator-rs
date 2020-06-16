@@ -18,7 +18,7 @@ pub struct MainWindow {
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
-    widgets: Vec<AccountGroupWidgets>,
+    pub widgets: Vec<AccountGroupWidgets>,
 }
 
 impl MainWindow {

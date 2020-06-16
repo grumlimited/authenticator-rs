@@ -57,6 +57,20 @@ fn main() {
         gui.display(group_clone);
 
         gui.set_application(&app);
+
+        let mut buttons = gui.edit_buttons();
+
+        for b in &mut gui.widgets {
+            for c in &mut b.account_widgets {
+                let id = c.id.clone();
+                let popover = c.popover.clone();
+                c.edit_button.connect_clicked(move |x| {
+                    popover.hide();
+                    println!("account id {}", id);
+                });
+            }
+        }
+
     });
 
     application.run(&[]);
