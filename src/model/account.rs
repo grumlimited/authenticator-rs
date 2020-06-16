@@ -16,6 +16,7 @@ pub struct Account {
 }
 
 pub struct AccountWidgets {
+    pub id: u32,
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
@@ -129,6 +130,7 @@ impl Account {
         grid.attach(&menu, 3, 0, 1, 1);
 
         AccountWidgets {
+            id: self.id.clone(),
             grid: grid.clone(),
             edit_button: edit_button.clone(),
             delete_button: delete_button.clone(),

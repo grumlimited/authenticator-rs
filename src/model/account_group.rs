@@ -10,6 +10,7 @@ pub struct AccountGroup {
 }
 
 pub struct AccountGroupWidgets {
+    pub id: u32,
     pub container: gtk::Box,
     pub account_widgets: Vec<AccountWidgets>,
 }
@@ -60,6 +61,7 @@ impl AccountGroup {
         group.add(&accounts);
 
         AccountGroupWidgets {
+            id: self.id.clone(),
             container: group.clone(),
             account_widgets,
         }
