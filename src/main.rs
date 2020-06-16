@@ -12,6 +12,7 @@ use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use gio::prelude::*;
 use gtk::prelude::*;
+use gtk::{Button, Entry};
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
@@ -59,9 +60,71 @@ fn main() {
         gui.set_application(&app);
 
         edit_buttons_actions(&mut gui);
+        edit_account_buttons_actions(&mut gui);
     });
 
     application.run(&[]);
+}
+
+fn edit_account_buttons_actions(gui: &mut MainWindow) {
+    fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, f: F)
+    where
+        F: 'static
+            + Fn(
+                Entry,
+                Entry,
+                Entry,
+                Arc<Mutex<RefCell<gtk::Box>>>,
+                Arc<Mutex<RefCell<gtk::Box>>>,
+            ) -> Box<dyn Fn(&gtk::Button)>,
+    {
+        let mut main_box = gui.main_box.clone();
+        let mut edit_account = gui.edit_account.clone();
+
+        let group = gui.edit_account_window.edit_account_input_group.clone();
+        let name = gui.edit_account_window.edit_account_input_name.clone();
+        let secret = gui.edit_account_window.edit_account_input_secret.clone();
+
+        let f2 = Box::new(f(group, name, secret, main_box, edit_account));
+
+        b.connect_clicked(f2);
+    }
+
+    let edit_account_cancel = gui.edit_account_window.edit_account_cancel.clone();
+    with_action(
+        gui,
+        edit_account_cancel,
+        |group, name, secret, main_box, edit_account| {
+            Box::new(move |_| {
+                let mut main_box = main_box.lock().unwrap();
+                let main_box = main_box.get_mut();
+
+                let mut edit_account = edit_account.lock().unwrap();
+                let edit_account = edit_account.get_mut();
+
+                main_box.set_visible(true);
+                edit_account.set_visible(false);
+            })
+        },
+    );
+
+    let edit_account_save = gui.edit_account_window.edit_account_save.clone();
+    with_action(
+        gui,
+        edit_account_save,
+        |group, name, secret, main_box, edit_account| {
+            Box::new(move |_| {
+                let mut main_box = main_box.lock().unwrap();
+                let main_box = main_box.get_mut();
+
+                let mut edit_account = edit_account.lock().unwrap();
+                let edit_account = edit_account.get_mut();
+
+                let entry = group.get_buffer().get_text();
+                println!("{:?}", entry);
+            })
+        },
+    );
 }
 
 fn edit_buttons_actions(gui: &mut MainWindow) {

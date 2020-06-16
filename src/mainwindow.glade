@@ -247,7 +247,7 @@
                 <property name="column_homogeneous">True</property>
                 <child>
                   <object class="GtkButton" id="edit_account_cancel">
-                    <property name="label" translatable="yes">button</property>
+                    <property name="label" translatable="yes">Cancel</property>
                     <property name="name">edit_account_cancel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

@@ -1,5 +1,3 @@
-use crate::state::{State, StateRs};
-
 use gtk::prelude::*;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -9,10 +7,9 @@ use chrono::prelude::*;
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use glib::Sender;
-use rusqlite::Connection;
-use std::borrow::BorrowMut;
-use std::{thread, time};
 use gtk::Builder;
+use rusqlite::Connection;
+use std::{thread, time};
 
 pub struct EditAccountWindow {
     pub edit_account: gtk::Box,
@@ -61,7 +58,7 @@ impl MainWindow {
             stack: Arc::new(Mutex::new(RefCell::new(stack))),
             accounts_container,
             widgets: vec![],
-            edit_account_window: Self::create_edit_account_window(builder)
+            edit_account_window: Self::create_edit_account_window(builder),
         }
     }
 
@@ -96,8 +93,6 @@ impl MainWindow {
 
         let mut stack = self.stack.lock().unwrap();
         let stack = stack.get_mut();
-
-
 
         main_box.show();
         progress_bar.show();
