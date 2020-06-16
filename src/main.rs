@@ -58,17 +58,15 @@ fn main() {
 
         gui.set_application(&app);
 
-        let mut buttons = gui.edit_buttons();
-
-        for b in &mut gui.widgets {
-            for c in &mut b.account_widgets {
-                let id = c.id.clone();
-                let popover = c.popover.clone();
+        for group_widgets in &mut gui.widgets {
+            for account_widgets in &mut group_widgets.account_widgets {
+                let id = account_widgets.id.clone();
+                let popover = account_widgets.popover.clone();
 
                 let mut main_box = gui.main_box.clone();
                 let mut edit_account = gui.edit_account.clone();
 
-                c.edit_button.connect_clicked(move |x| {
+                account_widgets.edit_button.connect_clicked(move |x| {
                     let mut main_box = main_box.lock().unwrap();
                     let main_box = main_box.get_mut();
 
