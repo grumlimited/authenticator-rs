@@ -25,10 +25,6 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn reset_form(&mut self) {
-        self.edit_account_input_group.set_text("");
-    }
-
     pub fn edit_account_buttons_actions(gui: &mut MainWindow) {
         fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
         where
@@ -60,6 +56,10 @@ impl EditAccountWindow {
             edit_account_cancel,
             |group, name, secret, main_box, edit_account| {
                 Box::new(move |_| {
+                    group.set_text("");
+                    name.set_text("");
+                    secret.set_text("");
+
                     main_box.set_visible(true);
                     edit_account.set_visible(false);
                 })
