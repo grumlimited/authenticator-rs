@@ -19,6 +19,7 @@
   </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can_focus">False</property>
+    <property name="default_width">250</property>
     <property name="default_height">450</property>
     <child>
       <object class="GtkStack" id="stack">
@@ -146,9 +147,11 @@
                     <property name="row_spacing">25</property>
                     <property name="column_spacing">25</property>
                     <child>
-                      <object class="GtkLabel" id="label1">
+                      <object class="GtkLabel" id="edit_account_label_group">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Group</property>
                       </object>
                       <packing>
@@ -157,9 +160,10 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label2">
+                      <object class="GtkLabel" id="edit_account_label_name">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Name</property>
                       </object>
                       <packing>
@@ -168,9 +172,10 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label3">
+                      <object class="GtkLabel" id="edit_account_label_secret">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Secret</property>
                       </object>
                       <packing>
@@ -179,11 +184,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry1">
+                      <object class="GtkEntry" id="edit_account_input_group">
+                        <property name="height_request">35</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="activates_default">True</property>
                         <property name="width_chars">0</property>
+                        <property name="max_width_chars">20</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -191,7 +198,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry2">
+                      <object class="GtkEntry" id="edit_account_input_name">
+                        <property name="height_request">35</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                       </object>
@@ -201,7 +209,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry3">
+                      <object class="GtkEntry" id="edit_account_input_secret">
+                        <property name="height_request">35</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">6</property>
@@ -237,8 +246,9 @@
                 <property name="margin_top">20</property>
                 <property name="column_homogeneous">True</property>
                 <child>
-                  <object class="GtkButton">
+                  <object class="GtkButton" id="edit_account_cancel">
                     <property name="label" translatable="yes">button</property>
+                    <property name="name">edit_account_cancel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -254,8 +264,9 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton">
+                  <object class="GtkButton" id="edit_account_save">
                     <property name="label" translatable="yes">Save</property>
+                    <property name="name">edit_account_save</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -292,16 +303,16 @@
   </object>
   <object class="GtkSizeGroup" id="add_account_inputs">
     <widgets>
-      <widget name="entry1"/>
-      <widget name="entry2"/>
-      <widget name="entry3"/>
+      <widget name="edit_account_input_group"/>
+      <widget name="edit_account_input_name"/>
+      <widget name="edit_account_input_secret"/>
     </widgets>
   </object>
   <object class="GtkSizeGroup" id="add_account_labels">
     <widgets>
-      <widget name="label1"/>
-      <widget name="label2"/>
-      <widget name="label3"/>
+      <widget name="edit_account_label_group"/>
+      <widget name="edit_account_label_name"/>
+      <widget name="edit_account_label_secret"/>
     </widgets>
   </object>
 </interface>
