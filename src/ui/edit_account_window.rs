@@ -25,6 +25,10 @@ impl EditAccountWindow {
         }
     }
 
+    pub fn reset_form(&mut self) {
+        self.edit_account_input_group.set_text("");
+    }
+
     pub fn edit_account_buttons_actions(gui: &mut MainWindow) {
         fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
         where
