@@ -8,11 +8,8 @@ use gtk::Orientation;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
+use glib::clone;
 use std::collections::HashMap;
-
-thread_local!(
-    static GLOBAL: RefCell<HashMap<u32, Option<String>>> = RefCell::new(HashMap::new())
-);
 
 #[derive(Debug, Clone)]
 pub struct Account {
@@ -27,11 +24,6 @@ impl Account {
     pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
         let string = Self::generate_time_based_password(secret).unwrap();
         let totp = string.as_str();
-
-        GLOBAL.with(move |global| {
-            let mut totps_map = global.borrow_mut();
-            totps_map.insert(id, Some(totp.to_owned()));
-        });
 
         Account {
             id,
@@ -49,11 +41,6 @@ impl Account {
     pub fn update(&mut self) {
         let key = self.secret.as_str();
         let totp = Self::generate_time_based_password(key).unwrap();
-
-        GLOBAL.with(|global| {
-            let mut totps_map = global.borrow_mut();
-            totps_map.insert(self.id, Some(totp.to_owned()));
-        });
 
         self.gtk_label.set_label(totp.as_str());
     }
@@ -111,22 +98,19 @@ impl Account {
             popover.show_all();
         });
 
-        let id = self.id;
+        let totp_label_clone = self.gtk_label.clone();
 
-        copy_button.connect_clicked(move |copy_button| {
+        copy_button.connect_clicked(move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+            let option = totp_label_clone.get_label();
 
-            GLOBAL.with(|global| {
-                let totps_map = global.borrow();
+            match option {
+                Some(v) =>{
+                    clipboard.set_text(v.as_str())
+                },
+                None =>{},
+            }
 
-                match totps_map.get(&id) {
-                    Some(v) => match v {
-                        Some(v) => clipboard.set_text(v.as_str()),
-                        None => {}
-                    },
-                    None => {}
-                }
-            });
         });
 
         grid.attach(&label, 0, 0, 1, 1);
