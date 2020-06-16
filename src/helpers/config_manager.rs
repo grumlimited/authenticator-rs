@@ -111,8 +111,8 @@ impl ConfigManager {
                 .query_map(params![group_id], |row| {
                     let label = row.get_unwrap::<usize, String>(1);
                     let secret = row.get_unwrap::<usize, String>(3);
-                    let mut account = Account::new(group_id, label.as_str(), secret.as_str());
-                    account.id = row.get(0)?;
+                    let id = row.get(0)?;
+                    let account = Account::new(id, group_id, label.as_str(), secret.as_str());
 
                     Ok(account)
                 })
@@ -151,9 +151,9 @@ impl ConfigManager {
                         .query_map(params![group_id], |row| {
                             let label = row.get_unwrap::<usize, String>(1);
                             let secret = row.get_unwrap::<usize, String>(3);
-                            let mut account =
-                                Account::new(group_id, label.as_str(), secret.as_str());
-                            account.id = row.get(0)?;
+                            let id = row.get(0)?;
+                            let account =
+                                Account::new(id, group_id, label.as_str(), secret.as_str());
 
                             Ok(account)
                         })
@@ -239,13 +239,13 @@ impl ConfigManager {
             .unwrap();
 
         stmt.query_row(params![account_id], |row| {
-            let id: u32 = row.get(0)?;
             let group_id: u32 = row.get(1)?;
             let label: String = row.get(2)?;
             let secret: String = row.get(3)?;
+            let id = row.get(0)?;
 
-            let mut account = Account::new(group_id, label.as_str(), secret.as_str());
-            account.id = id;
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
+
             Ok(account)
         })
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
@@ -276,8 +276,7 @@ impl ConfigManager {
             let label: String = row.get(1)?;
             let secret: String = row.get(2)?;
 
-            let mut account = Account::new(group_id, label.as_str(), secret.as_str());
-            account.id = id;
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())

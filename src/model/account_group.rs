@@ -2,7 +2,7 @@ use crate::model::Account;
 use gtk::prelude::*;
 use gtk::{Align, Orientation};
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default)]
 pub struct AccountGroup {
     pub id: u32,
     pub name: String,

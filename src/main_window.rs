@@ -94,7 +94,7 @@ impl MainWindow {
 
             if second == 29 || second == 0 {
                 let mut state = state.lock().unwrap();
-                let mut state = state.get_mut();
+                let state = state.get_mut();
                 state.groups.iter_mut().for_each(|group| group.update());
             }
 

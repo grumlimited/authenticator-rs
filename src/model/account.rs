@@ -5,35 +5,67 @@ use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
 use gtk::Orientation;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone, PartialEq)]
+use std::collections::HashMap;
+
+// Declare a new thread local storage key
+thread_local!(
+    static GLOBAL: RefCell<HashMap<u32, Option<String>>> = RefCell::new(HashMap::new())
+);
+
+#[derive(Debug, Clone)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,
     pub label: String,
     pub secret: String,
-    gtk_label: gtk::Label,
+    gtk_label: Arc<Mutex<RefCell<gtk::Label>>>,
 }
 
 impl Account {
-    pub fn new(group_id: u32, label: &str, secret: &str) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
+        let string = Self::generate_time_based_password(secret).unwrap();
+        let totp = string.as_str();
+        let totp2 = totp.to_owned().clone();
+
+        GLOBAL.with(move |global| {
+            let mut r = global.borrow_mut();
+            r.insert(id, Some(totp2));
+        });
+
         Account {
-            id: 0,
+            id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            gtk_label: gtk::LabelBuilder::new()
-                .label(Self::generate_time_based_password(secret).unwrap().as_str())
-                .width_chars(8)
-                .single_line_mode(true)
-                .build(),
+            gtk_label: Arc::new(Mutex::new(RefCell::new(
+                gtk::LabelBuilder::new()
+                    .label(totp)
+                    .width_chars(8)
+                    .single_line_mode(true)
+                    .build(),
+            ))),
         }
     }
 
     pub fn update(&mut self) {
         let key = self.secret.as_str();
         let totp = Self::generate_time_based_password(key).unwrap();
-        self.gtk_label.set_label(totp.as_str());
+        let totp2 = totp.clone();
+
+        let l = self.gtk_label.clone();
+        let mut l = l.lock().unwrap();
+        let mut l = l.get_mut();
+
+        GLOBAL.with(|global| {
+            println!("{:?}", global);
+            let mut r = global.borrow_mut();
+            r.insert(self.id.clone(), Some(totp2));
+        });
+
+        l.set_label(totp.as_str());
     }
 
     pub fn widget(&self) -> gtk::Grid {
@@ -63,23 +95,18 @@ impl Account {
             .always_show_image(true)
             .build();
 
-        let edit_button = gtk::ButtonBuilder::new()
-            .label("Edit")
-            .build();
+        let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
-        let delete_button = gtk::ButtonBuilder::new()
-            .label("Delete")
-            .build();
+        let delete_button = gtk::ButtonBuilder::new().label("Delete").build();
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)
             .build();
 
-        buttons_container.add(&edit_button);
-        buttons_container.add(&delete_button);
+        buttons_container.pack_start(&edit_button, false, false, 0);
+        buttons_container.pack_start(&delete_button, false, false, 0);
 
-        let popover = gtk::PopoverMenuBuilder::new()
-            .build();
+        let popover = gtk::PopoverMenuBuilder::new().build();
 
         popover.add(&buttons_container);
 
@@ -94,8 +121,20 @@ impl Account {
             popover.show_all();
         });
 
+        copy_button.connect_clicked(move |copy_button| {
+            GLOBAL.with(|global| println!("{:?}", global));
+
+            // let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+
+            // clipboard.set_text(self.gtk_label.get_label());
+        });
+
+        let l = self.gtk_label.clone();
+        let mut l = l.lock().unwrap();
+        let mut l = l.get_mut();
+
         grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(&self.gtk_label, 1, 0, 1, 1);
+        grid.attach(l, 1, 0, 1, 1);
         grid.attach(&copy_button, 2, 0, 1, 1);
         grid.attach(&menu, 3, 0, 1, 1);
 

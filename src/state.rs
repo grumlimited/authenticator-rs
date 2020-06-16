@@ -1,6 +1,6 @@
 use crate::model::AccountGroup;
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, Default)]
 pub struct State {
     pub groups: Vec<AccountGroup>,
 }
