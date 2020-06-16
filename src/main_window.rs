@@ -7,18 +7,17 @@ use std::sync::{Arc, Mutex};
 use chrono::prelude::*;
 
 use crate::helpers::ConfigManager;
+use crate::model::{AccountGroup, AccountGroupWidgets};
 use glib::Sender;
 use rusqlite::Connection;
+use std::borrow::BorrowMut;
 use std::{thread, time};
-use crate::model::AccountGroup;
 
 pub struct MainWindow {
-    state: Arc<Mutex<RefCell<State>>>,
     window: gtk::ApplicationWindow,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
-    connection: Arc<Mutex<Connection>>,
 }
 
 impl MainWindow {
@@ -35,37 +34,16 @@ impl MainWindow {
 
         progress_bar.set_fraction(progress_bar_fraction());
 
-        let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
-
-        let mut state = State::new();
-
-        {
-            let connection = connection.clone();
-            let mut connection = connection.lock().unwrap();
-            Self::fetch_accounts(&mut state, &mut connection);
-        }
-
-        let m = MainWindow {
-            state: Arc::new(Mutex::new(RefCell::new(state))),
+        MainWindow {
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
-            connection,
-        };
-
-        m
+        }
     }
 
-    pub fn fetch_accounts<'a>(
-        state: &'a mut State,
-        conn: &mut Connection,
-    ) -> &'a Vec<AccountGroup> {
-        let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
-
-        state.add_groups(groups);
-
-        &state.groups
+    pub fn fetch_accounts(conn: &mut Connection) -> Vec<AccountGroup> {
+        ConfigManager::load_account_groups(&conn).unwrap()
     }
 
     pub fn set_application(&mut self, application: &gtk::Application) {
@@ -74,10 +52,6 @@ impl MainWindow {
             gtk::main_quit();
             Inhibit(false)
         });
-
-        self.start_progress_bar();
-
-        self.display();
 
         let mut main_box = self.main_box.lock().unwrap();
         let main_box = main_box.get_mut();
@@ -90,21 +64,21 @@ impl MainWindow {
         self.window.show();
     }
 
-    pub fn display(&mut self) {
-        let state = self.state.clone();
-        let mut state = state.lock().unwrap();
-        let state = state.get_mut();
+    pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
+        let groups = groups.clone();
+        let mut guard = groups.lock().unwrap();
+        let groups = guard.get_mut();
 
-        match state.state_rs {
-            StateRs::MainAccounts => {
-                let widgets: Vec<gtk::Box> = state.groups.iter_mut().map(|v| v.widget()).collect();
-                widgets.iter().for_each(|w| self.accounts_container.add(w));
-                self.accounts_container.show_all();
-            }
-        }
+        let widgets: Vec<AccountGroupWidgets> = groups
+            .iter_mut()
+            .map(|account_group| account_group.widget())
+            .collect();
+
+        widgets.iter().for_each(|w| self.accounts_container.add(&w.container));
+        self.accounts_container.show_all();
     }
 
-    fn start_progress_bar(&mut self) {
+    pub fn start_progress_bar(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
         let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
         let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
 
@@ -112,7 +86,7 @@ impl MainWindow {
 
         let pb = self.progress_bar.clone();
 
-        let state = self.state.clone();
+        let groups = groups.clone();
 
         rx.attach(None, move |second| {
             let mut guard = pb.lock().unwrap();
@@ -122,9 +96,10 @@ impl MainWindow {
             progress_bar.set_fraction(fraction);
 
             if second == 29 || second == 0 {
-                let mut state = state.lock().unwrap();
-                let state = state.get_mut();
-                state.groups.iter_mut().for_each(|group| group.update());
+                let mut guard = groups.lock().unwrap();
+                let groups = guard.get_mut();
+
+                groups.iter_mut().for_each(|group| group.update());
             }
 
             glib::Continue(true)

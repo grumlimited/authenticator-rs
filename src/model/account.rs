@@ -15,6 +15,12 @@ pub struct Account {
     gtk_label: Option<gtk::Label>,
 }
 
+pub struct AccountWidgets {
+    pub grid: gtk::Grid,
+    pub edit_button: gtk::Button,
+    pub delete_button: gtk::Button,
+}
+
 impl Account {
     pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
         Account {
@@ -37,7 +43,7 @@ impl Account {
         }
     }
 
-    pub fn widget(&mut self) -> gtk::Grid {
+    pub fn widget(&mut self) -> AccountWidgets {
         let grid = gtk::GridBuilder::new()
             .visible(true)
             .margin_start(10)
@@ -122,7 +128,11 @@ impl Account {
         grid.attach(&copy_button, 2, 0, 1, 1);
         grid.attach(&menu, 3, 0, 1, 1);
 
-        grid
+        AccountWidgets {
+            grid: grid.clone(),
+            edit_button: edit_button.clone(),
+            delete_button: delete_button.clone(),
+        }
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {

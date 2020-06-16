@@ -1,4 +1,4 @@
-use crate::model::Account;
+use crate::model::{Account, AccountWidgets};
 use gtk::prelude::*;
 use gtk::{Align, Orientation};
 
@@ -7,6 +7,11 @@ pub struct AccountGroup {
     pub id: u32,
     pub name: String,
     pub entries: Vec<Account>,
+}
+
+pub struct AccountGroupWidgets {
+    pub container: gtk::Box,
+    pub account_widgets: Vec<AccountWidgets>,
 }
 
 impl AccountGroup {
@@ -22,7 +27,7 @@ impl AccountGroup {
         self.entries.iter_mut().for_each(|x| x.update());
     }
 
-    pub fn widget(&mut self) -> gtk::Box {
+    pub fn widget(&mut self) -> AccountGroupWidgets {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
 
         let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
@@ -42,13 +47,22 @@ impl AccountGroup {
         accounts.set_margin_start(5);
         accounts.set_margin_end(5);
 
-        for account in &mut self.entries {
-            accounts.add(&account.widget());
-        }
+        let account_widgets: Vec<AccountWidgets> = self
+            .entries
+            .iter_mut()
+            .map(|c| {
+                let w = c.widget();
+                accounts.add(&w.grid);
+                w
+            })
+            .collect();
 
         group.add(&accounts);
 
-        group
+        AccountGroupWidgets {
+            container: group.clone(),
+            account_widgets,
+        }
     }
 
     pub fn sort(entries: &mut Vec<Account>) {

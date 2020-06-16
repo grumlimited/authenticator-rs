@@ -14,8 +14,7 @@ impl Default for StateRs {
 }
 
 #[derive(Debug, Default)]
-pub struct  State {
-    pub groups: Vec<AccountGroup>,
+pub struct State {
     pub state_rs: StateRs,
 }
 
@@ -25,9 +24,5 @@ impl State {
             state_rs: StateRs::MainAccounts,
             ..State::default()
         }
-    }
-
-    pub fn add_groups(&mut self, groups: Vec<AccountGroup>) {
-        self.groups = groups
     }
 }
