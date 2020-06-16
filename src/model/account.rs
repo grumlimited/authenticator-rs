@@ -63,25 +63,25 @@ impl Account {
             .always_show_image(true)
             .build();
 
-        let button1 = gtk::ButtonBuilder::new()
+        let edit_button = gtk::ButtonBuilder::new()
             .label("Edit")
             .build();
 
-        let button2 = gtk::ButtonBuilder::new()
+        let delete_button = gtk::ButtonBuilder::new()
             .label("Delete")
             .build();
 
-        let mbox = gtk::BoxBuilder::new()
+        let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)
             .build();
 
-        popover.add(&mbox);
-
-        mbox.add(&button1);
-        mbox.add(&button2);
+        buttons_container.add(&edit_button);
+        buttons_container.add(&delete_button);
 
         let popover = gtk::PopoverMenuBuilder::new()
             .build();
+
+        popover.add(&buttons_container);
 
         let menu = gtk::MenuButtonBuilder::new()
             .margin_start(5)
@@ -90,7 +90,7 @@ impl Account {
             .popover(&popover)
             .build();
 
-        menu.connect_clicked(move |x| {
+        menu.connect_clicked(move |menu_button| {
             popover.show_all();
         });
 
