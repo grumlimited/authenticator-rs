@@ -14,7 +14,7 @@ use gio::prelude::*;
 use gtk::prelude::*;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-use crate::ui::EditAccountWindow;
+use crate::ui::{EditAccountWindow, AccountsWindow};
 
 mod helpers;
 mod model;
@@ -60,27 +60,10 @@ fn main() {
 
         gui.set_application(&app);
 
-        edit_buttons_actions(&mut gui);
+        AccountsWindow::edit_buttons_actions(&mut gui);
         EditAccountWindow::edit_account_buttons_actions(&mut gui);
     });
 
     application.run(&[]);
 }
 
-fn edit_buttons_actions(gui: &mut MainWindow) {
-    for group_widgets in &mut gui.widgets {
-        for account_widgets in &mut group_widgets.account_widgets {
-            let id = account_widgets.id.clone();
-            let popover = account_widgets.popover.clone();
-
-            let main_box = gui.main_box.clone();
-            let edit_account = gui.edit_account.clone();
-
-            account_widgets.edit_button.connect_clicked(move |x| {
-                popover.hide();
-                main_box.set_visible(false);
-                edit_account.set_visible(true);
-            });
-        }
-    }
-}

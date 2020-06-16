@@ -15,11 +15,6 @@ use crate::ui::{EditAccountWindow, AccountsWindow};
 
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
-
-    pub main_box: gtk::Box,
-    pub edit_account: gtk::Box,
-    stack: gtk::Stack,
-    accounts_container: gtk::Box,
     pub widgets: Vec<AccountGroupWidgets>,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
@@ -35,17 +30,8 @@ impl MainWindow {
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
 
-        let main_box: gtk::Box = builder.get_object("main_box").unwrap();
-        let edit_account: gtk::Box = builder.get_object("edit_account").unwrap();
-        let stack: gtk::Stack = builder.get_object("stack").unwrap();
-        let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
-
         MainWindow {
             window,
-            main_box,
-            edit_account,
-            stack,
-            accounts_container,
             widgets: vec![],
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
@@ -66,9 +52,9 @@ impl MainWindow {
         let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
         let progress_bar = progress_bar.get_mut();
 
-        self.main_box.show();
+        self.accounts_window.main_box.show();
         progress_bar.show();
-        self.stack.show();
+        self.accounts_window.stack.show();
 
         self.window.show();
     }
@@ -96,10 +82,10 @@ impl MainWindow {
 
         widgets
             .iter()
-            .for_each(|w| self.accounts_container.add(&w.container));
+            .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
 
         self.widgets = widgets;
-        self.accounts_container.show_all();
+        self.accounts_window.accounts_container.show_all();
     }
 
     pub fn start_progress_bar(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
