@@ -1,10 +1,10 @@
 use crate::model::AccountGroup;
-use std::fmt::Debug;
 use serde::export::Formatter;
+use std::fmt::Debug;
 
 #[derive(Debug)]
 pub enum StateRs {
-    MainAccounts
+    MainAccounts,
 }
 
 impl Default for StateRs {
@@ -14,7 +14,7 @@ impl Default for StateRs {
 }
 
 #[derive(Debug, Default)]
-pub struct State {
+pub struct  State {
     pub groups: Vec<AccountGroup>,
     pub state_rs: StateRs,
 }

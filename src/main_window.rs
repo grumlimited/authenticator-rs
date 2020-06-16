@@ -45,17 +45,22 @@ impl MainWindow {
             Self::fetch_accounts(&mut state, &mut connection);
         }
 
-        MainWindow {
+        let m = MainWindow {
             state: Arc::new(Mutex::new(RefCell::new(state))),
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
             connection,
-        }
+        };
+
+        m
     }
 
-    pub fn fetch_accounts<'a>(state: &'a mut State, conn: &mut Connection) -> &'a Vec<AccountGroup> {
+    pub fn fetch_accounts<'a>(
+        state: &'a mut State,
+        conn: &mut Connection,
+    ) -> &'a Vec<AccountGroup> {
         let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
 
         state.add_groups(groups);
@@ -63,7 +68,7 @@ impl MainWindow {
         &state.groups
     }
 
-    pub fn start(&mut self, application: &gtk::Application) {
+    pub fn set_application(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| {
             gtk::main_quit();
@@ -72,6 +77,20 @@ impl MainWindow {
 
         self.start_progress_bar();
 
+        self.display();
+
+        let mut main_box = self.main_box.lock().unwrap();
+        let main_box = main_box.get_mut();
+        let mut progress_bar = self.progress_bar.lock().unwrap();
+        let progress_bar = progress_bar.get_mut();
+
+        main_box.show();
+        progress_bar.show();
+
+        self.window.show();
+    }
+
+    pub fn display(&mut self) {
         let state = self.state.clone();
         let mut state = state.lock().unwrap();
         let state = state.get_mut();
@@ -83,15 +102,6 @@ impl MainWindow {
                 self.accounts_container.show_all();
             }
         }
-
-        let mut main_box = self.main_box.lock().unwrap();
-        let main_box = main_box.get_mut();
-        let mut progress_bar = self.progress_bar.lock().unwrap();
-        let progress_bar = progress_bar.get_mut();
-
-        main_box.show();
-        progress_bar.show();
-        self.window.show();
     }
 
     fn start_progress_bar(&mut self) {

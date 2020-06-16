@@ -170,15 +170,6 @@ impl ConfigManager {
         group.or_else(|_| Self::create_group(conn, group_name))
     }
 
-    pub async fn _async_save_account<'a>(
-        conn: Arc<Mutex<Box<Connection>>>,
-        account: &'a mut Account,
-        group_name: &str,
-    ) -> Result<&'a mut Account, LoadError> {
-        let conn = conn.lock().unwrap();
-        Self::save_account(&conn, account, group_name)
-    }
-
     pub fn save_account<'a>(
         conn: &Connection,
         account: &'a mut Account,

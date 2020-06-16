@@ -32,7 +32,9 @@ impl Account {
 
         let clone = self.gtk_label.clone();
 
-        if let Some(gtk_label) = clone { gtk_label.set_label(totp.as_str()) }
+        if let Some(gtk_label) = clone {
+            gtk_label.set_label(totp.as_str())
+        }
     }
 
     pub fn widget(&mut self) -> gtk::Grid {
@@ -110,7 +112,9 @@ impl Account {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             let option = totp_label_clone.get_label();
 
-            if let Some(v) = option { clipboard.set_text(v.as_str()) }
+            if let Some(v) = option {
+                clipboard.set_text(v.as_str())
+            }
         });
 
         grid.attach(&label, 0, 0, 1, 1);

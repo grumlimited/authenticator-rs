@@ -14,7 +14,7 @@ impl AccountGroup {
         AccountGroup {
             id,
             name: name.to_owned(),
-            entries
+            entries,
         }
     }
 

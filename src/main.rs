@@ -36,7 +36,7 @@ fn main() {
         );
 
         let mut gui = MainWindow::new();
-        gui.start(&app);
+        gui.set_application(&app);
     });
 
     application.run(&[]);
