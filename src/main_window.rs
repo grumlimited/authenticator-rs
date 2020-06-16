@@ -18,6 +18,7 @@ pub struct MainWindow {
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
+    widgets: Vec<AccountGroupWidgets>,
 }
 
 impl MainWindow {
@@ -39,6 +40,7 @@ impl MainWindow {
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
+            widgets: vec![],
         }
     }
 
@@ -74,7 +76,12 @@ impl MainWindow {
             .map(|account_group| account_group.widget())
             .collect();
 
-        widgets.iter().for_each(|w| self.accounts_container.add(&w.container));
+        self.widgets = widgets;
+
+        self.widgets
+            .iter()
+            .for_each(|w| self.accounts_container.add(&w.container));
+
         self.accounts_container.show_all();
     }
 
