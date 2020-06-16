@@ -1,4 +1,4 @@
-use crate::state::State;
+use crate::state::{State, StateRs};
 
 use gtk::prelude::*;
 use std::cell::RefCell;
@@ -10,6 +10,7 @@ use crate::helpers::ConfigManager;
 use glib::Sender;
 use rusqlite::Connection;
 use std::{thread, time};
+use crate::model::AccountGroup;
 
 pub struct MainWindow {
     state: Arc<Mutex<RefCell<State>>>,
@@ -29,16 +30,23 @@ impl MainWindow {
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
-        // let label: gtk::Label = builder.get_object("label1").unwrap();
-        let main_box: gtk::Box = builder.get_object("box").unwrap();
+        let main_box: gtk::Box = builder.get_object("main_box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
 
         progress_bar.set_fraction(progress_bar_fraction());
 
         let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
+        let mut state = State::new();
+
+        {
+            let connection = connection.clone();
+            let mut connection = connection.lock().unwrap();
+            Self::fetch_accounts(&mut state, &mut connection);
+        }
+
         MainWindow {
-            state: Arc::new(Mutex::new(RefCell::new(State::new()))),
+            state: Arc::new(Mutex::new(RefCell::new(state))),
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
@@ -47,18 +55,12 @@ impl MainWindow {
         }
     }
 
-    pub fn fetch_accounts(&mut self) {
-        let conn = self.connection.clone();
-        let conn = conn.lock().unwrap();
+    pub fn fetch_accounts<'a>(state: &'a mut State, conn: &mut Connection) -> &'a Vec<AccountGroup> {
         let mut groups = ConfigManager::load_account_groups(&conn).unwrap();
 
-        let widgets: Vec<gtk::Box> = groups.iter_mut().map(|v| v.widget()).collect();
-
-        widgets.iter().for_each(|w| self.accounts_container.add(w));
-
-        let mut state = self.state.lock().unwrap();
-        let state = state.get_mut();
         state.add_groups(groups);
+
+        &state.groups
     }
 
     // Set up naming for the window and show it to the user.
@@ -70,9 +72,29 @@ impl MainWindow {
         });
 
         self.start_progress_bar();
-        self.fetch_accounts();
 
-        self.window.show_all();
+        let state = self.state.clone();
+        let mut state = state.lock().unwrap();
+        let mut state = state.get_mut();
+
+
+
+        match state.state_rs {
+            StateRs::MainAccounts => {
+                let widgets: Vec<gtk::Box> = state.groups.iter_mut().map(|v| v.widget()).collect();
+                widgets.iter().for_each(|w| self.accounts_container.add(w));
+                self.accounts_container.show_all();
+            }
+        }
+
+        let mut main_box = self.main_box.lock().unwrap();
+        let mut main_box = main_box.get_mut();
+        let mut progress_bar = self.progress_bar.lock().unwrap();
+        let mut progress_bar = progress_bar.get_mut();
+
+        main_box.show();
+        progress_bar.show();
+        self.window.show();
     }
 
     fn start_progress_bar(&mut self) {

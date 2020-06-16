@@ -11,7 +11,7 @@
     <property name="can_focus">False</property>
     <property name="default_height">450</property>
     <child>
-      <object class="GtkBox" id="box">
+      <object class="GtkBox" id="main_box">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
