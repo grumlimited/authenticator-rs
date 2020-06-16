@@ -74,7 +74,7 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
                 Entry,
                 Entry,
                 Entry,
-                Arc<Mutex<RefCell<gtk::Box>>>,
+                gtk::Box,
                 Arc<Mutex<RefCell<gtk::Box>>>,
             ) -> Box<dyn Fn(&gtk::Button)>,
     {
@@ -96,8 +96,6 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
         edit_account_cancel,
         |group, name, secret, main_box, edit_account| {
             Box::new(move |_| {
-                let mut main_box = main_box.lock().unwrap();
-                let main_box = main_box.get_mut();
 
                 let mut edit_account = edit_account.lock().unwrap();
                 let edit_account = edit_account.get_mut();
@@ -114,9 +112,6 @@ fn edit_account_buttons_actions(gui: &mut MainWindow) {
         edit_account_save,
         |group, name, secret, main_box, edit_account| {
             Box::new(move |_| {
-                let mut main_box = main_box.lock().unwrap();
-                let main_box = main_box.get_mut();
-
                 let mut edit_account = edit_account.lock().unwrap();
                 let edit_account = edit_account.get_mut();
 
@@ -137,9 +132,6 @@ fn edit_buttons_actions(gui: &mut MainWindow) {
             let mut edit_account = gui.edit_account.clone();
 
             account_widgets.edit_button.connect_clicked(move |x| {
-                let mut main_box = main_box.lock().unwrap();
-                let main_box = main_box.get_mut();
-
                 let mut edit_account = edit_account.lock().unwrap();
                 let edit_account = edit_account.get_mut();
 

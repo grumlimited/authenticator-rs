@@ -24,7 +24,7 @@ pub struct EditAccountWindow {
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
-    pub main_box: Arc<Mutex<RefCell<gtk::Box>>>,
+    pub main_box: gtk::Box,
     pub edit_account: Arc<Mutex<RefCell<gtk::Box>>>,
     stack: Arc<Mutex<RefCell<gtk::Stack>>>,
     accounts_container: gtk::Box,
@@ -53,7 +53,7 @@ impl MainWindow {
         MainWindow {
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
-            main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
+            main_box: main_box,
             edit_account: Arc::new(Mutex::new(RefCell::new(edit_account))),
             stack: Arc::new(Mutex::new(RefCell::new(stack))),
             accounts_container,
@@ -85,8 +85,7 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        let mut main_box = self.main_box.lock().unwrap();
-        let main_box = main_box.get_mut();
+        let mut main_box = self.main_box.clone();
 
         let mut progress_bar = self.progress_bar.lock().unwrap();
         let progress_bar = progress_bar.get_mut();
