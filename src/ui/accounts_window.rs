@@ -5,6 +5,7 @@ use gtk::prelude::*;
 use gtk::Builder;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
+use crate::model::AccountGroupWidgets;
 
 pub struct AccountsWindow {
     pub main_box: gtk::Box,
@@ -12,6 +13,7 @@ pub struct AccountsWindow {
     pub stack: gtk::Stack,
     pub accounts_container: gtk::Box,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
+    pub widgets: Vec<AccountGroupWidgets>,
 }
 
 impl AccountsWindow {
@@ -30,11 +32,12 @@ impl AccountsWindow {
             stack,
             accounts_container,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
+            widgets: vec![],
         }
     }
 
     pub fn edit_buttons_actions(gui: &mut MainWindow) {
-        for group_widgets in &mut gui.widgets {
+        for group_widgets in &mut gui.accounts_window.widgets {
             for account_widgets in &mut group_widgets.account_widgets {
                 let id = account_widgets.id.clone();
                 let popover = account_widgets.popover.clone();

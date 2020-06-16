@@ -15,7 +15,6 @@ use crate::ui::{AccountsWindow, EditAccountWindow};
 
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
-    pub widgets: Vec<AccountGroupWidgets>,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
 }
@@ -32,7 +31,6 @@ impl MainWindow {
 
         MainWindow {
             window,
-            widgets: vec![],
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
         }
@@ -62,7 +60,7 @@ impl MainWindow {
     pub fn edit_buttons(&mut self) -> Vec<gtk::Button> {
         let mut buttons = Vec::new();
 
-        for group_widgets in &mut self.widgets {
+        for group_widgets in &mut self.accounts_window.widgets {
             for account_widgets in &mut group_widgets.account_widgets {
                 buttons.push(account_widgets.edit_button.clone())
             }
@@ -84,7 +82,7 @@ impl MainWindow {
             .iter()
             .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
 
-        self.widgets = widgets;
+        self.accounts_window.widgets = widgets;
         self.accounts_window.accounts_container.show_all();
     }
 

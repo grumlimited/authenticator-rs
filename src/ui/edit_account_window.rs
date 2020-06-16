@@ -26,7 +26,7 @@ impl EditAccountWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: &mut MainWindow) {
-        fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
+        fn with_action<F>(gui: &mut MainWindow, button: gtk::Button, button_closure: F)
         where
             F: 'static
                 + Fn(
@@ -47,7 +47,7 @@ impl EditAccountWindow {
             let button_closure =
                 Box::new(button_closure(group, name, secret, main_box, edit_account));
 
-            b.connect_clicked(button_closure);
+            button.connect_clicked(button_closure);
         }
 
         let edit_account_cancel = gui.edit_account_window.edit_account_cancel.clone();
