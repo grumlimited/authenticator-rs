@@ -8,8 +8,12 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
+use crate::helpers::ConfigManager;
+use crate::model::AccountGroup;
 use gio::prelude::*;
 use gtk::prelude::*;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 mod helpers;
 mod model;
@@ -36,6 +40,22 @@ fn main() {
         );
 
         let mut gui = MainWindow::new();
+
+        let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
+
+        let mut conn = connection.clone();
+        let mut conn = conn.lock().unwrap();
+        let mut groups = MainWindow::fetch_accounts(&mut conn);
+
+        let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
+            Arc::new(Mutex::new(RefCell::new(groups)));
+
+        let group_clone = groups.clone();
+        gui.start_progress_bar(group_clone);
+
+        let group_clone = groups.clone();
+        gui.display(group_clone);
+
         gui.set_application(&app);
     });
 
