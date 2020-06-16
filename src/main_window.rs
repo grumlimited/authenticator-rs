@@ -17,7 +17,6 @@ pub struct MainWindow {
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     main_box: Arc<Mutex<RefCell<gtk::Box>>>,
     accounts_container: gtk::Box,
-    copy_and_paste: gtk::Image,
     connection: Arc<Mutex<Connection>>,
 }
 
@@ -33,7 +32,6 @@ impl MainWindow {
         // let label: gtk::Label = builder.get_object("label1").unwrap();
         let main_box: gtk::Box = builder.get_object("box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
-        let copy_and_paste: gtk::Image = builder.get_object("copy_and_paste").unwrap();
 
         progress_bar.set_fraction(progress_bar_fraction());
 
@@ -45,7 +43,6 @@ impl MainWindow {
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
-            copy_and_paste,
             connection,
         }
     }

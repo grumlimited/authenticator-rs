@@ -27,11 +27,10 @@ impl Account {
     pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
         let string = Self::generate_time_based_password(secret).unwrap();
         let totp = string.as_str();
-        let totp2 = totp.to_owned().clone();
 
         GLOBAL.with(move |global| {
-            let mut r = global.borrow_mut();
-            r.insert(id, Some(totp2));
+            let mut totps_map = global.borrow_mut();
+            totps_map.insert(id, Some(totp.to_owned()));
         });
 
         Account {
@@ -50,12 +49,10 @@ impl Account {
     pub fn update(&mut self) {
         let key = self.secret.as_str();
         let totp = Self::generate_time_based_password(key).unwrap();
-        let totp2 = totp.clone();
 
         GLOBAL.with(|global| {
-            println!("{:?}", global);
-            let mut r = global.borrow_mut();
-            r.insert(self.id.clone(), Some(totp2));
+            let mut totps_map = global.borrow_mut();
+            totps_map.insert(self.id, Some(totp.to_owned()));
         });
 
         self.gtk_label.set_label(totp.as_str());
@@ -117,15 +114,18 @@ impl Account {
         let id = self.id;
 
         copy_button.connect_clicked(move |copy_button| {
-            GLOBAL.with(|global| {
-                println!("{:?}", global);
-                let mut r = global.borrow_mut();
+            let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
 
-                let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-                let option = r.get(&id).clone();
-                let x1 = option.unwrap().clone();
-                let x = x1.unwrap();
-                clipboard.set_text(x.as_str());
+            GLOBAL.with(|global| {
+                let totps_map = global.borrow();
+
+                match totps_map.get(&id) {
+                    Some(v) => match v {
+                        Some(v) => clipboard.set_text(v.as_str()),
+                        None => {}
+                    },
+                    None => {}
+                }
             });
         });
 
