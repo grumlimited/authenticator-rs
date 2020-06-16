@@ -12,12 +12,13 @@ use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use gio::prelude::*;
 use gtk::prelude::*;
-use gtk::{Button, Entry};
+use gtk::Entry;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 mod helpers;
 mod model;
+mod ui;
 
 const STYLE: &str = include_str!("resources/style.css");
 
