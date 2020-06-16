@@ -16,7 +16,8 @@ use std::{thread, time};
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
-    main_box: Arc<Mutex<RefCell<gtk::Box>>>,
+    pub main_box: Arc<Mutex<RefCell<gtk::Box>>>,
+    pub edit_account: Arc<Mutex<RefCell<gtk::Box>>>,
     stack: Arc<Mutex<RefCell<gtk::Stack>>>,
     accounts_container: gtk::Box,
     pub widgets: Vec<AccountGroupWidgets>,
@@ -32,8 +33,11 @@ impl MainWindow {
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
         let main_box: gtk::Box = builder.get_object("main_box").unwrap();
+        let edit_account: gtk::Box = builder.get_object("edit_account").unwrap();
         let stack: gtk::Stack = builder.get_object("stack").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
+
+        println!("{:?}", stack.get_child_by_name("page0"));
 
         progress_bar.set_fraction(progress_bar_fraction());
 
@@ -41,6 +45,7 @@ impl MainWindow {
             window,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
+            edit_account: Arc::new(Mutex::new(RefCell::new(edit_account))),
             stack: Arc::new(Mutex::new(RefCell::new(stack))),
             accounts_container,
             widgets: vec![],

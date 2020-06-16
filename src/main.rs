@@ -64,9 +64,20 @@ fn main() {
             for c in &mut b.account_widgets {
                 let id = c.id.clone();
                 let popover = c.popover.clone();
+
+                let mut main_box = gui.main_box.clone();
+                let mut edit_account = gui.edit_account.clone();
+
                 c.edit_button.connect_clicked(move |x| {
+                    let mut main_box = main_box.lock().unwrap();
+                    let main_box = main_box.get_mut();
+
+                    let mut edit_account = edit_account.lock().unwrap();
+                    let edit_account = edit_account.get_mut();
+
                     popover.hide();
-                    println!("account id {}", id);
+                    main_box.set_visible(false);
+                    edit_account.set_visible(true);
                 });
             }
         }
