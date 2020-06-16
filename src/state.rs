@@ -7,12 +7,10 @@ pub struct State {
 
 impl State {
     pub fn new() -> Self {
-        Self {
-            ..State::default()
-        }
+        Self { ..State::default() }
     }
 
-    pub fn add_groups(&mut self, groups: Vec<AccountGroup>)  {
+    pub fn add_groups(&mut self, groups: Vec<AccountGroup>) {
         self.groups = groups
     }
 }

@@ -21,7 +21,7 @@ fn main() {
         Some("com.github.gtk-rs.examples.text_viewer"),
         Default::default(),
     )
-        .expect("Initialization failed...");
+    .expect("Initialization failed...");
 
     application.connect_startup(|app| {
         let provider = gtk::CssProvider::new();

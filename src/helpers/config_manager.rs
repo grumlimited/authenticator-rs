@@ -1,7 +1,7 @@
 use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
+use crate::model::{Account, AccountGroup};
 use std::sync::{Arc, Mutex};
-use crate::model::{AccountGroup, Account};
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
@@ -36,7 +36,7 @@ impl ConfigManager {
 
     fn path() -> std::path::PathBuf {
         if let Some(project_dirs) =
-        directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
+            directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
             project_dirs.data_dir().into()
         } else {
@@ -66,8 +66,8 @@ impl ConfigManager {
                 Self::get_accounts(&conn, id)?,
             ))
         })
-            .map(|rows| rows.map(|each| each.unwrap()).collect())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map(|rows| rows.map(|each| each.unwrap()).collect())
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
@@ -122,7 +122,7 @@ impl ConfigManager {
 
             Ok(AccountGroup::new(group_id, group_name.as_str(), accounts))
         })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn get_or_create_group(
@@ -190,7 +190,7 @@ impl ConfigManager {
             "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
             params![account.label, group.id, account.secret],
         )
-            .unwrap();
+        .unwrap();
 
         let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
@@ -211,8 +211,8 @@ impl ConfigManager {
             "UPDATE accounts SET label = ?2, secret = ?3 WHERE id = ?1",
             params![account.id, account.label, account.secret],
         )
-            .map(|_| account)
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map(|_| account)
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     fn init_tables(conn: &Connection) -> Result<usize, rusqlite::Error> {
@@ -225,12 +225,12 @@ impl ConfigManager {
                   )",
             params![],
         )
-            .and(conn.execute(
-                "CREATE TABLE IF NOT EXISTS groups (
+        .and(conn.execute(
+            "CREATE TABLE IF NOT EXISTS groups (
                   id             INTEGER PRIMARY KEY,
                   name           TEXT NOT NULL)",
-                params![],
-            ))
+            params![],
+        ))
     }
 
     pub fn get_account(conn: &Connection, account_id: u32) -> Result<Account, LoadError> {
@@ -248,7 +248,7 @@ impl ConfigManager {
             account.id = id;
             Ok(account)
         })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub async fn async_delete_account<'a>(
@@ -280,7 +280,7 @@ impl ConfigManager {
             account.id = id;
             Ok(account)
         })
-            .map(|rows| rows.map(|row| row.unwrap()).collect())
+        .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 }
 

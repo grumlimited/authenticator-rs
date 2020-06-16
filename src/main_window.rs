@@ -6,10 +6,10 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 
+use crate::helpers::ConfigManager;
 use glib::Sender;
-use std::{thread, time};
-use crate::helpers::{ConfigManager};
 use rusqlite::Connection;
+use std::{thread, time};
 
 pub struct MainWindow {
     state: Arc<Mutex<RefCell<State>>>,
@@ -46,7 +46,7 @@ impl MainWindow {
             main_box: Arc::new(Mutex::new(RefCell::new(main_box))),
             accounts_container,
             copy_and_paste,
-            connection
+            connection,
         }
     }
 
@@ -71,7 +71,6 @@ impl MainWindow {
             gtk::main_quit();
             Inhibit(false)
         });
-
 
         self.add_groups();
 
@@ -109,7 +108,8 @@ impl MainWindow {
 async fn progress_bar_interval(tx: Sender<u8>) {
     loop {
         thread::sleep(time::Duration::from_secs(1));
-        tx.send(chrono::Local::now().second() as u8).expect("Couldn't send data to channel");
+        tx.send(chrono::Local::now().second() as u8)
+            .expect("Couldn't send data to channel");
     }
 }
 

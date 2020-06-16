@@ -1,6 +1,6 @@
 use crate::model::Account;
-use gtk::{Orientation, Align};
 use gtk::prelude::*;
+use gtk::{Align, Orientation};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AccountGroup {
@@ -26,9 +26,7 @@ impl AccountGroup {
     pub fn widget(&self) -> gtk::Box {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
 
-        let group_label = gtk::LabelBuilder::new()
-            .label(self.name.as_str())
-            .build();
+        let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
 
         group_label.set_hexpand(true);
         group_label.set_halign(Align::Start);

@@ -4,8 +4,9 @@ use base32::decode;
 use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
+use gtk::Orientation;
 
-#[derive(Debug, Clone,  PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,
@@ -25,7 +26,7 @@ impl Account {
                 .label(Self::generate_time_based_password(secret).unwrap().as_str())
                 .width_chars(8)
                 .single_line_mode(true)
-                .build()
+                .build(),
         }
     }
 
@@ -36,7 +37,6 @@ impl Account {
     }
 
     pub fn widget(&self) -> gtk::Grid {
-
         let grid = gtk::GridBuilder::new()
             .visible(true)
             .margin_start(10)
@@ -54,8 +54,50 @@ impl Account {
             .xalign(0.05000000074505806_f32)
             .build();
 
+        let image = gtk::ImageBuilder::new().icon_name("edit-copy").build();
+
+        let copy_button = gtk::ButtonBuilder::new()
+            .margin_start(5)
+            .margin_end(5)
+            .image(&image)
+            .always_show_image(true)
+            .build();
+
+        let button1 = gtk::ButtonBuilder::new()
+            .label("Edit")
+            .build();
+
+        let button2 = gtk::ButtonBuilder::new()
+            .label("Delete")
+            .build();
+
+        let mbox = gtk::BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .build();
+
+        popover.add(&mbox);
+
+        mbox.add(&button1);
+        mbox.add(&button2);
+
+        let popover = gtk::PopoverMenuBuilder::new()
+            .build();
+
+        let menu = gtk::MenuButtonBuilder::new()
+            .margin_start(5)
+            .margin_end(5)
+            .use_popover(true)
+            .popover(&popover)
+            .build();
+
+        menu.connect_clicked(move |x| {
+            popover.show_all();
+        });
+
         grid.attach(&label, 0, 0, 1, 1);
         grid.attach(&self.gtk_label, 1, 0, 1, 1);
+        grid.attach(&copy_button, 2, 0, 1, 1);
+        grid.attach(&menu, 3, 0, 1, 1);
 
         grid
     }
