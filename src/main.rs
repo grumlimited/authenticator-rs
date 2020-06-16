@@ -12,7 +12,6 @@ use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use gio::prelude::*;
 use gtk::prelude::*;
-use gtk::Entry;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use crate::ui::EditAccountWindow;

@@ -7,7 +7,6 @@ use chrono::prelude::*;
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use glib::Sender;
-use gtk::Builder;
 use rusqlite::Connection;
 use std::{thread, time};
 
@@ -19,7 +18,7 @@ pub struct MainWindow {
     progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     pub main_box: gtk::Box,
     pub edit_account: gtk::Box,
-    stack: Arc<Mutex<RefCell<gtk::Stack>>>,
+    stack: gtk::Stack,
     accounts_container: gtk::Box,
     pub widgets: Vec<AccountGroupWidgets>,
     pub edit_account_window: ui::EditAccountWindow,
@@ -46,7 +45,7 @@ impl MainWindow {
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             main_box,
             edit_account,
-            stack: Arc::new(Mutex::new(RefCell::new(stack))),
+            stack: stack,
             accounts_container,
             widgets: vec![],
             edit_account_window: EditAccountWindow::new(builder),
@@ -64,17 +63,12 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        let mut main_box = self.main_box.clone();
-
         let mut progress_bar = self.progress_bar.lock().unwrap();
         let progress_bar = progress_bar.get_mut();
 
-        let mut stack = self.stack.lock().unwrap();
-        let stack = stack.get_mut();
-
-        main_box.show();
+        self.main_box.show();
         progress_bar.show();
-        stack.show();
+        self.stack.show();
 
         self.window.show();
     }
