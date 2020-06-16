@@ -15,6 +15,7 @@ use gtk::prelude::*;
 use gtk::Entry;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
+use crate::ui::EditAccountWindow;
 
 mod helpers;
 mod model;
@@ -61,52 +62,10 @@ fn main() {
         gui.set_application(&app);
 
         edit_buttons_actions(&mut gui);
-        edit_account_buttons_actions(&mut gui);
+        EditAccountWindow::edit_account_buttons_actions(&mut gui);
     });
 
     application.run(&[]);
-}
-
-fn edit_account_buttons_actions(gui: &mut MainWindow) {
-    fn with_action<F>(gui: &mut MainWindow, b: gtk::Button, button_closure: F)
-    where
-        F: 'static + Fn(Entry, Entry, Entry, gtk::Box, gtk::Box) -> Box<dyn Fn(&gtk::Button)>,
-    {
-        let mut main_box = gui.main_box.clone();
-        let mut edit_account = gui.edit_account.clone();
-
-        let group = gui.edit_account_window.edit_account_input_group.clone();
-        let name = gui.edit_account_window.edit_account_input_name.clone();
-        let secret = gui.edit_account_window.edit_account_input_secret.clone();
-
-        let button_closure = Box::new(button_closure(group, name, secret, main_box, edit_account));
-
-        b.connect_clicked(button_closure);
-    }
-
-    let edit_account_cancel = gui.edit_account_window.edit_account_cancel.clone();
-    with_action(
-        gui,
-        edit_account_cancel,
-        |group, name, secret, main_box, edit_account| {
-            Box::new(move |_| {
-                main_box.set_visible(true);
-                edit_account.set_visible(false);
-            })
-        },
-    );
-
-    let edit_account_save = gui.edit_account_window.edit_account_save.clone();
-    with_action(
-        gui,
-        edit_account_save,
-        |group, name, secret, main_box, edit_account| {
-            Box::new(move |_| {
-                let entry = group.get_buffer().get_text();
-                println!("{:?}", entry);
-            })
-        },
-    );
 }
 
 fn edit_buttons_actions(gui: &mut MainWindow) {
