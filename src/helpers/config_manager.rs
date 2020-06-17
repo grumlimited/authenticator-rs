@@ -20,7 +20,7 @@ pub enum LoadError {
 }
 
 impl ConfigManager {
-    pub fn log4rs() -> std::path::PathBuf {
+    pub fn _log4rs() -> std::path::PathBuf {
         let mut path = ConfigManager::path();
         path.push("log4rs.yaml");
 
@@ -42,13 +42,6 @@ impl ConfigManager {
         } else {
             std::env::current_dir().unwrap_or_default()
         }
-    }
-
-    pub async fn async_load_account_groups(
-        conn: Arc<Mutex<Box<Connection>>>,
-    ) -> Result<Vec<AccountGroup>, LoadError> {
-        let conn = conn.lock().unwrap();
-        Self::load_account_groups(&conn)
     }
 
     pub fn load_account_groups(conn: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
@@ -75,7 +68,7 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn create_group(conn: &Connection, group_name: &str) -> Result<AccountGroup, LoadError> {
+    fn _create_group(conn: &Connection, group_name: &str) -> Result<AccountGroup, LoadError> {
         conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group_name])
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
             .unwrap();
@@ -125,7 +118,7 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn get_or_create_group(
+    pub fn _get_or_create_group(
         conn: &Connection,
         group_name: &str,
     ) -> Result<AccountGroup, LoadError> {
@@ -167,58 +160,15 @@ impl ConfigManager {
             )
             .map_err(|e| LoadError::DbError(format!("{:?}", e)));
 
-        group.or_else(|_| Self::create_group(conn, group_name))
+        group.or_else(|_| Self::_create_group(conn, group_name))
     }
 
-    pub fn get_group_by_id(conn: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {
-        let mut stmt = conn
-            .prepare("SELECT id, name FROM groups WHERE id = :group_id")
-            .unwrap();
-
-        let group = stmt
-            .query_row_named(
-                named_params! {
-                ":group_id": group_id
-                },
-                |row| {
-                    let group_id: u32 = row.get_unwrap(0);
-                    let group_name: String = row.get_unwrap(1);
-
-                    let mut stmt = conn
-                        .prepare(
-                            "SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1",
-                        )
-                        .unwrap();
-
-                    let accounts = stmt
-                        .query_map(params![group_id], |row| {
-                            let label = row.get_unwrap::<usize, String>(1);
-                            let secret = row.get_unwrap::<usize, String>(3);
-                            let id = row.get(0)?;
-                            let account =
-                                Account::new(id, group_id, label.as_str(), secret.as_str());
-
-                            Ok(account)
-                        })
-                        .unwrap()
-                        .map(|e| e.unwrap())
-                        .collect();
-
-                    row.get::<usize, u32>(0)
-                        .map(|id| AccountGroup::new(id, group_name.as_str(), accounts))
-                },
-            )
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)));
-
-        group
-    }
-
-    pub fn save_account<'a>(
+    pub fn _save_account<'a>(
         conn: &Connection,
         account: &'a mut Account,
         group_name: &str,
     ) -> Result<&'a mut Account, LoadError> {
-        let group = Self::get_or_create_group(conn, group_name).unwrap();
+        let group = Self::_get_or_create_group(conn, group_name).unwrap();
 
         conn.execute(
             "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
@@ -287,15 +237,7 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub async fn async_delete_account<'a>(
-        conn: Arc<Mutex<Box<Connection>>>,
-        account_id: u32,
-    ) -> Result<usize, LoadError> {
-        let conn = conn.lock().unwrap();
-        Self::delete_account(&conn, account_id)
-    }
-
-    pub fn delete_account(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
+    pub fn _delete_account(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
         let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
         stmt.execute(params![account_id])

@@ -75,8 +75,6 @@ impl Account {
 
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
-        println!("{:?}", edit_button);
-
         let delete_button = gtk::ButtonBuilder::new().label("Delete").build();
 
         let buttons_container = gtk::BoxBuilder::new()
@@ -131,10 +129,10 @@ impl Account {
         grid.attach(&menu, 3, 0, 1, 1);
 
         AccountWidgets {
-            id: self.id.clone(),
-            grid: grid.clone(),
-            edit_button: edit_button.clone(),
-            delete_button: delete_button.clone(),
+            id: self.id,
+            grid,
+            edit_button,
+            delete_button,
             popover: popover_clone,
         }
     }

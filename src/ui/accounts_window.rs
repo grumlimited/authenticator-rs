@@ -4,7 +4,7 @@ use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
-use gtk::{Builder, ComboBoxText};
+use gtk::Builder;
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -40,7 +40,7 @@ impl AccountsWindow {
     }
 
     pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut gui = gui.clone();
+        let mut gui = gui;
 
         let accounts_container_1 = gui.accounts_window.accounts_container.clone();
         let accounts_container_2 = accounts_container_1.clone();
@@ -57,13 +57,14 @@ impl AccountsWindow {
             .map(|account_group| account_group.widget())
             .collect();
 
-        widgets.iter().for_each(|w| accounts_container_1.add(&w.container));
+        widgets
+            .iter()
+            .for_each(|w| accounts_container_1.add(&w.container));
 
         gui.accounts_window.widgets = widgets;
         gui.accounts_window.accounts_container = accounts_container_2;
 
-        let connection_clone = connection.clone();
-        AccountsWindow::edit_buttons_actions(gui, connection_clone);
+        AccountsWindow::edit_buttons_actions(gui, connection);
 
         accounts_container_3.show_all();
     }
@@ -71,7 +72,7 @@ impl AccountsWindow {
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         for group_widgets in gui.accounts_window.widgets {
             for account_widgets in group_widgets.account_widgets {
-                let id = account_widgets.id.clone();
+                let id = account_widgets.id;
                 let popover = account_widgets.popover.clone();
 
                 let main_box = gui.accounts_window.main_box.clone();
@@ -90,10 +91,7 @@ impl AccountsWindow {
                 let input_secret = gui.edit_account_window.input_secret.clone();
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
 
-                println!("{:?}", account_widgets.edit_button);
-
-                account_widgets.edit_button.connect_clicked(move |x| {
-                    println!("{}", "dsqdsqdsq");
+                account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection).unwrap();
 

@@ -1,9 +1,9 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
-use crate::model::{Account, AccountGroupWidgets};
+use crate::model::Account;
 use crate::ui::AccountsWindow;
 use gtk::prelude::*;
-use gtk::{Builder, Widget};
+use gtk::Builder;
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
@@ -50,7 +50,6 @@ impl EditAccountWindow {
         {
             let accounts_window = gui.accounts_window.clone();
             let edit_account_window = gui.edit_account_window.clone();
-            let gui = gui.clone();
 
             let button_closure =
                 button_closure(connection, gui, accounts_window, edit_account_window);
@@ -107,12 +106,11 @@ impl EditAccountWindow {
                         Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
                     let connection_clone = connection.clone();
-                    ConfigManager::update_account(connection_clone, &mut account);
+                    let _ = ConfigManager::update_account(connection_clone, &mut account);
 
                     let gui = gui.clone();
                     let connection1 = connection.clone();
                     AccountsWindow::replace_accounts_and_widgets(gui, connection1);
-
 
                     accounts_window.main_box.set_visible(true);
                     edit_account_window.edit_account.set_visible(false);

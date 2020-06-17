@@ -60,7 +60,6 @@ impl MainWindow {
     }
 
     pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
-        let groups = groups.clone();
         let mut guard = groups.lock().unwrap();
         let groups = guard.get_mut();
 
@@ -84,8 +83,6 @@ impl MainWindow {
         pool.spawn_ok(progress_bar_interval(tx));
 
         let pb = self.accounts_window.progress_bar.clone();
-
-        let groups = groups.clone();
 
         rx.attach(None, move |second| {
             let mut guard = pb.lock().unwrap();

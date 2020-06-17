@@ -1,5 +1,3 @@
-mod state;
-
 mod main_window;
 
 use main_window::MainWindow;
@@ -56,15 +54,13 @@ fn main() {
         let group_clone = groups.clone();
         gui.start_progress_bar(group_clone);
 
-        let group_clone = groups.clone();
-        gui.display(group_clone);
+        gui.display(groups);
 
         gui.set_application(&app);
         let conn = connection.clone();
         AccountsWindow::edit_buttons_actions(gui.clone(), conn);
 
-        let conn = connection.clone();
-        EditAccountWindow::edit_account_buttons_actions(gui, conn);
+        EditAccountWindow::edit_account_buttons_actions(gui, connection);
     });
 
     application.run(&[]);

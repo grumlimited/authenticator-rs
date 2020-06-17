@@ -62,13 +62,9 @@ impl AccountGroup {
         group.add(&accounts);
 
         AccountGroupWidgets {
-            id: self.id.clone(),
-            container: group.clone(),
+            id: self.id,
+            container: group,
             account_widgets,
         }
-    }
-
-    pub fn sort(entries: &mut Vec<Account>) {
-        entries.sort_by(|a, b| a.label.to_lowercase().cmp(&b.label.to_lowercase()));
     }
 }
