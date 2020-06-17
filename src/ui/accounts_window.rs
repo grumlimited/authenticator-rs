@@ -7,6 +7,7 @@ use gtk::Builder;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
+#[derive(Clone, Debug)]
 pub struct AccountsWindow {
     pub main_box: gtk::Box,
     pub edit_account: gtk::Box,

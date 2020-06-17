@@ -2,6 +2,7 @@ use crate::main_window::MainWindow;
 use gtk::prelude::*;
 use gtk::Builder;
 
+#[derive(Clone, Debug)]
 pub struct EditAccountWindow {
     pub edit_account: gtk::Box,
     pub container: gtk::Box,
