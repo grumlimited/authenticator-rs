@@ -17,7 +17,8 @@ pub struct Account {
 
 #[derive(Debug, Clone)]
 pub struct AccountWidgets {
-    pub id: u32,
+    pub account_id: u32,
+    pub group_id: u32,
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
@@ -54,6 +55,8 @@ impl Account {
             .margin_bottom(5)
             .margin_top(5)
             .build();
+
+        grid.set_widget_name(format!("account_id_{}", self.id).as_str());
 
         let label = gtk::LabelBuilder::new()
             .label(self.label.as_str())
@@ -100,17 +103,15 @@ impl Account {
             popover.show_all();
         });
 
-        let string = Self::generate_time_based_password(self.secret.as_str()).unwrap();
-        let totp = string.as_str();
-
-        let gtk_label = gtk::LabelBuilder::new()
-            .label(totp)
+        let totp = Self::generate_time_based_password(self.secret.as_str()).unwrap();
+        let totp_label = gtk::LabelBuilder::new()
+            .label(totp.as_str())
             .width_chars(8)
             .single_line_mode(true)
             .build();
 
-        let totp_label_clone = gtk_label.clone();
-        let totp_label_clone2 = gtk_label.clone();
+        let totp_label_clone = totp_label.clone();
+        let totp_label_clone2 = totp_label.clone();
 
         self.gtk_label = Some(totp_label_clone2);
 
@@ -123,13 +124,21 @@ impl Account {
             }
         });
 
+        {
+            let grid = grid.clone();
+            delete_button.connect_clicked(move |_| {
+                grid.set_visible(false);
+            });
+        }
+
         grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(&gtk_label, 1, 0, 1, 1);
+        grid.attach(&totp_label, 1, 0, 1, 1);
         grid.attach(&copy_button, 2, 0, 1, 1);
         grid.attach(&menu, 3, 0, 1, 1);
 
         AccountWidgets {
-            id: self.id,
+            account_id: self.id,
+            group_id: self.group_id,
             grid,
             edit_button,
             delete_button,

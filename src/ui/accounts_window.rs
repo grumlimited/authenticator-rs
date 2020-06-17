@@ -62,13 +62,16 @@ impl AccountsWindow {
         gui.accounts_window.accounts_container = accounts_container;
         gui.accounts_window.accounts_container.show_all();
 
+        let gui2 = gui.clone();
+        let connection2 = connection.clone();
         AccountsWindow::edit_buttons_actions(gui, connection);
+        AccountsWindow::delete_buttons_actions(gui2, connection2);
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         for group_widgets in gui.accounts_window.widgets {
             for account_widgets in group_widgets.account_widgets {
-                let id = account_widgets.id;
+                let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
 
                 let main_box = gui.accounts_window.main_box.clone();
@@ -76,8 +79,7 @@ impl AccountsWindow {
 
                 let account = {
                     let connection = connection.clone();
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::get_account(&connection, id)
+                    ConfigManager::get_account(connection, id)
                 }
                 .unwrap();
 
@@ -108,6 +110,71 @@ impl AccountsWindow {
                     popover.hide();
                     main_box.set_visible(false);
                     edit_account.set_visible(true);
+                });
+            }
+        }
+    }
+
+    pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let gui_clone = gui.clone();
+        for group_widgets in gui.accounts_window.widgets {
+            let group_widgets_outer = group_widgets.clone();
+
+            for account_widgets in group_widgets.account_widgets {
+                let account_id = account_widgets.account_id;
+                let group_id = account_widgets.group_id;
+                let popover = account_widgets.popover.clone();
+
+                // let connection = connection.clone();
+
+                let gui_inner = gui_clone.clone();
+                let group_widgets_inner = group_widgets_outer.clone();
+
+                account_widgets.delete_button.connect_clicked(move |_| {
+                    // let connection = connection.clone();
+                    // let _ = ConfigManager::delete_account(connection, id).unwrap();
+
+                    println!("group_id {}", group_id);
+                    println!("account_id to delete {}", account_id);
+
+                    let gui = gui_inner.clone();
+                    println!("before {:?}", gui.accounts_window.widgets);
+
+                    let mut gui2 = gui_inner.clone();
+
+                    let r =
+                        gui2.accounts_window.widgets.iter_mut().find(|x| x.id == group_id );
+
+                    if let Some(a) = r {
+                        let mut p = &mut a.account_widgets;
+
+                        if let Some(pos) = p.iter().position(|x| {
+                            x.account_id == account_id
+                        }) {
+                            println!("pos {}", pos);
+                            p.remove(pos);
+                        }
+                    }
+
+                    println!("after {:?}", gui.accounts_window.widgets);
+
+                    // let mut group_widgets_inner = group_widgets_inner.clone();
+                    // let mut account_widgets = group_widgets_inner.account_widgets;
+                    // println!("before {}", account_widgets.len());
+                    // println!("before2 {}", gui_inner.accounts_window.widgets.len());
+                    // if let Some(pos) = account_widgets.iter().position(|x| {
+                    //     println!("account_id {}", x.account_id);
+                    //     x.account_id == account_id
+                    // }) {
+                    //     println!("pos {}", pos);
+                    //     account_widgets.remove(pos);
+                    // }
+                    //
+                    // println!("after {}", account_widgets.len());
+                    //
+                    // group_widgets_inner.account_widgets = account_widgets;
+
+                    popover.hide();
                 });
             }
         }

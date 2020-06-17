@@ -36,7 +36,7 @@ impl MainWindow {
             window,
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
-            pool: futures_executor::ThreadPool::new().expect("Failed to build pool")
+            pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
         }
     }
 
@@ -47,9 +47,7 @@ impl MainWindow {
 
     pub fn set_application(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
-        self.window.connect_delete_event(|_, _| {
-            Inhibit(false)
-        });
+        self.window.connect_delete_event(|_, _| Inhibit(false));
 
         let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
         let progress_bar = progress_bar.get_mut();

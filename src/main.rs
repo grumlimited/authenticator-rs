@@ -62,7 +62,12 @@ fn main() {
         let conn = connection.clone();
         AccountsWindow::edit_buttons_actions(gui.clone(), conn);
 
-        EditAccountWindow::edit_account_buttons_actions(gui, connection);
+        let conn = connection.clone();
+        let gui_clone = gui.clone();
+
+        EditAccountWindow::edit_account_buttons_actions(gui, conn);
+
+        AccountsWindow::delete_buttons_actions(gui_clone, connection);
     });
 
     application.run(&[]);

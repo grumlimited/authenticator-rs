@@ -219,7 +219,12 @@ impl ConfigManager {
         ))
     }
 
-    pub fn get_account(conn: &Connection, account_id: u32) -> Result<Account, LoadError> {
+    pub fn get_account(
+        connection: Arc<Mutex<Connection>>,
+        account_id: u32,
+    ) -> Result<Account, LoadError> {
+        let conn = connection.lock().unwrap();
+
         let mut stmt = conn
             .prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1")
             .unwrap();
@@ -237,7 +242,11 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn _delete_account(conn: &Connection, account_id: u32) -> Result<usize, LoadError> {
+    pub fn delete_account(
+        connection: Arc<Mutex<Connection>>,
+        account_id: u32,
+    ) -> Result<usize, LoadError> {
+        let conn = connection.lock().unwrap();
         let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
         stmt.execute(params![account_id])
