@@ -42,30 +42,30 @@ impl AccountsWindow {
     pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut gui = gui.clone();
 
-        let p = gui.accounts_window.accounts_container.clone();
-        let p2 = p.clone();
-        let p3 = p.clone();
+        let accounts_container_1 = gui.accounts_window.accounts_container.clone();
+        let accounts_container_2 = accounts_container_1.clone();
+        let accounts_container_3 = accounts_container_1.clone();
 
-        let children = p.get_children();
-        children.iter().for_each(|e| p.remove(e));
+        let children = accounts_container_1.get_children();
+        children.iter().for_each(|e| accounts_container_1.remove(e));
 
-        let connection1 = connection.clone();
-        let mut groups = MainWindow::fetch_accounts(connection1);
+        let connection_clone = connection.clone();
+        let mut groups = MainWindow::fetch_accounts(connection_clone);
 
         let widgets: Vec<AccountGroupWidgets> = groups
             .iter_mut()
             .map(|account_group| account_group.widget())
             .collect();
 
-        widgets.iter().for_each(|w| p.add(&w.container));
+        widgets.iter().for_each(|w| accounts_container_1.add(&w.container));
 
         gui.accounts_window.widgets = widgets;
-        gui.accounts_window.accounts_container = p2;
+        gui.accounts_window.accounts_container = accounts_container_2;
 
-        let connection1 = connection.clone();
-        AccountsWindow::edit_buttons_actions(gui, connection1);
+        let connection_clone = connection.clone();
+        AccountsWindow::edit_buttons_actions(gui, connection_clone);
 
-        p3.show_all();
+        accounts_container_3.show_all();
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {

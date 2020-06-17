@@ -106,8 +106,8 @@ impl EditAccountWindow {
                     let mut account =
                         Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
-                    let connection1 = connection.clone();
-                    ConfigManager::update_account(connection1, &mut account);
+                    let connection_clone = connection.clone();
+                    ConfigManager::update_account(connection_clone, &mut account);
 
                     let gui = gui.clone();
                     let connection1 = connection.clone();
