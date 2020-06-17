@@ -48,7 +48,6 @@ impl MainWindow {
     pub fn set_application(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| {
-            gtk::main_quit();
             Inhibit(false)
         });
 
