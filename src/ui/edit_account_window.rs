@@ -5,6 +5,7 @@ use gtk::prelude::*;
 use gtk::{Builder, Widget};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
+use crate::ui::AccountsWindow;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -42,30 +43,17 @@ impl EditAccountWindow {
             F: 'static
                 + Fn(
                     Arc<Mutex<Connection>>,
-                    gtk::ComboBoxText,
-                    gtk::Entry,
-                    gtk::Entry,
-                    gtk::Entry,
-                    gtk::Box,
-                    gtk::Box,
+                    AccountsWindow,
+                    EditAccountWindow,
                 ) -> Box<dyn Fn(&gtk::Button)>,
         {
-            let main_box = gui.accounts_window.main_box.clone();
-            let edit_account = gui.accounts_window.edit_account.clone();
-
-            let group = gui.edit_account_window.input_group.clone();
-            let account_id = gui.edit_account_window.input_account_id.clone();
-            let name = gui.edit_account_window.input_name.clone();
-            let secret = gui.edit_account_window.input_secret.clone();
+            let accounts_window = gui.accounts_window.clone();
+            let edit_account_window = gui.edit_account_window.clone();
 
             let button_closure = button_closure(
                 connection,
-                group,
-                account_id,
-                name,
-                secret,
-                main_box,
-                edit_account,
+                accounts_window,
+                edit_account_window,
             );
 
             button.connect_clicked(button_closure);
@@ -78,13 +66,16 @@ impl EditAccountWindow {
             gui,
             connection,
             edit_account_cancel,
-            |_, _, account_id, name, secret, main_box, edit_account| {
+            |_, accounts_window, edit_account_window| {
                 Box::new(move |_| {
+                    let name = edit_account_window.input_name.clone();
+                    let secret = edit_account_window.input_secret.clone();
+
                     name.set_text("");
                     secret.set_text("");
 
-                    main_box.set_visible(true);
-                    edit_account.set_visible(false);
+                    accounts_window.main_box.set_visible(true);
+                    edit_account_window.edit_account.set_visible(false);
                 })
             },
         );
@@ -94,8 +85,13 @@ impl EditAccountWindow {
             gui_clone,
             connection_clone,
             edit_account_save,
-            |connection, group, account_id, name, secret, main_box, edit_account| {
+            |connection, accounts_window, edit_account_window| {
                 Box::new(move |_| {
+                    let name = edit_account_window.input_name.clone();
+                    let secret = edit_account_window.input_secret.clone();
+                    let account_id = edit_account_window.input_account_id.clone();
+                    let group = edit_account_window.input_group.clone();
+
                     let name: String = name.get_buffer().get_text();
                     let secret: String = secret.get_buffer().get_text();
 
@@ -141,8 +137,8 @@ impl EditAccountWindow {
 
 
 
-                    main_box.set_visible(true);
-                    edit_account.set_visible(false);
+                    accounts_window.main_box.set_visible(true);
+                    edit_account_window.edit_account.set_visible(false);
                 })
             },
         );
