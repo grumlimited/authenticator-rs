@@ -242,8 +242,8 @@ impl ConfigManager {
         account: &'a mut Account,
     ) -> Result<&'a mut Account, LoadError> {
         conn.execute(
-            "UPDATE accounts SET label = ?2, secret = ?3 WHERE id = ?1",
-            params![account.id, account.label, account.secret],
+            "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
+            params![account.id, account.label, account.secret, account.group_id],
         )
         .map(|_| account)
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))

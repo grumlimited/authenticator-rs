@@ -13,6 +13,7 @@ pub struct EditAccountWindow {
     pub input_group: gtk::ComboBoxText,
     pub input_name: gtk::Entry,
     pub input_secret: gtk::Entry,
+    pub input_account_id: gtk::Entry,
     pub cancel_button: gtk::Button,
     pub save_button: gtk::Button,
 }
@@ -25,6 +26,7 @@ impl EditAccountWindow {
             input_group: builder.get_object("edit_account_input_group").unwrap(),
             input_name: builder.get_object("edit_account_input_name").unwrap(),
             input_secret: builder.get_object("edit_account_input_secret").unwrap(),
+            input_account_id: builder.get_object("edit_account_input_account_id").unwrap(),
             cancel_button: builder.get_object("edit_account_cancel").unwrap(),
             save_button: builder.get_object("edit_account_save").unwrap(),
         }
@@ -43,6 +45,7 @@ impl EditAccountWindow {
                     gtk::ComboBoxText,
                     gtk::Entry,
                     gtk::Entry,
+                    gtk::Entry,
                     gtk::Box,
                     gtk::Box,
                 ) -> Box<dyn Fn(&gtk::Button)>,
@@ -51,11 +54,12 @@ impl EditAccountWindow {
             let edit_account = gui.accounts_window.edit_account.clone();
 
             let group = gui.edit_account_window.input_group.clone();
+            let account_id = gui.edit_account_window.input_account_id.clone();
             let name = gui.edit_account_window.input_name.clone();
             let secret = gui.edit_account_window.input_secret.clone();
 
             let button_closure =
-                button_closure(connection, group, name, secret, main_box, edit_account);
+                button_closure(connection, group, account_id, name, secret, main_box, edit_account);
 
             button.connect_clicked(button_closure);
         }
@@ -67,9 +71,8 @@ impl EditAccountWindow {
             gui,
             connection,
             edit_account_cancel,
-            |_, group, name, secret, main_box, edit_account| {
+            |_, _, account_id, name, secret, main_box, edit_account| {
                 Box::new(move |_| {
-                    // group.set_text("");
                     name.set_text("");
                     secret.set_text("");
 
@@ -86,17 +89,22 @@ impl EditAccountWindow {
             gui_clone,
             connection_clone,
             edit_account_save,
-            |connection, group, name, secret, main_box, edit_account| {
+            |connection, group, account_id, name, secret, main_box, edit_account| {
                 Box::new(move |_| {
-                    // let group: String = group.get_buffer().get_text();
                     let name: String = name.get_buffer().get_text();
                     let secret: String = secret.get_buffer().get_text();
+
+                    let account_id: u32 = account_id.get_buffer().get_text().parse().unwrap();
+                    let group_id = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
                     println!("{:?}", name);
 
-                    let mut account = Account::new(1, 1, name.as_str(), secret.as_str());
+                    let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
                     let connection = connection.lock().unwrap();
                     ConfigManager::update_account(&connection, &mut account);
+
+                    main_box.set_visible(true);
+                    edit_account.set_visible(false);
                 })
             },
         );

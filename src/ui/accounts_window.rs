@@ -59,6 +59,7 @@ impl AccountsWindow {
                 let input_group = gui.edit_account_window.input_group.clone();
                 let input_name = gui.edit_account_window.input_name.clone();
                 let input_secret = gui.edit_account_window.input_secret.clone();
+                let input_account_id = gui.edit_account_window.input_account_id.clone();
 
                 account_widgets.edit_button.connect_clicked(move |x| {
                     let connection = connection.lock().unwrap();
@@ -75,12 +76,11 @@ impl AccountsWindow {
                         }
                     });
 
+                    let account_id = format!("{}", account.id);
+                    input_account_id.set_text(account_id.as_str());
                     input_name.set_text(account.label.as_str());
                     input_secret.set_text(account.secret.as_str());
 
-                    println!("{:?}", group);
-                    println!("{:?}", group);
-                    println!("{:?}", account);
                     popover.hide();
                     main_box.set_visible(false);
                     edit_account.set_visible(true);
