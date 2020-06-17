@@ -28,7 +28,7 @@ fn main() {
     )
     .expect("Initialization failed...");
 
-    application.connect_startup(|app| {
+    application.connect_startup(|_| {
         let provider = gtk::CssProvider::new();
         provider
             .load_from_data(STYLE.as_bytes())
@@ -39,7 +39,9 @@ fn main() {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+    });
 
+    application.connect_activate(|app| {
         let mut gui = MainWindow::new();
 
         let connection: Arc<Mutex<Connection>> =
