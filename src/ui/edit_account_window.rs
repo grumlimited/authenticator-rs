@@ -1,12 +1,16 @@
+use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
+use crate::model::Account;
 use gtk::prelude::*;
 use gtk::Builder;
+use rusqlite::Connection;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
     pub edit_account: gtk::Box,
     pub container: gtk::Box,
-    pub input_group: gtk::Entry,
+    pub input_group: gtk::ComboBoxText,
     pub input_name: gtk::Entry,
     pub input_secret: gtk::Entry,
     pub cancel_button: gtk::Button,
@@ -26,12 +30,17 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: MainWindow) {
-        fn with_action<F>(gui: MainWindow, button: gtk::Button, button_closure: F)
-        where
+    pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        fn with_action<F>(
+            gui: MainWindow,
+            connection: Arc<Mutex<Connection>>,
+            button: gtk::Button,
+            button_closure: F,
+        ) where
             F: 'static
                 + Fn(
-                    gtk::Entry,
+                    Arc<Mutex<Connection>>,
+                    gtk::ComboBoxText,
                     gtk::Entry,
                     gtk::Entry,
                     gtk::Box,
@@ -45,19 +54,22 @@ impl EditAccountWindow {
             let name = gui.edit_account_window.input_name.clone();
             let secret = gui.edit_account_window.input_secret.clone();
 
-            let button_closure = button_closure(group, name, secret, main_box, edit_account);
+            let button_closure =
+                button_closure(connection, group, name, secret, main_box, edit_account);
 
             button.connect_clicked(button_closure);
         }
 
         let gui_clone = gui.clone();
+        let connection_clone = connection.clone();
         let edit_account_cancel = gui.edit_account_window.cancel_button.clone();
         with_action(
             gui,
+            connection,
             edit_account_cancel,
-            |group, name, secret, main_box, edit_account| {
+            |_, group, name, secret, main_box, edit_account| {
                 Box::new(move |_| {
-                    group.set_text("");
+                    // group.set_text("");
                     name.set_text("");
                     secret.set_text("");
 
@@ -68,13 +80,23 @@ impl EditAccountWindow {
         );
 
         let edit_account_save = gui_clone.edit_account_window.save_button.clone();
+
+        // let conn = connection.clone();
         with_action(
             gui_clone,
+            connection_clone,
             edit_account_save,
-            |group, name, secret, main_box, edit_account| {
+            |connection, group, name, secret, main_box, edit_account| {
                 Box::new(move |_| {
-                    let entry = group.get_buffer().get_text();
-                    println!("{:?}", entry);
+                    // let group: String = group.get_buffer().get_text();
+                    let name: String = name.get_buffer().get_text();
+                    let secret: String = secret.get_buffer().get_text();
+                    println!("{:?}", name);
+
+                    let mut account = Account::new(1, 1, name.as_str(), secret.as_str());
+
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::update_account(&connection, &mut account);
                 })
             },
         );

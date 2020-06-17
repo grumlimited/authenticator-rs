@@ -1,9 +1,11 @@
+use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
 use gtk::Builder;
+use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
@@ -37,7 +39,8 @@ impl AccountsWindow {
         }
     }
 
-    pub fn edit_buttons_actions(gui: MainWindow) {
+    pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let connection = connection.lock().unwrap();
         for group_widgets in gui.accounts_window.widgets {
             for account_widgets in group_widgets.account_widgets {
                 let id = account_widgets.id.clone();
@@ -46,7 +49,11 @@ impl AccountsWindow {
                 let main_box = gui.accounts_window.main_box.clone();
                 let edit_account = gui.accounts_window.edit_account.clone();
 
+                let account = ConfigManager::get_account(&connection, id);
+
                 account_widgets.edit_button.connect_clicked(move |x| {
+                    println!("{:?}", account);
+
                     popover.hide();
                     main_box.set_visible(false);
                     edit_account.set_visible(true);

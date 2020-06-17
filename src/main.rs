@@ -13,6 +13,7 @@ use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 use gio::prelude::*;
 use gtk::prelude::*;
+use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
@@ -43,11 +44,11 @@ fn main() {
 
         let mut gui = MainWindow::new();
 
-        let connection = Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
+        let connection: Arc<Mutex<Connection>> =
+            Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
         let mut conn = connection.clone();
-        let mut conn = conn.lock().unwrap();
-        let mut groups = MainWindow::fetch_accounts(&mut conn);
+        let mut groups = MainWindow::fetch_accounts(conn);
 
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));
@@ -59,9 +60,11 @@ fn main() {
         gui.display(group_clone);
 
         gui.set_application(&app);
+        let mut conn = connection.clone();
+        AccountsWindow::edit_buttons_actions(gui.clone(), conn);
 
-        AccountsWindow::edit_buttons_actions(gui.clone());
-        EditAccountWindow::edit_account_buttons_actions(gui);
+        let mut conn = connection.clone();
+        EditAccountWindow::edit_account_buttons_actions(gui, conn);
     });
 
     application.run(&[]);
