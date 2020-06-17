@@ -9,6 +9,7 @@ pub struct AccountGroup {
     pub entries: Vec<Account>,
 }
 
+#[derive(Debug, Clone)]
 pub struct AccountGroupWidgets {
     pub id: u32,
     pub container: gtk::Box,

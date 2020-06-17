@@ -6,7 +6,7 @@ use base32::Alphabet::RFC4648;
 use gtk::prelude::*;
 use gtk::Orientation;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,
@@ -15,6 +15,7 @@ pub struct Account {
     gtk_label: Option<gtk::Label>,
 }
 
+#[derive(Debug, Clone)]
 pub struct AccountWidgets {
     pub id: u32,
     pub grid: gtk::Grid,
