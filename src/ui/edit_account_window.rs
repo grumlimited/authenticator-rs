@@ -26,8 +26,8 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: &mut MainWindow) {
-        fn with_action<F>(gui: &mut MainWindow, button: gtk::Button, button_closure: F)
+    pub fn edit_account_buttons_actions(gui: MainWindow) {
+        fn with_action<F>(gui: MainWindow, button: gtk::Button, button_closure: F)
         where
             F: 'static
                 + Fn(
@@ -50,6 +50,7 @@ impl EditAccountWindow {
             button.connect_clicked(button_closure);
         }
 
+        let gui_clone = gui.clone();
         let edit_account_cancel = gui.edit_account_window.cancel_button.clone();
         with_action(
             gui,
@@ -66,9 +67,9 @@ impl EditAccountWindow {
             },
         );
 
-        let edit_account_save = gui.edit_account_window.save_button.clone();
+        let edit_account_save = gui_clone.edit_account_window.save_button.clone();
         with_action(
-            gui,
+            gui_clone,
             edit_account_save,
             |group, name, secret, main_box, edit_account| {
                 Box::new(move |_| {

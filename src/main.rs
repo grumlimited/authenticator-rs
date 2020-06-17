@@ -60,8 +60,8 @@ fn main() {
 
         gui.set_application(&app);
 
-        AccountsWindow::edit_buttons_actions(&mut gui);
-        EditAccountWindow::edit_account_buttons_actions(&mut gui);
+        AccountsWindow::edit_buttons_actions(gui.clone());
+        EditAccountWindow::edit_account_buttons_actions(gui);
     });
 
     application.run(&[]);

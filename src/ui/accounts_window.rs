@@ -37,9 +37,9 @@ impl AccountsWindow {
         }
     }
 
-    pub fn edit_buttons_actions(gui: &mut MainWindow) {
-        for group_widgets in &mut gui.accounts_window.widgets {
-            for account_widgets in &mut group_widgets.account_widgets {
+    pub fn edit_buttons_actions(gui: MainWindow) {
+        for group_widgets in gui.accounts_window.widgets {
+            for account_widgets in group_widgets.account_widgets {
                 let id = account_widgets.id.clone();
                 let popover = account_widgets.popover.clone();
 

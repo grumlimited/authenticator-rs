@@ -13,6 +13,7 @@ use std::{thread, time};
 use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 
+#[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     pub edit_account_window: ui::EditAccountWindow,
