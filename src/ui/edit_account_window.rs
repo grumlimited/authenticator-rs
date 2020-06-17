@@ -44,8 +44,7 @@ impl EditAccountWindow {
             let name = gui.edit_account_window.input_name.clone();
             let secret = gui.edit_account_window.input_secret.clone();
 
-            let button_closure =
-                Box::new(button_closure(group, name, secret, main_box, edit_account));
+            let button_closure = button_closure(group, name, secret, main_box, edit_account);
 
             button.connect_clicked(button_closure);
         }
