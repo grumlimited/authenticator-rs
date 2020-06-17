@@ -39,6 +39,35 @@ impl AccountsWindow {
         }
     }
 
+    pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let mut gui = gui.clone();
+
+        let p = gui.accounts_window.accounts_container.clone();
+        let p2 = p.clone();
+        let p3 = p.clone();
+
+        let children = p.get_children();
+        children.iter().for_each(|e| p.remove(e));
+
+        let connection1 = connection.clone();
+        let mut groups = MainWindow::fetch_accounts(connection1);
+
+        let widgets: Vec<AccountGroupWidgets> = groups
+            .iter_mut()
+            .map(|account_group| account_group.widget())
+            .collect();
+
+        widgets.iter().for_each(|w| p.add(&w.container));
+
+        gui.accounts_window.widgets = widgets;
+        gui.accounts_window.accounts_container = p2;
+
+        let connection1 = connection.clone();
+        AccountsWindow::edit_buttons_actions(gui, connection1);
+
+        p3.show_all();
+    }
+
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         for group_widgets in gui.accounts_window.widgets {
             for account_widgets in group_widgets.account_widgets {

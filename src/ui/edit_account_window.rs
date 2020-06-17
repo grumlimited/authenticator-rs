@@ -106,36 +106,13 @@ impl EditAccountWindow {
                     let mut account =
                         Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
-                    let connection2 = connection.clone();
-                    let connection3 = connection.clone();
-                    let p = accounts_window.accounts_container.clone();
-                    let mut gui = gui.clone();
+                    let connection1 = connection.clone();
+                    ConfigManager::update_account(connection1, &mut account);
 
-                    let children = p.get_children();
-                    children.iter().for_each(|e| p.remove(e));
+                    let gui = gui.clone();
+                    let connection1 = connection.clone();
+                    AccountsWindow::replace_accounts_and_widgets(gui, connection1);
 
-                    {
-                        let connection = connection.lock().unwrap();
-                        ConfigManager::update_account(&connection, &mut account);
-                    }
-
-                    let mut groups = MainWindow::fetch_accounts(connection3);
-
-                    let widgets: Vec<AccountGroupWidgets> = groups
-                        .iter_mut()
-                        .map(|account_group| account_group.widget())
-                        .collect();
-
-                    widgets.iter().for_each(|w| p.add(&w.container));
-
-                    let p2 = p.clone();
-                    let p3 = p.clone();
-
-                    gui.accounts_window.widgets = widgets;
-                    gui.accounts_window.accounts_container = p2;
-                    AccountsWindow::edit_buttons_actions(gui, connection2);
-
-                    p3.show_all();
 
                     accounts_window.main_box.set_visible(true);
                     edit_account_window.edit_account.set_visible(false);

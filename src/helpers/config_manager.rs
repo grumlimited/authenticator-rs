@@ -237,10 +237,12 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn update_account<'a>(
-        conn: &Connection,
-        account: &'a mut Account,
-    ) -> Result<&'a mut Account, LoadError> {
+    pub fn update_account(
+        connection: Arc<Mutex<Connection>>,
+        account: &mut Account,
+    ) -> Result<&mut Account, LoadError> {
+        let conn = connection.lock().unwrap();
+
         conn.execute(
             "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
             params![account.id, account.label, account.secret, account.group_id],
