@@ -4,7 +4,7 @@ use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
-use gtk::Builder;
+use gtk::{Builder, ComboBoxText};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -40,7 +40,6 @@ impl AccountsWindow {
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let connection = connection.lock().unwrap();
         for group_widgets in gui.accounts_window.widgets {
             for account_widgets in group_widgets.account_widgets {
                 let id = account_widgets.id.clone();
@@ -49,11 +48,39 @@ impl AccountsWindow {
                 let main_box = gui.accounts_window.main_box.clone();
                 let edit_account = gui.accounts_window.edit_account.clone();
 
-                let account = ConfigManager::get_account(&connection, id);
+                let account = {
+                    let connection = connection.clone();
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::get_account(&connection, id)
+                }
+                .unwrap();
+
+                let connection = connection.clone();
+                let input_group = gui.edit_account_window.input_group.clone();
+                let input_name = gui.edit_account_window.input_name.clone();
+                let input_secret = gui.edit_account_window.input_secret.clone();
 
                 account_widgets.edit_button.connect_clicked(move |x| {
-                    println!("{:?}", account);
+                    let connection = connection.lock().unwrap();
+                    let group =
+                        ConfigManager::get_group_by_id(&connection, account.group_id).unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection).unwrap();
 
+                    groups.iter().for_each(|group| {
+                        let string = format!("{}", group.id);
+                        let entry_id = Some(string.as_str());
+                        input_group.append(entry_id, group.name.as_str());
+                        if group.id == account.group_id {
+                            input_group.set_active_id(entry_id);
+                        }
+                    });
+
+                    input_name.set_text(account.label.as_str());
+                    input_secret.set_text(account.secret.as_str());
+
+                    println!("{:?}", group);
+                    println!("{:?}", group);
+                    println!("{:?}", account);
                     popover.hide();
                     main_box.set_visible(false);
                     edit_account.set_visible(true);
