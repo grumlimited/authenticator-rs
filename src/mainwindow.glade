@@ -67,6 +67,7 @@
             </child>
             <child>
               <object class="GtkBox" id="accounts_container">
+                <property name="name">accounts_container</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>

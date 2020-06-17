@@ -63,8 +63,6 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |x| {
                     let connection = connection.lock().unwrap();
-                    let group =
-                        ConfigManager::get_group_by_id(&connection, account.group_id).unwrap();
                     let groups = ConfigManager::load_account_groups(&connection).unwrap();
 
                     groups.iter().for_each(|group| {

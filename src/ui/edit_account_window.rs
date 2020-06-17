@@ -1,8 +1,8 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
-use crate::model::Account;
+use crate::model::{Account, AccountGroupWidgets};
 use gtk::prelude::*;
-use gtk::Builder;
+use gtk::{Builder, Widget};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
@@ -58,8 +58,15 @@ impl EditAccountWindow {
             let name = gui.edit_account_window.input_name.clone();
             let secret = gui.edit_account_window.input_secret.clone();
 
-            let button_closure =
-                button_closure(connection, group, account_id, name, secret, main_box, edit_account);
+            let button_closure = button_closure(
+                connection,
+                group,
+                account_id,
+                name,
+                secret,
+                main_box,
+                edit_account,
+            );
 
             button.connect_clicked(button_closure);
         }
@@ -83,8 +90,6 @@ impl EditAccountWindow {
         );
 
         let edit_account_save = gui_clone.edit_account_window.save_button.clone();
-
-        // let conn = connection.clone();
         with_action(
             gui_clone,
             connection_clone,
@@ -95,13 +100,46 @@ impl EditAccountWindow {
                     let secret: String = secret.get_buffer().get_text();
 
                     let account_id: u32 = account_id.get_buffer().get_text().parse().unwrap();
-                    let group_id = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
-                    println!("{:?}", name);
+                    let group_id = group
+                        .get_active_id()
+                        .unwrap()
+                        .as_str()
+                        .to_owned()
+                        .parse()
+                        .unwrap();
 
-                    let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
+                    let mut account =
+                        Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
                     let connection = connection.lock().unwrap();
                     ConfigManager::update_account(&connection, &mut account);
+
+                    let mut groups = ConfigManager::load_account_groups(&connection).unwrap();
+
+                    let widgets: Vec<AccountGroupWidgets> = groups
+                        .iter_mut()
+                        .map(|account_group| account_group.widget())
+                        .collect();
+
+                    // let vec = main_box.get_children();
+                    // let c = vec.iter().filter_map(|e| {
+                    //     match e.get_widget_name() {
+                    //         Some(v) if v.as_str() == "accounts_container" => Some(e),
+                    //         _ => None
+                    //     }
+                    // }).collect::<Vec<&Widget>>();
+                    //
+                    //
+                    // if let Some(c) = c.first() {
+                    //     println!("{:?}", c);
+                    //     let c = c as gtk::Box;
+                    //     gtk::Box::add();
+                    //     widgets
+                    //         .iter()
+                    //         .for_each(|w| c.add(&w.container));
+                    // }
+
+
 
                     main_box.set_visible(true);
                     edit_account.set_visible(false);
