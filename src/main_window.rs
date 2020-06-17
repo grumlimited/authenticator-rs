@@ -12,12 +12,14 @@ use std::{thread, time};
 
 use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
+use futures_executor::ThreadPool;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
+    pool: ThreadPool,
 }
 
 impl MainWindow {
@@ -34,6 +36,7 @@ impl MainWindow {
             window,
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
+            pool: futures_executor::ThreadPool::new().expect("Failed to build pool")
         }
     }
 
@@ -78,9 +81,7 @@ impl MainWindow {
 
     pub fn start_progress_bar(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
         let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
-        let pool = futures_executor::ThreadPool::new().expect("Failed to build pool");
-
-        pool.spawn_ok(progress_bar_interval(tx));
+        self.pool.spawn_ok(progress_bar_interval(tx));
 
         let pb = self.accounts_window.progress_bar.clone();
 
