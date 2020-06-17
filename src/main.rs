@@ -47,8 +47,8 @@ fn main() {
         let connection: Arc<Mutex<Connection>> =
             Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
-        let mut conn = connection.clone();
-        let mut groups = MainWindow::fetch_accounts(conn);
+        let conn = connection.clone();
+        let groups = MainWindow::fetch_accounts(conn);
 
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));
@@ -60,10 +60,10 @@ fn main() {
         gui.display(group_clone);
 
         gui.set_application(&app);
-        let mut conn = connection.clone();
+        let conn = connection.clone();
         AccountsWindow::edit_buttons_actions(gui.clone(), conn);
 
-        let mut conn = connection.clone();
+        let conn = connection.clone();
         EditAccountWindow::edit_account_buttons_actions(gui, conn);
     });
 

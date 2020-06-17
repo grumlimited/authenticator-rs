@@ -75,6 +75,8 @@ impl Account {
 
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
+        println!("{:?}", edit_button);
+
         let delete_button = gtk::ButtonBuilder::new().label("Delete").build();
 
         let buttons_container = gtk::BoxBuilder::new()

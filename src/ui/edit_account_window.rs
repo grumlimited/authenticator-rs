@@ -1,11 +1,11 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
 use crate::model::{Account, AccountGroupWidgets};
+use crate::ui::AccountsWindow;
 use gtk::prelude::*;
 use gtk::{Builder, Widget};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
-use crate::ui::AccountsWindow;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -43,18 +43,17 @@ impl EditAccountWindow {
             F: 'static
                 + Fn(
                     Arc<Mutex<Connection>>,
+                    MainWindow,
                     AccountsWindow,
                     EditAccountWindow,
                 ) -> Box<dyn Fn(&gtk::Button)>,
         {
             let accounts_window = gui.accounts_window.clone();
             let edit_account_window = gui.edit_account_window.clone();
+            let gui = gui.clone();
 
-            let button_closure = button_closure(
-                connection,
-                accounts_window,
-                edit_account_window,
-            );
+            let button_closure =
+                button_closure(connection, gui, accounts_window, edit_account_window);
 
             button.connect_clicked(button_closure);
         }
@@ -66,7 +65,7 @@ impl EditAccountWindow {
             gui,
             connection,
             edit_account_cancel,
-            |_, accounts_window, edit_account_window| {
+            |_, _, accounts_window, edit_account_window| {
                 Box::new(move |_| {
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
@@ -85,7 +84,7 @@ impl EditAccountWindow {
             gui_clone,
             connection_clone,
             edit_account_save,
-            |connection, accounts_window, edit_account_window| {
+            |connection, gui, accounts_window, edit_account_window| {
                 Box::new(move |_| {
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
@@ -107,35 +106,36 @@ impl EditAccountWindow {
                     let mut account =
                         Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::update_account(&connection, &mut account);
+                    let connection2 = connection.clone();
+                    let connection3 = connection.clone();
+                    let p = accounts_window.accounts_container.clone();
+                    let mut gui = gui.clone();
 
-                    let mut groups = ConfigManager::load_account_groups(&connection).unwrap();
+                    let children = p.get_children();
+                    children.iter().for_each(|e| p.remove(e));
+
+                    {
+                        let connection = connection.lock().unwrap();
+                        ConfigManager::update_account(&connection, &mut account);
+                    }
+
+                    let mut groups = MainWindow::fetch_accounts(connection3);
 
                     let widgets: Vec<AccountGroupWidgets> = groups
                         .iter_mut()
                         .map(|account_group| account_group.widget())
                         .collect();
 
-                    // let vec = main_box.get_children();
-                    // let c = vec.iter().filter_map(|e| {
-                    //     match e.get_widget_name() {
-                    //         Some(v) if v.as_str() == "accounts_container" => Some(e),
-                    //         _ => None
-                    //     }
-                    // }).collect::<Vec<&Widget>>();
-                    //
-                    //
-                    // if let Some(c) = c.first() {
-                    //     println!("{:?}", c);
-                    //     let c = c as gtk::Box;
-                    //     gtk::Box::add();
-                    //     widgets
-                    //         .iter()
-                    //         .for_each(|w| c.add(&w.container));
-                    // }
+                    widgets.iter().for_each(|w| p.add(&w.container));
 
+                    let p2 = p.clone();
+                    let p3 = p.clone();
 
+                    gui.accounts_window.widgets = widgets;
+                    gui.accounts_window.accounts_container = p2;
+                    AccountsWindow::edit_buttons_actions(gui, connection2);
+
+                    p3.show_all();
 
                     accounts_window.main_box.set_visible(true);
                     edit_account_window.edit_account.set_visible(false);

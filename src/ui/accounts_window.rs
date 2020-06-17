@@ -61,7 +61,10 @@ impl AccountsWindow {
                 let input_secret = gui.edit_account_window.input_secret.clone();
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
 
+                println!("{:?}", account_widgets.edit_button);
+
                 account_widgets.edit_button.connect_clicked(move |x| {
+                    println!("{}", "dsqdsqdsq");
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection).unwrap();
 

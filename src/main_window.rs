@@ -38,7 +38,7 @@ impl MainWindow {
     }
 
     pub fn fetch_accounts(conn: Arc<Mutex<Connection>>) -> Vec<AccountGroup> {
-        let mut conn = conn.lock().unwrap();
+        let conn = conn.lock().unwrap();
         ConfigManager::load_account_groups(&conn).unwrap()
     }
 
