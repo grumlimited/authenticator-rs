@@ -94,11 +94,8 @@ impl AccountsWindow {
             let connection = connection.clone();
 
             let group_widgets = group_widgets.clone();
-            let account_widgets = group_widgets.account_widgets.clone();
 
             delete_button.connect_clicked(move |_| {
-                let account_widgets = account_widgets.borrow_mut();
-
                 let connection = connection.clone();
                 let _ = ConfigManager::delete_group(connection, group_id);
                 group_widgets.container.set_visible(false);
