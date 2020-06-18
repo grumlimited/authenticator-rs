@@ -54,14 +54,15 @@ impl AccountsWindow {
             .map(|account_group| account_group.widget())
             .collect();
 
-        // add updated accounts back to list
-        widgets
-            .iter()
-            .for_each(|w| accounts_container.add(&w.container));
-
         {
             let gui = gui.clone();
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+
+            // add updated accounts back to list
+            widgets
+                .iter()
+                .for_each(|w| accounts_container.add(&w.container));
+
             *m_widgets = widgets;
         }
 
