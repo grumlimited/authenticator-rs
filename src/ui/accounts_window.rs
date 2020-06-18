@@ -85,6 +85,8 @@ impl AccountsWindow {
     }
 
     pub fn group_edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let widgets_list_clone = gui.accounts_window.widgets.clone();
+
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
@@ -98,11 +100,15 @@ impl AccountsWindow {
             let connection2 = connection.clone();
 
             let group_widgets = group_widgets.clone();
+            let widgets_list_clone = widgets_list_clone.clone();
 
             delete_button.connect_clicked(move |_| {
                 let connection = connection.clone();
                 let _ = ConfigManager::delete_group(connection, group_id);
                 group_widgets.container.set_visible(false);
+
+                let mut group_widgets = widgets_list_clone.lock().unwrap();
+                group_widgets.retain(|x| x.id != group_id);
             });
 
             update_button.connect_clicked(move |_| {

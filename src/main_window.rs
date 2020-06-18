@@ -12,7 +12,6 @@ use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
-use std::borrow::BorrowMut;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -86,17 +85,7 @@ impl MainWindow {
 
             menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
-
-                let nb_accounts = widgets.iter().fold(0, |x, y| {
-                    x + {
-                        let account_widgets = y.account_widgets.clone();
-                        let account_widgets = account_widgets.borrow();
-
-                        account_widgets.len()
-                    }
-                });
-
-                if nb_accounts == 0 {
+                if widgets.is_empty() {
                     // can't add account if no groups
                     add_account_button.set_sensitive(false)
                 }
