@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 pub struct AccountsWindow {
     pub main_box: gtk::Box,
     pub edit_account: gtk::Box,
+    pub add_group: gtk::Box,
     pub stack: gtk::Stack,
     pub accounts_container: gtk::Box,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
@@ -24,6 +25,7 @@ impl AccountsWindow {
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
         let main_box: gtk::Box = builder.get_object("main_box").unwrap();
         let edit_account: gtk::Box = builder.get_object("edit_account").unwrap();
+        let add_group: gtk::Box = builder.get_object("add_group").unwrap();
         let stack: gtk::Stack = builder.get_object("stack").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
 
@@ -32,6 +34,7 @@ impl AccountsWindow {
         AccountsWindow {
             main_box,
             edit_account,
+            add_group,
             stack,
             accounts_container,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
@@ -141,6 +144,7 @@ impl AccountsWindow {
 
                 let main_box = gui.accounts_window.main_box.clone();
                 let edit_account = gui.accounts_window.edit_account.clone();
+                let add_group = gui.accounts_window.add_group.clone();
 
                 let connection = connection.clone();
                 let input_group = gui.edit_account_window.input_group.clone();
@@ -176,6 +180,7 @@ impl AccountsWindow {
 
                     popover.hide();
                     main_box.set_visible(false);
+                    add_group.set_visible(false);
                     edit_account.set_visible(true);
                 });
             }
