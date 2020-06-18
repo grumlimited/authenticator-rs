@@ -3,3 +3,7 @@
     font-size: 14pt;
     font-weight: bold;
 }
+
+.group_label_entry {
+    border-width: 0px;
+}

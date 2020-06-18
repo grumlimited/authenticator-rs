@@ -41,13 +41,20 @@ impl AccountGroup {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
-        let group_label_button = gtk::ButtonBuilder::new().label(self.name.as_str()).build();
+        let group_label_button = gtk::ButtonBuilder::new()
+            .label(self.name.as_str())
+            .height_request(32)
+            .build();
+
+        let group_label_entry = gtk::EntryBuilder::new()
+            .margin_end(5)
+            .visible(false)
+            .height_request(32)
+            .no_show_all(true)
+            .text(self.name.as_str()).build();
 
         group_label_button.set_hexpand(false);
         group_label_button.set_halign(Align::Start);
-
-        let style_context = group_label_button.get_style_context();
-        style_context.add_class("account_group_label");
 
         let group_label_box = gtk::GridBuilder::new()
             .orientation(Orientation::Vertical)
@@ -56,7 +63,34 @@ impl AccountGroup {
             .margin_bottom(10)
             .build();
 
+        let style_context = group_label_box.get_style_context();
+        style_context.add_class("account_group_label");
+
+        let style_context = group_label_entry.get_style_context();
+        style_context.add_class("group_label_entry");
+
+        let dialog_ok_image = gtk::ImageBuilder::new().icon_name("dialog-ok").build();
+        let cancel_image = gtk::ImageBuilder::new().icon_name("dialog-cancel").build();
+        let cancel_button = gtk::ButtonBuilder::new()
+            .image(&cancel_image)
+            .always_show_image(true)
+            .margin_end(5)
+            .visible(false)
+            .no_show_all(true)
+            .build();
+
+        let save_button = gtk::ButtonBuilder::new()
+            .image(&dialog_ok_image)
+            .always_show_image(true)
+            .margin_end(5)
+            .visible(false)
+            .no_show_all(true)
+            .build();
+
         group_label_box.attach(&group_label_button, 0, 0, 1, 1);
+        group_label_box.attach(&group_label_entry, 1, 0, 1, 1);
+        group_label_box.attach(&cancel_button, 2, 0, 1, 1);
+        group_label_box.attach(&save_button, 3, 0, 1, 1);
 
         let popover = gtk::PopoverMenuBuilder::new()
             .relative_to(&group_label_button)
@@ -64,6 +98,36 @@ impl AccountGroup {
             .build();
 
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
+
+        {
+            let save_button = save_button.clone();
+            let cancel_button = cancel_button.clone();
+            let group_label_entry = group_label_entry.clone();
+            let group_label_button = group_label_button.clone();
+            let popover = popover.clone();
+            edit_button.connect_clicked(move |_| {
+                group_label_button.set_visible(false);
+                group_label_entry.set_visible(true);
+                cancel_button.set_visible(true);
+                save_button.set_visible(true);
+                popover.set_visible(false);
+            });
+        }
+
+        {
+            let save_button = save_button.clone();
+            let cancel_button = cancel_button.clone();
+            let cancel_button2 = cancel_button.clone();
+            let group_label_entry = group_label_entry.clone();
+            let group_label_button = group_label_button.clone();
+            cancel_button.connect_clicked(move |_| {
+                group_label_button.set_visible(true);
+                group_label_entry.set_visible(false);
+                cancel_button2.set_visible(false);
+                save_button.set_visible(false);
+            });
+        }
+
         let delete_button = gtk::ButtonBuilder::new()
             .label("Delete")
             .sensitive(self.entries.is_empty())
