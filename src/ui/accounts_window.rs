@@ -78,7 +78,6 @@ impl AccountsWindow {
 
         {
             let gui = gui.clone();
-            let connection = connection.clone();
             AccountsWindow::delete_buttons_actions(gui, connection);
         }
 
@@ -93,7 +92,7 @@ impl AccountsWindow {
             let group_label_entry = group_widgets.group_label_entry.clone();
             let group_label_button = group_widgets.group_label_button.clone();
             let edit_form_box = group_widgets.edit_form_box.clone();
-            let group_id = group_widgets.id.clone();
+            let group_id = group_widgets.id;
 
             let connection = connection.clone();
             let connection2 = connection.clone();

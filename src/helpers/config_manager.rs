@@ -148,50 +148,42 @@ impl ConfigManager {
         conn: Arc<Mutex<Connection>>,
         group_id: u32,
     ) -> Result<AccountGroup, LoadError> {
-        let group = {
-            let conn = conn.clone();
-            let conn = conn.lock().unwrap();
+        let conn = conn.lock().unwrap();
 
-            let mut stmt = conn
-                .prepare("SELECT id, name FROM groups WHERE id = :group_id")
-                .unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM groups WHERE id = :group_id")
+            .unwrap();
 
-            stmt.query_row_named(
-                named_params! {
-                ":group_id": group_id
-                },
-                |row| {
-                    let group_id: u32 = row.get_unwrap(0);
-                    let group_name: String = row.get_unwrap(1);
+        stmt.query_row_named(
+            named_params! {
+            ":group_id": group_id
+            },
+            |row| {
+                let group_id: u32 = row.get_unwrap(0);
+                let group_name: String = row.get_unwrap(1);
 
-                    let mut stmt = conn
-                        .prepare(
-                            "SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1",
-                        )
-                        .unwrap();
+                let mut stmt = conn
+                    .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
+                    .unwrap();
 
-                    let accounts = stmt
-                        .query_map(params![group_id], |row| {
-                            let label = row.get_unwrap::<usize, String>(1);
-                            let secret = row.get_unwrap::<usize, String>(3);
-                            let id = row.get(0)?;
-                            let account =
-                                Account::new(id, group_id, label.as_str(), secret.as_str());
+                let accounts = stmt
+                    .query_map(params![group_id], |row| {
+                        let label = row.get_unwrap::<usize, String>(1);
+                        let secret = row.get_unwrap::<usize, String>(3);
+                        let id = row.get(0)?;
+                        let account = Account::new(id, group_id, label.as_str(), secret.as_str());
 
-                            Ok(account)
-                        })
-                        .unwrap()
-                        .map(|e| e.unwrap())
-                        .collect();
+                        Ok(account)
+                    })
+                    .unwrap()
+                    .map(|e| e.unwrap())
+                    .collect();
 
-                    row.get::<usize, u32>(0)
-                        .map(|id| AccountGroup::new(id, group_name.as_str(), accounts))
-                },
-            )
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-        };
-
-        group
+                row.get::<usize, u32>(0)
+                    .map(|id| AccountGroup::new(id, group_name.as_str(), accounts))
+            },
+        )
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     // pub fn _save_account<'a>(

@@ -128,11 +128,9 @@ impl AccountGroup {
 
         {
             let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let cancel_button = cancel_button.clone();
             let group_label_button = group_label_button.clone();
             cancel_button.connect_clicked(move |_| {
                 group_label_edit_form_box.set_visible(false);
-
                 group_label_button.set_visible(true);
             });
         }
