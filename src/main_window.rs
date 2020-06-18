@@ -11,6 +11,7 @@ use std::{thread, time};
 use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
+use gtk::PositionType;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -38,10 +39,44 @@ impl MainWindow {
         }
     }
 
+    fn build_system_menu(&mut self) {
+        let titlebar = gtk::HeaderBarBuilder::new()
+            .show_close_button(true)
+            .events( gdk::EventMask::ALL_EVENTS_MASK)
+            .title("Authenticator RS")
+            .decoration_layout("button:minimize,maximize,close")
+            .build();
+
+        let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
+
+        let b = gtk::ButtonBuilder::new()
+            .image(&add_image)
+            .build();
+
+        let popover = gtk::PopoverMenuBuilder::new()
+            .position(PositionType::Bottom)
+            .relative_to(&b)
+            .build();
+
+        b.connect_clicked(move |_| {
+            popover.show_all();
+        });
+
+        titlebar.add(&b);
+        self.window.set_titlebar(Some(&titlebar));
+
+        titlebar.show_all();
+
+    }
+
     pub fn set_application(&mut self, application: &gtk::Application) {
         self.window.set_application(Some(application));
+
+        self.build_system_menu();
+
         self.window.connect_delete_event(|_, _| Inhibit(false));
 
+        // self.build_system_menu(application);
         self.start_progress_bar();
 
         let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
