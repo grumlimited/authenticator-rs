@@ -21,6 +21,14 @@ pub struct MainWindow {
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pool: ThreadPool,
+    state: RefCell<State>,
+}
+
+#[derive(Clone, Debug)]
+pub enum State {
+    DISPLAY_ACCOUNTS,
+    DISPLAY_EDIT_ACCOUNT,
+    DISPLAY_ADD_GROUP,
 }
 
 impl MainWindow {
@@ -38,6 +46,30 @@ impl MainWindow {
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
+            state: RefCell::new(State::DISPLAY_ACCOUNTS),
+        }
+    }
+
+    pub fn switch_to(gui: MainWindow, state: State) {
+        let mut t = gui.state.borrow_mut();
+        *t = state;
+
+        match state {
+            State::DISPLAY_ACCOUNTS => {
+                gui.accounts_window.main_box.set_visible(true);
+                gui.accounts_window.add_group.set_visible(false);
+                gui.accounts_window.edit_account.set_visible(false);
+            },
+            State::DISPLAY_EDIT_ACCOUNT => {
+                gui.accounts_window.main_box.set_visible(false);
+                gui.accounts_window.add_group.set_visible(false);
+                gui.accounts_window.edit_account.set_visible(true);
+            },
+            State::DISPLAY_ADD_GROUP => {
+                gui.accounts_window.main_box.set_visible(false);
+                gui.accounts_window.add_group.set_visible(true);
+                gui.accounts_window.edit_account.set_visible(false);
+            },
         }
     }
 

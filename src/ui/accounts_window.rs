@@ -1,5 +1,5 @@
 use crate::helpers::ConfigManager;
-use crate::main_window::MainWindow;
+use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
@@ -132,6 +132,7 @@ impl AccountsWindow {
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let g = gui.clone();
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
@@ -151,6 +152,8 @@ impl AccountsWindow {
                 let input_name = gui.edit_account_window.input_name.clone();
                 let input_secret = gui.edit_account_window.input_secret.clone();
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
+
+                let g = gui.clone();
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let groups = {
@@ -179,9 +182,9 @@ impl AccountsWindow {
                     input_secret.set_text(account.secret.as_str());
 
                     popover.hide();
-                    main_box.set_visible(false);
-                    add_group.set_visible(false);
-                    edit_account.set_visible(true);
+
+                    let gui = g.clone();
+                    MainWindow::switch_to(gui, State::DISPLAY_EDIT_ACCOUNT);
                 });
             }
         }
