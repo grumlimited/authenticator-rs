@@ -112,11 +112,14 @@ impl AccountGroup {
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
         {
+            let group_label_entry = group_label_entry.clone();
             let group_label_edit_form_box = group_label_edit_form_box.clone();
             let group_label_button = group_label_button.clone();
             let popover = popover.clone();
             edit_button.connect_clicked(move |_| {
                 group_label_edit_form_box.set_visible(true);
+
+                group_label_entry.grab_focus();
 
                 group_label_button.set_visible(false);
                 popover.set_visible(false);
