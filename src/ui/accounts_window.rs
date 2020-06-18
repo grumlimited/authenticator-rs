@@ -89,10 +89,12 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
-            let edit_button = group_widgets.edit_button.clone();
+            let update_button = group_widgets.update_button.clone();
+            let group_label_entry = group_widgets.group_label_entry.clone();
             let group_id = group_widgets.id.clone();
 
             let connection = connection.clone();
+            let connection2 = connection.clone();
 
             let group_widgets = group_widgets.clone();
 
@@ -102,8 +104,20 @@ impl AccountsWindow {
                 group_widgets.container.set_visible(false);
             });
 
-            edit_button.connect_clicked(move |_| {
+            update_button.connect_clicked(move |_| {
+                let connection = connection2.clone();
+                let connection2 = connection.clone();
+                if let Some(s) = group_label_entry.get_text() {
+                    let mut group = ConfigManager::get_group(connection, group_id).unwrap();
+                    group.name = s.to_string();
 
+                    let _ = ConfigManager::update_group(connection2, &group).unwrap();
+
+                    // group_label_button.set_visible(false);
+                    group_label_entry.set_visible(false);
+                    // cancel_button.set_visible(true);
+                    // save_button.set_visible(true);
+                }
             });
         }
     }

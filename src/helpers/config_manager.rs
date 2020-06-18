@@ -96,6 +96,20 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub fn update_group(
+        conn: Arc<Mutex<Connection>>,
+        group: &AccountGroup,
+    ) -> Result<(), LoadError> {
+        let conn = conn.lock().unwrap();
+
+        conn.execute(
+            "UPDATE groups SET name = ?2 WHERE id = ?1",
+            params![group.id, group.name],
+        )
+            .map(|_| ())
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     pub async fn _async_get_group(
         conn: Arc<Mutex<Connection>>,
         group_id: u32,
@@ -130,24 +144,25 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn _get_or_create_group(
+    pub fn get_group(
         conn: Arc<Mutex<Connection>>,
-        group_name: &str,
+        group_id: u32,
     ) -> Result<AccountGroup, LoadError> {
         let group = {
             let conn = conn.clone();
             let conn = conn.lock().unwrap();
 
             let mut stmt = conn
-                .prepare("SELECT id FROM groups WHERE name = :name")
+                .prepare("SELECT id, name FROM groups WHERE id = :group_id")
                 .unwrap();
 
             stmt.query_row_named(
                 named_params! {
-                ":name": group_name
+                ":group_id": group_id
                 },
                 |row| {
                     let group_id: u32 = row.get_unwrap(0);
+                    let group_name: String = row.get_unwrap(1);
 
                     let mut stmt = conn
                         .prepare(
@@ -170,43 +185,43 @@ impl ConfigManager {
                         .collect();
 
                     row.get::<usize, u32>(0)
-                        .map(|id| AccountGroup::new(id, group_name, accounts))
+                        .map(|id| AccountGroup::new(id, group_name.as_str(), accounts))
                 },
             )
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
         };
 
-        group.or_else(|_| Self::_create_group(conn, group_name))
+        group
     }
 
-    pub fn _save_account<'a>(
-        conn: Arc<Mutex<Connection>>,
-        account: &'a mut Account,
-        group_name: &str,
-    ) -> Result<&'a mut Account, LoadError> {
-        let group = {
-            let conn = conn.clone();
-            Self::_get_or_create_group(conn, group_name).unwrap()
-        };
-
-        let conn = conn.lock().unwrap();
-
-        conn.execute(
-            "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
-            params![account.label, group.id, account.secret],
-        )
-        .unwrap();
-
-        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
-
-        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
-            .map(|id| {
-                account.id = id;
-                account.group_id = group.id;
-                account
-            })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-    }
+    // pub fn _save_account<'a>(
+    //     conn: Arc<Mutex<Connection>>,
+    //     account: &'a mut Account,
+    //     group_name: &str,
+    // ) -> Result<&'a mut Account, LoadError> {
+    //     let group = {
+    //         let conn = conn.clone();
+    //         Self::_get_or_create_group(conn, group_name).unwrap()
+    //     };
+    //
+    //     let conn = conn.lock().unwrap();
+    //
+    //     conn.execute(
+    //         "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
+    //         params![account.label, group.id, account.secret],
+    //     )
+    //     .unwrap();
+    //
+    //     let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+    //
+    //     stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+    //         .map(|id| {
+    //             account.id = id;
+    //             account.group_id = group.id;
+    //             account
+    //         })
+    //         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    // }
 
     pub fn update_account(
         connection: Arc<Mutex<Connection>>,

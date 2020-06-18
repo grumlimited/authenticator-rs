@@ -17,6 +17,8 @@ pub struct AccountGroupWidgets {
     pub container: gtk::Box,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
+    pub update_button: gtk::Button,
+    pub group_label_entry: gtk::Entry,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -79,7 +81,7 @@ impl AccountGroup {
             .no_show_all(true)
             .build();
 
-        let save_button = gtk::ButtonBuilder::new()
+        let update_button = gtk::ButtonBuilder::new()
             .image(&dialog_ok_image)
             .always_show_image(true)
             .margin_end(5)
@@ -90,7 +92,7 @@ impl AccountGroup {
         group_label_box.attach(&group_label_button, 0, 0, 1, 1);
         group_label_box.attach(&group_label_entry, 1, 0, 1, 1);
         group_label_box.attach(&cancel_button, 2, 0, 1, 1);
-        group_label_box.attach(&save_button, 3, 0, 1, 1);
+        group_label_box.attach(&update_button, 3, 0, 1, 1);
 
         let popover = gtk::PopoverMenuBuilder::new()
             .relative_to(&group_label_button)
@@ -100,7 +102,7 @@ impl AccountGroup {
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
         {
-            let save_button = save_button.clone();
+            let save_button = update_button.clone();
             let cancel_button = cancel_button.clone();
             let group_label_entry = group_label_entry.clone();
             let group_label_button = group_label_button.clone();
@@ -115,7 +117,7 @@ impl AccountGroup {
         }
 
         {
-            let save_button = save_button.clone();
+            let save_button = update_button.clone();
             let cancel_button = cancel_button.clone();
             let cancel_button2 = cancel_button.clone();
             let group_label_entry = group_label_entry.clone();
@@ -181,6 +183,8 @@ impl AccountGroup {
             container: group,
             edit_button,
             delete_button,
+            update_button,
+            group_label_entry,
             account_widgets,
         }
     }
