@@ -12,6 +12,7 @@ use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
+use std::borrow::BorrowMut;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -53,12 +54,12 @@ impl MainWindow {
             .position(PositionType::Bottom)
             .build();
 
-        let edit_button = gtk::ButtonBuilder::new()
+        let add_account_button = gtk::ButtonBuilder::new()
             .label("Add account")
             .margin(3)
             .build();
 
-        let delete_button = gtk::ButtonBuilder::new()
+        let add_group_button = gtk::ButtonBuilder::new()
             .label("Add group")
             .margin(3)
             .build();
@@ -69,8 +70,8 @@ impl MainWindow {
 
         popover.add(&buttons_container);
 
-        buttons_container.pack_start(&edit_button, false, false, 0);
-        buttons_container.pack_start(&delete_button, false, false, 0);
+        buttons_container.pack_start(&add_account_button, false, false, 0);
+        buttons_container.pack_start(&add_group_button, false, false, 0);
 
         let menu = gtk::MenuButtonBuilder::new()
             .image(&add_image)
@@ -79,9 +80,29 @@ impl MainWindow {
             .popover(&popover)
             .build();
 
-        menu.connect_clicked(move |_| {
-            popover.show_all();
-        });
+        {
+            let widgets = self.accounts_window.widgets.clone();
+            let add_account_button = add_account_button.clone();
+
+            menu.connect_clicked(move |_| {
+                let widgets = widgets.lock().unwrap();
+
+                widgets.iter().fold(0, |x, y| {
+                    x + {
+                        let account_widgets = y.account_widgets.clone();
+                        let  account_widgets = account_widgets.borrow();
+
+                        account_widgets.len()
+                    }
+                });
+
+                if widgets.is_empty() {
+                    add_account_button.set_sensitive(false)
+                }
+
+                popover.show_all();
+            });
+        }
 
         titlebar.add(&menu);
         self.window.set_titlebar(Some(&titlebar));
@@ -96,7 +117,6 @@ impl MainWindow {
 
         self.window.connect_delete_event(|_, _| Inhibit(false));
 
-        // self.build_system_menu(application);
         self.start_progress_bar();
 
         let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
