@@ -4,7 +4,7 @@ use base32::decode;
 use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
-use gtk::Orientation;
+use gtk::{Align, Orientation};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Account {
@@ -28,7 +28,11 @@ pub struct AccountWidgets {
 
 impl AccountWidgets {
     pub fn update(&mut self) {
-        let totp = Account::generate_time_based_password(self.totp_secret.as_str()).unwrap();
+        let totp = match Account::generate_time_based_password(self.totp_secret.as_str()) {
+            Ok(totp) => totp,
+            Err(_) => "error".to_owned(),
+        };
+
         self.totp_label.set_label(totp.as_str())
     }
 }
@@ -99,11 +103,16 @@ impl Account {
             popover.show_all();
         });
 
-        let totp = Self::generate_time_based_password(self.secret.as_str()).unwrap();
+        let totp = match Self::generate_time_based_password(self.secret.as_str()) {
+            Ok(totp) => totp,
+            Err(_) => "error".to_owned(),
+        };
+
         let totp_label = gtk::LabelBuilder::new()
             .label(totp.as_str())
             .width_chars(8)
-            .single_line_mode(true)
+            // .single_line_mode(true)
+            .halign(Align::End)
             .build();
 
         let totp_label_clone = totp_label.clone();

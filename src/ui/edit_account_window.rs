@@ -93,7 +93,6 @@ impl EditAccountWindow {
                     let name: String = name.get_buffer().get_text();
                     let secret: String = secret.get_buffer().get_text();
 
-                    let account_id: u32 = account_id.get_buffer().get_text().parse().unwrap();
                     let group_id = group
                         .get_active_id()
                         .unwrap()
@@ -102,15 +101,28 @@ impl EditAccountWindow {
                         .parse()
                         .unwrap();
 
-                    let mut account =
-                        Account::new(account_id, group_id, name.as_str(), secret.as_str());
+                    match account_id.get_buffer().get_text().parse() {
+                        Ok(account_id) if account_id == 0 => {
+                            let mut account =
+                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
 
-                    let connection_clone = connection.clone();
-                    let _ = ConfigManager::update_account(connection_clone, &mut account);
+                            let connection = connection.clone();
+                            let _ = ConfigManager::save_account(connection, &mut account).unwrap();
+                        }
+                        Ok(account_id) => {
+                            let mut account =
+                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
+
+                            let connection = connection.clone();
+                            let _ =
+                                ConfigManager::update_account(connection, &mut account).unwrap();
+                        }
+                        Err(_) => panic!(),
+                    };
 
                     let gui = gui.clone();
-                    let connection1 = connection.clone();
-                    AccountsWindow::replace_accounts_and_widgets(gui, connection1);
+                    let connection = connection.clone();
+                    AccountsWindow::replace_accounts_and_widgets(gui, connection);
 
                     accounts_window.main_box.set_visible(true);
                     edit_account_window.edit_account.set_visible(false);

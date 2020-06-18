@@ -8,10 +8,12 @@ use crate::model::{AccountGroup, AccountGroupWidgets};
 use glib::Sender;
 use std::{thread, time};
 
+use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
+use rusqlite::Connection;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -39,7 +41,7 @@ impl MainWindow {
         }
     }
 
-    fn build_system_menu(&mut self) {
+    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
             .events(gdk::EventMask::ALL_EVENTS_MASK)
@@ -82,6 +84,7 @@ impl MainWindow {
         {
             let widgets = self.accounts_window.widgets.clone();
             let add_account_button = add_account_button.clone();
+            let popover = popover.clone();
 
             menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
@@ -94,16 +97,48 @@ impl MainWindow {
             });
         }
 
+        {
+            let popover = popover.clone();
+            let edit_account_window = self.edit_account_window.clone();
+            let accounts_window = self.accounts_window.clone();
+            add_account_button.connect_clicked(move |_| {
+                let groups = {
+                    let connection = connection.clone();
+                    ConfigManager::load_account_groups(connection).unwrap()
+                };
+
+                groups.iter().for_each(|group| {
+                    let string = format!("{}", group.id);
+                    let entry_id = Some(string.as_str());
+                    edit_account_window
+                        .input_group
+                        .append(entry_id, group.name.as_str());
+                });
+
+                edit_account_window.input_account_id.set_text("0");
+                edit_account_window.input_name.set_text("");
+                edit_account_window.input_secret.set_text("");
+
+                popover.hide();
+                accounts_window.main_box.set_visible(false);
+                edit_account_window.edit_account.set_visible(true);
+            });
+        }
+
         titlebar.add(&menu);
         self.window.set_titlebar(Some(&titlebar));
 
         titlebar.show_all();
     }
 
-    pub fn set_application(&mut self, application: &gtk::Application) {
+    pub fn set_application(
+        &mut self,
+        application: &gtk::Application,
+        connection: Arc<Mutex<Connection>>,
+    ) {
         self.window.set_application(Some(application));
 
-        self.build_system_menu();
+        self.build_system_menu(connection);
 
         self.window.connect_delete_event(|_, _| Inhibit(false));
 

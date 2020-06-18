@@ -96,14 +96,14 @@ impl AccountsWindow {
             let edit_form_box = group_widgets.edit_form_box.clone();
             let group_id = group_widgets.id;
 
-            let connection = connection.clone();
-            let connection2 = connection.clone();
+            let connection_1 = connection.clone();
+            let connection_2 = connection_1.clone();
 
             let group_widgets = group_widgets.clone();
             let widgets_list_clone = widgets_list_clone.clone();
 
             delete_button.connect_clicked(move |_| {
-                let connection = connection.clone();
+                let connection = connection_1.clone();
                 let _ = ConfigManager::delete_group(connection, group_id);
                 group_widgets.container.set_visible(false);
 
@@ -112,7 +112,7 @@ impl AccountsWindow {
             });
 
             update_button.connect_clicked(move |_| {
-                let connection = connection2.clone();
+                let connection = connection_2.clone();
                 let connection2 = connection.clone();
                 if let Some(s) = group_label_entry.get_text() {
                     let mut group = ConfigManager::get_group(connection, group_id).unwrap();

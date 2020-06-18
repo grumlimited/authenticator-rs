@@ -186,34 +186,28 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    // pub fn _save_account<'a>(
-    //     conn: Arc<Mutex<Connection>>,
-    //     account: &'a mut Account,
-    //     group_name: &str,
-    // ) -> Result<&'a mut Account, LoadError> {
-    //     let group = {
-    //         let conn = conn.clone();
-    //         Self::_get_or_create_group(conn, group_name).unwrap()
-    //     };
-    //
-    //     let conn = conn.lock().unwrap();
-    //
-    //     conn.execute(
-    //         "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
-    //         params![account.label, group.id, account.secret],
-    //     )
-    //     .unwrap();
-    //
-    //     let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
-    //
-    //     stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
-    //         .map(|id| {
-    //             account.id = id;
-    //             account.group_id = group.id;
-    //             account
-    //         })
-    //         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-    // }
+    pub fn save_account(
+        conn: Arc<Mutex<Connection>>,
+        account: &mut Account,
+    ) -> Result<&mut Account, LoadError> {
+        let conn = conn.lock().unwrap();
+
+        conn.execute(
+            "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
+            params![account.label, account.group_id, account.secret],
+        )
+        .unwrap();
+
+        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+
+        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+            .map(|id| {
+                account.id = id;
+                account.group_id = account.group_id;
+                account
+            })
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
 
     pub fn update_account(
         connection: Arc<Mutex<Connection>>,
