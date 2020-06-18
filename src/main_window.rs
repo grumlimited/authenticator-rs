@@ -49,13 +49,14 @@ impl MainWindow {
         self.window.set_application(Some(application));
         self.window.connect_delete_event(|_, _| Inhibit(false));
 
+        self.start_progress_bar();
+
         let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
         let progress_bar = progress_bar.get_mut();
 
-        self.accounts_window.main_box.show();
         progress_bar.show();
+        self.accounts_window.main_box.show();
         self.accounts_window.stack.show();
-
         self.window.show();
     }
 
@@ -77,8 +78,6 @@ impl MainWindow {
         *m_widgets = widgets;
 
         self.accounts_window.accounts_container.show_all();
-
-        self.start_progress_bar();
     }
 
     pub fn start_progress_bar(&mut self) {
