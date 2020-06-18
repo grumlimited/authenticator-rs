@@ -1,6 +1,8 @@
 use crate::model::{Account, AccountWidgets};
 use gtk::prelude::*;
 use gtk::{Align, Orientation, PositionType};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Default)]
 pub struct AccountGroup {
@@ -15,12 +17,14 @@ pub struct AccountGroupWidgets {
     pub container: gtk::Box,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
-    pub account_widgets: Vec<AccountWidgets>,
+    pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
 impl AccountGroupWidgets {
     pub fn update(&mut self) {
-        self.account_widgets.iter_mut().for_each(|x| x.update());
+        let r = self.account_widgets.clone();
+        let mut r = r.borrow_mut();
+        (*r).iter_mut().for_each(|x| x.update());
     }
 }
 
@@ -37,9 +41,7 @@ impl AccountGroup {
         let group = gtk::Box::new(Orientation::Vertical, 0i32);
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
-        let group_label_button = gtk::ButtonBuilder::new()
-            .label(self.name.as_str())
-            .build();
+        let group_label_button = gtk::ButtonBuilder::new().label(self.name.as_str()).build();
 
         group_label_button.set_hexpand(false);
         group_label_button.set_halign(Align::Start);
@@ -76,10 +78,6 @@ impl AccountGroup {
 
         popover.add(&buttons_container);
 
-        group_label_button.connect_clicked(move |_| {
-            popover.show_all();
-        });
-
         group.add(&group_label_box);
 
         let accounts = gtk::Box::new(Orientation::Vertical, 0i32);
@@ -95,6 +93,22 @@ impl AccountGroup {
                 w
             })
             .collect();
+
+        let account_widgets = Rc::new(RefCell::new(account_widgets));
+
+        {
+            let account_widgets = account_widgets.clone();
+            let delete_button = delete_button.clone();
+            group_label_button.connect_clicked(move |_| {
+                let r = account_widgets.borrow_mut();
+
+                if r.is_empty() {
+                    delete_button.set_sensitive(true);
+                }
+
+                popover.show_all();
+            });
+        }
 
         group.add(&accounts);
 

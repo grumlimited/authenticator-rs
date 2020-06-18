@@ -83,14 +83,16 @@ impl AccountsWindow {
     pub fn group_edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
-            let b = group_widgets.delete_button.clone();
-            let group_id = group_widgets.id.clone();
+            let delete_button = group_widgets.delete_button.clone();
+            let _group_id = group_widgets.id.clone();
 
-            let connection = connection.clone();
+            let _connection = connection.clone();
 
-            b.connect_clicked(move |_| {
+            let account_widgets = group_widgets.account_widgets.clone();
 
-
+            delete_button.connect_clicked(move |_| {
+                let account_widgets = account_widgets.borrow_mut();
+                println!("{}", account_widgets.len());
             });
         }
     }
@@ -99,7 +101,10 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
-            for account_widgets in &group_widgets.account_widgets {
+            let account_widgets = group_widgets.account_widgets.clone();
+            let mut account_widgets = account_widgets.borrow_mut();
+
+            for account_widgets in account_widgets.iter_mut() {
                 let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
 
@@ -148,7 +153,10 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
-            for account_widgets in &group_widgets.account_widgets {
+            let account_widgets = group_widgets.account_widgets.clone();
+            let mut account_widgets = account_widgets.borrow_mut();
+
+            for account_widgets in account_widgets.iter_mut() {
                 let account_id = account_widgets.account_id;
                 let group_id = account_widgets.group_id;
                 let popover = account_widgets.popover.clone();
@@ -156,8 +164,6 @@ impl AccountsWindow {
                 let connection = connection.clone();
 
                 let gui = gui.clone();
-
-                let group_delete_button = group_widgets.delete_button.clone();
 
                 account_widgets.delete_button.connect_clicked(move |_| {
                     let connection = connection.clone();
@@ -168,17 +174,14 @@ impl AccountsWindow {
                     let widgets_group = widgets_list.iter_mut().find(|x| x.id == group_id);
 
                     if let Some(widgets_group) = widgets_group {
-                        if let Some(pos) = widgets_group
-                            .account_widgets
+                        let account_widgets = widgets_group.account_widgets.clone();
+                        let mut account_widgets = account_widgets.borrow_mut();
+
+                        if let Some(pos) = account_widgets
                             .iter()
                             .position(|x| x.account_id == account_id)
                         {
-                            widgets_group.account_widgets.remove(pos);
-
-                            // activating group delete button if no more accounts attached to group
-                            if widgets_group.account_widgets.is_empty() {
-                                group_delete_button.set_sensitive(true)
-                            }
+                            account_widgets.remove(pos);
                         }
                     }
 
