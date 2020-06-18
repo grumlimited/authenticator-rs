@@ -69,11 +69,7 @@ impl AccountsWindow {
             AccountsWindow::edit_buttons_actions(gui, connection);
         }
 
-        {
-            let gui = gui.clone();
-            let connection = connection.clone();
-            AccountsWindow::delete_buttons_actions(gui, connection);
-        }
+        AccountsWindow::delete_buttons_actions(gui, connection);
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -126,11 +122,9 @@ impl AccountsWindow {
     }
 
     pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let gui_clone = gui.clone();
         let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
 
         for group_widgets in widgets_list.iter_mut() {
-            let gui_outer = gui_clone.clone();
 
             for account_widgets in &group_widgets.account_widgets {
                 let account_id = account_widgets.account_id;
@@ -139,13 +133,12 @@ impl AccountsWindow {
 
                 let connection = connection.clone();
 
-                let gui_inner = gui_outer.clone();
+                let gui = gui.clone();
 
                 account_widgets.delete_button.connect_clicked(move |_| {
                     let connection = connection.clone();
                     let _ = ConfigManager::delete_account(connection, account_id).unwrap();
 
-                    let gui = gui_inner.clone();
                     let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
 
                     let widgets_group = widgets_list.iter_mut().find(|x| x.id == group_id);
