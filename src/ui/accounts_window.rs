@@ -139,7 +139,7 @@ impl AccountsWindow {
                 let input_secret = gui.edit_account_window.input_secret.clone();
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
 
-                let g = gui.clone();
+                let gui = gui.clone();
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let groups = {
@@ -152,6 +152,8 @@ impl AccountsWindow {
                         ConfigManager::get_account(connection, id)
                     }
                     .unwrap();
+
+                    input_group.remove_all(); //re-added and refreshed just below
 
                     groups.iter().for_each(|group| {
                         let string = format!("{}", group.id);
@@ -169,7 +171,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    let gui = g.clone();
+                    let gui = gui.clone();
                     MainWindow::switch_to(gui, State::DisplayEditAccount);
                 });
             }
