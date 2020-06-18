@@ -44,7 +44,9 @@ impl ConfigManager {
         }
     }
 
-    pub fn load_account_groups(conn: Arc<Mutex<Connection>>) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(
+        conn: Arc<Mutex<Connection>>,
+    ) -> Result<Vec<AccountGroup>, LoadError> {
         {
             let conn = conn.clone();
             Self::init_tables(conn).unwrap();
@@ -73,7 +75,12 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn _create_group(conn: &Connection, group_name: &str) -> Result<AccountGroup, LoadError> {
+    fn _create_group(
+        conn: Arc<Mutex<Connection>>,
+        group_name: &str,
+    ) -> Result<AccountGroup, LoadError> {
+        let conn = conn.lock().unwrap();
+
         conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group_name])
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
             .unwrap();
@@ -90,7 +97,7 @@ impl ConfigManager {
     }
 
     pub async fn _async_get_group(
-        conn: Arc<Mutex<Box<Connection>>>,
+        conn: Arc<Mutex<Connection>>,
         group_id: u32,
     ) -> Result<AccountGroup, LoadError> {
         let conn = conn.lock().unwrap();
@@ -124,15 +131,18 @@ impl ConfigManager {
     }
 
     pub fn _get_or_create_group(
-        conn: &Connection,
+        conn: Arc<Mutex<Connection>>,
         group_name: &str,
     ) -> Result<AccountGroup, LoadError> {
-        let mut stmt = conn
-            .prepare("SELECT id FROM groups WHERE name = :name")
-            .unwrap();
+        let group = {
+            let conn = conn.clone();
+            let conn = conn.lock().unwrap();
 
-        let group = stmt
-            .query_row_named(
+            let mut stmt = conn
+                .prepare("SELECT id FROM groups WHERE name = :name")
+                .unwrap();
+
+            stmt.query_row_named(
                 named_params! {
                 ":name": group_name
                 },
@@ -163,17 +173,23 @@ impl ConfigManager {
                         .map(|id| AccountGroup::new(id, group_name, accounts))
                 },
             )
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)));
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        };
 
         group.or_else(|_| Self::_create_group(conn, group_name))
     }
 
     pub fn _save_account<'a>(
-        conn: &Connection,
+        conn: Arc<Mutex<Connection>>,
         account: &'a mut Account,
         group_name: &str,
     ) -> Result<&'a mut Account, LoadError> {
-        let group = Self::_get_or_create_group(conn, group_name).unwrap();
+        let group = {
+            let conn = conn.clone();
+            Self::_get_or_create_group(conn, group_name).unwrap()
+        };
+
+        let conn = conn.lock().unwrap();
 
         conn.execute(
             "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
@@ -279,38 +295,47 @@ impl ConfigManager {
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{Account, AccountGroup};
-
     use super::ConfigManager;
     use rusqlite::Connection;
     use std::path::Path;
 
+    use crate::model::{Account, AccountGroup};
     use async_std::task;
     use std::sync::{Arc, Mutex};
 
     #[test]
     fn create_new_account_and_new_group() {
-        let conn = Connection::open_in_memory().unwrap();
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = ConfigManager::init_tables(&conn);
+        let _ = {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn);
+        };
 
-        let mut account = Account::new(0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret");
 
-        let result = ConfigManager::save_account(&conn, &mut account, "group name")
-            .unwrap()
-            .clone();
+        let result = {
+            let conn = conn.clone();
+            ConfigManager::_save_account(conn, &mut account, "group name")
+                .unwrap()
+                .clone()
+        };
 
         assert!(result.id > 0);
         assert!(result.group_id > 0);
         assert_eq!("label", result.label);
 
-        let account_reloaded = ConfigManager::get_account(&conn, account.id).unwrap();
+        let account_reloaded = {
+            let conn = conn.clone();
+            ConfigManager::get_account(conn, account.id).unwrap()
+        };
+
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        let account_reloaded = ConfigManager::update_account(&conn, &mut account_reloaded).unwrap();
+        let account_reloaded = ConfigManager::update_account(conn, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -318,22 +343,31 @@ mod tests {
 
     #[test]
     fn create_new_account_with_existing_group() {
-        let conn = Connection::open_in_memory().unwrap();
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = ConfigManager::init_tables(&conn);
+        let _ = {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn);
+        };
 
-        let group = ConfigManager::create_group(&conn, "existing_group2").unwrap();
+        let group = {
+            let conn = conn.clone();
+            ConfigManager::_create_group(conn, "existing_group2").unwrap()
+        };
 
-        let mut account = Account::new(group.id, "label", "secret");
+        let mut account = Account::new(0, group.id, "label", "secret");
 
-        let result = ConfigManager::save_account(&conn, &mut account, "existing_group2")
-            .unwrap()
-            .clone();
+        let result = {
+            let conn = conn.clone();
+            ConfigManager::_save_account(conn, &mut account, "existing_group2")
+                .unwrap()
+                .clone()
+        };
 
         assert!(result.id > 0);
         assert_eq!(group.id, result.group_id);
 
-        let reloaded_group = ConfigManager::get_or_create_group(&conn, "existing_group2").unwrap();
+        let reloaded_group = ConfigManager::_get_or_create_group(conn, "existing_group2").unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
@@ -341,16 +375,21 @@ mod tests {
 
     #[test]
     fn get_or_create_group_with_new_group() {
-        let conn = Connection::open_in_memory().unwrap();
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = ConfigManager::init_tables(&conn);
+        let _ = {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn);
+        };
 
-        let group = ConfigManager::get_or_create_group(&conn, "existing_group2").unwrap();
+        let group = {
+            let conn = conn.clone();
+            ConfigManager::_create_group(conn, "existing_group2").unwrap()
+        };
 
         assert!(group.id > 0);
         assert_eq!("existing_group2", group.name);
 
-        let conn = Arc::new(Mutex::new(Box::new(conn)));
         let group: AccountGroup =
             task::block_on(ConfigManager::_async_get_group(conn, group.id)).unwrap();
 
@@ -360,19 +399,25 @@ mod tests {
 
     #[test]
     fn delete_account() {
-        let conn = Connection::open_in_memory().unwrap();
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = ConfigManager::init_tables(&conn);
+        let _ = {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn);
+        };
 
-        let mut account = Account::new(0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret");
 
-        let result = ConfigManager::save_account(&conn, &mut account, "group name")
-            .unwrap()
-            .clone();
+        let result = {
+            let conn = conn.clone();
+            ConfigManager::_save_account(conn, &mut account, "group name")
+                .unwrap()
+                .clone()
+        };
 
         assert_eq!(1, result.id);
 
-        let result = ConfigManager::delete_account(&conn, account.id).unwrap();
+        let result = ConfigManager::delete_account(conn, account.id).unwrap();
         assert!(result > 0);
     }
 }

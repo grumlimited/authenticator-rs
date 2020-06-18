@@ -6,7 +6,7 @@ use base32::Alphabet::RFC4648;
 use gtk::prelude::*;
 use gtk::Orientation;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,

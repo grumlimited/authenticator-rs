@@ -47,3 +47,5 @@ features = ["v3_22"]
 [dependencies.glib]
 version = "0.9.3"
 
+[dev-dependencies]
+async-std = {version ="1.6.0", features = ["unstable"] }
