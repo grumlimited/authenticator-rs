@@ -74,6 +74,12 @@ impl AccountsWindow {
         {
             let gui = gui.clone();
             let connection = connection.clone();
+            AccountsWindow::group_edit_buttons_actions(gui, connection);
+        }
+
+        {
+            let gui = gui.clone();
+            let connection = connection.clone();
             AccountsWindow::delete_buttons_actions(gui, connection);
         }
 
