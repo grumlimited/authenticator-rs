@@ -53,7 +53,7 @@ impl AccountsWindow {
             let gui = gui.clone();
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
-            *m_widgets =  groups
+            *m_widgets = groups
                 .iter_mut()
                 .map(|account_group| account_group.widget())
                 .collect();
@@ -98,7 +98,6 @@ impl AccountsWindow {
 
             delete_button.connect_clicked(move |_| {
                 let account_widgets = account_widgets.borrow_mut();
-                println!("{}", account_widgets.len());
 
                 let connection = connection.clone();
                 let _ = ConfigManager::delete_group(connection, group_id);
@@ -121,12 +120,6 @@ impl AccountsWindow {
                 let main_box = gui.accounts_window.main_box.clone();
                 let edit_account = gui.accounts_window.edit_account.clone();
 
-                let account = {
-                    let connection = connection.clone();
-                    ConfigManager::get_account(connection, id)
-                }
-                .unwrap();
-
                 let connection = connection.clone();
                 let input_group = gui.edit_account_window.input_group.clone();
                 let input_name = gui.edit_account_window.input_name.clone();
@@ -134,8 +127,16 @@ impl AccountsWindow {
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
 
                 account_widgets.edit_button.connect_clicked(move |_| {
-                    let connection = connection.clone();
-                    let groups = ConfigManager::load_account_groups(connection).unwrap();
+                    let groups = {
+                        let connection = connection.clone();
+                        ConfigManager::load_account_groups(connection).unwrap()
+                    };
+
+                    let account = {
+                        let connection = connection.clone();
+                        ConfigManager::get_account(connection, id)
+                    }
+                    .unwrap();
 
                     groups.iter().for_each(|group| {
                         let string = format!("{}", group.id);
