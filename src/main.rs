@@ -56,8 +56,15 @@ fn main() {
         gui.display(groups);
 
         gui.set_application(&app);
-        let conn = connection.clone();
-        AccountsWindow::edit_buttons_actions(gui.clone(), conn);
+        {
+            let conn = connection.clone();
+            AccountsWindow::edit_buttons_actions(gui.clone(), conn);
+        }
+
+        {
+            let conn = connection.clone();
+            AccountsWindow::group_edit_buttons_actions(gui.clone(), conn);
+        }
 
         let conn = connection.clone();
         let gui_clone = gui.clone();

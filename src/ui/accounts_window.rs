@@ -80,6 +80,21 @@ impl AccountsWindow {
         gui.accounts_window.accounts_container.show_all();
     }
 
+    pub fn group_edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        for group_widgets in widgets_list.iter_mut() {
+            let b = group_widgets.delete_button.clone();
+            let group_id = group_widgets.id.clone();
+
+            let connection = connection.clone();
+
+            b.connect_clicked(move |_| {
+
+
+            });
+        }
+    }
+
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
@@ -142,6 +157,8 @@ impl AccountsWindow {
 
                 let gui = gui.clone();
 
+                let group_delete_button = group_widgets.delete_button.clone();
+
                 account_widgets.delete_button.connect_clicked(move |_| {
                     let connection = connection.clone();
                     let _ = ConfigManager::delete_account(connection, account_id).unwrap();
@@ -157,6 +174,11 @@ impl AccountsWindow {
                             .position(|x| x.account_id == account_id)
                         {
                             widgets_group.account_widgets.remove(pos);
+
+                            // activating group delete button if no more accounts attached to group
+                            if widgets_group.account_widgets.is_empty() {
+                                group_delete_button.set_sensitive(true)
+                            }
                         }
                     }
 
