@@ -159,6 +159,9 @@ impl MainWindow {
                     ConfigManager::load_account_groups(connection).unwrap()
                 };
 
+                edit_account_window
+                    .input_group.remove_all();
+
                 groups.iter().for_each(|group| {
                     let string = format!("{}", group.id);
                     let entry_id = Some(string.as_str());
