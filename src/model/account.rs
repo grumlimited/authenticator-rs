@@ -72,9 +72,9 @@ impl Account {
             .always_show_image(true)
             .build();
 
-        let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
+        let edit_button = gtk::ButtonBuilder::new().label("Edit").margin(3).build();
 
-        let delete_button = gtk::ButtonBuilder::new().label("Delete").build();
+        let delete_button = gtk::ButtonBuilder::new().label("Delete").margin(3).build();
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)

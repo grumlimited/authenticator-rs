@@ -109,7 +109,7 @@ impl AccountGroup {
             .position(PositionType::Right)
             .build();
 
-        let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
+        let edit_button = gtk::ButtonBuilder::new().label("Edit").margin(3).build();
 
         {
             let group_label_entry = group_label_entry.clone();
@@ -137,6 +137,7 @@ impl AccountGroup {
 
         let delete_button = gtk::ButtonBuilder::new()
             .label("Delete")
+            .margin(3)
             .sensitive(self.entries.is_empty())
             .build();
 
