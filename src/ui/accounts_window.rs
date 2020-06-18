@@ -7,8 +7,8 @@ use gtk::prelude::*;
 use gtk::Builder;
 use rusqlite::Connection;
 use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
@@ -63,17 +63,23 @@ impl AccountsWindow {
         gui.accounts_window.accounts_container = accounts_container;
         gui.accounts_window.accounts_container.show_all();
 
-        let gui2 = gui.clone();
-        let connection2 = connection.clone();
-        AccountsWindow::edit_buttons_actions(gui, connection);
-        AccountsWindow::delete_buttons_actions(gui2, connection2);
+        {
+            let gui = gui.clone();
+            let connection = connection.clone();
+            AccountsWindow::edit_buttons_actions(gui, connection);
+        }
+
+        {
+            let gui = gui.clone();
+            let connection = connection.clone();
+            AccountsWindow::delete_buttons_actions(gui, connection);
+        }
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let o = gui.accounts_window.widgets;
-        let mut oo = o.borrow_mut();
+        let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
 
-        for group_widgets in oo.iter_mut() {
+        for group_widgets in widgets_list.iter_mut() {
             for account_widgets in &group_widgets.account_widgets {
                 let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
@@ -121,80 +127,40 @@ impl AccountsWindow {
 
     pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         let gui_clone = gui.clone();
+        let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
 
-        let o = gui.accounts_window.widgets;
-        let mut oo = o.borrow_mut();
-
-        for group_widgets in oo.iter_mut() {
-            let group_widgets_outer = group_widgets.clone();
+        for group_widgets in widgets_list.iter_mut() {
             let gui_outer = gui_clone.clone();
 
             for account_widgets in &group_widgets.account_widgets {
                 let account_id = account_widgets.account_id;
                 let group_id = account_widgets.group_id;
-                // let popover = account_widgets.popover.clone();
-                //
-                // let connection = connection.clone();
+                let popover = account_widgets.popover.clone();
+
+                let connection = connection.clone();
 
                 let gui_inner = gui_outer.clone();
-                // let m = gui_inner.accounts_window.widgets.clone();
-                // let group_widgets_inner = group_widgets_outer.clone();
 
                 account_widgets.delete_button.connect_clicked(move |_| {
-                    // let connection = connection.clone();
-                    // let _ = ConfigManager::delete_account(connection, id).unwrap();
+                    let connection = connection.clone();
+                    let _ = ConfigManager::delete_account(connection, account_id).unwrap();
 
                     let gui = gui_inner.clone();
-                    let m = gui.accounts_window.widgets;
-                    let mut mm = m.borrow_mut();
+                    let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
 
+                    let widgets_group = widgets_list.iter_mut().find(|x| x.id == group_id);
 
-                    println!("group_id {}", group_id);
-                    println!("account_id to delete {}", account_id);
+                    if let Some(widgets_group) = widgets_group {
+                        if let Some(pos) = widgets_group
+                            .account_widgets
+                            .iter()
+                            .position(|x| x.account_id == account_id)
+                        {
+                            widgets_group.account_widgets.remove(pos);
+                        }
+                    }
 
-                    // let gui2 = gui_inner.clone();
-                    // let arc = gui2.accounts_window.widgets;
-                    // let ref_mut = arc.borrow_mut();
-                    println!("before {:?}", mm);
-
-                    mm.clear();
-
-        //
-        //             let mut gui2 = gui_inner.clone();
-        //
-        //             let r =
-        //                 gui2.accounts_window.widgets.iter_mut().find(|x| x.id == group_id );
-        //
-        //             if let Some(a) = r {
-        //                 let mut p = &mut a.account_widgets;
-        //
-        //                 if let Some(pos) = p.iter().position(|x| {
-        //                     x.account_id == account_id
-        //                 }) {
-        //                     println!("pos {}", pos);
-        //                     p.remove(pos);
-        //                 }
-        //             }
-        //
-        //             println!("after {:?}", gui.accounts_window.widgets);
-        //
-        //             // let mut group_widgets_inner = group_widgets_inner.clone();
-        //             // let mut account_widgets = group_widgets_inner.account_widgets;
-        //             // println!("before {}", account_widgets.len());
-        //             // println!("before2 {}", gui_inner.accounts_window.widgets.len());
-        //             // if let Some(pos) = account_widgets.iter().position(|x| {
-        //             //     println!("account_id {}", x.account_id);
-        //             //     x.account_id == account_id
-        //             // }) {
-        //             //     println!("pos {}", pos);
-        //             //     account_widgets.remove(pos);
-        //             // }
-        //             //
-        //             // println!("after {}", account_widgets.len());
-        //             //
-        //             // group_widgets_inner.account_widgets = account_widgets;
-        //
-        //             popover.hide();
+                    popover.hide();
                 });
             }
         }
