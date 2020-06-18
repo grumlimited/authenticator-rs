@@ -59,19 +59,19 @@ impl MainWindow {
 
         match state {
             State::DisplayAccounts => {
-                gui.accounts_window.main_box.set_visible(true);
+                gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
-                gui.edit_account_window.edit_account.set_visible(false);
+                gui.edit_account_window.container.set_visible(false);
             },
             State::DisplayEditAccount => {
-                gui.accounts_window.main_box.set_visible(false);
+                gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
-                gui.edit_account_window.edit_account.set_visible(true);
+                gui.edit_account_window.container.set_visible(true);
             },
             State::DisplayAddGroup => {
-                gui.accounts_window.main_box.set_visible(false);
+                gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(true);
-                gui.edit_account_window.edit_account.set_visible(false);
+                gui.edit_account_window.container.set_visible(false);
             },
         }
     }
@@ -100,14 +100,21 @@ impl MainWindow {
             .margin(3)
             .build();
 
-        // {
-        //     let add_group_button = add_group_button.clone();
-        //     add_group_button.connect_clicked(move |_| {
-        //         self.accounts_window.main_box.set_visible(false);
-        //         self.accounts_window.add_group.set_visible(true);
-        //         self.accounts_window.edit_account.set_visible(false);
-        //     });
-        // }
+        {
+            let popover = popover.clone();
+            let add_group_button = add_group_button.clone();
+            let edit_account_window = self.edit_account_window.clone();
+            let accounts_window = self.accounts_window.clone();
+            let add_group = self.add_group.clone();
+
+            add_group_button.connect_clicked(move |_| {
+                popover.hide();
+
+                edit_account_window.container.set_visible(false);
+                accounts_window.container.set_visible(false);
+                add_group.container.set_visible(true);
+            });
+        }
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)
@@ -145,6 +152,7 @@ impl MainWindow {
             let popover = popover.clone();
             let edit_account_window = self.edit_account_window.clone();
             let accounts_window = self.accounts_window.clone();
+            let add_group = self.add_group.clone();
             add_account_button.connect_clicked(move |_| {
                 let groups = {
                     let connection = connection.clone();
@@ -164,8 +172,9 @@ impl MainWindow {
                 edit_account_window.input_secret.set_text("");
 
                 popover.hide();
-                accounts_window.main_box.set_visible(false);
-                edit_account_window.edit_account.set_visible(true);
+                accounts_window.container.set_visible(false);
+                add_group.container.set_visible(false);
+                edit_account_window.container.set_visible(true);
             });
         }
 
@@ -192,7 +201,7 @@ impl MainWindow {
         let progress_bar = progress_bar.get_mut();
 
         progress_bar.show();
-        self.accounts_window.main_box.show();
+        self.accounts_window.container.show();
         // self.accounts_window.stack.show();
         self.window.show();
     }

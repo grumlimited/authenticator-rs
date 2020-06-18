@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
-    pub main_box: gtk::Box,
+    pub container: gtk::Box,
     pub accounts_container: gtk::Box,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidgets>>>,
@@ -26,7 +26,7 @@ impl AccountsWindow {
         progress_bar.set_fraction(Self::progress_bar_fraction());
 
         AccountsWindow {
-            main_box,
+            container: main_box,
             accounts_container,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             widgets: Arc::new(Mutex::new(vec![])),

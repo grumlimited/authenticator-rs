@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
-    pub edit_account: gtk::Box,
+    pub container: gtk::Box,
     pub input_group: gtk::ComboBoxText,
     pub input_name: gtk::Entry,
     pub input_secret: gtk::Entry,
@@ -21,7 +21,7 @@ pub struct EditAccountWindow {
 impl EditAccountWindow {
     pub fn new(builder: Builder) -> EditAccountWindow {
         EditAccountWindow {
-            edit_account: builder.get_object("edit_account").unwrap(),
+            container: builder.get_object("edit_account").unwrap(),
             input_group: builder.get_object("edit_account_input_group").unwrap(),
             input_name: builder.get_object("edit_account_input_name").unwrap(),
             input_secret: builder.get_object("edit_account_input_secret").unwrap(),
@@ -70,8 +70,8 @@ impl EditAccountWindow {
                     name.set_text("");
                     secret.set_text("");
 
-                    accounts_window.main_box.set_visible(true);
-                    edit_account_window.edit_account.set_visible(false);
+                    accounts_window.container.set_visible(true);
+                    edit_account_window.container.set_visible(false);
                 })
             },
         );
@@ -122,8 +122,8 @@ impl EditAccountWindow {
                     let connection = connection.clone();
                     AccountsWindow::replace_accounts_and_widgets(gui, connection);
 
-                    accounts_window.main_box.set_visible(true);
-                    edit_account_window.edit_account.set_visible(false);
+                    accounts_window.container.set_visible(true);
+                    edit_account_window.container.set_visible(false);
                 })
             },
         );
