@@ -110,38 +110,26 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub async fn _async_get_group(
+    pub fn save_group(
         conn: Arc<Mutex<Connection>>,
-        group_id: u32,
-    ) -> Result<AccountGroup, LoadError> {
+        group: &mut AccountGroup,
+    ) -> Result<&mut AccountGroup, LoadError> {
         let conn = conn.lock().unwrap();
-        let mut stmt = conn
-            .prepare("SELECT id, name FROM groups WHERE id = ?1")
+
+        conn.execute(
+            "INSERT INTO groups (name) VALUES (?1)",
+            params![group.name],
+        )
             .unwrap();
 
-        stmt.query_row(params![group_id], |group_row| {
-            let group_name: String = group_row.get_unwrap(1);
+        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
-            let mut stmt = conn
-                .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
-                .unwrap();
-
-            let accounts = stmt
-                .query_map(params![group_id], |row| {
-                    let label = row.get_unwrap::<usize, String>(1);
-                    let secret = row.get_unwrap::<usize, String>(3);
-                    let id = row.get(0)?;
-                    let account = Account::new(id, group_id, label.as_str(), secret.as_str());
-
-                    Ok(account)
-                })
-                .unwrap()
-                .map(|e| e.unwrap())
-                .collect();
-
-            Ok(AccountGroup::new(group_id, group_name.as_str(), accounts))
-        })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+            .map(|id| {
+                group.id = id;
+                group
+            })
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn get_group(

@@ -1,6 +1,6 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
-use crate::model::Account;
+use crate::model::{Account, AccountGroup};
 use crate::ui::AccountsWindow;
 use gtk::prelude::*;
 use gtk::Builder;
@@ -41,10 +41,10 @@ impl AddGroupWindow {
 
         let gui_clone = gui.clone();
         let connection_clone = connection.clone();
-        let edit_account_cancel = gui.edit_account_window.cancel_button.clone();
+        let add_group_account_cancel = gui.add_group.cancel_button.clone();
 
         // CANCEL
-        with_action(gui, connection, edit_account_cancel, |_, gui| {
+        with_action(gui, connection, add_group_account_cancel, |_, gui| {
             Box::new(move |_| {
                 let gui = gui.clone();
                 let gui2 = gui.clone();
@@ -58,60 +58,34 @@ impl AddGroupWindow {
             })
         });
 
-        let edit_account_save = gui_clone.edit_account_window.save_button.clone();
+        let add_group_account_save = gui_clone.add_group.save_button.clone();
 
         //SAVE
         with_action(
             gui_clone,
             connection_clone,
-            edit_account_save,
+            add_group_account_save,
             |connection, gui| {
                 Box::new(move |_| {
-                    let gui = gui.clone();
-                    let gui2 = gui.clone();
-                    let gui3 = gui.clone();
+                    let connection = connection.clone();
+                    let gui_1 = gui.clone();
+                    let gui_2 = gui_1.clone();
+                    let gui3 = gui_1.clone();
 
-                    let edit_account_window = gui.edit_account_window;
+                    let add_group = gui_1.add_group;
 
-                    let name = edit_account_window.input_name.clone();
-                    let secret = edit_account_window.input_secret.clone();
-                    let account_id = edit_account_window.input_account_id.clone();
-                    let group = edit_account_window.input_group.clone();
+                    let name = add_group.input_group.clone();
 
                     let name: String = name.get_buffer().get_text();
-                    let secret: String = secret.get_buffer().get_text();
 
-                    let group_id = group
-                        .get_active_id()
-                        .unwrap()
-                        .as_str()
-                        .to_owned()
-                        .parse()
-                        .unwrap();
+                    let mut group = AccountGroup::new(0, name.as_str(), vec![]);
 
-                    match account_id.get_buffer().get_text().parse() {
-                        Ok(account_id) if account_id == 0 => {
-                            let mut account =
-                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
+                    {
+                        let connection = connection.clone();
+                        ConfigManager::save_group(connection, &mut group).unwrap();
+                    }
 
-                            let connection = connection.clone();
-                            let _ = ConfigManager::save_account(connection, &mut account).unwrap();
-                        }
-                        Ok(account_id) => {
-                            let mut account =
-                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
-
-                            let connection = connection.clone();
-                            let _ =
-                                ConfigManager::update_account(connection, &mut account).unwrap();
-                        }
-                        Err(_) => panic!(),
-                    };
-
-                    let gui = gui2.clone();
-                    let connection = connection.clone();
-                    AccountsWindow::replace_accounts_and_widgets(gui, connection);
-
+                    AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
                     MainWindow::switch_to(gui3, State::DisplayAccounts);
                 })
             },

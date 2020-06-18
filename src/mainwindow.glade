@@ -18,6 +18,11 @@
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-ok</property>
   </object>
+  <object class="GtkImage" id="save1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-ok</property>
+  </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can_focus">False</property>
     <property name="default_width">250</property>
@@ -155,6 +160,7 @@
                         <property name="height_request">35</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="width_chars">23</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -331,6 +337,7 @@
                         <property name="height_request">35</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="width_chars">23</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -428,10 +435,5 @@
       <widget name="edit_account_label_name"/>
       <widget name="edit_account_label_secret"/>
     </widgets>
-  </object>
-  <object class="GtkImage" id="save1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">dialog-ok</property>
   </object>
 </interface>
