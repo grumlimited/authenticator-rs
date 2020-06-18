@@ -49,21 +49,19 @@ impl AccountsWindow {
         let connection_clone = connection.clone();
         let mut groups = ConfigManager::load_account_groups(connection_clone).unwrap();
 
-        let widgets: Vec<AccountGroupWidgets> = groups
-            .iter_mut()
-            .map(|account_group| account_group.widget())
-            .collect();
-
         {
             let gui = gui.clone();
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
+            *m_widgets =  groups
+                .iter_mut()
+                .map(|account_group| account_group.widget())
+                .collect();
+
             // add updated accounts back to list
-            widgets
+            m_widgets
                 .iter()
                 .for_each(|w| accounts_container.add(&w.container));
-
-            *m_widgets = widgets;
         }
 
         {
