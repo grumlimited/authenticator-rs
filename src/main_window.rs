@@ -10,7 +10,7 @@ use std::{thread, time};
 
 use crate::helpers::ConfigManager;
 use crate::ui;
-use crate::ui::{AccountsWindow, EditAccountWindow, AddGroupWindow};
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
 use rusqlite::Connection;
@@ -62,17 +62,17 @@ impl MainWindow {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(false);
-            },
+            }
             State::DisplayEditAccount => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
-            },
+            }
             State::DisplayAddGroup => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(true);
                 gui.edit_account_window.container.set_visible(false);
-            },
+            }
         }
     }
 

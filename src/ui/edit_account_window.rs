@@ -38,14 +38,9 @@ impl EditAccountWindow {
             button: gtk::Button,
             button_closure: F,
         ) where
-            F: 'static
-                + Fn(
-                    Arc<Mutex<Connection>>,
-                    MainWindow,
-                ) -> Box<dyn Fn(&gtk::Button)>,
+            F: 'static + Fn(Arc<Mutex<Connection>>, MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
-            let button_closure =
-                button_closure(connection, gui);
+            let button_closure = button_closure(connection, gui);
 
             button.connect_clicked(button_closure);
         }
@@ -54,26 +49,21 @@ impl EditAccountWindow {
         let connection_clone = connection.clone();
         let edit_account_cancel = gui.edit_account_window.cancel_button.clone();
 
-        with_action(
-            gui,
-            connection,
-            edit_account_cancel,
-            |_, gui| {
-                Box::new(move |_| {
-                    let gui = gui.clone();
-                    let gui2 = gui.clone();
-                    let edit_account_window = gui.edit_account_window;
+        with_action(gui, connection, edit_account_cancel, |_, gui| {
+            Box::new(move |_| {
+                let gui = gui.clone();
+                let gui2 = gui.clone();
+                let edit_account_window = gui.edit_account_window;
 
-                    let name = edit_account_window.input_name.clone();
-                    let secret = edit_account_window.input_secret.clone();
+                let name = edit_account_window.input_name.clone();
+                let secret = edit_account_window.input_secret.clone();
 
-                    name.set_text("");
-                    secret.set_text("");
+                name.set_text("");
+                secret.set_text("");
 
-                    MainWindow::switch_to(gui2, State::DisplayAccounts);
-                })
-            },
-        );
+                MainWindow::switch_to(gui2, State::DisplayAccounts);
+            })
+        });
 
         let edit_account_save = gui_clone.edit_account_window.save_button.clone();
 

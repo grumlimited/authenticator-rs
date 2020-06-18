@@ -8,7 +8,7 @@ extern crate gtk;
 
 use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
-use crate::ui::{AccountsWindow, EditAccountWindow};
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use gio::prelude::*;
 use gtk::prelude::*;
 use rusqlite::Connection;
@@ -70,10 +70,19 @@ fn main() {
             AccountsWindow::group_edit_buttons_actions(gui.clone(), conn);
         }
 
-        let conn = connection.clone();
-        let gui_clone = gui.clone();
+        {
+            let gui = gui.clone();
+            let conn = connection.clone();
+            EditAccountWindow::edit_account_buttons_actions(gui, conn);
+        }
 
-        EditAccountWindow::edit_account_buttons_actions(gui, conn);
+        {
+            let gui = gui.clone();
+            let conn = connection.clone();
+            AddGroupWindow::edit_account_buttons_actions(gui, conn);
+        }
+
+        let gui_clone = gui.clone();
 
         AccountsWindow::delete_buttons_actions(gui_clone, connection);
     });
