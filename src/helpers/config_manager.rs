@@ -312,11 +312,21 @@ mod tests {
             ConfigManager::init_tables(conn);
         };
 
+        let mut group = AccountGroup::new(0, "new group", vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
+
+        let group = {
+            let conn = conn.clone();
+            ConfigManager::save_group(conn, &mut group)
+                .unwrap()
+                .clone()
+        };
+
+        account.group_id = group.id;
 
         let result = {
             let conn = conn.clone();
-            ConfigManager::_save_account(conn, &mut account, "group name")
+            ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
         };
@@ -359,7 +369,7 @@ mod tests {
 
         let result = {
             let conn = conn.clone();
-            ConfigManager::_save_account(conn, &mut account, "existing_group2")
+            ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
         };
@@ -367,7 +377,7 @@ mod tests {
         assert!(result.id > 0);
         assert_eq!(group.id, result.group_id);
 
-        let reloaded_group = ConfigManager::_get_or_create_group(conn, "existing_group2").unwrap();
+        let reloaded_group = ConfigManager::get_group(conn, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
@@ -389,12 +399,6 @@ mod tests {
 
         assert!(group.id > 0);
         assert_eq!("existing_group2", group.name);
-
-        let group: AccountGroup =
-            task::block_on(ConfigManager::_async_get_group(conn, group.id)).unwrap();
-
-        assert!(group.id > 0);
-        assert_eq!("existing_group2", group.name);
     }
 
     #[test]
@@ -410,7 +414,7 @@ mod tests {
 
         let result = {
             let conn = conn.clone();
-            ConfigManager::_save_account(conn, &mut account, "group name")
+            ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
         };
