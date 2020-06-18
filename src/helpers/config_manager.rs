@@ -44,8 +44,13 @@ impl ConfigManager {
         }
     }
 
-    pub fn load_account_groups(conn: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
-        Self::init_tables(&conn).unwrap();
+    pub fn load_account_groups(conn: Arc<Mutex<Connection>>) -> Result<Vec<AccountGroup>, LoadError> {
+        {
+            let conn = conn.clone();
+            Self::init_tables(conn).unwrap();
+        }
+
+        let conn = conn.lock().unwrap();
 
         let mut stmt = conn.prepare("SELECT id, name FROM groups").unwrap();
 
@@ -201,7 +206,9 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn init_tables(conn: &Connection) -> Result<usize, rusqlite::Error> {
+    fn init_tables(conn: Arc<Mutex<Connection>>) -> Result<usize, rusqlite::Error> {
+        let conn = conn.lock().unwrap();
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
                   id              INTEGER PRIMARY KEY,

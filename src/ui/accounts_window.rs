@@ -47,7 +47,7 @@ impl AccountsWindow {
         children.iter().for_each(|e| accounts_container.remove(e));
 
         let connection_clone = connection.clone();
-        let mut groups = MainWindow::fetch_accounts(connection_clone);
+        let mut groups = ConfigManager::load_account_groups(connection_clone).unwrap();
 
         let widgets: Vec<AccountGroupWidgets> = groups
             .iter_mut()
@@ -104,8 +104,8 @@ impl AccountsWindow {
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
 
                 account_widgets.edit_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection).unwrap();
+                    let connection = connection.clone();
+                    let groups = ConfigManager::load_account_groups(connection).unwrap();
 
                     groups.iter().for_each(|group| {
                         let string = format!("{}", group.id);

@@ -4,10 +4,8 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 
-use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use glib::Sender;
-use rusqlite::Connection;
 use std::{thread, time};
 
 use crate::ui;
@@ -38,11 +36,6 @@ impl MainWindow {
             accounts_window: AccountsWindow::new(builder_clone),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
         }
-    }
-
-    pub fn fetch_accounts(conn: Arc<Mutex<Connection>>) -> Vec<AccountGroup> {
-        let conn = conn.lock().unwrap();
-        ConfigManager::load_account_groups(&conn).unwrap()
     }
 
     pub fn set_application(&mut self, application: &gtk::Application) {

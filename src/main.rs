@@ -48,7 +48,7 @@ fn main() {
             Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
         let conn = connection.clone();
-        let groups = MainWindow::fetch_accounts(conn);
+        let groups = ConfigManager::load_account_groups(conn).unwrap();
 
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));
