@@ -72,7 +72,7 @@ impl MainWindow {
             .iter()
             .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
 
-        self.accounts_window.widgets = widgets;
+        self.accounts_window.widgets.replace(widgets);
         self.accounts_window.accounts_container.show_all();
     }
 
