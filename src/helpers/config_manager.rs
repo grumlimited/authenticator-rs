@@ -106,8 +106,8 @@ impl ConfigManager {
             "UPDATE groups SET name = ?2 WHERE id = ?1",
             params![group.id, group.name],
         )
-            .map(|_| ())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map(|_| ())
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub async fn _async_get_group(

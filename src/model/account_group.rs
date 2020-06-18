@@ -1,4 +1,5 @@
 use crate::model::{Account, AccountWidgets};
+use gtk::prelude::BoxExt;
 use gtk::prelude::*;
 use gtk::{Align, Orientation, PositionType};
 use std::cell::RefCell;
@@ -15,10 +16,12 @@ pub struct AccountGroup {
 pub struct AccountGroupWidgets {
     pub id: u32,
     pub container: gtk::Box,
+    pub edit_form_box: gtk::Box,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub update_button: gtk::Button,
     pub group_label_entry: gtk::Entry,
+    pub group_label_button: gtk::Button,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -46,17 +49,24 @@ impl AccountGroup {
         let group_label_button = gtk::ButtonBuilder::new()
             .label(self.name.as_str())
             .height_request(32)
+            .hexpand(false)
+            .halign(Align::Start)
             .build();
 
         let group_label_entry = gtk::EntryBuilder::new()
             .margin_end(5)
-            .visible(false)
             .height_request(32)
-            .no_show_all(true)
-            .text(self.name.as_str()).build();
+            .width_chars(15)
+            .visible(true)
+            .text(self.name.as_str())
+            .build();
 
-        group_label_button.set_hexpand(false);
-        group_label_button.set_halign(Align::Start);
+        let group_label_edit_form_box = gtk::BoxBuilder::new()
+            .orientation(Orientation::Horizontal)
+            .height_request(32)
+            .visible(false)
+            .no_show_all(true)
+            .build();
 
         let group_label_box = gtk::GridBuilder::new()
             .orientation(Orientation::Vertical)
@@ -77,22 +87,22 @@ impl AccountGroup {
             .image(&cancel_image)
             .always_show_image(true)
             .margin_end(5)
-            .visible(false)
-            .no_show_all(true)
+            .visible(true)
             .build();
 
         let update_button = gtk::ButtonBuilder::new()
             .image(&dialog_ok_image)
             .always_show_image(true)
             .margin_end(5)
-            .visible(false)
-            .no_show_all(true)
+            .visible(true)
             .build();
 
         group_label_box.attach(&group_label_button, 0, 0, 1, 1);
-        group_label_box.attach(&group_label_entry, 1, 0, 1, 1);
-        group_label_box.attach(&cancel_button, 2, 0, 1, 1);
-        group_label_box.attach(&update_button, 3, 0, 1, 1);
+        group_label_box.attach(&group_label_edit_form_box, 1, 0, 1, 1);
+
+        group_label_edit_form_box.pack_start(&group_label_entry, false, false, 0);
+        group_label_edit_form_box.pack_start(&cancel_button, false, false, 0);
+        group_label_edit_form_box.pack_start(&update_button, false, false, 0);
 
         let popover = gtk::PopoverMenuBuilder::new()
             .relative_to(&group_label_button)
@@ -102,31 +112,25 @@ impl AccountGroup {
         let edit_button = gtk::ButtonBuilder::new().label("Edit").build();
 
         {
-            let save_button = update_button.clone();
-            let cancel_button = cancel_button.clone();
-            let group_label_entry = group_label_entry.clone();
+            let group_label_edit_form_box = group_label_edit_form_box.clone();
             let group_label_button = group_label_button.clone();
             let popover = popover.clone();
             edit_button.connect_clicked(move |_| {
+                group_label_edit_form_box.set_visible(true);
+
                 group_label_button.set_visible(false);
-                group_label_entry.set_visible(true);
-                cancel_button.set_visible(true);
-                save_button.set_visible(true);
                 popover.set_visible(false);
             });
         }
 
         {
-            let save_button = update_button.clone();
+            let group_label_edit_form_box = group_label_edit_form_box.clone();
             let cancel_button = cancel_button.clone();
-            let cancel_button2 = cancel_button.clone();
-            let group_label_entry = group_label_entry.clone();
             let group_label_button = group_label_button.clone();
             cancel_button.connect_clicked(move |_| {
+                group_label_edit_form_box.set_visible(false);
+
                 group_label_button.set_visible(true);
-                group_label_entry.set_visible(false);
-                cancel_button2.set_visible(false);
-                save_button.set_visible(false);
             });
         }
 
@@ -181,10 +185,12 @@ impl AccountGroup {
         AccountGroupWidgets {
             id: self.id,
             container: group,
+            edit_form_box: group_label_edit_form_box,
             edit_button,
             delete_button,
             update_button,
             group_label_entry,
+            group_label_button,
             account_widgets,
         }
     }
