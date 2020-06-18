@@ -10,7 +10,6 @@ use std::sync::{Arc, Mutex};
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
     pub edit_account: gtk::Box,
-    pub container: gtk::Box,
     pub input_group: gtk::ComboBoxText,
     pub input_name: gtk::Entry,
     pub input_secret: gtk::Entry,
@@ -23,7 +22,6 @@ impl EditAccountWindow {
     pub fn new(builder: Builder) -> EditAccountWindow {
         EditAccountWindow {
             edit_account: builder.get_object("edit_account").unwrap(),
-            container: builder.get_object("add_accounts_container").unwrap(),
             input_group: builder.get_object("edit_account_input_group").unwrap(),
             input_name: builder.get_object("edit_account_input_name").unwrap(),
             input_secret: builder.get_object("edit_account_input_secret").unwrap(),

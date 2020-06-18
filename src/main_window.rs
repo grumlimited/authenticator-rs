@@ -10,7 +10,7 @@ use std::{thread, time};
 
 use crate::helpers::ConfigManager;
 use crate::ui;
-use crate::ui::{AccountsWindow, EditAccountWindow};
+use crate::ui::{AccountsWindow, EditAccountWindow, AddGroupWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
 use rusqlite::Connection;
@@ -20,6 +20,7 @@ pub struct MainWindow {
     window: gtk::ApplicationWindow,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
+    pub add_group: ui::AddGroupWindow,
     pool: ThreadPool,
     state: RefCell<State>,
 }
@@ -36,7 +37,8 @@ impl MainWindow {
         // Initialize the UI from the Glade XML.
         let glade_src = include_str!("mainwindow.glade");
         let builder = gtk::Builder::new_from_string(glade_src);
-        let builder_clone = builder.clone();
+        let builder_clone_1 = builder.clone();
+        let builder_clone_2 = builder.clone();
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
@@ -44,7 +46,8 @@ impl MainWindow {
         MainWindow {
             window,
             edit_account_window: EditAccountWindow::new(builder),
-            accounts_window: AccountsWindow::new(builder_clone),
+            accounts_window: AccountsWindow::new(builder_clone_1),
+            add_group: AddGroupWindow::new(builder_clone_2),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: RefCell::new(State::DisplayAccounts),
         }
@@ -57,18 +60,18 @@ impl MainWindow {
         match state {
             State::DisplayAccounts => {
                 gui.accounts_window.main_box.set_visible(true);
-                gui.accounts_window.add_group.set_visible(false);
-                gui.accounts_window.edit_account.set_visible(false);
+                gui.add_group.container.set_visible(false);
+                gui.edit_account_window.edit_account.set_visible(false);
             },
             State::DisplayEditAccount => {
                 gui.accounts_window.main_box.set_visible(false);
-                gui.accounts_window.add_group.set_visible(false);
-                gui.accounts_window.edit_account.set_visible(true);
+                gui.add_group.container.set_visible(false);
+                gui.edit_account_window.edit_account.set_visible(true);
             },
             State::DisplayAddGroup => {
                 gui.accounts_window.main_box.set_visible(false);
-                gui.accounts_window.add_group.set_visible(true);
-                gui.accounts_window.edit_account.set_visible(false);
+                gui.add_group.container.set_visible(true);
+                gui.edit_account_window.edit_account.set_visible(false);
             },
         }
     }
@@ -97,12 +100,14 @@ impl MainWindow {
             .margin(3)
             .build();
 
-        {
-            let add_group_button = add_group_button.clone();
-            add_group_button.connect_clicked(move |_| {
-
-            });
-        }
+        // {
+        //     let add_group_button = add_group_button.clone();
+        //     add_group_button.connect_clicked(move |_| {
+        //         self.accounts_window.main_box.set_visible(false);
+        //         self.accounts_window.add_group.set_visible(true);
+        //         self.accounts_window.edit_account.set_visible(false);
+        //     });
+        // }
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)
@@ -188,7 +193,7 @@ impl MainWindow {
 
         progress_bar.show();
         self.accounts_window.main_box.show();
-        self.accounts_window.stack.show();
+        // self.accounts_window.stack.show();
         self.window.show();
     }
 
