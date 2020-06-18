@@ -26,9 +26,9 @@ pub struct MainWindow {
 
 #[derive(Clone, Debug)]
 pub enum State {
-    DISPLAY_ACCOUNTS,
-    DISPLAY_EDIT_ACCOUNT,
-    DISPLAY_ADD_GROUP,
+    DisplayAccounts,
+    DisplayEditAccount,
+    DisplayAddGroup,
 }
 
 impl MainWindow {
@@ -46,26 +46,26 @@ impl MainWindow {
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
-            state: RefCell::new(State::DISPLAY_ACCOUNTS),
+            state: RefCell::new(State::DisplayAccounts),
         }
     }
 
     pub fn switch_to(gui: MainWindow, state: State) {
         let mut t = gui.state.borrow_mut();
-        *t = state;
+        *t = state.clone();
 
         match state {
-            State::DISPLAY_ACCOUNTS => {
+            State::DisplayAccounts => {
                 gui.accounts_window.main_box.set_visible(true);
                 gui.accounts_window.add_group.set_visible(false);
                 gui.accounts_window.edit_account.set_visible(false);
             },
-            State::DISPLAY_EDIT_ACCOUNT => {
+            State::DisplayEditAccount => {
                 gui.accounts_window.main_box.set_visible(false);
                 gui.accounts_window.add_group.set_visible(false);
                 gui.accounts_window.edit_account.set_visible(true);
             },
-            State::DISPLAY_ADD_GROUP => {
+            State::DisplayAddGroup => {
                 gui.accounts_window.main_box.set_visible(false);
                 gui.accounts_window.add_group.set_visible(true);
                 gui.accounts_window.edit_account.set_visible(false);
@@ -96,6 +96,13 @@ impl MainWindow {
             .label("Add group")
             .margin(3)
             .build();
+
+        {
+            let add_group_button = add_group_button.clone();
+            add_group_button.connect_clicked(move |_| {
+
+            });
+        }
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)

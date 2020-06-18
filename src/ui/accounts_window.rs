@@ -132,7 +132,6 @@ impl AccountsWindow {
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let g = gui.clone();
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
@@ -142,10 +141,6 @@ impl AccountsWindow {
             for account_widgets in account_widgets.iter_mut() {
                 let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
-
-                let main_box = gui.accounts_window.main_box.clone();
-                let edit_account = gui.accounts_window.edit_account.clone();
-                let add_group = gui.accounts_window.add_group.clone();
 
                 let connection = connection.clone();
                 let input_group = gui.edit_account_window.input_group.clone();
@@ -184,7 +179,7 @@ impl AccountsWindow {
                     popover.hide();
 
                     let gui = g.clone();
-                    MainWindow::switch_to(gui, State::DISPLAY_EDIT_ACCOUNT);
+                    MainWindow::switch_to(gui, State::DisplayEditAccount);
                 });
             }
         }
