@@ -352,6 +352,38 @@ mod tests {
     }
 
     #[test]
+    fn test_update_group() {
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+
+        let _ = {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn);
+        };
+
+        let mut group = AccountGroup::new(0, "new group", vec![]);
+
+        let mut  group = {
+            let conn = conn.clone();
+            ConfigManager::save_group(conn, &mut group)
+                .unwrap()
+                .clone()
+        };
+
+        assert_eq!("new group", group.name);
+
+        group.name = "other name".to_owned();
+
+        {
+            let conn = conn.clone();
+            ConfigManager::update_group(conn, &mut group)
+                .unwrap()
+                .clone()
+        }
+
+        assert_eq!("other name", group.name);
+    }
+
+    #[test]
     fn create_new_account_with_existing_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
