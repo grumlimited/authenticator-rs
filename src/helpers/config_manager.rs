@@ -265,6 +265,17 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    pub fn delete_group(
+        connection: Arc<Mutex<Connection>>,
+        group_id: u32,
+    ) -> Result<usize, LoadError> {
+        let conn = connection.lock().unwrap();
+        let mut stmt = conn.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
+
+        stmt.execute(params![group_id])
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     pub fn delete_account(
         connection: Arc<Mutex<Connection>>,
         account_id: u32,

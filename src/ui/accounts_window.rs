@@ -84,15 +84,20 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
-            let _group_id = group_widgets.id.clone();
+            let group_id = group_widgets.id.clone();
 
-            let _connection = connection.clone();
+            let connection = connection.clone();
 
+            let group_widgets = group_widgets.clone();
             let account_widgets = group_widgets.account_widgets.clone();
 
             delete_button.connect_clicked(move |_| {
                 let account_widgets = account_widgets.borrow_mut();
                 println!("{}", account_widgets.len());
+
+                let connection = connection.clone();
+                let _ = ConfigManager::delete_group(connection, group_id);
+                group_widgets.container.set_visible(false);
             });
         }
     }
