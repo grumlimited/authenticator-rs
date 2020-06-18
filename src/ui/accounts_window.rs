@@ -7,7 +7,6 @@ use gtk::prelude::*;
 use gtk::Builder;
 use rusqlite::Connection;
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
@@ -17,7 +16,7 @@ pub struct AccountsWindow {
     pub stack: gtk::Stack,
     pub accounts_container: gtk::Box,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
-    pub widgets: Rc<RefCell<Vec<AccountGroupWidgets>>>,
+    pub widgets: Arc<Mutex<Vec<AccountGroupWidgets>>>,
 }
 
 impl AccountsWindow {
@@ -36,14 +35,14 @@ impl AccountsWindow {
             stack,
             accounts_container,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
-            widgets: Rc::new(RefCell::new(vec![])),
+            widgets: Arc::new(Mutex::new(vec![])),
         }
     }
 
     pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut gui = gui;
         let accounts_container = gui.accounts_window.accounts_container.clone();
 
+        // empty list of accounts first
         let children = accounts_container.get_children();
         children.iter().for_each(|e| accounts_container.remove(e));
 
@@ -55,13 +54,16 @@ impl AccountsWindow {
             .map(|account_group| account_group.widget())
             .collect();
 
+        // add updated accounts back to list
         widgets
             .iter()
             .for_each(|w| accounts_container.add(&w.container));
 
-        gui.accounts_window.widgets.replace(widgets);
-        gui.accounts_window.accounts_container = accounts_container;
-        gui.accounts_window.accounts_container.show_all();
+        {
+            let gui = gui.clone();
+            let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+            *m_widgets = widgets;
+        }
 
         {
             let gui = gui.clone();
@@ -69,11 +71,17 @@ impl AccountsWindow {
             AccountsWindow::edit_buttons_actions(gui, connection);
         }
 
-        AccountsWindow::delete_buttons_actions(gui, connection);
+        {
+            let gui = gui.clone();
+            let connection = connection.clone();
+            AccountsWindow::delete_buttons_actions(gui, connection);
+        }
+
+        gui.accounts_window.accounts_container.show_all();
     }
 
     pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
+        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
             for account_widgets in &group_widgets.account_widgets {
@@ -122,10 +130,9 @@ impl AccountsWindow {
     }
 
     pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
+        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
-
             for account_widgets in &group_widgets.account_widgets {
                 let account_id = account_widgets.account_id;
                 let group_id = account_widgets.group_id;
@@ -139,7 +146,7 @@ impl AccountsWindow {
                     let connection = connection.clone();
                     let _ = ConfigManager::delete_account(connection, account_id).unwrap();
 
-                    let mut widgets_list = gui.accounts_window.widgets.borrow_mut();
+                    let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
                     let widgets_group = widgets_list.iter_mut().find(|x| x.id == group_id);
 

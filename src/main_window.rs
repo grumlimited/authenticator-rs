@@ -72,29 +72,31 @@ impl MainWindow {
             .iter()
             .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
 
-        self.accounts_window.widgets.replace(widgets);
+        let m_widgets = self.accounts_window.widgets.clone();
+        let mut m_widgets = m_widgets.lock().unwrap();
+        *m_widgets = widgets;
+
         self.accounts_window.accounts_container.show_all();
+
+        self.start_progress_bar();
     }
 
-    pub fn start_progress_bar(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
+    pub fn start_progress_bar(&mut self) {
         let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
         self.pool.spawn_ok(progress_bar_interval(tx));
 
-        let pb = self.accounts_window.progress_bar.clone();
+        let progress_bar = self.accounts_window.progress_bar.clone();
+        let widgets = self.accounts_window.widgets.clone();
 
-        rx.attach(None, move |second| {
-            let mut guard = pb.lock().unwrap();
+        rx.attach(None, move |_| {
+            let mut guard = progress_bar.lock().unwrap();
             let progress_bar = guard.get_mut();
 
             let fraction = AccountsWindow::progress_bar_fraction();
             progress_bar.set_fraction(fraction);
 
-            if second == 29 || second == 0 {
-                let mut guard = groups.lock().unwrap();
-                let groups = guard.get_mut();
-
-                groups.iter_mut().for_each(|group| group.update());
-            }
+            let mut w = widgets.lock().unwrap();
+            w.iter_mut().for_each(|group| group.update());
 
             glib::Continue(true)
         });

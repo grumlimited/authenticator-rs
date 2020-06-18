@@ -53,9 +53,6 @@ fn main() {
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));
 
-        let group_clone = groups.clone();
-        gui.start_progress_bar(group_clone);
-
         gui.display(groups);
 
         gui.set_application(&app);

@@ -12,7 +12,6 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
-    gtk_label: Option<gtk::Label>,
 }
 
 #[derive(Debug, Clone)]
@@ -23,6 +22,15 @@ pub struct AccountWidgets {
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub popover: gtk::PopoverMenu,
+    totp_label: gtk::Label,
+    totp_secret: String,
+}
+
+impl AccountWidgets {
+    pub fn update(&mut self) {
+        let totp = Account::generate_time_based_password(self.totp_secret.as_str()).unwrap();
+        self.totp_label.set_label(totp.as_str())
+    }
 }
 
 impl Account {
@@ -32,18 +40,6 @@ impl Account {
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            gtk_label: None,
-        }
-    }
-
-    pub fn update(&mut self) {
-        let key = self.secret.as_str();
-        let totp = Self::generate_time_based_password(key).unwrap();
-
-        let clone = self.gtk_label.clone();
-
-        if let Some(gtk_label) = clone {
-            gtk_label.set_label(totp.as_str())
         }
     }
 
@@ -113,8 +109,6 @@ impl Account {
         let totp_label_clone = totp_label.clone();
         let totp_label_clone2 = totp_label.clone();
 
-        self.gtk_label = Some(totp_label_clone2);
-
         copy_button.connect_clicked(move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             let option = totp_label_clone.get_label();
@@ -143,6 +137,8 @@ impl Account {
             edit_button,
             delete_button,
             popover: popover_clone,
+            totp_label: totp_label_clone2,
+            totp_secret: self.secret.clone(),
         }
     }
 

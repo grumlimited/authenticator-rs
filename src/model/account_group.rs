@@ -16,6 +16,12 @@ pub struct AccountGroupWidgets {
     pub account_widgets: Vec<AccountWidgets>,
 }
 
+impl AccountGroupWidgets {
+    pub fn update(&mut self) {
+        self.account_widgets.iter_mut().for_each(|x| x.update());
+    }
+}
+
 impl AccountGroup {
     pub fn new(id: u32, name: &str, entries: Vec<Account>) -> Self {
         AccountGroup {
@@ -23,10 +29,6 @@ impl AccountGroup {
             name: name.to_owned(),
             entries,
         }
-    }
-
-    pub fn update(&mut self) {
-        self.entries.iter_mut().for_each(|x| x.update());
     }
 
     pub fn widget(&mut self) -> AccountGroupWidgets {
