@@ -87,16 +87,17 @@ impl MainWindow {
             menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
 
-                widgets.iter().fold(0, |x, y| {
+                let nb_accounts = widgets.iter().fold(0, |x, y| {
                     x + {
                         let account_widgets = y.account_widgets.clone();
-                        let  account_widgets = account_widgets.borrow();
+                        let account_widgets = account_widgets.borrow();
 
                         account_widgets.len()
                     }
                 });
 
-                if widgets.is_empty() {
+                if nb_accounts == 0 {
+                    // can't add account if no groups
                     add_account_button.set_sensitive(false)
                 }
 
