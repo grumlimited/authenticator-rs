@@ -14,6 +14,7 @@ use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{Orientation, PositionType};
 use rusqlite::Connection;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -22,7 +23,7 @@ pub struct MainWindow {
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
     pool: ThreadPool,
-    state: RefCell<State>,
+    state: Rc<RefCell<State>>,
 }
 
 #[derive(Clone, Debug)]
@@ -49,7 +50,7 @@ impl MainWindow {
             accounts_window: AccountsWindow::new(builder_clone_1),
             add_group: AddGroupWindow::new(builder_clone_2),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
-            state: RefCell::new(State::DisplayAccounts),
+            state: Rc::new(RefCell::new(State::DisplayAccounts)),
         }
     }
 
@@ -107,12 +108,16 @@ impl MainWindow {
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
 
+            let state = self.state.clone();
+
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
 
                 edit_account_window.container.set_visible(false);
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
+
+                state.replace(State::DisplayAddGroup);
             });
         }
 
@@ -152,6 +157,9 @@ impl MainWindow {
             let edit_account_window = self.edit_account_window.clone();
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
+
+            let state = self.state.clone();
+
             add_account_button.connect_clicked(move |_| {
                 let groups = {
                     let connection = connection.clone();
@@ -171,6 +179,9 @@ impl MainWindow {
                 edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");
                 edit_account_window.input_secret.set_text("");
+
+                let state = state.clone();
+                state.replace(State::DisplayEditAccount);
 
                 popover.hide();
                 accounts_window.container.set_visible(false);
