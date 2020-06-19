@@ -69,3 +69,6 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
     
     $HOME/.cargo/bin/authenticator-rust
     
+## Assets
+
+Icon files are fromm [authenticator](https://gitlab.gnome.org/World/Authenticator).
