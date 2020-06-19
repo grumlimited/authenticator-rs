@@ -96,24 +96,59 @@
                 <property name="orientation">vertical</property>
                 <property name="spacing">25</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="margin_start">10</property>
-                    <property name="margin_top">25</property>
-                    <property name="margin_bottom">25</property>
-                    <property name="label" translatable="yes">Edit account</property>
-                    <style>
-                      <class name="section_title"/>
-                      <class name="account_group_label"/>
-                    </style>
+                    <child>
+                      <object class="GtkLabel" id="add_accounts_container_edit">
+                        <property name="name">add_accounts_container_edit</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="margin_start">10</property>
+                        <property name="margin_top">25</property>
+                        <property name="margin_bottom">25</property>
+                        <property name="label" translatable="yes">Edit account</property>
+                        <style>
+                          <class name="section_title"/>
+                          <class name="account_group_label"/>
+                        </style>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="add_accounts_container_add">
+                        <property name="name">add_accounts_container_add</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="margin_start">10</property>
+                        <property name="margin_top">25</property>
+                        <property name="margin_bottom">25</property>
+                        <property name="label" translatable="yes">Add account</property>
+                        <style>
+                          <class name="section_title"/>
+                          <class name="account_group_label"/>
+                        </style>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
                     <property name="position">0</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
                 <child>
                   <object class="GtkGrid">
@@ -154,6 +189,7 @@
                       <object class="GtkLabel" id="edit_account_label_secret">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="valign">start</property>
                         <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Secret</property>
                       </object>
@@ -219,7 +255,7 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child>

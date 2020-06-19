@@ -16,6 +16,8 @@ pub struct EditAccountWindow {
     pub input_account_id: gtk::Entry,
     pub cancel_button: gtk::Button,
     pub save_button: gtk::Button,
+    pub add_accounts_container_edit: gtk::Label,
+    pub add_accounts_container_add: gtk::Label,
 }
 
 impl EditAccountWindow {
@@ -27,6 +29,8 @@ impl EditAccountWindow {
             input_secret: builder.get_object("edit_account_input_secret").unwrap(),
             input_account_id: builder.get_object("edit_account_input_account_id").unwrap(),
             cancel_button: builder.get_object("edit_account_cancel").unwrap(),
+            add_accounts_container_edit: builder.get_object("add_accounts_container_edit").unwrap(),
+            add_accounts_container_add: builder.get_object("add_accounts_container_add").unwrap(),
             save_button: builder.get_object("edit_account_save").unwrap(),
         }
     }

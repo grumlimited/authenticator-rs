@@ -30,6 +30,7 @@ pub struct MainWindow {
 pub enum State {
     DisplayAccounts,
     DisplayEditAccount,
+    DisplayAddAccount,
     DisplayAddGroup,
 }
 
@@ -68,6 +69,15 @@ impl MainWindow {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
+                gui.edit_account_window.add_accounts_container_edit.set_visible(true);
+                gui.edit_account_window.add_accounts_container_add.set_visible(false);
+            }
+            State::DisplayAddAccount => {
+                gui.accounts_window.container.set_visible(false);
+                gui.add_group.container.set_visible(false);
+                gui.edit_account_window.container.set_visible(true);
+                gui.edit_account_window.add_accounts_container_edit.set_visible(false);
+                gui.edit_account_window.add_accounts_container_add.set_visible(true);
             }
             State::DisplayAddGroup => {
                 gui.accounts_window.container.set_visible(false);
@@ -182,11 +192,14 @@ impl MainWindow {
                 edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");
 
+                edit_account_window.add_accounts_container_edit.set_visible(false);
+                edit_account_window.add_accounts_container_add.set_visible(true);
+
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                 buffer.set_text("");
 
                 let state = state.clone();
-                state.replace(State::DisplayEditAccount);
+                state.replace(State::DisplayAddAccount);
 
                 popover.hide();
                 accounts_window.container.set_visible(false);
