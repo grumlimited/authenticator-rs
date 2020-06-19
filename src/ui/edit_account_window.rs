@@ -48,8 +48,8 @@ impl EditAccountWindow {
         let buffer = secret.get_buffer().unwrap();
         let (start, end) = buffer.get_bounds();
         let secret_value: String = match buffer.get_slice(&start, &end, true) {
-            Some(v) => v.to_string(),
-            None => "".to_owned()
+            Some(secret_value) => secret_value.to_string(),
+            None => "".to_owned(),
         };
 
         if secret_value.is_empty() {
@@ -148,8 +148,8 @@ impl EditAccountWindow {
                         let buffer = secret.get_buffer().unwrap();
                         let (start, end) = buffer.get_bounds();
                         let secret: String = match buffer.get_slice(&start, &end, true) {
-                            Some(v) => v.to_string(),
-                            None => "".to_owned()
+                            Some(secret_value) => secret_value.to_string(),
+                            None => "".to_owned(),
                         };
 
                         let group_id = group
