@@ -2,9 +2,11 @@ use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
 use crate::model::Account;
 use crate::ui::AccountsWindow;
+use core::fmt;
 use gtk::prelude::*;
 use gtk::Builder;
 use rusqlite::Connection;
+use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
@@ -31,6 +33,46 @@ impl EditAccountWindow {
         }
     }
 
+    fn validate(&self) -> Result<(), ValidationError> {
+        let name = self.input_name.clone();
+        let secret = self.input_secret.clone();
+
+        let mut result: Result<(), ValidationError> = Ok(());
+
+        if name.get_buffer().get_text().is_empty() {
+            name.set_property_primary_icon_name(Some("gtk-dialog-error"));
+            let style_context = name.get_style_context();
+            style_context.add_class("error");
+            result = Err(ValidationError::FieldError);
+        }
+
+        if secret.get_buffer().get_text().is_empty() {
+            secret.set_property_primary_icon_name(Some("gtk-dialog-error"));
+            let style_context = secret.get_style_context();
+            style_context.add_class("error");
+            result = Err(ValidationError::FieldError);
+        }
+
+        result
+    }
+
+    pub fn reset(&self) {
+        let name = self.input_name.clone();
+        let secret = self.input_secret.clone();
+        let group = self.input_group.clone();
+
+        name.set_property_primary_icon_name(None);
+        let style_context = name.get_style_context();
+        style_context.remove_class("error");
+
+        secret.set_property_primary_icon_name(None);
+        let style_context = secret.get_style_context();
+        style_context.remove_class("error");
+
+        let style_context = group.get_style_context();
+        style_context.remove_class("error");
+    }
+
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
         fn with_action<F>(
             gui: MainWindow,
@@ -54,6 +96,7 @@ impl EditAccountWindow {
                 let gui = gui.clone();
                 let gui2 = gui.clone();
                 let edit_account_window = gui.edit_account_window;
+                edit_account_window.reset();
 
                 edit_account_window.input_name.set_text("");
                 edit_account_window.input_secret.set_text("");
@@ -73,50 +116,93 @@ impl EditAccountWindow {
                     let gui_1 = gui.clone();
                     let gui_2 = gui_1.clone();
                     let gui_3 = gui_1.clone();
+                    let gui_4 = gui_1.clone();
 
-                    let edit_account_window = gui_1.edit_account_window;
+                    gui_4.edit_account_window.reset();
 
-                    let name = edit_account_window.input_name.clone();
-                    let secret = edit_account_window.input_secret;
-                    let account_id = edit_account_window.input_account_id.clone();
-                    let group = edit_account_window.input_group;
+                    match gui_4.edit_account_window.validate() {
+                        Ok(()) => {
+                            let edit_account_window = gui_1.edit_account_window;
 
-                    let name: String = name.get_buffer().get_text();
-                    let secret: String = secret.get_buffer().get_text();
+                            let name = edit_account_window.input_name.clone();
+                            let secret = edit_account_window.input_secret.clone();
+                            let account_id = edit_account_window.input_account_id.clone();
+                            let group = edit_account_window.input_group.clone();
 
-                    let group_id = group
-                        .get_active_id()
-                        .unwrap()
-                        .as_str()
-                        .to_owned()
-                        .parse()
-                        .unwrap();
+                            let name: String = name.get_buffer().get_text();
+                            let secret: String = secret.get_buffer().get_text();
 
-                    match account_id.get_buffer().get_text().parse() {
-                        Ok(account_id) if account_id == 0 => {
-                            let mut account =
-                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
+                            let group_id = group
+                                .get_active_id()
+                                .unwrap()
+                                .as_str()
+                                .to_owned()
+                                .parse()
+                                .unwrap();
+
+                            match account_id.get_buffer().get_text().parse() {
+                                Ok(account_id) if account_id == 0 => {
+                                    let mut account = Account::new(
+                                        account_id,
+                                        group_id,
+                                        name.as_str(),
+                                        secret.as_str(),
+                                    );
+
+                                    let connection = connection.clone();
+                                    let _ = ConfigManager::save_account(connection, &mut account)
+                                        .unwrap();
+                                }
+                                Ok(account_id) => {
+                                    let mut account = Account::new(
+                                        account_id,
+                                        group_id,
+                                        name.as_str(),
+                                        secret.as_str(),
+                                    );
+
+                                    let connection = connection.clone();
+                                    let _ = ConfigManager::update_account(connection, &mut account)
+                                        .unwrap();
+                                }
+                                Err(e) => panic!(e),
+                            };
 
                             let connection = connection.clone();
-                            let _ = ConfigManager::save_account(connection, &mut account).unwrap();
+                            AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
+
+                            edit_account_window.reset();
+                            MainWindow::switch_to(gui_3, State::DisplayAccounts);
                         }
-                        Ok(account_id) => {
-                            let mut account =
-                                Account::new(account_id, group_id, name.as_str(), secret.as_str());
-
-                            let connection = connection.clone();
-                            let _ =
-                                ConfigManager::update_account(connection, &mut account).unwrap();
-                        }
-                        Err(e) => panic!(e),
-                    };
-
-                    let connection = connection.clone();
-                    AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
-
-                    MainWindow::switch_to(gui_3, State::DisplayAccounts);
+                        Err(_) => {}
+                    }
                 })
             },
         );
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ValidationError {
+    FieldError,
+}
+
+impl Error for ValidationError {
+    fn description(&self) -> &str {
+        match *self {
+            ValidationError::FieldError => "invalid",
+        }
+    }
+
+    fn cause(&self) -> Option<&dyn Error> {
+        None
+    }
+}
+
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ValidationError::FieldError => write!(f, "invalid"),
+        }
     }
 }

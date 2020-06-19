@@ -7,3 +7,7 @@
 .group_label_entry {
     border-width: 0px;
 }
+
+.error {
+    background-color: #ffccd2;
+}

@@ -166,6 +166,7 @@ impl MainWindow {
                     ConfigManager::load_account_groups(connection).unwrap()
                 };
 
+                edit_account_window.reset();
                 edit_account_window.input_group.remove_all();
 
                 groups.iter().for_each(|group| {
