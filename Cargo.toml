@@ -9,24 +9,6 @@ repository = "https://github.com/grumlimited/authenticator-rs/"
 authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
 edition = "2018"
 
-[package.metadata.deb]
-maintainer = "Romain Gallet <rgallet@grumlimited.co.uk>"
-copyright = "Copyright (c) 2020 Grum Limited"
-license-file = ["COPYING", "3"]
-depends = "$auto"
-extended-description = '''
-authenticator-rs
-'''
-section = "GNOME"
-priority = "optional"
-assets = [
-   ["data/uk.co.grumlimited.authenticator-rs.svg", "usr/share/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg", "644"],
-   ["data/uk.co.grumlimited.authenticator-rs.64.png", "usr/share/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png", "644"],
-   ["data/uk.co.grumlimited.authenticator-rs.128.png", "usr/share/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png", "644"],
-   ["data/uk.co.grumlimited.authenticator-rs.appdata.xml", "usr/share/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml", "644"],
-   ["data/uk.co.grumlimited.authenticator-rs.desktop", "usr/share/applications/uk.co.grumlimited.authenticator-rs.desktop", "644"]
-]
-
 [dependencies]
 base32 = "0.4.0"
 chrono = "0.4.11"
@@ -36,9 +18,9 @@ futures-executor = "0.3.5"
 gdk = "0.12.1"
 gio = "0.8.1"
 rusqlite = "0.23.1"
-serde_json = "1.0.53"
+serde_json = "1.0.55"
 serde = { version = "1.0.111", features = ["derive"] }
-totp-rs = "0.2.5"
+totp-rs = "0.2.6"
 
 [dependencies.gtk]
 version = "0.8.1"
@@ -48,4 +30,4 @@ features = ["v3_22"]
 version = "0.9.3"
 
 [dev-dependencies]
-async-std = {version ="1.6.0", features = ["unstable"] }
+async-std = {version ="1.6.2", features = ["unstable"] }

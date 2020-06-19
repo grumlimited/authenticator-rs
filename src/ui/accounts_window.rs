@@ -167,7 +167,9 @@ impl AccountsWindow {
                     let account_id = format!("{}", account.id);
                     input_account_id.set_text(account_id.as_str());
                     input_name.set_text(account.label.as_str());
-                    input_secret.set_text(account.secret.as_str());
+
+                    let buffer = input_secret.get_buffer().unwrap();
+                    buffer.set_text(account.secret.as_str());
 
                     popover.hide();
 

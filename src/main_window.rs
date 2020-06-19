@@ -181,7 +181,9 @@ impl MainWindow {
 
                 edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");
-                edit_account_window.input_secret.set_text("");
+
+                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
+                buffer.set_text("");
 
                 let state = state.clone();
                 state.replace(State::DisplayEditAccount);
