@@ -1,5 +1,5 @@
-use std::error::Error;
 use core::fmt;
+use std::error::Error;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ValidationError {

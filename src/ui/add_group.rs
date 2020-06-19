@@ -1,7 +1,7 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroup;
-use crate::ui::AccountsWindow;
+use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
 use gtk::Builder;
 use rusqlite::Connection;
@@ -23,6 +23,29 @@ impl AddGroupWindow {
             cancel_button: builder.get_object("add_group_cancel").unwrap(),
             save_button: builder.get_object("add_group_save").unwrap(),
         }
+    }
+
+    fn validate(&self) -> Result<(), ValidationError> {
+        let name = self.input_group.clone();
+
+        let mut result: Result<(), ValidationError> = Ok(());
+
+        if name.get_buffer().get_text().is_empty() {
+            name.set_property_primary_icon_name(Some("gtk-dialog-error"));
+            let style_context = name.get_style_context();
+            style_context.add_class("error");
+            result = Err(ValidationError::FieldError);
+        }
+
+        result
+    }
+
+    pub fn reset(&self) {
+        let name = self.input_group.clone();
+
+        name.set_property_primary_icon_name(None);
+        let style_context = name.get_style_context();
+        style_context.remove_class("error");
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -47,6 +70,7 @@ impl AddGroupWindow {
         with_action(gui, connection, add_group_account_cancel, |_, gui| {
             Box::new(move |_| {
                 let gui_1 = gui.clone();
+                gui.add_group.reset();
 
                 gui_1.add_group.input_group.set_text("");
 
@@ -68,19 +92,26 @@ impl AddGroupWindow {
                     let gui_2 = gui_1.clone();
                     let gui3 = gui_1.clone();
 
-                    let add_group = gui_1.add_group;
+                    gui_1.add_group.reset();
 
-                    let name: String = add_group.input_group.get_buffer().get_text();
+                    match gui_1.add_group.validate() {
+                        Ok(()) => {
+                            let add_group = gui_1.add_group;
 
-                    let mut group = AccountGroup::new(0, name.as_str(), vec![]);
+                            let name: String = add_group.input_group.get_buffer().get_text();
 
-                    {
-                        let connection = connection.clone();
-                        ConfigManager::save_group(connection, &mut group).unwrap();
+                            let mut group = AccountGroup::new(0, name.as_str(), vec![]);
+
+                            {
+                                let connection = connection.clone();
+                                ConfigManager::save_group(connection, &mut group).unwrap();
+                            }
+
+                            AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
+                            MainWindow::switch_to(gui3, State::DisplayAccounts);
+                        }
+                        Err(_) => {}
                     }
-
-                    AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
-                    MainWindow::switch_to(gui3, State::DisplayAccounts);
                 })
             },
         );

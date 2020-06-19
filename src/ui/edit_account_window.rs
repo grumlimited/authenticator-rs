@@ -52,8 +52,8 @@ impl EditAccountWindow {
         } else {
             let secret_value: String = secret.get_buffer().get_text();
             match Account::generate_time_based_password(secret_value.as_str()) {
-                Ok(_) =>{}
-                Err(_) =>{
+                Ok(_) => {}
+                Err(_) => {
                     secret.set_property_primary_icon_name(Some("gtk-dialog-error"));
                     let style_context = secret.get_style_context();
                     style_context.add_class("error");
@@ -190,4 +190,3 @@ impl EditAccountWindow {
         );
     }
 }
-
