@@ -2,7 +2,7 @@ AUTHENTICATOR-RS
 ==================
 ![Continuous integration](https://github.com/grumlimited/authenticator-rs/workflows/Continuous%20integration/badge.svg?branch=master)
 
-Authenticator-rs is a TOTP-MFA application written in Rust and Iced.
+Authenticator-rs is a TOTP-MFA application written in Rust and GTK3.
 
 This application is very much a work in progress.
 
@@ -13,19 +13,24 @@ in the latest versions of python shipped with [Arch Linux](https://www.archlinux
 It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
 but definitely in the rough...
 
-Lastly, it is using this fantastic library: [iced](https://github.com/hecrj/iced) as the building blocks for its UI.
-Thanks [@ecrj](https://github.com/hecrj) and the iced team.
-
-<kbd>![authenticator-rs](./authenticator-rs-main2.png "Main view")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-add-account.png "Adding account")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-group-view.png "Group view")</kbd>
-<kbd>![authenticator-rs](./authenticator-rs-account-edit2.png "Edit account")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-main.png "Main view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-edit-account.png "Main view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-add-group.png "Main view")</kbd>
 
 ## License
 
 Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
 
 ## Changelog
+
+### 0.0.6
+
+* Plain GTK3 version
+* Not production-ready. Missing lots of UI input validation.
+
+### 0.0.5
+
+* Last Iced version
 
 ### 0.0.4
 
@@ -52,9 +57,9 @@ _Only tested on Linux (Arch Linux to be specific)._
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    chmod +x ./authenticator-rs-0.0.4-x86_64
+    chmod +x ./authenticator-rs-0.0.6-x86_64
 
-    ./authenticator-rs-0.0.4-x86_64
+    ./authenticator-rs-0.0.6-x86_64
 
 ## Building
 

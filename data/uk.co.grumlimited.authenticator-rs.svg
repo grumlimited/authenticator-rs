@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="512"
+   height="512"
+   viewBox="0 0 135.46666 135.46666"
+   version="1.1"
+   id="svg271"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   sodipodi:docname="codes.nora.gDiceRoller.svg"
+   inkscape:export-xdpi="48.000004"
+   inkscape:export-ydpi="48.000004"
+   inkscape:export-filename="/media/nora/Storage/repos/gitlab.gnome.org/NoraCodes/diceroller/data/codes.nora.gDiceRoller.64.png">
+  <defs
+     id="defs265" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="192.53464"
+     inkscape:cy="276.67148"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1022"
+     inkscape:window-x="0"
+     inkscape:window-y="28"
+     inkscape:window-maximized="1"
+     units="px"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     showguides="true"
+     inkscape:guide-bbox="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid308"
+       originx="-1.0289546"
+       originy="-1.5581426" />
+    <sodipodi:guide
+       position="198.05951,-22.111606"
+       orientation="0,1"
+       id="guide110"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata268">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-1.0289546,-159.97519)">
+    <rect
+       style="display:inline;fill:#aa0000;fill-opacity:1;stroke-width:1.28868127;enable-background:new"
+       id="rect148"
+       width="129.64583"
+       height="129.64583"
+       x="3.9393678"
+       y="162.88562"
+       rx="10.164242"
+       ry="10.258503" />
+    <ellipse
+       style="display:inline;fill:#ffd5d5;fill-opacity:1;stroke-width:1.28750026;enable-background:new"
+       id="path150"
+       cx="30.535513"
+       cy="188.29305"
+       rx="12.731284"
+       ry="12.57627" />
+    <ellipse
+       style="display:inline;fill:#ffd5d5;fill-opacity:1;stroke-width:1.28750026;enable-background:new"
+       id="path150-3"
+       cx="108.87457"
+       cy="188.29305"
+       rx="12.731284"
+       ry="12.57627" />
+    <ellipse
+       style="display:inline;fill:#ffd5d5;fill-opacity:1;stroke-width:1.28750026;enable-background:new"
+       id="path150-6"
+       cx="30.535513"
+       cy="264.46921"
+       rx="12.731284"
+       ry="12.57627" />
+    <ellipse
+       style="display:inline;fill:#ffd5d5;fill-opacity:1;stroke-width:1.28750026;enable-background:new"
+       id="path150-3-2"
+       cx="108.87457"
+       cy="264.46921"
+       rx="12.731284"
+       ry="12.57627" />
+    <ellipse
+       style="display:inline;fill:#ffd5d5;fill-opacity:1;stroke-width:1.28750026;enable-background:new"
+       id="path150-3-9"
+       cx="71.553711"
+       cy="226.38103"
+       rx="12.731284"
+       ry="12.57627" />
+  </g>
+</svg>

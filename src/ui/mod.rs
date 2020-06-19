@@ -1,7 +1,7 @@
-mod account;
-mod account_group;
-pub mod authenticator;
+mod accounts_window;
+mod add_group;
+mod edit_account_window;
 
-pub use self::account::*;
-pub use self::account_group::*;
-pub use self::authenticator::*;
+pub use self::accounts_window::*;
+pub use self::add_group::*;
+pub use self::edit_account_window::*;

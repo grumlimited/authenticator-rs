@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Dice Roller
+GenericName=Dice Roller
+Comment=Roll dice of many different shapes and sizes in all possible combinations.
+Categories=Game;GTK
+Icon=codes.nora.gDiceRoller
+Exec=codes.nora.gDiceRoller
+Terminal=false
+Type=Application
