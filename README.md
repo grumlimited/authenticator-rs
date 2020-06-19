@@ -1,51 +1,71 @@
-# gDiceRoller
-## A multifunction polyhedral dice simulator for GNOME
+AUTHENTICATOR-RS
+==================
+![Continuous integration](https://github.com/grumlimited/authenticator-rs/workflows/Continuous%20integration/badge.svg?branch=master)
 
-gDiceRoller uses the RFYL library to roll arbitrary collections of dice and do arbitrary
-arithmetic on their results in real time.
+Authenticator-rs is a TOTP-MFA application written in Rust and GTK3.
 
-![A screenshot of gDiceRoller](data/screenshot.png)
+This application is very much a work in progress.
+
+It is initially inspired by [authenticator](https://gitlab.gnome.org/World/Authenticator), which sadly sort of 
+[broke](https://aur.archlinux.org/packages/authenticator/) for me 
+in the latest versions of python shipped with [Arch Linux](https://www.archlinux.org/).
+
+It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
+but definitely in the rough...
+
+<kbd>![authenticator-rs](./authenticator-rs-main.png "Main view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-edit-account.png "Main view")</kbd>
+<kbd>![authenticator-rs](./authenticator-rs-add-group.png "Main view")</kbd>
+
+## License
+
+Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README.md).
+
+## Changelog
+
+### 0.0.6
+
+* Plain GTK3 version
+* Not production-ready. Missing lots of UI input validation.
+
+### 0.0.5
+
+* Last Iced version
+
+### 0.0.4
+
+* Editing existing accounts
+
+### 0.0.3
+
+* SQLite backend! _(deleting/updating accounts coming soon! )_
+
+### 0.0.2
+
+* Adding new accounts
+* More error handling
+
+### 0.0.1
+
+_Only tested on Linux (Arch Linux to be specific)._
+
+* Initial release;
+* Generating TOTP tokens for multiple accounts, every 30 seconds;
+* Copy and pasting tokens to clipboard.
+
+## Running
+
+Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
+
+    chmod +x ./authenticator-rs-0.0.6-x86_64
+
+    ./authenticator-rs-0.0.6-x86_64
 
 ## Building
 
-Building gDiceRoller requires `rustc`, `cargo`, and GTK3 development libraries.
-All of gDiceRoller's Rust dependencies are vendored in the `vendor` directory, meaning
-that building does not require an active internet connection once the repository has
-been cloned.
-
-gDiceRoller uses GNU Make. Simply:
-
-```bash
-make
-sudo make install
-# to remove
-sudo make uninstall
-```
-
-To build with Flatpak, you need the `flatpak-builder` and the following dependencies:
-
-```bash
-# Add flathub and the gnome-nightly repo
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak remote-add --user --if-not-exists gnome-nightly https://sdk.gnome.org/gnome-nightly.flatpakrepo
-
-# Install the gnome-nightly Sdk and Platform runtime
-flatpak install --user gnome-nightly org.gnome.Sdk org.gnome.Platform
-
-# Install the required rust-stable extension from flathub
-flatpak install --user flathub org.freedesktop.Sdk.Extension.rust-stable//18.08
-```
-
-Then, `make flatpak`. The package is built into `flatpak/` so you can run
-`flatpak-builder --run flatpak/ data/codes.nora.gdiceroller.json codes.nora.gdiceroller`
-or publish to a repo.
-
-## TODO
-
-- [ ]  Internationalization
-- [ ]  Code tidying
-- [x]  Icons and app metadata
-- [x]  Flatpak
-- [ ]  Snap package
-- [ ]  .deb and .rpm packages
-
+    cargo build
+    
+    cargo install --path=.
+    
+    $HOME/.cargo/bin/authenticator-rust
+    
