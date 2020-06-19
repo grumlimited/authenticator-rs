@@ -149,7 +149,6 @@ impl MainWindow {
         }
 
         {
-            let popover = popover.clone();
             let edit_account_window = self.edit_account_window.clone();
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();

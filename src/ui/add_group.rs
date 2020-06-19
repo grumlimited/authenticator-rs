@@ -1,6 +1,6 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
-use crate::model::{Account, AccountGroup};
+use crate::model::AccountGroup;
 use crate::ui::AccountsWindow;
 use gtk::prelude::*;
 use gtk::Builder;
@@ -46,15 +46,11 @@ impl AddGroupWindow {
         // CANCEL
         with_action(gui, connection, add_group_account_cancel, |_, gui| {
             Box::new(move |_| {
-                let gui = gui.clone();
-                let gui2 = gui.clone();
-                let add_group = gui.add_group;
+                let gui_1 = gui.clone();
 
-                let name = add_group.input_group.clone();
+                gui_1.add_group.input_group.set_text("");
 
-                name.set_text("");
-
-                MainWindow::switch_to(gui2, State::DisplayAccounts);
+                MainWindow::switch_to(gui_1, State::DisplayAccounts);
             })
         });
 
@@ -74,9 +70,7 @@ impl AddGroupWindow {
 
                     let add_group = gui_1.add_group;
 
-                    let name = add_group.input_group.clone();
-
-                    let name: String = name.get_buffer().get_text();
+                    let name: String = add_group.input_group.get_buffer().get_text();
 
                     let mut group = AccountGroup::new(0, name.as_str(), vec![]);
 

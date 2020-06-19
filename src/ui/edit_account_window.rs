@@ -55,11 +55,8 @@ impl EditAccountWindow {
                 let gui2 = gui.clone();
                 let edit_account_window = gui.edit_account_window;
 
-                let name = edit_account_window.input_name.clone();
-                let secret = edit_account_window.input_secret.clone();
-
-                name.set_text("");
-                secret.set_text("");
+                edit_account_window.input_name.set_text("");
+                edit_account_window.input_secret.set_text("");
 
                 MainWindow::switch_to(gui2, State::DisplayAccounts);
             })
@@ -73,16 +70,16 @@ impl EditAccountWindow {
             edit_account_save,
             |connection, gui| {
                 Box::new(move |_| {
-                    let gui = gui.clone();
-                    let gui2 = gui.clone();
-                    let gui3 = gui.clone();
+                    let gui_1 = gui.clone();
+                    let gui_2 = gui_1.clone();
+                    let gui_3 = gui_1.clone();
 
-                    let edit_account_window = gui.edit_account_window;
+                    let edit_account_window = gui_1.edit_account_window;
 
                     let name = edit_account_window.input_name.clone();
-                    let secret = edit_account_window.input_secret.clone();
+                    let secret = edit_account_window.input_secret;
                     let account_id = edit_account_window.input_account_id.clone();
-                    let group = edit_account_window.input_group.clone();
+                    let group = edit_account_window.input_group;
 
                     let name: String = name.get_buffer().get_text();
                     let secret: String = secret.get_buffer().get_text();
@@ -114,11 +111,10 @@ impl EditAccountWindow {
                         Err(_) => panic!(),
                     };
 
-                    let gui = gui2.clone();
                     let connection = connection.clone();
-                    AccountsWindow::replace_accounts_and_widgets(gui, connection);
+                    AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
 
-                    MainWindow::switch_to(gui3, State::DisplayAccounts);
+                    MainWindow::switch_to(gui_3, State::DisplayAccounts);
                 })
             },
         );

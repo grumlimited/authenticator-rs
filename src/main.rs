@@ -82,9 +82,7 @@ fn main() {
             AddGroupWindow::edit_account_buttons_actions(gui, conn);
         }
 
-        let gui_clone = gui.clone();
-
-        AccountsWindow::delete_buttons_actions(gui_clone, connection);
+        AccountsWindow::delete_buttons_actions(gui, connection);
     });
 
     application.run(&[]);
