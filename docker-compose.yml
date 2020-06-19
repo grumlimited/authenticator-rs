@@ -1,5 +1,7 @@
-version: '2'
+version: '3'
 services:
-  hello_world:
+  rust:
     image: ubuntu
-    command: [/bin/echo, 'Hello world
+    command: [/bin/sleep, '60000']
+    volumes:
+    - '.:/authenticator-rs'
