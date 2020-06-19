@@ -15,6 +15,7 @@ pub struct AddGroupWindow {
     pub save_button: gtk::Button,
 }
 
+
 impl AddGroupWindow {
     pub fn new(builder: Builder) -> AddGroupWindow {
         AddGroupWindow {
@@ -25,6 +26,7 @@ impl AddGroupWindow {
         }
     }
 
+    #[allow(clippy::useless_let_if_seq)]
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_group.clone();
 
@@ -94,23 +96,20 @@ impl AddGroupWindow {
 
                     gui_1.add_group.reset();
 
-                    match gui_1.add_group.validate() {
-                        Ok(()) => {
-                            let add_group = gui_1.add_group;
+                    if let Ok(()) = gui_1.add_group.validate() {
+                        let add_group = gui_1.add_group;
 
-                            let name: String = add_group.input_group.get_buffer().get_text();
+                        let name: String = add_group.input_group.get_buffer().get_text();
 
-                            let mut group = AccountGroup::new(0, name.as_str(), vec![]);
+                        let mut group = AccountGroup::new(0, name.as_str(), vec![]);
 
-                            {
-                                let connection = connection.clone();
-                                ConfigManager::save_group(connection, &mut group).unwrap();
-                            }
-
-                            AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
-                            MainWindow::switch_to(gui3, State::DisplayAccounts);
+                        {
+                            let connection = connection.clone();
+                            ConfigManager::save_group(connection, &mut group).unwrap();
                         }
-                        Err(_) => {}
+
+                        AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
+                        MainWindow::switch_to(gui3, State::DisplayAccounts);
                     }
                 })
             },

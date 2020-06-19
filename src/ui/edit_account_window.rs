@@ -31,6 +31,7 @@ impl EditAccountWindow {
         }
     }
 
+    #[allow(clippy::useless_let_if_seq)]
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
@@ -129,61 +130,58 @@ impl EditAccountWindow {
 
                     gui_4.edit_account_window.reset();
 
-                    match gui_4.edit_account_window.validate() {
-                        Ok(()) => {
-                            let edit_account_window = gui_1.edit_account_window;
+                    if let Ok(()) = gui_4.edit_account_window.validate() {
+                        let edit_account_window = gui_1.edit_account_window;
 
-                            let name = edit_account_window.input_name.clone();
-                            let secret = edit_account_window.input_secret.clone();
-                            let account_id = edit_account_window.input_account_id.clone();
-                            let group = edit_account_window.input_group.clone();
+                        let name = edit_account_window.input_name.clone();
+                        let secret = edit_account_window.input_secret.clone();
+                        let account_id = edit_account_window.input_account_id.clone();
+                        let group = edit_account_window.input_group.clone();
 
-                            let name: String = name.get_buffer().get_text();
-                            let secret: String = secret.get_buffer().get_text();
+                        let name: String = name.get_buffer().get_text();
+                        let secret: String = secret.get_buffer().get_text();
 
-                            let group_id = group
-                                .get_active_id()
-                                .unwrap()
-                                .as_str()
-                                .to_owned()
-                                .parse()
-                                .unwrap();
+                        let group_id = group
+                            .get_active_id()
+                            .unwrap()
+                            .as_str()
+                            .to_owned()
+                            .parse()
+                            .unwrap();
 
-                            match account_id.get_buffer().get_text().parse() {
-                                Ok(account_id) if account_id == 0 => {
-                                    let mut account = Account::new(
-                                        account_id,
-                                        group_id,
-                                        name.as_str(),
-                                        secret.as_str(),
-                                    );
+                        match account_id.get_buffer().get_text().parse() {
+                            Ok(account_id) if account_id == 0 => {
+                                let mut account = Account::new(
+                                    account_id,
+                                    group_id,
+                                    name.as_str(),
+                                    secret.as_str(),
+                                );
 
-                                    let connection = connection.clone();
-                                    let _ = ConfigManager::save_account(connection, &mut account)
-                                        .unwrap();
-                                }
-                                Ok(account_id) => {
-                                    let mut account = Account::new(
-                                        account_id,
-                                        group_id,
-                                        name.as_str(),
-                                        secret.as_str(),
-                                    );
+                                let connection = connection.clone();
+                                let _ =
+                                    ConfigManager::save_account(connection, &mut account).unwrap();
+                            }
+                            Ok(account_id) => {
+                                let mut account = Account::new(
+                                    account_id,
+                                    group_id,
+                                    name.as_str(),
+                                    secret.as_str(),
+                                );
 
-                                    let connection = connection.clone();
-                                    let _ = ConfigManager::update_account(connection, &mut account)
-                                        .unwrap();
-                                }
-                                Err(e) => panic!(e),
-                            };
+                                let connection = connection.clone();
+                                let _ = ConfigManager::update_account(connection, &mut account)
+                                    .unwrap();
+                            }
+                            Err(e) => panic!(e),
+                        };
 
-                            let connection = connection.clone();
-                            AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
+                        let connection = connection.clone();
+                        AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
 
-                            edit_account_window.reset();
-                            MainWindow::switch_to(gui_3, State::DisplayAccounts);
-                        }
-                        Err(_) => {}
+                        edit_account_window.reset();
+                        MainWindow::switch_to(gui_3, State::DisplayAccounts);
                     }
                 })
             },
