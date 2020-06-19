@@ -116,10 +116,7 @@ impl ConfigManager {
     ) -> Result<&mut AccountGroup, LoadError> {
         let conn = conn.lock().unwrap();
 
-        conn.execute(
-            "INSERT INTO groups (name) VALUES (?1)",
-            params![group.name],
-        )
+        conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group.name])
             .unwrap();
 
         let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
@@ -317,9 +314,7 @@ mod tests {
 
         let group = {
             let conn = conn.clone();
-            ConfigManager::save_group(conn, &mut group)
-                .unwrap()
-                .clone()
+            ConfigManager::save_group(conn, &mut group).unwrap().clone()
         };
 
         account.group_id = group.id;
@@ -362,11 +357,9 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
 
-        let mut  group = {
+        let mut group = {
             let conn = conn.clone();
-            ConfigManager::save_group(conn, &mut group)
-                .unwrap()
-                .clone()
+            ConfigManager::save_group(conn, &mut group).unwrap().clone()
         };
 
         assert_eq!("new group", group.name);
