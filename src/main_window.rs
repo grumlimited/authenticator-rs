@@ -164,10 +164,9 @@ impl MainWindow {
 
             menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
-                if widgets.is_empty() {
-                    // can't add account if no groups
-                    add_account_button.set_sensitive(false)
-                }
+
+                // can't add account if no groups
+                add_account_button.set_sensitive(!widgets.is_empty());
 
                 popover.show_all();
             });
