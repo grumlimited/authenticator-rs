@@ -113,6 +113,8 @@ impl MainWindow {
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
 
+                add_group.input_group.set_text("");
+
                 edit_account_window.container.set_visible(false);
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
@@ -166,6 +168,7 @@ impl MainWindow {
                     ConfigManager::load_account_groups(connection).unwrap()
                 };
 
+                edit_account_window.reset();
                 edit_account_window.input_group.remove_all();
 
                 groups.iter().for_each(|group| {
