@@ -43,8 +43,11 @@ impl AccountGroup {
     }
 
     pub fn widget(&mut self) -> AccountGroupWidgets {
-        let group = gtk::Box::new(Orientation::Vertical, 0i32);
-        group.set_widget_name(format!("group_id_{}", self.id).as_str());
+        let group = gtk::BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .spacing(0)
+            .name(format!("group_id_{}", self.id).as_str())
+            .build();
 
         let group_label_button = gtk::ButtonBuilder::new()
             .label(self.name.as_str())

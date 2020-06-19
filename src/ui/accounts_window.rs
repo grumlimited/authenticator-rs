@@ -105,6 +105,13 @@ impl AccountsWindow {
                 group_widgets.retain(|x| x.id != group_id);
             });
 
+            {
+                let update_button = update_button.clone();
+                group_label_entry.connect_activate(move |_| {
+                    update_button.clicked();
+                });
+            }
+
             update_button.connect_clicked(move |_| {
                 let connection = connection_2.clone();
                 let connection2 = connection.clone();
