@@ -70,7 +70,7 @@ impl AccountGroup {
 
         let group_label_box = gtk::GridBuilder::new()
             .orientation(Orientation::Vertical)
-            .margin_start(15)
+            .margin_start(5)
             .margin_top(10)
             .margin_bottom(10)
             .build();
@@ -152,9 +152,15 @@ impl AccountGroup {
 
         group.add(&group_label_box);
 
-        let accounts = gtk::Box::new(Orientation::Vertical, 0i32);
-        accounts.set_margin_start(5);
-        accounts.set_margin_end(5);
+        let accounts = gtk::BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .spacing(0)
+            .margin_start(5)
+            .margin_end(5)
+            .build();
+
+        let style_context = accounts.get_style_context();
+        style_context.add_class("account_box");
 
         let account_widgets: Vec<AccountWidgets> = self
             .entries

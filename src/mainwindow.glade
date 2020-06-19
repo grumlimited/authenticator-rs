@@ -26,7 +26,7 @@
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can_focus">False</property>
     <property name="default_width">250</property>
-    <property name="default_height">450</property>
+    <property name="default_height">650</property>
     <child>
       <object class="GtkStack" id="stack">
         <property name="name">stack</property>
@@ -37,11 +37,13 @@
             <property name="name">main_box</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_bottom">10</property>
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkProgressBar" id="progress_bar">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="margin_bottom">10</property>
               </object>
               <packing>
                 <property name="expand">False</property>
