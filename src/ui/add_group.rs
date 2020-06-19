@@ -15,7 +15,6 @@ pub struct AddGroupWindow {
     pub save_button: gtk::Button,
 }
 
-
 impl AddGroupWindow {
     pub fn new(builder: Builder) -> AddGroupWindow {
         AddGroupWindow {
