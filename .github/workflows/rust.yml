@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir -p /home/runner/.local/share/authenticator-rs/
           sudo apt-get update
-          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev libsqlite3-dev xclip
+          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev libsqlite3-dev librust-gtk-sys-dev
 
       - name: Rust toolchain
         uses: actions-rs/toolchain@v1

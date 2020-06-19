@@ -30,7 +30,7 @@ jobs:
       - name: System dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev libsqlite3-dev
+          sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev libsqlite3-dev librust-gtk-sys-dev
 
           mkdir ~/.cargo/release
 
