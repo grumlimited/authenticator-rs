@@ -1,12 +1,10 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
 use crate::model::Account;
-use crate::ui::AccountsWindow;
-use core::fmt;
+use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
 use gtk::Builder;
 use rusqlite::Connection;
-use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
@@ -193,27 +191,3 @@ impl EditAccountWindow {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ValidationError {
-    FieldError,
-}
-
-impl Error for ValidationError {
-    fn description(&self) -> &str {
-        match *self {
-            ValidationError::FieldError => "invalid",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn Error> {
-        None
-    }
-}
-
-impl fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ValidationError::FieldError => write!(f, "invalid"),
-        }
-    }
-}
