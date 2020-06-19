@@ -105,6 +105,13 @@ impl AccountsWindow {
                 group_widgets.retain(|x| x.id != group_id);
             });
 
+            {
+                let update_button = update_button.clone();
+                group_label_entry.connect_activate(move |_| {
+                    update_button.clicked();
+                });
+            }
+
             update_button.connect_clicked(move |_| {
                 let connection = connection_2.clone();
                 let connection2 = connection.clone();
@@ -167,7 +174,9 @@ impl AccountsWindow {
                     let account_id = format!("{}", account.id);
                     input_account_id.set_text(account_id.as_str());
                     input_name.set_text(account.label.as_str());
-                    input_secret.set_text(account.secret.as_str());
+
+                    let buffer = input_secret.get_buffer().unwrap();
+                    buffer.set_text(account.secret.as_str());
 
                     popover.hide();
 

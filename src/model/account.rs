@@ -50,7 +50,7 @@ impl Account {
     pub fn widget(&mut self) -> AccountWidgets {
         let grid = gtk::GridBuilder::new()
             .visible(true)
-            .margin_start(10)
+            .margin_start(0)
             .margin_end(10)
             .margin_bottom(5)
             .margin_top(5)
@@ -60,7 +60,7 @@ impl Account {
 
         let label = gtk::LabelBuilder::new()
             .label(self.label.as_str())
-            .margin_start(20)
+            .margin_start(8)
             .width_chars(19)
             .single_line_mode(true)
             .max_width_chars(50)

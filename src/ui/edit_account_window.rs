@@ -12,10 +12,12 @@ pub struct EditAccountWindow {
     pub container: gtk::Box,
     pub input_group: gtk::ComboBoxText,
     pub input_name: gtk::Entry,
-    pub input_secret: gtk::Entry,
+    pub input_secret: gtk::TextView,
     pub input_account_id: gtk::Entry,
     pub cancel_button: gtk::Button,
     pub save_button: gtk::Button,
+    pub add_accounts_container_edit: gtk::Label,
+    pub add_accounts_container_add: gtk::Label,
 }
 
 impl EditAccountWindow {
@@ -27,6 +29,8 @@ impl EditAccountWindow {
             input_secret: builder.get_object("edit_account_input_secret").unwrap(),
             input_account_id: builder.get_object("edit_account_input_account_id").unwrap(),
             cancel_button: builder.get_object("edit_account_cancel").unwrap(),
+            add_accounts_container_edit: builder.get_object("add_accounts_container_edit").unwrap(),
+            add_accounts_container_add: builder.get_object("add_accounts_container_add").unwrap(),
             save_button: builder.get_object("edit_account_save").unwrap(),
         }
     }
@@ -45,17 +49,21 @@ impl EditAccountWindow {
             result = Err(ValidationError::FieldError);
         }
 
-        if secret.get_buffer().get_text().is_empty() {
-            secret.set_property_primary_icon_name(Some("gtk-dialog-error"));
+        let buffer = secret.get_buffer().unwrap();
+        let (start, end) = buffer.get_bounds();
+        let secret_value: String = match buffer.get_slice(&start, &end, true) {
+            Some(secret_value) => secret_value.to_string(),
+            None => "".to_owned(),
+        };
+
+        if secret_value.is_empty() {
             let style_context = secret.get_style_context();
             style_context.add_class("error");
             result = Err(ValidationError::FieldError);
         } else {
-            let secret_value: String = secret.get_buffer().get_text();
             match Account::generate_time_based_password(secret_value.as_str()) {
                 Ok(_) => {}
                 Err(_) => {
-                    secret.set_property_primary_icon_name(Some("gtk-dialog-error"));
                     let style_context = secret.get_style_context();
                     style_context.add_class("error");
                     result = Err(ValidationError::FieldError);
@@ -75,7 +83,6 @@ impl EditAccountWindow {
         let style_context = name.get_style_context();
         style_context.remove_class("error");
 
-        secret.set_property_primary_icon_name(None);
         let style_context = secret.get_style_context();
         style_context.remove_class("error");
 
@@ -109,7 +116,9 @@ impl EditAccountWindow {
                 edit_account_window.reset();
 
                 edit_account_window.input_name.set_text("");
-                edit_account_window.input_secret.set_text("");
+
+                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
+                buffer.set_text("");
 
                 MainWindow::switch_to(gui2, State::DisplayAccounts);
             })
@@ -139,7 +148,13 @@ impl EditAccountWindow {
                         let group = edit_account_window.input_group.clone();
 
                         let name: String = name.get_buffer().get_text();
-                        let secret: String = secret.get_buffer().get_text();
+
+                        let buffer = secret.get_buffer().unwrap();
+                        let (start, end) = buffer.get_bounds();
+                        let secret: String = match buffer.get_slice(&start, &end, true) {
+                            Some(secret_value) => secret_value.to_string(),
+                            None => "".to_owned(),
+                        };
 
                         let group_id = group
                             .get_active_id()
