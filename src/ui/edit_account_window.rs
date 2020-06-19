@@ -108,7 +108,7 @@ impl EditAccountWindow {
                             let _ =
                                 ConfigManager::update_account(connection, &mut account).unwrap();
                         }
-                        Err(_) => panic!(),
+                        Err(e) => panic!(e),
                     };
 
                     let connection = connection.clone();
