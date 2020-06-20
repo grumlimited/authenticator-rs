@@ -64,7 +64,8 @@ impl Account {
             .width_chars(19)
             .single_line_mode(true)
             .max_width_chars(50)
-            .xalign(0.05_f32)
+            .hexpand(true)
+            .xalign(0.0)
             .build();
 
         let image = gtk::ImageBuilder::new().icon_name("edit-copy").build();
