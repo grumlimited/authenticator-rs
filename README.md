@@ -23,43 +23,15 @@ Authenticator-rs is published under the [GNU GENERAL PUBLIC LICENSE v3](./README
 
 ## Changelog
 
-### 0.0.6
+See [releases](https://github.com/grumlimited/authenticator-rs/releases).
 
-* Plain GTK3 version
-* Not production-ready. Missing lots of UI input validation.
+## Installing
 
-### 0.0.5
-
-* Last Iced version
-
-### 0.0.4
-
-* Editing existing accounts
-
-### 0.0.3
-
-* SQLite backend! _(deleting/updating accounts coming soon! )_
-
-### 0.0.2
-
-* Adding new accounts
-* More error handling
-
-### 0.0.1
-
-_Only tested on Linux (Arch Linux to be specific)._
-
-* Initial release;
-* Generating TOTP tokens for multiple accounts, every 30 seconds;
-* Copy and pasting tokens to clipboard.
-
-## Running
+#### Debian
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    chmod +x ./authenticator-rs-0.0.6-x86_64
-
-    ./authenticator-rs-0.0.6-x86_64
+    dpkg -i authenticator-rs-0.0.8-x86-64.deb
 
 ## Building
 
@@ -71,4 +43,6 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
     
 ## Assets
 
-Icon files are fromm [authenticator](https://gitlab.gnome.org/World/Authenticator).
+Icon files are from [authenticator](https://gitlab.gnome.org/World/Authenticator).
+
+Original GTK template from [Nora Codes - gDiceRoller](https://nora.codes/tutorial/speedy-desktop-apps-with-gtk-and-rust/) .
