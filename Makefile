@@ -66,7 +66,6 @@ clean :
 debian-pkg : install
 	mkdir -p $(DESTDIR)/DEBIAN
 	cp data/deb/control $(DESTDIR)/DEBIAN/
-	echo "Version: $(RELEASE_VERSION)"
 	echo "Version: $(RELEASE_VERSION)" >> $(DESTDIR)/DEBIAN/control
 	cp data/deb/postinst $(DESTDIR)/DEBIAN/
 	chmod 775 $(DESTDIR)/DEBIAN/postinst

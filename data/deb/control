@@ -3,6 +3,6 @@ Section: development
 Priority: optional
 Architecture: all
 Depends: libgtk-3-0, libsqlite3-0
-Maintainer: rgallet@grumlimited.co.uk
+Maintainer: rgallet_at_grumlimited.co.uk
 Description: MFA Authenticator
  Authenticator-rs is a TOTP-MFA application written in Rust and GTK3.

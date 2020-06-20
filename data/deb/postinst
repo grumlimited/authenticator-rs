@@ -1,5 +1,5 @@
 #!/bin/sh
 
-chmod +x /usr/bin/uk.co.grumlimited.authenticator-rs
+chmod +x /usr/bin/authenticator-rs
 
 exit 0
