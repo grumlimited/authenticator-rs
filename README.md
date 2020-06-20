@@ -31,7 +31,7 @@ See [releases](https://github.com/grumlimited/authenticator-rs/releases).
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
-    dpkg -i authenticator-rs-0.0.8-x86-64.deb
+    dpkg -i authenticator-rs-x.x.x-x86-64.deb
 
 ## Building
 
