@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=Dice Roller
-GenericName=Dice Roller
-Comment=Roll dice of many different shapes and sizes in all possible combinations.
-Categories=Game;GTK
-Icon=codes.nora.gDiceRoller
-Exec=codes.nora.gDiceRoller
+Name=Authenticator RS
+GenericName=Authenticator RS
+Comment=MFA authenticator
+Categories=Office;GTK
+Icon=uk.co.grumlimited.authenticator-rs
+Exec=uk.co.grumlimited.authenticator-rs
 Terminal=false
 Type=Application
