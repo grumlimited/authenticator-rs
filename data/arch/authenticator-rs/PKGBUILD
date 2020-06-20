@@ -1,0 +1,30 @@
+# Maintainer: Romain Gallet <rgallet@grumlimited.co.uk>
+_packager="Romain Gallet <rgallet@grumlimited.co.uk>"
+pkgname=authenticator-rs
+# pkgver=0.0.8 # set in CI
+pkgrel=1
+pkgdesc='MFA Authenticator. TOTP-MFA application written in Rust and GTK3.'
+arch=('x86_64')
+url="https://github.com/grumlimited/$pkgname/releases/download/$pkgver/$pkgname-$pkgver-$arch.deb"
+license=('GPLv3')
+groups=()
+depends=('cairo' 'desktop-file-utils' 'gcc-libs' 'gdk-pixbuf2' 'glib2' 'gtk3' 'hicolor-icon-theme' 'pango' 'sqlite')
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=()
+replaces=()
+backup=()
+options=()
+install=$pkgname.install
+source=($url)
+noextract=()
+
+build() {
+	rm control.tar.xz
+	tar xvf data.tar.xz
+}
+
+package() {
+	cp -fr usr/ ${pkgdir}
+}
