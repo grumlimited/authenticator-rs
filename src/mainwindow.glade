@@ -70,12 +70,14 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="margin_bottom">10</property>
+                    <property name="vexpand">True</property>
                     <child>
                       <object class="GtkBox" id="accounts_container">
                         <property name="name">accounts_container</property>
                         <property name="height_request">250</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="vexpand">True</property>
                         <property name="orientation">vertical</property>
                         <property name="spacing">25</property>
                         <child>
