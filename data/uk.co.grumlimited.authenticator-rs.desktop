@@ -1,9 +1,11 @@
 [Desktop Entry]
 Name=Authenticator RS
-GenericName=Authenticator RS
-Comment=MFA authenticator
-Categories=Office;GTK
+GenericName=Two-factor Authentication
+Comment=A Two-Factor Authentication application
+Categories=GNOME;GTK;Security;Utility;
 Icon=uk.co.grumlimited.authenticator-rs
-Exec=uk.co.grumlimited.authenticator-rs
+Keywords=Gnome;GTK;Verification;2FA;Authentication;OTP;TwoFactor;
+Exec=authenticator-rs
 Terminal=false
 Type=Application
+StartupNotify=true
