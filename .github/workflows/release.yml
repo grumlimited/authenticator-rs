@@ -42,6 +42,11 @@ jobs:
           override: true
           components: rustfmt, clippy
 
+      - name: Clean
+        uses: actions-rs/cargo@v1
+        with:
+          command: clean
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
