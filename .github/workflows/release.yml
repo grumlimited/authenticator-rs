@@ -99,6 +99,7 @@ jobs:
 
       - name: Create arch package checksum file
         run: |
+          sudo chown -R $USER .
           md5sum data/arch/authenticator-rs/*.xz >> data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum
 
       - name: Upload Arch Linux release
