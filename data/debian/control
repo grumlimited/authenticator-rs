@@ -1,0 +1,8 @@
+Package: authenticator-rs
+Section: development
+Priority: optional
+Architecture: all
+Depends: libgtk-3-0, libsqlite3-0, libcairo2, desktop-file-utils, libgdk-pixbuf2.0-0, libglib2.0-0, hicolor-icon-theme
+Maintainer: rgallet_at_grumlimited.co.uk
+Description: MFA Authenticator
+ Authenticator-rs is a TOTP-MFA application written in Rust and GTK3.

@@ -47,19 +47,77 @@ jobs:
         with:
           command: build
 
-      - name: Create binary
+      - name: Create Debian package
         env:
           DESTDIR: '~/authenticator-rs-deb'
         run: |
-          sudo mkdir -p $DESTDIR
+          mkdir -p $DESTDIR
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
 
-      - name: Upload Release Asset
+      - name: Upload Debian release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'authenticator-rs-${{ github.event.release.tag_name }}-x86-64.deb'
-          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86-64.deb'
+          asset_path: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb'
+          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb'
           asset_content_type: application/octet-stream
+
+      - name: Upload Debian release checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: '${{ github.event.release.upload_url }}'
+          asset_path: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb.md5sum'
+          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb.md5sum'
+          asset_content_type: text/plain
+
+  arch:
+    runs-on: ubuntu-latest
+    needs: [ci]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare arch package metadata
+        run: |
+          wget https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb -O data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
+
+          MD5_SUM=$(md5sum data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb  | awk '{print $1}')
+          awk -v q="'" -v MD5_SUM=$MD5_SUM -i inplace 'BEGINFILE{print "md5sums=(" q MD5_SUM q ")"}{print}' data/arch/authenticator-rs/PKGBUILD
+          awk -i inplace 'BEGINFILE{print "pkgver=${{ github.event.release.tag_name }}"}{print}' data/arch/authenticator-rs/PKGBUILD
+
+      - name: Validate PKGBUILD
+        id: validate-pkgbuild
+        uses: grumlimited/arch-pkgbuild-builder@v1.9.1
+        with:
+          target: pkgbuild
+          pkgbuild: data/arch/authenticator-rs/PKGBUILD
+
+      - name: Create arch package checksum file
+        run: |
+          sudo chown -R $USER .
+          md5sum data/arch/authenticator-rs/*.xz >> data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum
+
+      - name: Upload Arch Linux release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: '${{ github.event.release.upload_url }}'
+          asset_path: 'data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz'
+          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz'
+          asset_content_type: application/octet-stream
+
+      - name: Upload Arch Linux release checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: '${{ github.event.release.upload_url }}'
+          asset_path: 'data/arch/authenticator-rs/authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum'
+          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum'
+          asset_content_type: text/plain

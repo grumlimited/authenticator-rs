@@ -65,9 +65,10 @@ clean :
 
 debian-pkg : install
 	mkdir -p $(DESTDIR)/DEBIAN
-	cp data/deb/control $(DESTDIR)/DEBIAN/
+	cp data/debian/control $(DESTDIR)/DEBIAN/
 	echo "Version: $(RELEASE_VERSION)" >> $(DESTDIR)/DEBIAN/control
-	cp data/deb/postinst $(DESTDIR)/DEBIAN/
+	cp data/debian/postinst $(DESTDIR)/DEBIAN/
 	chmod 775 $(DESTDIR)/DEBIAN/postinst
-	dpkg-deb --build $(DESTDIR) authenticator-rs-$(RELEASE_VERSION)-x86-64.deb
+	dpkg-deb --build $(DESTDIR) authenticator-rs-$(RELEASE_VERSION)-x86_64.deb
+	md5sum authenticator-rs-$(RELEASE_VERSION)-x86_64.deb > authenticator-rs-$(RELEASE_VERSION)-x86_64.deb.md5sum
 
