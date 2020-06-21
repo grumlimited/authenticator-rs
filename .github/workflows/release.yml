@@ -21,7 +21,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/release
             ~/.cargo/registry
             ~/.cargo/git
             target
