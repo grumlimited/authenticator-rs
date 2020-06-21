@@ -27,11 +27,15 @@ See [releases](https://github.com/grumlimited/authenticator-rs/releases).
 
 ## Installing
 
-#### Debian
-
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
 
+#### Debian
+
     dpkg -i authenticator-rs-x.x.x-x86-64.deb
+
+#### Arch Linux
+
+    pacman -U authenticator-rs-x.x.x-1-x86_64.pkg.tar.xz
 
 ## Building
 
