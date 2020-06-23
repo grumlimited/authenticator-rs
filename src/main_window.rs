@@ -12,7 +12,7 @@ use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
-use gtk::{Orientation, PositionType};
+use gtk::{Orientation, PositionType, Align};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -100,24 +100,40 @@ impl MainWindow {
             .show_close_button(true)
             .events(gdk::EventMask::ALL_EVENTS_MASK)
             .title("Authenticator RS")
-            .decoration_layout("button:minimize,maximize,close")
             .build();
 
+        let main_icon = gtk::ImageBuilder::new().icon_name("uk.co.grumlimited.authenticator-rs").build();
         let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
 
         let popover = gtk::PopoverMenuBuilder::new()
             .position(PositionType::Bottom)
             .build();
 
+        let menu_width = 130_i32;
+
+        let buttons_container = gtk::BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .hexpand(true)
+            .width_request(menu_width)
+            .build();
+
         let add_account_button = gtk::ButtonBuilder::new()
             .label("Add account")
+            .hexpand_set(true)
+            .width_request(menu_width)
             .margin(3)
             .build();
 
         let add_group_button = gtk::ButtonBuilder::new()
             .label("Add group")
+            .halign(Align::Start)
+            .width_request(menu_width)
             .margin(3)
             .build();
+
+        // forcing labels in menu buttons to left-align
+        add_group_button.get_child().unwrap().downcast_ref::<gtk::Label>().unwrap().set_xalign(0f32);
+        add_account_button.get_child().unwrap().downcast_ref::<gtk::Label>().unwrap().set_xalign(0f32);
 
         {
             let popover = popover.clone();
@@ -141,19 +157,16 @@ impl MainWindow {
             });
         }
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .build();
-
         popover.add(&buttons_container);
 
         buttons_container.pack_start(&add_account_button, false, false, 0);
         buttons_container.pack_start(&add_group_button, false, false, 0);
 
-        let menu = gtk::MenuButtonBuilder::new()
+        let action_menu = gtk::MenuButtonBuilder::new()
             .image(&add_image)
             .margin_start(15)
             .use_popover(true)
+            .halign(Align::Start)
             .popover(&popover)
             .build();
 
@@ -162,7 +175,7 @@ impl MainWindow {
             let add_account_button = add_account_button.clone();
             let popover = popover.clone();
 
-            menu.connect_clicked(move |_| {
+            action_menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
 
                 // can't add account if no groups
@@ -219,7 +232,8 @@ impl MainWindow {
             });
         }
 
-        titlebar.add(&menu);
+        titlebar.pack_start(&main_icon);
+        titlebar.pack_start(&action_menu);
         self.window.set_titlebar(Some(&titlebar));
 
         titlebar.show_all();
@@ -243,7 +257,6 @@ impl MainWindow {
 
         progress_bar.show();
         self.accounts_window.container.show();
-        // self.accounts_window.stack.show();
         self.window.show();
     }
 

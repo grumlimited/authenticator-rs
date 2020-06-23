@@ -52,9 +52,14 @@ impl AccountGroup {
         let group_label_button = gtk::ButtonBuilder::new()
             .label(self.name.as_str())
             .height_request(32)
-            .hexpand(false)
             .halign(Align::Start)
             .build();
+
+        let style_context = group_label_button.get_style_context();
+        style_context.add_class("group_label_button");
+
+        // forcing labels in menu buttons to left-align
+        group_label_button.get_child().unwrap().downcast_ref::<gtk::Label>().unwrap().set_xalign(0f32);
 
         let group_label_entry = gtk::EntryBuilder::new()
             .margin_end(5)
