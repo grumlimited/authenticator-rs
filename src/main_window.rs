@@ -12,7 +12,7 @@ use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
-use gtk::{Orientation, PositionType, Align};
+use gtk::{Align, Orientation, PositionType};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -102,7 +102,9 @@ impl MainWindow {
             .title("Authenticator RS")
             .build();
 
-        let main_icon = gtk::ImageBuilder::new().icon_name("uk.co.grumlimited.authenticator-rs").build();
+        let main_icon = gtk::ImageBuilder::new()
+            .icon_name("uk.co.grumlimited.authenticator-rs")
+            .build();
         let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
 
         let popover = gtk::PopoverMenuBuilder::new()
@@ -132,8 +134,18 @@ impl MainWindow {
             .build();
 
         // forcing labels in menu buttons to left-align
-        add_group_button.get_child().unwrap().downcast_ref::<gtk::Label>().unwrap().set_xalign(0f32);
-        add_account_button.get_child().unwrap().downcast_ref::<gtk::Label>().unwrap().set_xalign(0f32);
+        add_group_button
+            .get_child()
+            .unwrap()
+            .downcast_ref::<gtk::Label>()
+            .unwrap()
+            .set_xalign(0f32);
+        add_account_button
+            .get_child()
+            .unwrap()
+            .downcast_ref::<gtk::Label>()
+            .unwrap()
+            .set_xalign(0f32);
 
         {
             let popover = popover.clone();
