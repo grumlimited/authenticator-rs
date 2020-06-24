@@ -7,3 +7,4 @@ Cargo.lock
 *#
 *.deb
 *.swp
+/data/uk.co.grumlimited.authenticator-rs.gresource

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/uk/co/grumlimited/authenticator-rs">
+    <file alias="authenticator-rs.svg">data/uk.co.grumlimited.authenticator-rs.svg</file>
+    <file alias="style.css">data/style.css</file>
+  </gresource>
+</gresources>

@@ -28,3 +28,23 @@
 .group_label_button:hover {
     color: white;
 }
+
+#about_popup_title {
+    color: white;
+    background-color: midnightblue;
+    font-family: Sans Bold;
+    font-size: 11pt;
+    font-weight: bold;
+}
+
+#about_textbuffer_title {
+    background-color: transparent;
+    font-family: Sans Bold;
+    font-size: 11pt;
+    font-weight: bold;
+}
+
+.about_textbuffer_body {
+    background-color: transparent;
+    font-size: 9pt;
+}
