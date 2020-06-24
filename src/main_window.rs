@@ -236,9 +236,17 @@ impl MainWindow {
         }
 
         {
+            let titlebar = gtk::HeaderBarBuilder::new()
+                .decoration_layout(":")
+                .title("About")
+                .build();
+
+            let popup = self.popup.clone();
+            popup.set_titlebar(Some(&titlebar));
+        }
+        {
             let popup = self.popup.clone();
             about_button.connect_clicked(move |_| {
-                popup.set_title("About");
                 popover.set_visible(false);
                 popup.set_visible(true);
                 popup.show_all();
