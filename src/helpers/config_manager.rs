@@ -402,7 +402,6 @@ mod tests {
             ConfigManager::save_account(conn2, &mut account1).expect("boom!");
             let mut account2 = Account::new(0, group.id, "ccc", "secret3");
             ConfigManager::save_account(conn3, &mut account2).expect("boom!");
-
         };
 
         {
