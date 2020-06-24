@@ -20,13 +20,6 @@ pub enum LoadError {
 }
 
 impl ConfigManager {
-    pub fn _log4rs() -> std::path::PathBuf {
-        let mut path = ConfigManager::path();
-        path.push("log4rs.yaml");
-
-        path
-    }
-
     fn db_path() -> std::path::PathBuf {
         let mut path = ConfigManager::path();
         path.push("authenticator.db");
@@ -54,7 +47,9 @@ impl ConfigManager {
 
         let conn = conn.lock().unwrap();
 
-        let mut stmt = conn.prepare("SELECT id, name FROM groups").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM groups ORDER BY LOWER(name)")
+            .unwrap();
 
         stmt.query_map(params![], |row| {
             let id: u32 = row.get(0)?;
@@ -72,27 +67,6 @@ impl ConfigManager {
 
     pub fn create_connection() -> Result<Connection, LoadError> {
         Connection::open_with_flags(Self::db_path(), OpenFlags::default())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-    }
-
-    fn _create_group(
-        conn: Arc<Mutex<Connection>>,
-        group_name: &str,
-    ) -> Result<AccountGroup, LoadError> {
-        let conn = conn.lock().unwrap();
-
-        conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group_name])
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-            .unwrap();
-
-        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
-
-        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
-            .map(|id| AccountGroup {
-                id,
-                name: group_name.to_owned(),
-                ..Default::default()
-            })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
@@ -274,8 +248,9 @@ impl ConfigManager {
     }
 
     fn get_accounts(conn: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt =
-            conn.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1")?;
+        let mut stmt = conn.prepare(
+            "SELECT id, label, secret FROM accounts WHERE group_id = ?1 ORDER BY LOWER(label)",
+        )?;
 
         stmt.query_map(params![group_id], |row| {
             let id: u32 = row.get(0)?;
@@ -294,10 +269,8 @@ impl ConfigManager {
 mod tests {
     use super::ConfigManager;
     use rusqlite::Connection;
-    use std::path::Path;
 
     use crate::model::{Account, AccountGroup};
-    use async_std::task;
     use std::sync::{Arc, Mutex};
 
     #[test]
@@ -306,7 +279,7 @@ mod tests {
 
         let _ = {
             let conn = conn.clone();
-            ConfigManager::init_tables(conn);
+            ConfigManager::init_tables(conn).expect("boom!");
         };
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
@@ -352,7 +325,7 @@ mod tests {
 
         let _ = {
             let conn = conn.clone();
-            ConfigManager::init_tables(conn);
+            ConfigManager::init_tables(conn).expect("boom!");
         };
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
@@ -382,12 +355,13 @@ mod tests {
 
         let _ = {
             let conn = conn.clone();
-            ConfigManager::init_tables(conn);
+            ConfigManager::init_tables(conn).expect("boom!");
         };
 
+        let mut group = AccountGroup::new(0, "existing_group2", vec![]);
         let group = {
             let conn = conn.clone();
-            ConfigManager::_create_group(conn, "existing_group2").unwrap()
+            ConfigManager::save_group(conn, &mut group).unwrap()
         };
 
         let mut account = Account::new(0, group.id, "label", "secret");
@@ -409,21 +383,43 @@ mod tests {
     }
 
     #[test]
-    fn get_or_create_group_with_new_group() {
+    fn save_group_ordering() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
+        {
             let conn = conn.clone();
-            ConfigManager::init_tables(conn);
+            ConfigManager::init_tables(conn).expect("boom!");
         };
 
-        let group = {
+        {
             let conn = conn.clone();
-            ConfigManager::_create_group(conn, "existing_group2").unwrap()
+            let conn2 = conn.clone();
+            let conn3 = conn.clone();
+            let mut group = AccountGroup::new(0, "bbb", vec![]);
+            ConfigManager::save_group(conn, &mut group).unwrap();
+
+            let mut account1 = Account::new(0, group.id, "hhh", "secret3");
+            ConfigManager::save_account(conn2, &mut account1).expect("boom!");
+            let mut account2 = Account::new(0, group.id, "ccc", "secret3");
+            ConfigManager::save_account(conn3, &mut account2).expect("boom!");
+
         };
 
-        assert!(group.id > 0);
-        assert_eq!("existing_group2", group.name);
+        {
+            let conn = conn.clone();
+            let mut group = AccountGroup::new(0, "AAA", vec![]);
+            ConfigManager::save_group(conn, &mut group).expect("boom!");
+        };
+
+        let results = ConfigManager::load_account_groups(conn).unwrap();
+
+        //groups in order
+        assert_eq!("AAA", results.get(0).unwrap().name);
+        assert_eq!("bbb", results.get(1).unwrap().name);
+
+        //accounts in order
+        assert_eq!("ccc", results.get(1).unwrap().entries.get(0).unwrap().label);
+        assert_eq!("hhh", results.get(1).unwrap().entries.get(1).unwrap().label);
     }
 
     #[test]
@@ -432,7 +428,7 @@ mod tests {
 
         let _ = {
             let conn = conn.clone();
-            ConfigManager::init_tables(conn);
+            ConfigManager::init_tables(conn).expect("boom!");
         };
 
         let mut account = Account::new(0, 0, "label", "secret");
