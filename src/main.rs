@@ -11,7 +11,6 @@ use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use gio::prelude::*;
 use gtk::prelude::*;
-use log4rs;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
