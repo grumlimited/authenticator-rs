@@ -119,7 +119,7 @@ impl MainWindow {
             self.window.set_application(Some(&application));
         }
 
-        self.build_system_menu(connection);
+        self.build_menus(connection);
 
         self.window.connect_delete_event(|_, _| Inhibit(false));
 
@@ -174,13 +174,25 @@ impl MainWindow {
         });
     }
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) {
+    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
             .title("Authenticator RS")
             .build();
 
-        let connection = connection.clone();
+        {
+            let connection = connection.clone();
+            titlebar.pack_start(&self.build_action_menu(connection));
+        }
+
+        titlebar.pack_end(&self.build_system_menu());
+        self.window.set_titlebar(Some(&titlebar));
+
+        titlebar.show_all();
+    }
+
+    fn build_system_menu(&mut self) -> gtk::MenuButton {
+        let menu_width = 130_i32;
 
         let popover = gtk::PopoverMenuBuilder::new()
             .position(PositionType::Bottom)
@@ -188,11 +200,13 @@ impl MainWindow {
 
         let buttons_container = gtk::BoxBuilder::new()
             .orientation(Orientation::Vertical)
+            .width_request(menu_width)
             .hexpand(true)
             .build();
 
         let about_button = gtk::ButtonBuilder::new()
             .label("About")
+            .hexpand(true)
             .hexpand_set(true)
             .margin(3)
             .build();
@@ -233,16 +247,12 @@ impl MainWindow {
                 popup.set_visible(true);
                 popup.show_all();
             });
-        }
+        };
 
-        titlebar.pack_start(&self.action_menu(connection));
-        titlebar.pack_end(&system_menu);
-        self.window.set_titlebar(Some(&titlebar));
-
-        titlebar.show_all();
+        system_menu
     }
 
-    fn action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
+    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
         let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
 
         let popover = gtk::PopoverMenuBuilder::new()
@@ -395,7 +405,7 @@ async fn progress_bar_interval(tx: Sender<u8>) {
 }
 
 fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
-    Box::new(move |param: &[glib::Value]| {
+    Box::new(move |_param: &[glib::Value]| {
         popup.hide();
         None
     })
