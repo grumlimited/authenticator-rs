@@ -111,7 +111,7 @@ fn configure_logging() {
         format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(),
         gio::ResourceLookupFlags::NONE,
     )
-        .unwrap();
+    .unwrap();
     let log4rs_yaml = log4rs_yaml.to_vec();
     let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
 
