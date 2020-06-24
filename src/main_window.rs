@@ -180,10 +180,7 @@ impl MainWindow {
             .title("Authenticator RS")
             .build();
 
-        {
-            let connection = connection.clone();
-            titlebar.pack_start(&self.build_action_menu(connection));
-        }
+        titlebar.pack_start(&self.build_action_menu(connection));
 
         titlebar.pack_end(&self.build_system_menu());
         self.window.set_titlebar(Some(&titlebar));
@@ -239,7 +236,6 @@ impl MainWindow {
         }
 
         {
-            let popover = popover.clone();
             let popup = self.popup.clone();
             about_button.connect_clicked(move |_| {
                 popup.set_title("About");
