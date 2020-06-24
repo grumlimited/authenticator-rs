@@ -19,6 +19,7 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
+    popup: gtk::Window,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
@@ -44,9 +45,22 @@ impl MainWindow {
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
+        let popup: gtk::Window = builder.get_object("about_popup").unwrap();
+
+        builder.connect_signals(|_, handler_name| {
+            match handler_name {
+                // handler_name as defined in the glade file
+                "about_popup_close" => {
+                    let popup = popup.clone();
+                    Box::new(about_popup_close(popup))
+                }
+                _ => Box::new(|_| None),
+            }
+        });
 
         MainWindow {
             window,
+            popup,
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone_1),
             add_group: AddGroupWindow::new(builder_clone_2),
@@ -95,16 +109,146 @@ impl MainWindow {
         }
     }
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) {
+    pub fn set_application(
+        &mut self,
+        application: &gtk::Application,
+        connection: Arc<Mutex<Connection>>,
+    ) {
+        {
+            let application = application.clone();
+            self.window.set_application(Some(&application));
+        }
+
+        self.build_menus(connection);
+
+        self.window.connect_delete_event(|_, _| Inhibit(false));
+
+        self.start_progress_bar();
+
+        let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
+        let progress_bar = progress_bar.get_mut();
+
+        progress_bar.show();
+        self.accounts_window.container.show();
+        self.window.show();
+    }
+
+    pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
+        let mut guard = groups.lock().unwrap();
+        let groups = guard.get_mut();
+
+        let widgets: Vec<AccountGroupWidgets> = groups
+            .iter_mut()
+            .map(|account_group| account_group.widget())
+            .collect();
+
+        widgets
+            .iter()
+            .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
+
+        let m_widgets = self.accounts_window.widgets.clone();
+        let mut m_widgets = m_widgets.lock().unwrap();
+        *m_widgets = widgets;
+
+        self.accounts_window.accounts_container.show_all();
+    }
+
+    pub fn start_progress_bar(&mut self) {
+        let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
+        self.pool.spawn_ok(progress_bar_interval(tx));
+
+        let progress_bar = self.accounts_window.progress_bar.clone();
+        let widgets = self.accounts_window.widgets.clone();
+
+        rx.attach(None, move |_| {
+            let mut guard = progress_bar.lock().unwrap();
+            let progress_bar = guard.get_mut();
+
+            let fraction = AccountsWindow::progress_bar_fraction();
+            progress_bar.set_fraction(fraction);
+
+            let mut w = widgets.lock().unwrap();
+            w.iter_mut().for_each(|group| group.update());
+
+            glib::Continue(true)
+        });
+    }
+
+    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
-            .events(gdk::EventMask::ALL_EVENTS_MASK)
             .title("Authenticator RS")
             .build();
 
-        let main_icon = gtk::ImageBuilder::new()
-            .icon_name("uk.co.grumlimited.authenticator-rs")
+        titlebar.pack_start(&self.build_action_menu(connection));
+
+        titlebar.pack_end(&self.build_system_menu());
+        self.window.set_titlebar(Some(&titlebar));
+
+        titlebar.show_all();
+    }
+
+    fn build_system_menu(&mut self) -> gtk::MenuButton {
+        let menu_width = 130_i32;
+
+        let popover = gtk::PopoverMenuBuilder::new()
+            .position(PositionType::Bottom)
             .build();
+
+        let buttons_container = gtk::BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .width_request(menu_width)
+            .hexpand(true)
+            .build();
+
+        let about_button = gtk::ButtonBuilder::new()
+            .label("About")
+            .hexpand(true)
+            .hexpand_set(true)
+            .margin(3)
+            .build();
+
+        about_button
+            .get_child()
+            .unwrap()
+            .downcast_ref::<gtk::Label>()
+            .unwrap()
+            .set_xalign(0f32);
+
+        buttons_container.pack_start(&about_button, false, false, 0);
+        popover.add(&buttons_container);
+
+        let system_menu_image = gtk::ImageBuilder::new()
+            .icon_name("format-justify-fill")
+            .build();
+        let system_menu = gtk::MenuButtonBuilder::new()
+            .image(&system_menu_image)
+            .use_popover(true)
+            .halign(Align::Start)
+            .popover(&popover)
+            .build();
+
+        {
+            let popover = popover.clone();
+            system_menu.connect_clicked(move |_| {
+                popover.show_all();
+            });
+        }
+
+        {
+            let popup = self.popup.clone();
+            about_button.connect_clicked(move |_| {
+                popup.set_title("About");
+                popover.set_visible(false);
+                popup.set_visible(true);
+                popup.show_all();
+            });
+        };
+
+        system_menu
+    }
+
+    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
         let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
 
         let popover = gtk::PopoverMenuBuilder::new()
@@ -244,73 +388,7 @@ impl MainWindow {
             });
         }
 
-        titlebar.pack_start(&main_icon);
-        titlebar.pack_start(&action_menu);
-        self.window.set_titlebar(Some(&titlebar));
-
-        titlebar.show_all();
-    }
-
-    pub fn set_application(
-        &mut self,
-        application: &gtk::Application,
-        connection: Arc<Mutex<Connection>>,
-    ) {
-        self.window.set_application(Some(application));
-
-        self.build_system_menu(connection);
-
-        self.window.connect_delete_event(|_, _| Inhibit(false));
-
-        self.start_progress_bar();
-
-        let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
-        let progress_bar = progress_bar.get_mut();
-
-        progress_bar.show();
-        self.accounts_window.container.show();
-        self.window.show();
-    }
-
-    pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
-        let mut guard = groups.lock().unwrap();
-        let groups = guard.get_mut();
-
-        let widgets: Vec<AccountGroupWidgets> = groups
-            .iter_mut()
-            .map(|account_group| account_group.widget())
-            .collect();
-
-        widgets
-            .iter()
-            .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
-
-        let m_widgets = self.accounts_window.widgets.clone();
-        let mut m_widgets = m_widgets.lock().unwrap();
-        *m_widgets = widgets;
-
-        self.accounts_window.accounts_container.show_all();
-    }
-
-    pub fn start_progress_bar(&mut self) {
-        let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
-        self.pool.spawn_ok(progress_bar_interval(tx));
-
-        let progress_bar = self.accounts_window.progress_bar.clone();
-        let widgets = self.accounts_window.widgets.clone();
-
-        rx.attach(None, move |_| {
-            let mut guard = progress_bar.lock().unwrap();
-            let progress_bar = guard.get_mut();
-
-            let fraction = AccountsWindow::progress_bar_fraction();
-            progress_bar.set_fraction(fraction);
-
-            let mut w = widgets.lock().unwrap();
-            w.iter_mut().for_each(|group| group.update());
-
-            glib::Continue(true)
-        });
+        action_menu
     }
 }
 
@@ -320,4 +398,11 @@ async fn progress_bar_interval(tx: Sender<u8>) {
         tx.send(chrono::Local::now().second() as u8)
             .expect("Couldn't send data to channel");
     }
+}
+
+fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
+    Box::new(move |_param: &[glib::Value]| {
+        popup.hide();
+        None
+    })
 }

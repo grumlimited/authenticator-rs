@@ -19,18 +19,31 @@ sharedir=$(DESTDIR)$(PREFIX)/share
 target/release/authenticator-rs : src
 	cargo build --release
 
+# Compiling gResource
+gresource:
+	glib-compile-resources data/uk.co.grumlimited.authenticator-rs.xml
+
+run: gresource
+	cargo run
+
 # Install onto the system
-install : target/release/authenticator-rs
+install : target/release/authenticator-rs gresource
 	# Create the bindir, if need be
 	mkdir -p $(bindir)
 	# Install binary
 	$(INSTALL_PROGRAM) target/release/authenticator-rs $(bindir)/authenticator-rs
+	#
 	# Create the sharedir and subfolders, if need be
 	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
 	mkdir -p $(sharedir)/icons/hicolor/64x64/apps/
 	mkdir -p $(sharedir)/icons/hicolor/128x128/apps/
 	mkdir -p $(sharedir)/applications/
 	mkdir -p $(sharedir)/metainfo/
+	mkdir -p $(sharedir)/uk.co.grumlimited.authenticator-rs/
+
+	# Install gResource
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gresource $(sharedir)/uk.co.grumlimited.authenticator-rs/uk.co.grumlimited.authenticator-rs.gresource
+	
 	# Install icons
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png

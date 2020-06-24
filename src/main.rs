@@ -19,20 +19,25 @@ mod helpers;
 mod model;
 mod ui;
 
-const STYLE: &str = include_str!("resources/style.css");
+const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
+const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
 fn main() {
-    let application = gtk::Application::new(
-        Some("com.github.gtk-rs.examples.text_viewer"),
-        Default::default(),
-    )
-    .expect("Initialization failed...");
+    let application = gtk::Application::new(Some(NAMESPACE), Default::default())
+        .expect("Initialization failed...");
 
-    application.connect_startup(|_| {
+    let resource = {
+        match gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)) {
+            Ok(resource) => resource,
+            Err(_) => gio::Resource::load(format!("data/{}.gresource", NAMESPACE)).unwrap(),
+        }
+    };
+
+    gio::functions::resources_register(&resource);
+
+    application.connect_startup(move |_| {
         let provider = gtk::CssProvider::new();
-        provider
-            .load_from_data(STYLE.as_bytes())
-            .expect("Failed to load CSS");
+        provider.load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
 
         gtk::StyleContext::add_provider_for_screen(
             &gdk::Screen::get_default().expect("Error initializing gtk css provider."),

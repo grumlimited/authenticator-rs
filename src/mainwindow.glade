@@ -2,6 +2,11 @@
 <!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.22"/>
+  <object class="GtkImage" id="about_close_button_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-close</property>
+  </object>
   <object class="GtkSizeGroup" id="add_account_inputs"/>
   <object class="GtkImage" id="cancel">
     <property name="visible">True</property>
@@ -514,6 +519,137 @@
             <property name="name">add_group</property>
             <property name="title" translatable="yes">add_group</property>
             <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+  </object>
+  <object class="GtkWindow" id="about_popup">
+    <property name="name">about_popup</property>
+    <property name="width_request">400</property>
+    <property name="height_request">320</property>
+    <property name="can_focus">False</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="deletable">False</property>
+    <property name="transient_for">main_window</property>
+    <property name="attached_to">main_window</property>
+    <child>
+      <object class="GtkGrid">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="hexpand">True</property>
+        <property name="vexpand">True</property>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs.svg</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton">
+            <property name="label" translatable="yes">Close</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="halign">end</property>
+            <property name="valign">end</property>
+            <property name="margin_end">5</property>
+            <property name="margin_bottom">5</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="image">about_close_button_image</property>
+            <signal name="clicked" handler="about_popup_close" swapped="no"/>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="name">about_textbuffer_title</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">Authenticator RS</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">A Two-Factor Authentication application</property>
+            <style>
+              <class name="about_textbuffer_body"/>
+            </style>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="name">about_textbuffer_website</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">&lt;a href="https://github.com/grumlimited/authenticator-rs"&gt;Website&lt;/a&gt;</property>
+            <property name="use_markup">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="margin_start">5</property>
+            <property name="margin_end">5</property>
+            <property name="margin_bottom">10</property>
+            <property name="label" translatable="yes">This program comes with absolutely no warranty.
+
+See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3&lt;/a&gt;
+ or later for details.</property>
+            <property name="use_markup">True</property>
+            <property name="justify">center</property>
+            <property name="wrap">True</property>
+            <style>
+              <class name="about_textbuffer_gnu"/>
+            </style>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">4</property>
           </packing>
         </child>
       </object>
