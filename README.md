@@ -37,16 +37,18 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
 
     pacman -U authenticator-rs-x.x.x-1-x86_64.pkg.tar.xz
 
-## Building
+## Building (dev)
 
-    cargo build
-    
-    cargo install --path=.
+    make target/release/authenticator-rs
     
     $HOME/.cargo/bin/authenticator-rust
+    
+## Running (dev)
+
+    make run
     
 ## Assets
 
 Icon files are from [authenticator](https://gitlab.gnome.org/World/Authenticator).
 
-Original GTK template from [Nora Codes - gDiceRoller](https://nora.codes/tutorial/speedy-desktop-apps-with-gtk-and-rust/) .
+Original GTK template from [Nora Codes - gDiceRoller](https://nora.codes/tutorial/speedy-desktop-apps-with-gtk-and-rust/).

@@ -19,9 +19,12 @@ sharedir=$(DESTDIR)$(PREFIX)/share
 target/release/authenticator-rs : src
 	cargo build --release
 
-# Comping gResource
+# Compiling gResource
 gresource:
 	glib-compile-resources data/uk.co.grumlimited.authenticator-rs.xml
+
+run: gresource
+	cargo run
 
 # Install onto the system
 install : target/release/authenticator-rs gresource
