@@ -11,12 +11,12 @@ use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use gio::prelude::*;
 use gtk::prelude::*;
+use log4rs;
+use log4rs::config::Config;
+use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-use log4rs;
-use log4rs::config::Config;
-use log4rs::file::{RawConfig, Deserializers};
 
 mod helpers;
 mod model;
@@ -50,7 +50,11 @@ fn main() {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
 
-        let log4rs_yaml = gio::functions::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
+        let log4rs_yaml = gio::functions::resources_lookup_data(
+            format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(),
+            gio::ResourceLookupFlags::NONE,
+        )
+        .unwrap();
         let log4rs_yaml = log4rs_yaml.to_vec();
         let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
 
@@ -60,7 +64,8 @@ fn main() {
         let config = Config::builder()
             .appenders(appenders)
             .loggers(config.loggers())
-            .build(config.root()).unwrap();
+            .build(config.root())
+            .unwrap();
 
         log4rs::init_config(config).unwrap();
 
@@ -114,6 +119,4 @@ fn main() {
     application.run(&[]);
 }
 
-fn configure_logging() {
-
-}
+fn configure_logging() {}
