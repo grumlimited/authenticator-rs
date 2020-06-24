@@ -170,7 +170,6 @@ impl MainWindow {
     ) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
-            .events(gdk::EventMask::ALL_EVENTS_MASK)
             .title("Authenticator RS")
             .build();
 
@@ -201,7 +200,7 @@ impl MainWindow {
         buttons_container.pack_start(&about_button, false, false, 0);
         popover.add(&buttons_container);
 
-        let system_menu_image = gtk::ImageBuilder::new().icon_name("list-add").build();
+        let system_menu_image = gtk::ImageBuilder::new().icon_name("format-justify-fill").build();
         let system_menu = gtk::MenuButtonBuilder::new()
             .image(&system_menu_image)
             .use_popover(true)

@@ -537,6 +537,7 @@
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
+    <property name="deletable">False</property>
     <property name="transient_for">main_window</property>
     <property name="attached_to">main_window</property>
     <child>
