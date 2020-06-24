@@ -14,10 +14,15 @@ use gtk::prelude::*;
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
+use log4rs;
+use log4rs::config::Config;
+use log4rs::file::{RawConfig, Deserializers};
 
 mod helpers;
 mod model;
 mod ui;
+
+use log::{error, info, warn};
 
 const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
@@ -27,7 +32,7 @@ fn main() {
         .expect("Initialization failed...");
 
     let resource = {
-        match gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)) {
+        match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
             Ok(resource) => resource,
             Err(_) => gio::Resource::load(format!("data/{}.gresource", NAMESPACE)).unwrap(),
         }
@@ -44,6 +49,22 @@ fn main() {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+
+        let log4rs_yaml = gio::functions::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
+        let log4rs_yaml = log4rs_yaml.to_vec();
+        let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
+
+        let config = serde_yaml::from_str::<RawConfig>(log4rs_yaml.as_str()).unwrap();
+        let (appenders, _) = config.appenders_lossy(&Deserializers::default());
+
+        let config = Config::builder()
+            .appenders(appenders)
+            .loggers(config.loggers())
+            .build(config.root()).unwrap();
+
+        log4rs::init_config(config).unwrap();
+
+        info!("booting up");
     });
 
     application.connect_activate(|app| {
@@ -91,4 +112,8 @@ fn main() {
     });
 
     application.run(&[]);
+}
+
+fn configure_logging() {
+
 }
