@@ -47,6 +47,17 @@ impl MainWindow {
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let popup: gtk::Window = builder.get_object("about_popup").unwrap();
 
+        builder.connect_signals(|_, handler_name| {
+            match handler_name {
+                // handler_name as defined in the glade file
+                "about_popup_close" => {
+                    let popup = popup.clone();
+                    Box::new(about_popup_close(popup))
+                }
+                _ => Box::new(|_| None),
+            }
+        });
+
         MainWindow {
             window,
             popup,
@@ -108,7 +119,7 @@ impl MainWindow {
             self.window.set_application(Some(&application));
         }
 
-        self.build_system_menu(application, connection);
+        self.build_system_menu(connection);
 
         self.window.connect_delete_event(|_, _| Inhibit(false));
 
@@ -163,11 +174,7 @@ impl MainWindow {
         });
     }
 
-    fn build_system_menu(
-        &mut self,
-        application: &gtk::Application,
-        connection: Arc<Mutex<Connection>>,
-    ) {
+    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
             .title("Authenticator RS")
@@ -385,4 +392,11 @@ async fn progress_bar_interval(tx: Sender<u8>) {
         tx.send(chrono::Local::now().second() as u8)
             .expect("Couldn't send data to channel");
     }
+}
+
+fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
+    Box::new(move |param: &[glib::Value]| {
+        popup.hide();
+        None
+    })
 }
