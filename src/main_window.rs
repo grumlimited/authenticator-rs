@@ -365,6 +365,10 @@ impl MainWindow {
                         .append(entry_id, group.name.as_str());
                 });
 
+                let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+                let first_entry = first_entry.as_deref();
+                edit_account_window.input_group.set_active_id(first_entry);
+
                 edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");
 
