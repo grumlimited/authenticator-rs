@@ -41,7 +41,7 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
 
     make target/release/authenticator-rs
     
-    $HOME/.cargo/bin/authenticator-rust
+    ./target/release/authenticator-rs
     
 ## Running (dev)
 
