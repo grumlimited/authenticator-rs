@@ -5,6 +5,7 @@ use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
 use gtk::{Align, Orientation};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Account {
@@ -21,7 +22,10 @@ pub struct AccountWidgets {
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
+    pub copy_button: Arc<Mutex<gtk::Button>>,
     pub popover: gtk::PopoverMenu,
+    pub edit_copy_img: Arc<Mutex<gtk::Image>>,
+    pub dialog_ok_img: Arc<Mutex<gtk::Image>>,
     totp_label: gtk::Label,
     totp_secret: String,
 }
@@ -68,12 +72,13 @@ impl Account {
             .xalign(0.0)
             .build();
 
-        let image = gtk::ImageBuilder::new().icon_name("edit-copy").build();
+        let edit_copy_img = gtk::ImageBuilder::new().icon_name("edit-copy").build();
+        let dialog_ok_img = gtk::ImageBuilder::new().icon_name("dialog-ok").build();
 
         let copy_button = gtk::ButtonBuilder::new()
             .margin_start(5)
             .margin_end(5)
-            .image(&image)
+            .image(&edit_copy_img)
             .always_show_image(true)
             .build();
 
@@ -146,6 +151,9 @@ impl Account {
             grid,
             edit_button,
             delete_button,
+            copy_button: Arc::new(Mutex::new(copy_button)),
+            edit_copy_img: Arc::new(Mutex::new(edit_copy_img)),
+            dialog_ok_img: Arc::new(Mutex::new(dialog_ok_img)),
             popover: popover_clone,
             totp_label: totp_label_clone2,
             totp_secret: self.secret.clone(),

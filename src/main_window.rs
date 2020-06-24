@@ -23,7 +23,7 @@ pub struct MainWindow {
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
-    pool: ThreadPool,
+    pub pool: ThreadPool,
     state: Rc<RefCell<State>>,
 }
 
