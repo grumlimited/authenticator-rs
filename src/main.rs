@@ -23,16 +23,13 @@ const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
 fn main() {
-    let application = gtk::Application::new(
-        Some(NAMESPACE),
-        Default::default(),
-    )
-    .expect("Initialization failed...");
+    let application = gtk::Application::new(Some(NAMESPACE), Default::default())
+        .expect("Initialization failed...");
 
     let resource = {
         match gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)) {
             Ok(resource) => resource,
-            Err(_) => gio::Resource::load(format!("data/{}.gresource", NAMESPACE)).unwrap()
+            Err(_) => gio::Resource::load(format!("data/{}.gresource", NAMESPACE)).unwrap(),
         }
     };
 
@@ -40,8 +37,7 @@ fn main() {
 
     application.connect_startup(move |_| {
         let provider = gtk::CssProvider::new();
-        provider
-            .load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
+        provider.load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
 
         gtk::StyleContext::add_provider_for_screen(
             &gdk::Screen::get_default().expect("Error initializing gtk css provider."),

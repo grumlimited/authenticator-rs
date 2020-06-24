@@ -103,13 +103,10 @@ impl MainWindow {
         application: &gtk::Application,
         connection: Arc<Mutex<Connection>>,
     ) {
-
         {
             let application = application.clone();
             self.window.set_application(Some(&application));
         }
-
-
 
         self.build_system_menu(application, connection);
 
@@ -166,7 +163,11 @@ impl MainWindow {
         });
     }
 
-    fn build_system_menu(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>) {
+    fn build_system_menu(
+        &mut self,
+        application: &gtk::Application,
+        connection: Arc<Mutex<Connection>>,
+    ) {
         let titlebar = gtk::HeaderBarBuilder::new()
             .show_close_button(true)
             .events(gdk::EventMask::ALL_EVENTS_MASK)
