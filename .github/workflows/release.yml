@@ -24,7 +24,6 @@ jobs:
         id: validate-pkgbuild
         uses: grumlimited/arch-pkgbuild-builder@7b0e4a4cf887c9a6d8747792cb988ded87de889a
         with:
-          debug: false
           target: pkgbuild
           pkgname: data/arch/authenticator-rs/
 
