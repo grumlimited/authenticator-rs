@@ -22,7 +22,7 @@ jobs:
 
       - name: Validate PKGBUILD
         id: validate-pkgbuild
-        uses: grumlimited/arch-pkgbuild-builder@e730e097d8a23354d4335cfa513623b6cf27d8ff
+        uses: grumlimited/arch-pkgbuild-builder@e0cfe5db9c0d7786c556f6e20a501225994ea13d
         with:
           target: pkgbuild
           pkgname: data/arch/authenticator-rs/
