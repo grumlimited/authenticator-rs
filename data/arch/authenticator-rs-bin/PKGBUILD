@@ -1,7 +1,8 @@
 # Maintainer: Romain Gallet <rgallet@grumlimited.co.uk>
+# Contributor: Romain Gallet <rgallet@grumlimited.co.uk>
 _packager="Romain Gallet <rgallet@grumlimited.co.uk>"
-pkgname=authenticator-rs
-# pkgver=0.0.8 # set in CI
+_deb_pkgname=authenticator-rs
+pkgname=authenticator-rs-bin
 pkgrel=1
 pkgdesc='MFA Authenticator. TOTP-MFA application written in Rust and GTK3.'
 arch=('x86_64')
@@ -16,7 +17,6 @@ provides=()
 replaces=()
 backup=()
 options=()
-install=$pkgname.install
 source=($url)
 noextract=()
 
