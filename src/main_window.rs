@@ -23,7 +23,7 @@ pub struct MainWindow {
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
-    pool: ThreadPool,
+    pub pool: ThreadPool,
     state: Rc<RefCell<State>>,
 }
 
@@ -236,9 +236,17 @@ impl MainWindow {
         }
 
         {
+            let titlebar = gtk::HeaderBarBuilder::new()
+                .decoration_layout(":")
+                .title("About")
+                .build();
+
+            let popup = self.popup.clone();
+            popup.set_titlebar(Some(&titlebar));
+        }
+        {
             let popup = self.popup.clone();
             about_button.connect_clicked(move |_| {
-                popup.set_title("About");
                 popover.set_visible(false);
                 popup.set_visible(true);
                 popup.show_all();
@@ -364,6 +372,10 @@ impl MainWindow {
                         .input_group
                         .append(entry_id, group.name.as_str());
                 });
+
+                let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+                let first_entry = first_entry.as_deref();
+                edit_account_window.input_group.set_active_id(first_entry);
 
                 edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");

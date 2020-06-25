@@ -148,6 +148,35 @@ impl AccountsWindow {
 
                 let gui = gui.clone();
 
+                {
+                    let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+                    let dialog_ok_img = account_widgets.dialog_ok_img.clone();
+                    let edit_copy_img = account_widgets.edit_copy_img.clone();
+                    let copy_button_1 = account_widgets.copy_button.clone();
+                    let copy_button_2 = account_widgets.copy_button.clone();
+
+                    let pool = gui.pool.clone();
+
+                    rx.attach(None, move |_| {
+                        let edit_copy_img = edit_copy_img.lock().unwrap();
+                        let edit_copy_img = edit_copy_img.deref();
+                        let copy_button = copy_button_2.lock().unwrap();
+                        copy_button.set_image(Some(edit_copy_img));
+                        glib::Continue(true)
+                    });
+
+                    let copy_button = copy_button_1.lock().unwrap();
+                    copy_button.connect_clicked(move |b| {
+                        let dialog_ok_img = dialog_ok_img.lock().unwrap();
+                        let dialog_ok_img = dialog_ok_img.deref();
+                        b.set_image(Some(dialog_ok_img));
+
+                        let tx = tx.clone();
+                        pool.spawn_ok(times_up(tx, 2000));
+                    });
+                }
+
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let groups = {
                         let connection = connection.clone();
@@ -236,6 +265,19 @@ impl AccountsWindow {
     fn progress_bar_fraction_for(second: u32) -> f64 {
         (1_f64 - ((second % 30) as f64 / 30_f64)) as f64
     }
+}
+
+use glib::Sender;
+use std::ops::Deref;
+use std::{thread, time};
+
+/**
+* Sleeps for some time then messages end of wait, so that copy button
+* gets its default image restored.
+*/
+async fn times_up(tx: Sender<bool>, wait_ms: u64) {
+    thread::sleep(time::Duration::from_millis(wait_ms));
+    tx.send(true).expect("Couldn't send data to channel");
 }
 
 #[cfg(test)]

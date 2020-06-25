@@ -3,5 +3,6 @@
   <gresource prefix="/uk/co/grumlimited/authenticator-rs">
     <file alias="authenticator-rs.svg">data/uk.co.grumlimited.authenticator-rs.svg</file>
     <file alias="style.css">data/style.css</file>
+    <file alias="log4rs.yaml">data/log4rs.yaml</file>
   </gresource>
 </gresources>
