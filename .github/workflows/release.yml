@@ -92,10 +92,10 @@ jobs:
 
       - name: Validate PKGBUILD
         id: validate-pkgbuild
-        uses: grumlimited/arch-pkgbuild-builder@v1.9.1
+        uses: grumlimited/arch-pkgbuild-builder@ba5f2c6b4231721da71849fdb7924011295a1df9
         with:
           target: pkgbuild
-          pkgbuild: data/arch/authenticator-rs/PKGBUILD
+          pkgname: data/arch/authenticator-rs/
 
       - name: Create arch package checksum file
         run: |
