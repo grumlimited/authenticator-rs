@@ -2,10 +2,8 @@ use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
 use crate::helpers::LoadError::SaveError;
 use crate::model::{Account, AccountGroup};
-use serde_yaml::Error;
-use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
@@ -267,6 +265,16 @@ impl ConfigManager {
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
+    }
+
+    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
+        let group_accounts = {
+            let connection = connection.clone();
+            ConfigManager::load_account_groups(connection).unwrap()
+        };
+
+        let path = path.as_path();
+        ConfigManager::serialise_accounts(group_accounts, path).expect("Could not save accounts");
     }
 
     pub fn serialise_accounts(

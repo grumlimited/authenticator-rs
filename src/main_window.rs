@@ -13,11 +13,9 @@ use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
 use gtk::{
-    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, PrintOperationResult,
-    ResponseType, Window,
+    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, ResponseType, Window,
 };
 use rusqlite::Connection;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -471,21 +469,11 @@ fn export_accounts(
             gtk::ResponseType::Accept => {
                 let path = dialog.get_filename().unwrap();
                 let connection = connection.clone();
-                threadpool.spawn_ok(save_accounts(path, connection));
+                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection));
 
                 dialog.close();
             }
             _ => dialog.close(),
         }
     })
-}
-
-async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
-    let group_accounts = {
-        let connection = connection.clone();
-        ConfigManager::load_account_groups(connection).unwrap()
-    };
-
-    let path = path.as_path();
-    ConfigManager::serialise_accounts(group_accounts, path);
 }
