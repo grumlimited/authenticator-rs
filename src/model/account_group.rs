@@ -1,7 +1,8 @@
 use crate::model::{Account, AccountWidgets};
+use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
-use gtk::{Align, Orientation, PositionType};
+use gtk::{Orientation, PositionType};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -23,7 +24,8 @@ pub struct AccountGroupWidgets {
     pub delete_button: gtk::Button,
     pub update_button: gtk::Button,
     pub group_label_entry: gtk::Entry,
-    pub group_label_button: gtk::Button,
+    pub event_box: gtk::EventBox,
+    pub group_label: gtk::Label,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -51,22 +53,15 @@ impl AccountGroup {
             .name(format!("group_id_{}", self.id).as_str())
             .build();
 
-        let group_label_button = gtk::ButtonBuilder::new()
-            .label(self.name.as_str())
-            .height_request(32)
-            .halign(Align::Start)
-            .build();
+        //allows for group labels to respond to click events
+        let event_box = gtk::EventBoxBuilder::new().build();
 
-        let style_context = group_label_button.get_style_context();
+        let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
+
+        event_box.add(&group_label);
+
+        let style_context = group_label.get_style_context();
         style_context.add_class("group_label_button");
-
-        // forcing labels in menu buttons to left-align
-        group_label_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
 
         let group_label_entry = gtk::EntryBuilder::new()
             .margin_end(5)
@@ -112,7 +107,7 @@ impl AccountGroup {
             .visible(true)
             .build();
 
-        group_label_box.attach(&group_label_button, 0, 0, 1, 1);
+        group_label_box.attach(&event_box, 0, 0, 1, 1);
         group_label_box.attach(&group_label_edit_form_box, 1, 0, 1, 1);
 
         group_label_edit_form_box.pack_start(&group_label_entry, false, false, 0);
@@ -120,7 +115,7 @@ impl AccountGroup {
         group_label_edit_form_box.pack_start(&update_button, false, false, 0);
 
         let popover = gtk::PopoverMenuBuilder::new()
-            .relative_to(&group_label_button)
+            .relative_to(&event_box)
             .position(PositionType::Right)
             .build();
 
@@ -129,24 +124,24 @@ impl AccountGroup {
         {
             let group_label_entry = group_label_entry.clone();
             let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let group_label_button = group_label_button.clone();
+            let event_box = event_box.clone();
             let popover = popover.clone();
             edit_button.connect_clicked(move |_| {
                 group_label_edit_form_box.set_visible(true);
 
                 group_label_entry.grab_focus();
 
-                group_label_button.set_visible(false);
+                event_box.set_visible(false);
                 popover.set_visible(false);
             });
         }
 
         {
             let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let group_label_button = group_label_button.clone();
+            let event_box = event_box.clone();
             cancel_button.connect_clicked(move |_| {
                 group_label_edit_form_box.set_visible(false);
-                group_label_button.set_visible(true);
+                event_box.set_visible(true);
             });
         }
 
@@ -192,15 +187,20 @@ impl AccountGroup {
         {
             let account_widgets = account_widgets.clone();
             let delete_button = delete_button.clone();
-            group_label_button.connect_clicked(move |_| {
-                let r = account_widgets.borrow_mut();
 
-                if r.is_empty() {
-                    delete_button.set_sensitive(true);
-                }
+            event_box
+                .connect_local("button-press-event", false, move |_| {
+                    let account_widgets = account_widgets.borrow_mut();
 
-                popover.show_all();
-            });
+                    if account_widgets.is_empty() {
+                        delete_button.set_sensitive(true);
+                    }
+
+                    popover.show_all();
+
+                    Some(true.to_value())
+                })
+                .expect("Could not associate handler");
         }
 
         group.add(&accounts);
@@ -213,7 +213,8 @@ impl AccountGroup {
             delete_button,
             update_button,
             group_label_entry,
-            group_label_button,
+            event_box,
+            group_label,
             account_widgets,
         }
     }

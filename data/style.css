@@ -13,32 +13,18 @@
 }
 
 .account_box, .form_container {
-    background-color: rgba(147, 153, 161, 0.62);
-    border-radius: 3px;
-}
-
-/* flattening group label buttons */
-.group_label_button {
-    background-color: transparent;
-    border-width: 0px;
-    box-shadow: none;
-    padding: 0px;
 }
 
 .group_label_button:hover {
-    color: white;
 }
 
-#about_popup_title {
-    color: white;
-    background-color: midnightblue;
+#export_account_error_title {
     font-family: Sans Bold;
     font-size: 11pt;
     font-weight: bold;
 }
 
 #about_textbuffer_title {
-    background-color: transparent;
     font-family: Sans Bold;
     font-size: 11pt;
     font-weight: bold;

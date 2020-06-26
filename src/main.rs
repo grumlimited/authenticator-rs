@@ -53,6 +53,14 @@ fn main() {
         );
 
         configure_logging();
+
+        match ConfigManager::check_configuration_dir() {
+            Ok(()) => info!(
+                "Reading configuration from {}",
+                ConfigManager::path().display()
+            ),
+            Err(e) => panic!(e),
+        }
     });
 
     application.connect_activate(|app| {

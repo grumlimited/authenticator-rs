@@ -86,7 +86,8 @@ impl AccountsWindow {
             let delete_button = group_widgets.delete_button.clone();
             let update_button = group_widgets.update_button.clone();
             let group_label_entry = group_widgets.group_label_entry.clone();
-            let group_label_button = group_widgets.group_label_button.clone();
+            let event_box = group_widgets.event_box.clone();
+            let group_label = group_widgets.group_label.clone();
             let edit_form_box = group_widgets.edit_form_box.clone();
             let group_id = group_widgets.id;
 
@@ -122,8 +123,8 @@ impl AccountsWindow {
                     let _ = ConfigManager::update_group(connection2, &group).unwrap();
 
                     edit_form_box.set_visible(false);
-                    group_label_button.set_label(group.name.as_str());
-                    group_label_button.set_visible(true);
+                    group_label.set_label(group.name.as_str());
+                    event_box.set_visible(true);
                 }
             });
         }

@@ -2,6 +2,8 @@ use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
 use crate::helpers::LoadError::SaveError;
 use crate::model::{Account, AccountGroup};
+use glib::Sender;
+use log::debug;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -30,7 +32,7 @@ impl ConfigManager {
         path
     }
 
-    fn path() -> std::path::PathBuf {
+    pub fn path() -> std::path::PathBuf {
         if let Some(project_dirs) =
             directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
@@ -66,6 +68,18 @@ impl ConfigManager {
         })
         .map(|rows| rows.map(|each| each.unwrap()).collect())
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
+    pub fn check_configuration_dir() -> Result<(), LoadError> {
+        let path = Self::path();
+
+        if !path.exists() {
+            debug!("Creating directory {}", path.display());
+        }
+
+        std::fs::create_dir_all(path)
+            .map(|_| ())
+            .map_err(|_| LoadError::FileError)
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
@@ -267,11 +281,18 @@ impl ConfigManager {
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
-    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
+    pub async fn save_accounts(
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+        tx: Sender<bool>,
+    ) {
         let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
 
         let path = path.as_path();
-        ConfigManager::serialise_accounts(group_accounts, path).expect("Could not save accounts");
+        match ConfigManager::serialise_accounts(group_accounts, path) {
+            Ok(()) => tx.send(true).expect("Could not send message"),
+            Err(_) => tx.send(false).expect("Could not send message"),
+        };
     }
 
     pub fn serialise_accounts(
