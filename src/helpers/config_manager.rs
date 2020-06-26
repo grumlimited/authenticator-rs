@@ -311,6 +311,7 @@ mod tests {
 
     use crate::model::{Account, AccountGroup};
     use std::sync::{Arc, Mutex};
+    use std::path::PathBuf;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -482,5 +483,18 @@ mod tests {
 
         let result = ConfigManager::delete_account(conn, account.id).unwrap();
         assert!(result > 0);
+    }
+
+    #[test]
+    fn serialise_accounts() {
+
+        let account = Account::new(1, 0, "label", "secret");
+        let account_group = AccountGroup::new(2, "group", vec![account]);
+
+        let p = PathBuf::from("test.yaml");
+        let p = p.as_path();
+        let r = ConfigManager::serialise_accounts(vec![account_group], p).unwrap();
+
+        assert_eq!((), r);
     }
 }
