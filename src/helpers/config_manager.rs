@@ -292,10 +292,13 @@ impl ConfigManager {
             let mut file = &file;
             let yaml = yaml.as_bytes();
 
-            file.write_all(yaml)
-                .map_err(|_| SaveError(format!("Could not write serialised accounts to {}", out.display())))
+            file.write_all(yaml).map_err(|_| {
+                SaveError(format!(
+                    "Could not write serialised accounts to {}",
+                    out.display()
+                ))
+            })
         });
-
 
         r4
     }
