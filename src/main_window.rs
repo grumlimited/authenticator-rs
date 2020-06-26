@@ -5,15 +5,17 @@ use std::sync::{Arc, Mutex};
 use chrono::prelude::*;
 
 use crate::model::{AccountGroup, AccountGroupWidgets};
-use glib::Sender;
+use glib::{Receiver, Sender};
 use std::{thread, time};
 
 use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
+use glib::glib_sys::g_ascii_tolower;
 use gtk::{
-    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, ResponseType, Window,
+    Align, ApplicationWindow, FileChooserAction, FileChooserDialog, Orientation, PositionType,
+    ResponseType, Window,
 };
 use rusqlite::Connection;
 use std::rc::Rc;
@@ -21,7 +23,8 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
-    popup: gtk::Window,
+    about_popup: gtk::Window,
+    export_account_error: gtk::Window,
     pub edit_account_window: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
@@ -47,13 +50,18 @@ impl MainWindow {
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
-        let popup: gtk::Window = builder.get_object("about_popup").unwrap();
+        let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
+        let export_account_error: gtk::Window = builder.get_object("export_account_error").unwrap();
 
         builder.connect_signals(|_, handler_name| {
             match handler_name {
                 // handler_name as defined in the glade file
                 "about_popup_close" => {
-                    let popup = popup.clone();
+                    let popup = about_popup.clone();
+                    Box::new(about_popup_close(popup))
+                }
+                "export_account_error_close" => {
+                    let popup = export_account_error.clone();
                     Box::new(about_popup_close(popup))
                 }
                 _ => Box::new(|_| None),
@@ -62,7 +70,8 @@ impl MainWindow {
 
         MainWindow {
             window,
-            popup,
+            about_popup,
+            export_account_error,
             edit_account_window: EditAccountWindow::new(builder),
             accounts_window: AccountsWindow::new(builder_clone_1),
             add_group: AddGroupWindow::new(builder_clone_2),
@@ -230,7 +239,13 @@ impl MainWindow {
         {
             let popover = popover.clone();
             let threadpool = self.pool.clone();
-            export_button.connect_clicked(export_accounts(popover, connection, threadpool));
+            let export_account_error = self.export_account_error.clone();
+            export_button.connect_clicked(export_accounts(
+                popover,
+                connection,
+                threadpool,
+                export_account_error,
+            ));
         }
 
         buttons_container.pack_start(&export_button, false, false, 0);
@@ -260,11 +275,11 @@ impl MainWindow {
                 .title("About")
                 .build();
 
-            let popup = self.popup.clone();
+            let popup = self.about_popup.clone();
             popup.set_titlebar(Some(&titlebar));
         }
         {
-            let popup = self.popup.clone();
+            let popup = self.about_popup.clone();
             about_button.connect_clicked(move |_| {
                 popover.set_visible(false);
                 popup.set_visible(true);
@@ -442,6 +457,7 @@ fn export_accounts(
     popover: gtk::PopoverMenu,
     connection: Arc<Mutex<Connection>>,
     threadpool: ThreadPool,
+    export_account_error: Window,
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
@@ -468,7 +484,20 @@ fn export_accounts(
             gtk::ResponseType::Accept => {
                 let path = dialog.get_filename().unwrap();
                 let connection = connection.clone();
-                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection));
+                let export_account_error = export_account_error.clone();
+
+                let (tx, rx): (Sender<bool>, Receiver<bool>) =
+                    glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection, tx));
+
+                rx.attach(None, move |success| {
+                    if !success {
+                        export_account_error.show_all();
+                    }
+
+                    glib::Continue(true)
+                });
 
                 dialog.close();
             }
