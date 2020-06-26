@@ -493,6 +493,7 @@ fn export_accounts(
 
                 rx.attach(None, move |success| {
                     if !success {
+                        export_account_error.set_title("Error");
                         export_account_error.show_all();
                     }
 

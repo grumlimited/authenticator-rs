@@ -25,8 +25,8 @@
   </object>
   <object class="GtkWindow" id="export_account_error">
     <property name="name">export_account_error</property>
-    <property name="width_request">400</property>
-    <property name="height_request">320</property>
+    <property name="width_request">200</property>
+    <property name="height_request">160</property>
     <property name="can_focus">False</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
