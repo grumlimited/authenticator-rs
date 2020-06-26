@@ -53,6 +53,7 @@ impl AccountGroup {
             .name(format!("group_id_{}", self.id).as_str())
             .build();
 
+        //allows for group labels to respond to click events
         let event_box = gtk::EventBoxBuilder::new().build();
 
         let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
@@ -61,14 +62,6 @@ impl AccountGroup {
 
         let style_context = group_label.get_style_context();
         style_context.add_class("group_label_button");
-
-        // // forcing labels in menu buttons to left-align
-        // group_label_button
-        //     .get_child()
-        //     .unwrap()
-        //     .downcast_ref::<gtk::Label>()
-        //     .unwrap()
-        //     .set_xalign(0f32);
 
         let group_label_entry = gtk::EntryBuilder::new()
             .margin_end(5)
