@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct AccountGroup {
+    #[serde(skip)]
     pub id: u32,
     pub name: String,
     pub entries: Vec<Account>,

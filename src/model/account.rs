@@ -10,7 +10,9 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct Account {
+    #[serde(skip)]
     pub id: u32,
+    #[serde(skip)]
     pub group_id: u32,
     pub label: String,
     pub secret: String,

@@ -1,23 +1,13 @@
 ---
-- id: 2
-  name: Accounting
+- name: Accounting
   entries:
-    - id: 4
-      group_id: 2
-      label: Receipt Bank
+    - label: Receipt Bank
       secret: IXXETN6MTQO2TJNW
-    - id: 3
-      group_id: 2
-      label: Xero
+    - label: Xero
       secret: JJFEQ2CTNVYXUMD2KZBWEWJTNA
-- id: 1
-  name: Amazon Web Services
+- name: Amazon Web Services
   entries:
-    - id: 5
-      group_id: 1
-      label: CTM
+    - label: CTM
       secret: F72PZWSD4LY6I7FOFUJH4BF7BV4I64OVUPKKZMNDDFOYKYBNFTHA7HQLLPMBKVD4
-    - id: 2
-      group_id: 1
-      label: Grum
+    - label: Grum
       secret: WQM63EEHHXPE2OKNEZJBIRJ7UFK33NCSIQ736PG5O3FEB23MJDKHOIWS5YQKFOEI

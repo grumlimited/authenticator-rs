@@ -254,20 +254,15 @@ impl MainWindow {
                 match dialog.run() {
                     gtk::ResponseType::Accept => {
                         dialog.close();
-                        println!("{:?}", dialog.get_filename());
 
-                        let r = {
+                        let group_accounts = {
                             let connection = connection.clone();
-                            let r = ConfigManager::load_account_groups(connection).unwrap();
-                            println!("{:?}", r);
-                            r
+                            ConfigManager::load_account_groups(connection).unwrap()
                         };
 
-                        {
-                            let path = dialog.get_filename().unwrap();
-                            let path = path.as_path();
-                            ConfigManager::serialise_accounts(r, path);
-                        }
+                        let path = dialog.get_filename().unwrap();
+                        let path = path.as_path();
+                        ConfigManager::serialise_accounts(group_accounts, path);
                     }
                     _ => dialog.close(),
                 }
