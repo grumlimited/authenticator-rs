@@ -268,10 +268,7 @@ impl ConfigManager {
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
-        let group_accounts = {
-            let connection = connection.clone();
-            ConfigManager::load_account_groups(connection).unwrap()
-        };
+        let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
 
         let path = path.as_path();
         ConfigManager::serialise_accounts(group_accounts, path).expect("Could not save accounts");

@@ -229,7 +229,6 @@ impl MainWindow {
 
         {
             let popover = popover.clone();
-            let connection = connection.clone();
             let threadpool = self.pool.clone();
             export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
