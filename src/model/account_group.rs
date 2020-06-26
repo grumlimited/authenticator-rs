@@ -2,10 +2,11 @@ use crate::model::{Account, AccountWidgets};
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
 use gtk::{Align, Orientation, PositionType};
+use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct AccountGroup {
     pub id: u32,
     pub name: String,

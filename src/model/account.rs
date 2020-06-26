@@ -5,9 +5,10 @@ use base32::Alphabet::RFC4648;
 
 use gtk::prelude::*;
 use gtk::{Align, Orientation};
+use serde::Serialize;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct Account {
     pub id: u32,
     pub group_id: u32,

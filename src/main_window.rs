@@ -12,7 +12,10 @@ use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
-use gtk::{Align, Orientation, PositionType};
+use gtk::{
+    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, PrintOperationResult,
+    ResponseType, Window,
+};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -180,15 +183,18 @@ impl MainWindow {
             .title("Authenticator RS")
             .build();
 
-        titlebar.pack_start(&self.build_action_menu(connection));
+        {
+            let connection = connection.clone();
+            titlebar.pack_start(&self.build_action_menu(connection));
+        }
 
-        titlebar.pack_end(&self.build_system_menu());
+        titlebar.pack_end(&self.build_system_menu(connection));
         self.window.set_titlebar(Some(&titlebar));
 
         titlebar.show_all();
     }
 
-    fn build_system_menu(&mut self) -> gtk::MenuButton {
+    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
         let menu_width = 130_i32;
 
         let popover = gtk::PopoverMenuBuilder::new()
@@ -215,6 +221,60 @@ impl MainWindow {
             .unwrap()
             .set_xalign(0f32);
 
+        let export_button = gtk::ButtonBuilder::new()
+            .label("Export accounts")
+            .hexpand(true)
+            .hexpand_set(true)
+            .margin(3)
+            .build();
+
+        {
+            let popover = popover.clone();
+            export_button.connect_clicked(move |_| {
+                popover.set_visible(false);
+                let filter = gtk::FileFilter::new();
+                filter.set_name(Some("Yaml"));
+                filter.add_mime_type("text/yaml");
+                filter.add_pattern("*.yaml");
+                filter.add_pattern("*.yml");
+
+                let dialog = FileChooserDialog::with_buttons::<Window>(
+                    Some("Open File"),
+                    None,
+                    FileChooserAction::Save,
+                    &[
+                        ("_Cancel", ResponseType::Cancel),
+                        ("_Save", ResponseType::Accept),
+                    ],
+                );
+
+                dialog.add_filter(&filter);
+                dialog.show();
+
+                match dialog.run() {
+                    gtk::ResponseType::Accept => {
+                        dialog.close();
+                        println!("{:?}", dialog.get_filename());
+
+                        let r = {
+                            let connection = connection.clone();
+                            let r = ConfigManager::load_account_groups(connection).unwrap();
+                            println!("{:?}", r);
+                            r
+                        };
+
+                        {
+                            let path = dialog.get_filename().unwrap();
+                            let path = path.as_path();
+                            ConfigManager::serialise_accounts(r, path);
+                        }
+                    }
+                    _ => dialog.close(),
+                }
+            });
+        }
+
+        buttons_container.pack_start(&export_button, false, false, 0);
         buttons_container.pack_start(&about_button, false, false, 0);
         popover.add(&buttons_container);
 
