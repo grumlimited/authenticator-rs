@@ -1,12 +1,12 @@
 use crate::model::{Account, AccountWidgets};
+use glib::prelude::*; // or `use gtk::prelude::*;`
+use glib::{TypedValue, Value};
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
 use gtk::{Orientation, PositionType};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
-use glib::prelude::*; // or `use gtk::prelude::*;`
-use glib::{TypedValue, Value};
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct AccountGroup {
@@ -56,9 +56,7 @@ impl AccountGroup {
 
         let event_box = gtk::EventBoxBuilder::new().build();
 
-        let group_label = gtk::LabelBuilder::new()
-            .label(self.name.as_str())
-            .build();
+        let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
 
         event_box.add(&group_label);
 
@@ -198,7 +196,7 @@ impl AccountGroup {
             let account_widgets = account_widgets.clone();
             let delete_button = delete_button.clone();
 
-            event_box.connect_local("button-press-event", false,  move|_| {
+            event_box.connect_local("button-press-event", false, move |_| {
                 let account_widgets = account_widgets.borrow_mut();
 
                 if account_widgets.is_empty() {
@@ -207,10 +205,8 @@ impl AccountGroup {
 
                 popover.show_all();
 
-                Some( true.to_value())
+                Some(true.to_value())
             });
-
-
         }
 
         group.add(&accounts);
