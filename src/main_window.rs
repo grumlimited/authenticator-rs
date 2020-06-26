@@ -17,8 +17,8 @@ use gtk::{
     ResponseType, Window,
 };
 use rusqlite::Connection;
-use std::rc::Rc;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
