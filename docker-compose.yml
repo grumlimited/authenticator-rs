@@ -1,13 +1,7 @@
----
-- name: Accounting
-  entries:
-    - label: Receipt Bank
-      secret: IXXETN6MTQO2TJNW
-    - label: Xero
-      secret: JJFEQ2CTNVYXUMD2KZBWEWJTNA
-- name: Amazon Web Services
-  entries:
-    - label: CTM
-      secret: F72PZWSD4LY6I7FOFUJH4BF7BV4I64OVUPKKZMNDDFOYKYBNFTHA7HQLLPMBKVD4
-    - label: Grum
-      secret: WQM63EEHHXPE2OKNEZJBIRJ7UFK33NCSIQ736PG5O3FEB23MJDKHOIWS5YQKFOEI
+version: '3'
+services:
+  rust:
+    image: ubuntu
+    command: [/bin/sleep, '60000']
+    volumes:
+      - '.:/authenticator-rs'

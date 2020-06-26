@@ -230,43 +230,8 @@ impl MainWindow {
 
         {
             let popover = popover.clone();
-            export_button.connect_clicked(move |_| {
-                popover.set_visible(false);
-                let filter = gtk::FileFilter::new();
-                filter.set_name(Some("Yaml"));
-                filter.add_mime_type("text/yaml");
-                filter.add_pattern("*.yaml");
-                filter.add_pattern("*.yml");
-
-                let dialog = FileChooserDialog::with_buttons::<Window>(
-                    Some("Open File"),
-                    None,
-                    FileChooserAction::Save,
-                    &[
-                        ("_Cancel", ResponseType::Cancel),
-                        ("_Save", ResponseType::Accept),
-                    ],
-                );
-
-                dialog.add_filter(&filter);
-                dialog.show();
-
-                match dialog.run() {
-                    gtk::ResponseType::Accept => {
-                        dialog.close();
-
-                        let group_accounts = {
-                            let connection = connection.clone();
-                            ConfigManager::load_account_groups(connection).unwrap()
-                        };
-
-                        let path = dialog.get_filename().unwrap();
-                        let path = path.as_path();
-                        ConfigManager::serialise_accounts(group_accounts, path);
-                    }
-                    _ => dialog.close(),
-                }
-            });
+            let connection = connection.clone();
+            export_button.connect_clicked(export_accounts(popover, connection));
         }
 
         buttons_container.pack_start(&export_button, false, false, 0);
@@ -471,5 +436,45 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
     Box::new(move |_param: &[glib::Value]| {
         popup.hide();
         None
+    })
+}
+
+fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)> {
+    Box::new(move |_b: &gtk::Button| {
+        popover.set_visible(false);
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some("Yaml"));
+        filter.add_mime_type("text/yaml");
+        filter.add_pattern("*.yaml");
+        filter.add_pattern("*.yml");
+
+        let dialog = FileChooserDialog::with_buttons::<Window>(
+            Some("Open File"),
+            None,
+            FileChooserAction::Save,
+            &[
+                ("_Cancel", ResponseType::Cancel),
+                ("_Save", ResponseType::Accept),
+            ],
+        );
+
+        dialog.add_filter(&filter);
+        dialog.show();
+
+        match dialog.run() {
+            gtk::ResponseType::Accept => {
+                dialog.close();
+
+                let group_accounts = {
+                    let connection = connection.clone();
+                    ConfigManager::load_account_groups(connection).unwrap()
+                };
+
+                let path = dialog.get_filename().unwrap();
+                let path = path.as_path();
+                ConfigManager::serialise_accounts(group_accounts, path);
+            }
+            _ => dialog.close(),
+        }
     })
 }
