@@ -35,7 +35,10 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
 
 #### Arch Linux
 
-    pacman -U authenticator-rs-x.x.x-1-x86_64.pkg.tar.xz
+Authenticator RS is also available from [AUR](https://aur.archlinux.org/packages/authenticator-rs-bin/). Or from the release page:
+
+    pacman -U authenticator-rs-bin-x.x.x-1-x86_64.pkg.tar.xz
+    
 
 ## Building (dev)
 
