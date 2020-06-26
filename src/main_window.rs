@@ -18,6 +18,7 @@ use gtk::{
 };
 use rusqlite::Connection;
 use std::rc::Rc;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -231,7 +232,8 @@ impl MainWindow {
         {
             let popover = popover.clone();
             let connection = connection.clone();
-            export_button.connect_clicked(export_accounts(popover, connection));
+            let threadpool = self.pool.clone();
+            export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
 
         buttons_container.pack_start(&export_button, false, false, 0);
@@ -442,6 +444,7 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
 fn export_accounts(
     popover: gtk::PopoverMenu,
     connection: Arc<Mutex<Connection>>,
+    threadpool: ThreadPool,
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
@@ -466,18 +469,23 @@ fn export_accounts(
 
         match dialog.run() {
             gtk::ResponseType::Accept => {
-                dialog.close();
-
-                let group_accounts = {
-                    let connection = connection.clone();
-                    ConfigManager::load_account_groups(connection).unwrap()
-                };
-
                 let path = dialog.get_filename().unwrap();
-                let path = path.as_path();
-                ConfigManager::serialise_accounts(group_accounts, path);
+                let connection = connection.clone();
+                threadpool.spawn_ok(save_accounts(path, connection));
+
+                dialog.close();
             }
             _ => dialog.close(),
         }
     })
+}
+
+async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
+    let group_accounts = {
+        let connection = connection.clone();
+        ConfigManager::load_account_groups(connection).unwrap()
+    };
+
+    let path = path.as_path();
+    ConfigManager::serialise_accounts(group_accounts, path);
 }
