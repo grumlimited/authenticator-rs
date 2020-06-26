@@ -26,6 +26,10 @@ gresource:
 run: gresource
 	cargo run
 
+clippy:
+	find src/ -name "*.rs" -exec touch {} \;
+	cargo clippy
+
 # Install onto the system
 install : target/release/authenticator-rs gresource
 	# Create the bindir, if need be
