@@ -1,6 +1,9 @@
 use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
+use crate::helpers::LoadError::SaveError;
 use crate::model::{Account, AccountGroup};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
@@ -15,7 +18,7 @@ pub enum LoadError {
     #[allow(dead_code)]
     FormatError,
     #[allow(dead_code)]
-    SaveError,
+    SaveError(String),
     DbError(String),
 }
 
@@ -263,6 +266,42 @@ impl ConfigManager {
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
+
+    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) {
+        let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
+
+        let path = path.as_path();
+        ConfigManager::serialise_accounts(group_accounts, path).expect("Could not save accounts");
+    }
+
+    pub fn serialise_accounts(
+        account_groups: Vec<AccountGroup>,
+        out: &Path,
+    ) -> Result<(), LoadError> {
+        let file = std::fs::File::create(out).map_err(|_| {
+            SaveError(format!(
+                "Could not open file {} for writing.",
+                out.display()
+            ))
+        });
+
+        let yaml = serde_yaml::to_string(&account_groups)
+            .map_err(|_| SaveError("Could not serialise accounts".to_owned()));
+
+        let combined = file.and_then(|file| yaml.map(|yaml| (yaml, file)));
+
+        combined.and_then(|(yaml, file)| {
+            let mut file = &file;
+            let yaml = yaml.as_bytes();
+
+            file.write_all(yaml).map_err(|_| {
+                SaveError(format!(
+                    "Could not write serialised accounts to {}",
+                    out.display()
+                ))
+            })
+        })
+    }
 }
 
 #[cfg(test)]
@@ -271,6 +310,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::model::{Account, AccountGroup};
+    use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
 
     #[test]
@@ -443,5 +483,17 @@ mod tests {
 
         let result = ConfigManager::delete_account(conn, account.id).unwrap();
         assert!(result > 0);
+    }
+
+    #[test]
+    fn serialise_accounts() {
+        let account = Account::new(1, 0, "label", "secret");
+        let account_group = AccountGroup::new(2, "group", vec![account]);
+
+        let p = PathBuf::from("test.yaml");
+        let p = p.as_path();
+        let r = ConfigManager::serialise_accounts(vec![account_group], p).unwrap();
+
+        assert_eq!((), r);
     }
 }

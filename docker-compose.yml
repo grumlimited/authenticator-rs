@@ -4,4 +4,4 @@ services:
     image: ubuntu
     command: [/bin/sleep, '60000']
     volumes:
-    - '.:/authenticator-rs'
+      - '.:/authenticator-rs'
