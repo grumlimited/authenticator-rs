@@ -310,8 +310,8 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::model::{Account, AccountGroup};
-    use std::sync::{Arc, Mutex};
     use std::path::PathBuf;
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -487,7 +487,6 @@ mod tests {
 
     #[test]
     fn serialise_accounts() {
-
         let account = Account::new(1, 0, "label", "secret");
         let account_group = AccountGroup::new(2, "group", vec![account]);
 
