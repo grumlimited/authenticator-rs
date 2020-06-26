@@ -5,6 +5,7 @@ use crate::model::{Account, AccountGroup};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
@@ -30,7 +31,7 @@ impl ConfigManager {
         path
     }
 
-    fn path() -> std::path::PathBuf {
+    pub fn path() -> std::path::PathBuf {
         if let Some(project_dirs) =
             directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
         {
@@ -66,6 +67,18 @@ impl ConfigManager {
         })
         .map(|rows| rows.map(|each| each.unwrap()).collect())
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
+    pub fn check_configuration_dir() -> Result<(), LoadError> {
+        let path = Self::path();
+
+        if !path.exists() {
+            debug!("Creating directory {}", path.display());
+        }
+
+        std::fs::create_dir_all(path)
+            .map(|_| ())
+            .map_err(|_| LoadError::FileError)
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
