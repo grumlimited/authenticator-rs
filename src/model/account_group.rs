@@ -1,6 +1,5 @@
 use crate::model::{Account, AccountWidgets};
 use glib::prelude::*; // or `use gtk::prelude::*;`
-use glib::{TypedValue, Value};
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
 use gtk::{Orientation, PositionType};
@@ -196,17 +195,19 @@ impl AccountGroup {
             let account_widgets = account_widgets.clone();
             let delete_button = delete_button.clone();
 
-            event_box.connect_local("button-press-event", false, move |_| {
-                let account_widgets = account_widgets.borrow_mut();
+            event_box
+                .connect_local("button-press-event", false, move |_| {
+                    let account_widgets = account_widgets.borrow_mut();
 
-                if account_widgets.is_empty() {
-                    delete_button.set_sensitive(true);
-                }
+                    if account_widgets.is_empty() {
+                        delete_button.set_sensitive(true);
+                    }
 
-                popover.show_all();
+                    popover.show_all();
 
-                Some(true.to_value())
-            });
+                    Some(true.to_value())
+                })
+                .expect("Could not associate handler");
         }
 
         group.add(&accounts);
