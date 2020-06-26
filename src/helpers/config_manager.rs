@@ -273,22 +273,19 @@ impl ConfigManager {
         account_groups: Vec<AccountGroup>,
         out: &Path,
     ) -> Result<(), LoadError> {
-        let r: Result<File, LoadError> = std::fs::File::create(out).map_err(|_| {
+        let file = std::fs::File::create(out).map_err(|_| {
             SaveError(format!(
                 "Could not open file {} for writing.",
                 out.display()
             ))
         });
 
-        let r2: Result<String, LoadError> = serde_yaml::to_string(&account_groups)
+        let yaml = serde_yaml::to_string(&account_groups)
             .map_err(|_| SaveError("Could not serialise accounts".to_owned()));
 
-        let r3: Result<(String, File), LoadError> = r.and_then(|file: File| {
-            let e: Result<(String, File), LoadError> = r2.map(|e| (e, file));
-            e
-        });
+        let combined = file.and_then(|file| yaml.map(|yaml| (yaml, file)));
 
-        let r4 = r3.and_then(|(yaml, file)| {
+        combined.and_then(|(yaml, file)| {
             let mut file = &file;
             let yaml = yaml.as_bytes();
 
@@ -298,9 +295,7 @@ impl ConfigManager {
                     out.display()
                 ))
             })
-        });
-
-        r4
+        })
     }
 }
 
