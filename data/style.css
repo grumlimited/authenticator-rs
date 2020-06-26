@@ -18,8 +18,7 @@
 .group_label_button:hover {
 }
 
-#about_popup_title {
-    color: white;
+#export_account_error_title {
     font-family: Sans Bold;
     font-size: 11pt;
     font-weight: bold;
