@@ -439,7 +439,10 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
     })
 }
 
-fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)> {
+fn export_accounts(
+    popover: gtk::PopoverMenu,
+    connection: Arc<Mutex<Connection>>,
+) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
         let filter = gtk::FileFilter::new();
