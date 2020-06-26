@@ -290,12 +290,8 @@ impl ConfigManager {
 
         let path = path.as_path();
         match ConfigManager::serialise_accounts(group_accounts, path) {
-            Ok(()) => {
-                tx.send(true);
-            }
-            Err(_) => {
-                tx.send(false);
-            }
+            Ok(()) => tx.send(true).expect("Could not send message"),
+            Err(_) => tx.send(false).expect("Could not send message"),
         };
     }
 

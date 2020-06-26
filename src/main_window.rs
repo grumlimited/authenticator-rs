@@ -12,10 +12,8 @@ use crate::helpers::ConfigManager;
 use crate::ui;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use futures_executor::ThreadPool;
-use glib::glib_sys::g_ascii_tolower;
 use gtk::{
-    Align, ApplicationWindow, FileChooserAction, FileChooserDialog, Orientation, PositionType,
-    ResponseType, Window,
+    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, ResponseType, Window,
 };
 use rusqlite::Connection;
 use std::rc::Rc;

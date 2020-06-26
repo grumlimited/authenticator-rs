@@ -13,12 +13,9 @@
 }
 
 .account_box, .form_container {
-    border-radius: 3px;
-    border-width: 1px;
 }
 
 .group_label_button:hover {
-    /*color: #160f32;*/
 }
 
 #about_popup_title {
