@@ -2,10 +2,10 @@ use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
 use crate::helpers::LoadError::SaveError;
 use crate::model::{Account, AccountGroup};
+use log::debug;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
