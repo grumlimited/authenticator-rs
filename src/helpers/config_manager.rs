@@ -365,18 +365,16 @@ impl ConfigManager {
         let r: Result<Vec<AccountGroup>, LoadError> =
             ConfigManager::deserialise_accounts(path.as_path());
 
-        let f = r.and_then(|ref mut account_groups| {
-            let m = account_groups.iter_mut().map(|group| {
+        let results = r.and_then(|ref mut account_groups| {
+            let results: Vec<Result<(), LoadError>> = account_groups.iter_mut().map(|group| {
                 let connection = connection.clone();
                 Self::save_group_and_accounts(connection, group)
-            });
+            }).collect();
 
-            let gg: Vec<Result<(), LoadError>> = m.collect();
-
-            gg.iter().cloned().collect::<Result<(), LoadError>>()
+            results.iter().cloned().collect::<Result<(), LoadError>>()
         });
 
-        match f {
+        match results {
             Ok(_) => tx.send(true).expect("Could not send message"),
             Err(_) => tx.send(false).expect("Could not send message"),
         }
