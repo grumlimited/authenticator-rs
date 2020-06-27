@@ -3,11 +3,11 @@ use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
 use gtk::{Orientation, PositionType};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,

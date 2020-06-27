@@ -1,6 +1,6 @@
 use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
-use crate::helpers::LoadError::SaveError;
+use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use glib::Sender;
 use log::debug;
@@ -16,7 +16,7 @@ pub struct ConfigManager {
 #[derive(Debug, Clone, PartialEq)]
 pub enum LoadError {
     #[allow(dead_code)]
-    FileError,
+    FileError(String),
     #[allow(dead_code)]
     FormatError,
     #[allow(dead_code)]
@@ -79,7 +79,7 @@ impl ConfigManager {
 
         std::fs::create_dir_all(path)
             .map(|_| ())
-            .map_err(|_| LoadError::FileError)
+            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
@@ -288,11 +288,14 @@ impl ConfigManager {
     ) {
         let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
 
-        let path = path.as_path();
-        match ConfigManager::serialise_accounts(group_accounts, path) {
-            Ok(()) => tx.send(true).expect("Could not send message"),
-            Err(_) => tx.send(false).expect("Could not send message"),
-        };
+        async {
+            let path = path.as_path();
+            match ConfigManager::serialise_accounts(group_accounts, path) {
+                Ok(()) => tx.send(true).expect("Could not send message"),
+                Err(_) => tx.send(false).expect("Could not send message"),
+            }
+        }
+        .await;
     }
 
     pub fn serialise_accounts(
@@ -321,6 +324,20 @@ impl ConfigManager {
                     out.display()
                 ))
             })
+        })
+    }
+
+    pub fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
+        let file = std::fs::File::open(out).map_err(|_| {
+            FileError(format!(
+                "Could not open file {} for reading.",
+                out.display()
+            ))
+        });
+
+        file.and_then(|file| {
+            serde_yaml::from_reader(file)
+                .map_err(|e| SaveError(format!("Could not serialise accounts: {}", e)))
         })
     }
 }
@@ -511,10 +528,16 @@ mod tests {
         let account = Account::new(1, 0, "label", "secret");
         let account_group = AccountGroup::new(2, "group", vec![account]);
 
-        let p = PathBuf::from("test.yaml");
-        let p = p.as_path();
-        let r = ConfigManager::serialise_accounts(vec![account_group], p).unwrap();
+        let path = PathBuf::from("test.yaml");
+        let path = path.as_path();
+        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
 
-        assert_eq!((), r);
+        assert_eq!((), result);
+
+        let account_from_yaml = Account::new(0, 0, "label", "secret");
+        let account_group_from_yaml = AccountGroup::new(0, "group", vec![account_from_yaml]);
+
+        let result = ConfigManager::deserialise_accounts(path).unwrap();
+        assert_eq!(vec![account_group_from_yaml], result);
     }
 }
