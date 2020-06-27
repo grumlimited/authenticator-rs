@@ -353,7 +353,7 @@ impl ConfigManager {
         })
     }
 
-    pub async fn _restore_account_and_signal_back(
+    pub async fn restore_account_and_signal_back(
         path: PathBuf,
         connection: Arc<Mutex<Connection>>,
         tx: Sender<bool>,

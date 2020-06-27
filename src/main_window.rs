@@ -230,9 +230,24 @@ impl MainWindow {
         {
             let popover = popover.clone();
             let threadpool = self.pool.clone();
+            let connection = connection.clone();
             export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
 
+        let import_button = gtk::ButtonBuilder::new()
+            .label("Import accounts")
+            .hexpand(true)
+            .hexpand_set(true)
+            .margin(3)
+            .build();
+
+        {
+            let popover = popover.clone();
+            let threadpool = self.pool.clone();
+            import_button.connect_clicked(import_accounts(popover, connection, threadpool));
+        }
+
+        buttons_container.pack_start(&import_button, false, false, 0);
         buttons_container.pack_start(&export_button, false, false, 0);
         buttons_container.pack_start(&about_button, false, false, 0);
         popover.add(&buttons_container);
@@ -452,7 +467,7 @@ fn export_accounts(
         filter.add_pattern("*.yml");
 
         let dialog = FileChooserDialog::with_buttons::<Window>(
-            Some("Open File"),
+            Some("Save File"),
             None,
             FileChooserAction::Save,
             &[
@@ -494,6 +509,76 @@ fn export_accounts(
                 rx.attach(None, move |success| {
                     if !success {
                         export_account_error.set_title("Error");
+                        export_account_error.show_all();
+                    }
+
+                    glib::Continue(true)
+                });
+
+                dialog.close();
+            }
+            _ => dialog.close(),
+        }
+    })
+}
+
+fn import_accounts(
+    popover: gtk::PopoverMenu,
+    connection: Arc<Mutex<Connection>>,
+    threadpool: ThreadPool,
+) -> Box<dyn Fn(&gtk::Button)> {
+    Box::new(move |_b: &gtk::Button| {
+        popover.set_visible(false);
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some("Yaml"));
+        filter.add_mime_type("text/yaml");
+        filter.add_pattern("*.yaml");
+        filter.add_pattern("*.yml");
+
+        let dialog = FileChooserDialog::with_buttons::<Window>(
+            Some("Open File"),
+            None,
+            FileChooserAction::Open,
+            &[
+                ("_Cancel", ResponseType::Cancel),
+                ("_Open", ResponseType::Accept),
+            ],
+        );
+
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
+        );
+
+        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        export_account_error.set_title("Error");
+
+        let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
+
+        export_account_error_body.set_label("Could not load accounts!");
+
+        builder.connect_signals(|_, handler_name| match handler_name {
+            "export_account_error_close" => {
+                let popup = export_account_error.clone();
+                Box::new(about_popup_close(popup))
+            }
+            _ => Box::new(|_| None),
+        });
+
+        dialog.add_filter(&filter);
+        dialog.show();
+
+        match dialog.run() {
+            gtk::ResponseType::Accept => {
+                let path = dialog.get_filename().unwrap();
+                let connection = connection.clone();
+
+                let (tx, rx): (Sender<bool>, Receiver<bool>) =
+                    glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection, tx));
+
+                rx.attach(None, move |success| {
+                    if !success {
                         export_account_error.show_all();
                     }
 
