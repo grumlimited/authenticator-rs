@@ -230,11 +230,7 @@ impl MainWindow {
         {
             let popover = popover.clone();
             let threadpool = self.pool.clone();
-            export_button.connect_clicked(export_accounts(
-                popover,
-                connection,
-                threadpool
-            ));
+            export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
 
         buttons_container.pack_start(&export_button, false, false, 0);
@@ -466,11 +462,13 @@ fn export_accounts(
         );
 
         let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "export_account_error.ui").as_str(),
+            format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
         );
 
-        let export_account_error: Window =
-            builder.get_object("export_account_error").unwrap();
+        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
+
+        export_account_error_body.set_label("Could not save accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => {
