@@ -40,8 +40,7 @@ pub enum State {
 impl MainWindow {
     pub fn new() -> MainWindow {
         // Initialize the UI from the Glade XML.
-        let glade_src = include_str!("mainwindow.glade");
-        let builder = gtk::Builder::new_from_string(glade_src);
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
         let builder_clone_1 = builder.clone();
         let builder_clone_2 = builder.clone();
 
