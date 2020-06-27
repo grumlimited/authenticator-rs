@@ -4,9 +4,7 @@ use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use glib::Sender;
 use log::debug;
-use serde_json::to_string;
 use std::io::Write;
-use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -602,5 +600,26 @@ mod tests {
 
         let result = ConfigManager::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
+    }
+
+    #[test]
+    fn save_group_and_accounts() {
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+
+        {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn).expect("boom!");
+        }
+
+        let account = Account::new(0, 0, "label", "secret");
+        let mut account_group = AccountGroup::new(0, "group", vec![account]);
+
+        let o = account_group.clone();
+
+        ConfigManager::save_group_and_accounts(conn, &mut account_group);
+
+        assert!(account_group.id > 0);
+        assert_eq!(1, account_group.entries.len());
+        assert!(account_group.entries.first().unwrap().id > 0);
     }
 }
