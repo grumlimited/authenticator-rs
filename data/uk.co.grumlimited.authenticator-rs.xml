@@ -4,5 +4,9 @@
     <file alias="authenticator-rs.svg">data/uk.co.grumlimited.authenticator-rs.svg</file>
     <file alias="style.css">data/style.css</file>
     <file alias="log4rs.yaml">data/log4rs.yaml</file>
+
+    <!-- UI Files -->
+    <file compressed="true" preprocess="xml-stripblanks" alias="export_account_error.ui">data/ui/export_account_error.ui</file>
+
   </gresource>
 </gresources>
