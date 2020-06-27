@@ -362,16 +362,24 @@ impl ConfigManager {
         connection: Arc<Mutex<Connection>>,
         tx: Sender<bool>,
     ) {
-        match ConfigManager::deserialise_accounts(path.as_path()) {
-            Ok(ref mut account_groups) => {
-                account_groups.iter_mut().for_each(|group| {
-                    let connection = connection.clone();
-                    Self::save_group_and_accounts(connection, group);
-                });
-                tx.send(true).expect("Could not send message")
-            }
+        let r: Result<Vec<AccountGroup>, LoadError> =
+            ConfigManager::deserialise_accounts(path.as_path());
+
+        let f = r.and_then(|ref mut account_groups| {
+            let m = account_groups.iter_mut().map(|group| {
+                let connection = connection.clone();
+                Self::save_group_and_accounts(connection, group)
+            });
+
+            let gg: Vec<Result<(), LoadError>> = m.collect();
+
+            gg.iter().cloned().collect::<Result<(), LoadError>>()
+        });
+
+        match f {
+            Ok(_) => tx.send(true).expect("Could not send message"),
             Err(_) => tx.send(false).expect("Could not send message"),
-        };
+        }
     }
 
     fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
