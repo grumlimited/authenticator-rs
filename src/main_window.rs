@@ -575,7 +575,9 @@ fn import_accounts(
                 let (tx, rx): (Sender<bool>, Receiver<bool>) =
                     glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection, tx));
+                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
+                    path, connection, tx,
+                ));
 
                 rx.attach(None, move |success| {
                     if !success {
