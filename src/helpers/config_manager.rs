@@ -130,7 +130,7 @@ impl ConfigManager {
             Self::save_group(connection, group)
         };
 
-        let id = group.id.clone();
+        let id = group.id;
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
             Ok(_) => group
@@ -357,12 +357,12 @@ impl ConfigManager {
         })
     }
 
-    pub async fn restore_accounts(
+    pub async fn _restore_account_and_signal_back(
         path: PathBuf,
         connection: Arc<Mutex<Connection>>,
         tx: Sender<bool>,
     ) {
-        let results = Self::restore_accounts2(path, connection).await;
+        let results = Self::restore_accounts(path, connection).await;
 
         match results {
             Ok(_) => tx.send(true).expect("Could not send message"),
@@ -370,7 +370,7 @@ impl ConfigManager {
         }
     }
 
-    async fn restore_accounts2(
+    async fn restore_accounts(
         path: PathBuf,
         connection: Arc<Mutex<Connection>>,
     ) -> Result<(), LoadError> {
@@ -415,7 +415,6 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use async_std::task;
-    use chrono::format::Numeric::Second;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -620,7 +619,7 @@ mod tests {
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", vec![account]);
 
-        ConfigManager::save_group_and_accounts(conn, &mut account_group);
+        ConfigManager::save_group_and_accounts(conn, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
         assert_eq!(1, account_group.entries.len());
@@ -647,7 +646,7 @@ mod tests {
 
         let result = {
             let conn = conn.clone();
-            task::block_on(ConfigManager::restore_accounts2(
+            task::block_on(ConfigManager::restore_accounts(
                 PathBuf::from("test.yaml"),
                 conn,
             ))
