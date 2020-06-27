@@ -4,7 +4,9 @@ use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use glib::Sender;
 use log::debug;
+use serde_json::to_string;
 use std::io::Write;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -119,6 +121,48 @@ impl ConfigManager {
             })
             .map(|_| ())
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
+    fn xxx(conn: Arc<Mutex<Connection>>, group: &mut AccountGroup) -> Vec<Result<(), LoadError>> {
+        let id = group.id.clone();
+        group
+            .entries
+            .iter_mut()
+            .map(|e| {
+                let connection_1 = conn.clone();
+                e.group_id = id;
+                Self::save_account(connection_1, e)
+            })
+            .collect::<Vec<Result<(), LoadError>>>()
+    }
+
+    fn xxx2(v: Vec<Result<(), LoadError>>) -> Result<(), LoadError> {
+        let init: Result<(), LoadError> = Ok(());
+        v.iter().fold(init, |a, b| match b {
+            Ok(_) => a,
+            Err(v) => Err(v.clone()),
+        })
+    }
+
+    pub fn save_group_and_accounts(
+        connection: Arc<Mutex<Connection>>,
+        group: &mut AccountGroup,
+    ) -> Result<(), LoadError> {
+        let result: Result<(), LoadError> = {
+            let connection = connection.clone();
+            Self::save_group(connection, group)
+        };
+
+        let mut group = group;
+
+        let accounts_saved_results: Vec<Result<(), LoadError>> = match result {
+            Ok(_) => Self::xxx(connection, &mut group),
+            Err(_) => vec![Err(LoadError::FormatError)],
+        };
+
+        let gg = Self::xxx2(accounts_saved_results);
+
+        gg.or_else(|_| result)
     }
 
     pub fn get_group(
