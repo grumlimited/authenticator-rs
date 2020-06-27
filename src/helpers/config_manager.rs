@@ -364,23 +364,10 @@ impl ConfigManager {
     ) {
         match ConfigManager::deserialise_accounts(path.as_path()) {
             Ok(ref mut account_groups) => {
-                account_groups.iter_mut().for_each(|mut account_groups| {
-                    let connection_clone = connection.clone();
-                    let result = Self::save_group(connection_clone, &mut account_groups);
-                    match result {
-                        Ok(_) => {
-                            account_groups.entries.iter_mut().for_each(|account| {
-                                let connection_2 = connection.clone();
-                                match Self::save_account(connection_2, account) {
-                                    Ok(_) => {}
-                                    Err(_) => tx.send(false).expect("Could not send message"),
-                                }
-                            });
-                        }
-                        Err(_) => tx.send(false).expect("Could not send message"),
-                    }
+                account_groups.iter_mut().for_each(|group| {
+                    let connection = connection.clone();
+                    Self::save_group_and_accounts(connection, group);
                 });
-
                 tx.send(true).expect("Could not send message")
             }
             Err(_) => tx.send(false).expect("Could not send message"),
