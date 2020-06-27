@@ -135,14 +135,14 @@ impl ConfigManager {
         connection: Arc<Mutex<Connection>>,
         group: &mut AccountGroup,
     ) -> Result<(), LoadError> {
-        let result: Result<(), LoadError> = {
+        let group_saved_result: Result<(), LoadError> = {
             let connection = connection.clone();
             Self::save_group(connection, group)
         };
 
         let mut group = group;
 
-        let accounts_saved_results: Vec<Result<(), LoadError>> = match result {
+        let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
             Ok(_) => {
                 let id = group.id.clone();
                 group
@@ -154,13 +154,15 @@ impl ConfigManager {
                         Self::save_account(connection, e)
                     })
                     .collect::<Vec<Result<(), LoadError>>>()
-            },
-            Err(_) => vec![Err(LoadError::FormatError)],
+            }
+            Err(group_saved_error) => vec![Err(group_saved_error)],
         };
 
-        let gg = Self::xxx2(accounts_saved_results);
-
-        gg.or_else(|_| result)
+        let init: Result<(), LoadError> = Ok(());
+        accounts_saved_results.iter().fold(init, |a, b| match b {
+            Ok(_) => a,
+            Err(v) => Err(v.clone()),
+        })
     }
 
     pub fn get_group(
