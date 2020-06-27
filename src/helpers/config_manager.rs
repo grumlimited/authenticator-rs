@@ -123,14 +123,6 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn xxx2(v: Vec<Result<(), LoadError>>) -> Result<(), LoadError> {
-        let init: Result<(), LoadError> = Ok(());
-        v.iter().fold(init, |a, b| match b {
-            Ok(_) => a,
-            Err(v) => Err(v.clone()),
-        })
-    }
-
     pub fn save_group_and_accounts(
         connection: Arc<Mutex<Connection>>,
         group: &mut AccountGroup,
@@ -140,29 +132,23 @@ impl ConfigManager {
             Self::save_group(connection, group)
         };
 
-        let mut group = group;
+        let id = group.id.clone();
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
-            Ok(_) => {
-                let id = group.id.clone();
-                group
-                    .entries
-                    .iter_mut()
-                    .map(|e| {
-                        let connection = connection.clone();
-                        e.group_id = id;
-                        Self::save_account(connection, e)
-                    })
-                    .collect::<Vec<Result<(), LoadError>>>()
-            }
+            Ok(_) => group
+                .entries
+                .iter_mut()
+                .map(|account| {
+                    let connection = connection.clone();
+                    account.group_id = id;
+                    Self::save_account(connection, account)
+                })
+                .collect::<Vec<Result<(), LoadError>>>(),
+
             Err(group_saved_error) => vec![Err(group_saved_error)],
         };
 
-        let init: Result<(), LoadError> = Ok(());
-        accounts_saved_results.iter().fold(init, |a, b| match b {
-            Ok(_) => a,
-            Err(v) => Err(v.clone()),
-        })
+        accounts_saved_results.iter().cloned().collect()
     }
 
     pub fn get_group(
