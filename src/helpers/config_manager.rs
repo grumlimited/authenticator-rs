@@ -123,19 +123,6 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn xxx(conn: Arc<Mutex<Connection>>, group: &mut AccountGroup) -> Vec<Result<(), LoadError>> {
-        let id = group.id.clone();
-        group
-            .entries
-            .iter_mut()
-            .map(|e| {
-                let connection_1 = conn.clone();
-                e.group_id = id;
-                Self::save_account(connection_1, e)
-            })
-            .collect::<Vec<Result<(), LoadError>>>()
-    }
-
     fn xxx2(v: Vec<Result<(), LoadError>>) -> Result<(), LoadError> {
         let init: Result<(), LoadError> = Ok(());
         v.iter().fold(init, |a, b| match b {
@@ -156,7 +143,18 @@ impl ConfigManager {
         let mut group = group;
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match result {
-            Ok(_) => Self::xxx(connection, &mut group),
+            Ok(_) => {
+                let id = group.id.clone();
+                group
+                    .entries
+                    .iter_mut()
+                    .map(|e| {
+                        let connection = connection.clone();
+                        e.group_id = id;
+                        Self::save_account(connection, e)
+                    })
+                    .collect::<Vec<Result<(), LoadError>>>()
+            },
             Err(_) => vec![Err(LoadError::FormatError)],
         };
 
