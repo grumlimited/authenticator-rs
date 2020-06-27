@@ -1,6 +1,12 @@
 <interface>
     <requires lib="gtk+" version="3.22"/>
 
+    <object class="GtkImage" id="export_account_error_image">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="icon_name">dialog-close</property>
+        <property name="use_fallback">True</property>
+    </object>
     <object class="GtkWindow" id="error_popup">
         <property name="name">export_account_error</property>
         <property name="width_request">200</property>
@@ -32,7 +38,7 @@
                         <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
                         <property name="vexpand">True</property>
-<!--                        <property name="image">export_account_error_image</property>-->
+                        <property name="image">export_account_error_image</property>
                         <signal name="clicked" handler="export_account_error_close" swapped="no"/>
                     </object>
                     <packing>
