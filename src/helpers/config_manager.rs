@@ -571,12 +571,12 @@ mod tests {
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        let result = {
+        {
             let conn = conn.clone();
             ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
-        };
+        }
 
         assert_eq!(1, account.id);
 
@@ -613,8 +613,6 @@ mod tests {
 
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", vec![account]);
-
-        let o = account_group.clone();
 
         ConfigManager::save_group_and_accounts(conn, &mut account_group);
 
