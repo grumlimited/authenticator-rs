@@ -327,7 +327,36 @@ impl ConfigManager {
         })
     }
 
-    pub fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
+    pub async fn restore_accounts(
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+        tx: Sender<bool>,
+    ) {
+        match ConfigManager::deserialise_accounts(path.as_path()) {
+            Ok(ref mut account_groups) => {
+                account_groups.iter_mut().for_each(|mut account_groups| {
+                    let connection_clone = connection.clone();
+                    match Self::save_group(connection_clone, &mut account_groups) {
+                        Ok(account_groups) => {
+                            account_groups.entries.iter_mut().for_each(|account| {
+                                let connection_2 = connection.clone();
+                                match Self::save_account(connection_2, account) {
+                                    Ok(_) => {}
+                                    Err(_) => tx.send(false).expect("Could not send message"),
+                                }
+                            });
+                        }
+                        Err(_) => tx.send(false).expect("Could not send message"),
+                    }
+                });
+
+                tx.send(true).expect("Could not send message")
+            }
+            Err(_) => tx.send(false).expect("Could not send message"),
+        };
+    }
+
+    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
         let file = std::fs::File::open(out).map_err(|_| {
             FileError(format!(
                 "Could not open file {} for reading.",
