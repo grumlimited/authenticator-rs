@@ -51,6 +51,7 @@ impl AccountGroup {
         );
 
         let group: gtk::Box = builder.get_object("group").unwrap();
+        group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
