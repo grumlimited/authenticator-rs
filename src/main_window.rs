@@ -12,9 +12,6 @@ use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE_PREFIX};
 use futures_executor::ThreadPool;
-use gtk::{
-    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, ResponseType, Window,
-};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -194,38 +191,15 @@ impl MainWindow {
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let menu_width = 130_i32;
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str(),
+        );
 
-        let popover = gtk::PopoverMenuBuilder::new()
-            .position(PositionType::Bottom)
-            .build();
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .width_request(menu_width)
-            .hexpand(true)
-            .build();
+        let about_button: gtk::Button = builder.get_object("about_button").unwrap();
 
-        let about_button = gtk::ButtonBuilder::new()
-            .label("About")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
-
-        about_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
-
-        let export_button = gtk::ButtonBuilder::new()
-            .label("Export accounts")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
+        let export_button: gtk::Button = builder.get_object("export_button").unwrap();
 
         {
             let popover = popover.clone();
@@ -234,12 +208,7 @@ impl MainWindow {
             export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
 
-        let import_button = gtk::ButtonBuilder::new()
-            .label("Import accounts")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
+        let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
         {
             let popover = popover.clone();
@@ -248,25 +217,9 @@ impl MainWindow {
             import_button.connect_clicked(import_accounts(gui, popover, connection, threadpool));
         }
 
-        let sep = gtk::SeparatorMenuItemBuilder::new()
-            .height_request(7)
-            .build();
-
-        buttons_container.pack_start(&import_button, false, false, 0);
-        buttons_container.pack_start(&export_button, false, false, 0);
-        buttons_container.pack_start(&sep, false, false, 0);
-        buttons_container.pack_start(&about_button, false, false, 0);
-        popover.add(&buttons_container);
-
-        let system_menu_image = gtk::ImageBuilder::new()
-            .icon_name("format-justify-fill")
-            .build();
-        let system_menu = gtk::MenuButtonBuilder::new()
-            .image(&system_menu_image)
-            .use_popover(true)
-            .halign(Align::Start)
-            .popover(&popover)
-            .build();
+        let system_menu_image: gtk::Image = builder.get_object("system_menu_image").unwrap();
+        let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
+        system_menu.set_image(Some(&system_menu_image));
 
         {
             let popover = popover.clone();
@@ -297,51 +250,20 @@ impl MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str(),
+        );
 
-        let popover = gtk::PopoverMenuBuilder::new()
-            .position(PositionType::Bottom)
-            .build();
+        let add_image: gtk::Image = builder.get_object("add_image").unwrap();
 
-        let menu_width = 130_i32;
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .hexpand(true)
-            .width_request(menu_width)
-            .build();
+        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
 
-        let add_account_button = gtk::ButtonBuilder::new()
-            .label("Add account")
-            .hexpand_set(true)
-            .width_request(menu_width)
-            .margin(3)
-            .build();
-
-        let add_group_button = gtk::ButtonBuilder::new()
-            .label("Add group")
-            .halign(Align::Start)
-            .width_request(menu_width)
-            .margin(3)
-            .build();
-
-        // forcing labels in menu buttons to left-align
-        add_group_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
-        add_account_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
+        let add_group_button: gtk::Button = builder.get_object("add_group_button").unwrap();
 
         {
             let popover = popover.clone();
-            let add_group_button = add_group_button.clone();
             let edit_account_window = self.edit_account_window.clone();
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
@@ -361,18 +283,8 @@ impl MainWindow {
             });
         }
 
-        popover.add(&buttons_container);
-
-        buttons_container.pack_start(&add_account_button, false, false, 0);
-        buttons_container.pack_start(&add_group_button, false, false, 0);
-
-        let action_menu = gtk::MenuButtonBuilder::new()
-            .image(&add_image)
-            .margin_start(15)
-            .use_popover(true)
-            .halign(Align::Start)
-            .popover(&popover)
-            .build();
+        let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
+        action_menu.set_image(Some(&add_image));
 
         {
             let widgets = self.accounts_window.widgets.clone();
@@ -466,27 +378,14 @@ fn export_accounts(
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
-        let filter = gtk::FileFilter::new();
-        filter.set_name(Some("Yaml"));
-        filter.add_mime_type("text/yaml");
-        filter.add_pattern("*.yaml");
-        filter.add_pattern("*.yml");
-
-        let dialog = FileChooserDialog::with_buttons::<Window>(
-            Some("Save File"),
-            None,
-            FileChooserAction::Save,
-            &[
-                ("_Cancel", ResponseType::Cancel),
-                ("_Save", ResponseType::Accept),
-            ],
-        );
 
         let builder = gtk::Builder::new_from_resource(
             format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
         );
 
-        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
+
+        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
         export_account_error_body.set_label("Could not save accounts!");
@@ -499,7 +398,7 @@ fn export_accounts(
             _ => Box::new(|_| None),
         });
 
-        dialog.add_filter(&filter);
+        // dialog.add_filter(&filter);
         dialog.show();
 
         match dialog.run() {
@@ -536,32 +435,19 @@ fn import_accounts(
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
-        let filter = gtk::FileFilter::new();
-        filter.set_name(Some("Yaml"));
-        filter.add_mime_type("text/yaml");
-        filter.add_pattern("*.yaml");
-        filter.add_pattern("*.yml");
-
-        let dialog = FileChooserDialog::with_buttons::<Window>(
-            Some("Open File"),
-            None,
-            FileChooserAction::Open,
-            &[
-                ("_Cancel", ResponseType::Cancel),
-                ("_Open", ResponseType::Accept),
-            ],
-        );
 
         let builder = gtk::Builder::new_from_resource(
             format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
         );
 
-        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
+
+        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         export_account_error.set_title("Error");
 
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
-        export_account_error_body.set_label("Could not load accounts!");
+        export_account_error_body.set_label("Could not import accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => {
@@ -571,7 +457,6 @@ fn import_accounts(
             _ => Box::new(|_| None),
         });
 
-        dialog.add_filter(&filter);
         dialog.show();
 
         match dialog.run() {

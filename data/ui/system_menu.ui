@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <object class="GtkPopoverMenu" id="popover">
+    <property name="name">popover</property>
+    <property name="can_focus">False</property>
+    <property name="position">bottom</property>
+    <child>
+      <object class="GtkBox" id="buttons_container">
+        <property name="name">buttons_container</property>
+        <property name="width_request">130</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="hexpand">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkButton" id="import_button">
+            <property name="label" translatable="yes">Import accounts</property>
+            <property name="name">import_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="halign">start</property>
+            <property name="margin_start">3</property>
+            <property name="margin_end">3</property>
+            <property name="margin_top">3</property>
+            <property name="margin_bottom">3</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="export_button">
+            <property name="label" translatable="yes">Export accounts</property>
+            <property name="name">export_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="margin_start">3</property>
+            <property name="margin_end">3</property>
+            <property name="margin_top">3</property>
+            <property name="margin_bottom">3</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator" id="sep">
+            <property name="name">sep</property>
+            <property name="height_request">7</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="about_button">
+            <property name="label" translatable="yes">About</property>
+            <property name="name">about_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="margin_start">3</property>
+            <property name="margin_end">3</property>
+            <property name="margin_top">3</property>
+            <property name="margin_bottom">3</property>
+            <property name="hexpand">True</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="submenu">main</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkMenuButton" id="system_menu">
+    <property name="name">system_menu</property>
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="focus_on_click">False</property>
+    <property name="receives_default">True</property>
+    <property name="halign">start</property>
+    <property name="hexpand">True</property>
+    <property name="popover">popover</property>
+    <child>
+      <placeholder/>
+    </child>
+  </object>
+  <object class="GtkImage" id="system_menu_image">
+    <property name="name">system_menu_image</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">format-justify-fill</property>
+    <property name="use_fallback">True</property>
+  </object>
+</interface>
