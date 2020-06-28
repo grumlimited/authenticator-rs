@@ -18,13 +18,11 @@
 .group_label_button:hover {
 }
 
-#export_account_error_title {
-    font-family: Sans Bold;
-    font-size: 11pt;
-    font-weight: bold;
+.totp_label {
+    font-family: monospace;
 }
 
-#about_textbuffer_title {
+#export_account_error_title, #about_textbuffer_title {
     font-family: Sans Bold;
     font-size: 11pt;
     font-weight: bold;

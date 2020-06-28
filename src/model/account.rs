@@ -120,9 +120,12 @@ impl Account {
         let totp_label = gtk::LabelBuilder::new()
             .label(totp.as_str())
             .width_chars(8)
-            // .single_line_mode(true)
+            .single_line_mode(true)
             .halign(Align::End)
             .build();
+
+        let style_context = totp_label.get_style_context();
+        style_context.add_class("totp_label");
 
         let totp_label_clone = totp_label.clone();
         let totp_label_clone2 = totp_label.clone();
