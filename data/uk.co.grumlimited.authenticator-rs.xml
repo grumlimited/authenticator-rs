@@ -9,6 +9,7 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/ui/main.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="error_popup.ui">data/ui/error_popup.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="account.ui">data/ui/account.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="account_group.ui">data/ui/account_group.ui</file>
 
   </gresource>
 </gresources>
