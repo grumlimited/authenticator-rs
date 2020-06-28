@@ -248,8 +248,13 @@ impl MainWindow {
             import_button.connect_clicked(import_accounts(gui, popover, connection, threadpool));
         }
 
+        let sep = gtk::SeparatorMenuItemBuilder::new()
+            .height_request(7)
+            .build();
+
         buttons_container.pack_start(&import_button, false, false, 0);
         buttons_container.pack_start(&export_button, false, false, 0);
+        buttons_container.pack_start(&sep, false, false, 0);
         buttons_container.pack_start(&about_button, false, false, 0);
         popover.add(&buttons_container);
 
