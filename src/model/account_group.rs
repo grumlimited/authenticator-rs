@@ -1,8 +1,7 @@
 use crate::model::{Account, AccountWidgets};
+use crate::NAMESPACE_PREFIX;
 use glib::prelude::*; // or `use gtk::prelude::*;`
-use gtk::prelude::BoxExt;
 use gtk::prelude::*;
-use gtk::{Orientation, PositionType};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -47,79 +46,32 @@ impl AccountGroup {
     }
 
     pub fn widget(&mut self) -> AccountGroupWidgets {
-        let group = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .spacing(0)
-            .name(format!("group_id_{}", self.id).as_str())
-            .build();
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str(),
+        );
+
+        let group: gtk::Box = builder.get_object("group").unwrap();
+        group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         //allows for group labels to respond to click events
-        let event_box = gtk::EventBoxBuilder::new().build();
+        let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
 
-        let group_label = gtk::LabelBuilder::new().label(self.name.as_str()).build();
+        let group_label: gtk::Label = builder.get_object("group_label").unwrap();
+        group_label.set_label(self.name.as_str());
 
-        event_box.add(&group_label);
+        let group_label_entry: gtk::Entry = builder.get_object("group_label_entry").unwrap();
+        group_label_entry.set_text(self.name.as_str());
 
-        let style_context = group_label.get_style_context();
-        style_context.add_class("group_label_button");
+        let group_label_edit_form_box: gtk::Box =
+            builder.get_object("group_label_edit_form_box").unwrap();
 
-        let group_label_entry = gtk::EntryBuilder::new()
-            .margin_end(5)
-            .height_request(32)
-            .width_chars(15)
-            .visible(true)
-            .text(self.name.as_str())
-            .build();
+        let cancel_button: gtk::Button = builder.get_object("cancel_button").unwrap();
 
-        let group_label_edit_form_box = gtk::BoxBuilder::new()
-            .orientation(Orientation::Horizontal)
-            .height_request(32)
-            .visible(false)
-            .no_show_all(true)
-            .build();
+        let update_button: gtk::Button = builder.get_object("update_button").unwrap();
 
-        let group_label_box = gtk::GridBuilder::new()
-            .orientation(Orientation::Vertical)
-            .margin_start(5)
-            .margin_top(10)
-            .margin_bottom(10)
-            .build();
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
-        let style_context = group_label_box.get_style_context();
-        style_context.add_class("account_group_label");
-
-        let style_context = group_label_entry.get_style_context();
-        style_context.add_class("group_label_entry");
-
-        let dialog_ok_image = gtk::ImageBuilder::new().icon_name("dialog-ok").build();
-        let cancel_image = gtk::ImageBuilder::new().icon_name("dialog-cancel").build();
-        let cancel_button = gtk::ButtonBuilder::new()
-            .image(&cancel_image)
-            .always_show_image(true)
-            .margin_end(5)
-            .visible(true)
-            .build();
-
-        let update_button = gtk::ButtonBuilder::new()
-            .image(&dialog_ok_image)
-            .always_show_image(true)
-            .margin_end(5)
-            .visible(true)
-            .build();
-
-        group_label_box.attach(&event_box, 0, 0, 1, 1);
-        group_label_box.attach(&group_label_edit_form_box, 1, 0, 1, 1);
-
-        group_label_edit_form_box.pack_start(&group_label_entry, false, false, 0);
-        group_label_edit_form_box.pack_start(&cancel_button, false, false, 0);
-        group_label_edit_form_box.pack_start(&update_button, false, false, 0);
-
-        let popover = gtk::PopoverMenuBuilder::new()
-            .relative_to(&event_box)
-            .position(PositionType::Right)
-            .build();
-
-        let edit_button = gtk::ButtonBuilder::new().label("Edit").margin(3).build();
+        let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
 
         {
             let group_label_entry = group_label_entry.clone();
@@ -145,40 +97,24 @@ impl AccountGroup {
             });
         }
 
-        let delete_button = gtk::ButtonBuilder::new()
-            .label("Delete")
-            .margin(3)
-            .sensitive(self.entries.is_empty())
-            .build();
+        let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
+        delete_button.set_sensitive(self.entries.is_empty());
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .build();
-
-        buttons_container.pack_start(&edit_button, false, false, 0);
-        buttons_container.pack_start(&delete_button, false, false, 0);
-
+        let buttons_container: gtk::Box = builder.get_object("buttons_container").unwrap();
+        // This would normally be defined within account_group.ui.
+        // However doing so produces annoying (yet seemingly harmless) warnings:
+        // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
 
-        group.add(&group_label_box);
-
-        let accounts = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .spacing(0)
-            .margin_start(5)
-            .margin_end(5)
-            .build();
-
-        let style_context = accounts.get_style_context();
-        style_context.add_class("account_box");
+        let accounts: gtk::Box = builder.get_object("accounts").unwrap();
 
         let account_widgets: Vec<AccountWidgets> = self
             .entries
             .iter_mut()
-            .map(|c| {
-                let w = c.widget();
-                accounts.add(&w.grid);
-                w
+            .map(|account| {
+                let widget = account.widget();
+                accounts.add(&widget.grid);
+                widget
             })
             .collect();
 
@@ -202,8 +138,6 @@ impl AccountGroup {
                 })
                 .expect("Could not associate handler");
         }
-
-        group.add(&accounts);
 
         AccountGroupWidgets {
             id: self.id,
