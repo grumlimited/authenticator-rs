@@ -8,6 +8,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use log::error;
+
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
     pub groups: Vec<AccountGroup>,
@@ -362,7 +364,10 @@ impl ConfigManager {
 
         match results {
             Ok(_) => tx.send(true).expect("Could not send message"),
-            Err(_) => tx.send(false).expect("Could not send message"),
+            Err(e) => {
+                tx.send(false).expect("Could not send message");
+                error!("{:?}", e);
+            }
         }
     }
 
@@ -370,10 +375,10 @@ impl ConfigManager {
         path: PathBuf,
         connection: Arc<Mutex<Connection>>,
     ) -> Result<(), LoadError> {
-        let r: Result<Vec<AccountGroup>, LoadError> =
+        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> =
             ConfigManager::deserialise_accounts(path.as_path());
 
-        r.and_then(|ref mut account_groups| {
+        deserialised_accounts.and_then(|ref mut account_groups| {
             let results: Vec<Result<(), LoadError>> = account_groups
                 .iter_mut()
                 .map(|group| {
