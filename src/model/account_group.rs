@@ -102,7 +102,7 @@ impl AccountGroup {
 
         let buttons_container: gtk::Box = builder.get_object("buttons_container").unwrap();
         // This would normally be defined within account_group.ui.
-        // However doing so produces annoying (yet seemingly harmless) warning:
+        // However doing so produces annoying (yet seemingly harmless) warnings:
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
 
