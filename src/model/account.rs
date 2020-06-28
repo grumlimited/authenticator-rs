@@ -5,7 +5,6 @@ use base32::Alphabet::RFC4648;
 
 use crate::NAMESPACE_PREFIX;
 use gtk::prelude::*;
-use gtk::{Align, Orientation};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -94,7 +93,6 @@ impl Account {
         totp_label.set_label(totp.as_str());
 
         let totp_label_clone = totp_label.clone();
-        let totp_label_clone2 = totp_label.clone();
 
         copy_button.connect_clicked(move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
@@ -122,7 +120,7 @@ impl Account {
             edit_copy_img: Arc::new(Mutex::new(edit_copy_img)),
             dialog_ok_img: Arc::new(Mutex::new(dialog_ok_img)),
             popover: popover_clone,
-            totp_label: totp_label_clone2,
+            totp_label,
             totp_secret: self.secret.clone(),
         }
     }
