@@ -12,7 +12,6 @@ use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE_PREFIX};
 use futures_executor::ThreadPool;
-use gtk::{Align, Orientation, PositionType, Window};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -251,51 +250,20 @@ impl MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let add_image = gtk::ImageBuilder::new().icon_name("list-add").build();
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str(),
+        );
 
-        let popover = gtk::PopoverMenuBuilder::new()
-            .position(PositionType::Bottom)
-            .build();
+        let add_image: gtk::Image = builder.get_object("add_image").unwrap();
 
-        let menu_width = 130_i32;
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .hexpand(true)
-            .width_request(menu_width)
-            .build();
+        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
 
-        let add_account_button = gtk::ButtonBuilder::new()
-            .label("Add account")
-            .hexpand_set(true)
-            .width_request(menu_width)
-            .margin(3)
-            .build();
-
-        let add_group_button = gtk::ButtonBuilder::new()
-            .label("Add group")
-            .halign(Align::Start)
-            .width_request(menu_width)
-            .margin(3)
-            .build();
-
-        // forcing labels in menu buttons to left-align
-        add_group_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
-        add_account_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
+        let add_group_button: gtk::Button = builder.get_object("add_group_button").unwrap();
 
         {
             let popover = popover.clone();
-            let add_group_button = add_group_button.clone();
             let edit_account_window = self.edit_account_window.clone();
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
@@ -315,18 +283,8 @@ impl MainWindow {
             });
         }
 
-        popover.add(&buttons_container);
-
-        buttons_container.pack_start(&add_account_button, false, false, 0);
-        buttons_container.pack_start(&add_group_button, false, false, 0);
-
-        let action_menu = gtk::MenuButtonBuilder::new()
-            .image(&add_image)
-            .margin_start(15)
-            .use_popover(true)
-            .halign(Align::Start)
-            .popover(&popover)
-            .build();
+        let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
+        action_menu.set_image(Some(&add_image));
 
         {
             let widgets = self.accounts_window.widgets.clone();
@@ -427,7 +385,7 @@ fn export_accounts(
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
-        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
         export_account_error_body.set_label("Could not save accounts!");
@@ -484,7 +442,7 @@ fn import_accounts(
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
-        let export_account_error: Window = builder.get_object("error_popup").unwrap();
+        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         export_account_error.set_title("Error");
 
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
