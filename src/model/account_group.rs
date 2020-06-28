@@ -66,7 +66,6 @@ impl AccountGroup {
 
         let cancel_button: gtk::Button = builder.get_object("cancel_button").unwrap();
 
-
         let update_button: gtk::Button = builder.get_object("update_button").unwrap();
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
