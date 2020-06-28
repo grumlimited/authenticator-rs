@@ -7,6 +7,7 @@ use gtk::prelude::*;
 use gtk::{Align, Orientation};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
+use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
@@ -55,58 +56,31 @@ impl Account {
     }
 
     pub fn widget(&mut self) -> AccountWidgets {
-        let grid = gtk::GridBuilder::new()
-            .visible(true)
-            .margin_start(0)
-            .margin_end(10)
-            .margin_bottom(5)
-            .margin_top(5)
-            .build();
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str(),
+        );
+
+        let grid: gtk::Grid = builder.get_object("grid").unwrap();
 
         grid.set_widget_name(format!("account_id_{}", self.id).as_str());
 
-        let label = gtk::LabelBuilder::new()
-            .label(self.label.as_str())
-            .margin_start(8)
-            .width_chars(19)
-            .single_line_mode(true)
-            .max_width_chars(50)
-            .hexpand(true)
-            .xalign(0.0)
-            .build();
+        let label: gtk::Label = builder.get_object("account_name").unwrap();
+        label.set_label(self.label.as_str());
 
-        let edit_copy_img = gtk::ImageBuilder::new().icon_name("edit-copy").build();
-        let dialog_ok_img = gtk::ImageBuilder::new().icon_name("dialog-ok").build();
 
-        let copy_button = gtk::ButtonBuilder::new()
-            .margin_start(5)
-            .margin_end(5)
-            .image(&edit_copy_img)
-            .always_show_image(true)
-            .build();
+        let edit_copy_img: gtk::Image = builder.get_object("edit_copy_img").unwrap();
+        let dialog_ok_img: gtk::Image = builder.get_object("dialog_ok_img").unwrap();
 
-        let edit_button = gtk::ButtonBuilder::new().label("Edit").margin(3).build();
+        let copy_button: gtk::Button = builder.get_object("copy_button").unwrap();
 
-        let delete_button = gtk::ButtonBuilder::new().label("Delete").margin(3).build();
+        let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .build();
+        let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
 
-        buttons_container.pack_start(&edit_button, false, false, 0);
-        buttons_container.pack_start(&delete_button, false, false, 0);
-
-        let popover = gtk::PopoverMenuBuilder::new().build();
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
         let popover_clone = popover.clone();
 
-        popover.add(&buttons_container);
-
-        let menu = gtk::MenuButtonBuilder::new()
-            .margin_start(5)
-            .margin_end(5)
-            .use_popover(true)
-            .popover(&popover)
-            .build();
+        let menu: gtk::MenuButton = builder.get_object("menu").unwrap();
 
         menu.connect_clicked(move |_| {
             popover.show_all();
@@ -117,15 +91,8 @@ impl Account {
             Err(_) => "error".to_owned(),
         };
 
-        let totp_label = gtk::LabelBuilder::new()
-            .label(totp.as_str())
-            .width_chars(8)
-            .single_line_mode(true)
-            .halign(Align::End)
-            .build();
-
-        let style_context = totp_label.get_style_context();
-        style_context.add_class("totp_label");
+        let totp_label: gtk::Label = builder.get_object("totp_label").unwrap();
+        totp_label.set_label(totp.as_str());
 
         let totp_label_clone = totp_label.clone();
         let totp_label_clone2 = totp_label.clone();
@@ -145,11 +112,6 @@ impl Account {
                 grid.set_visible(false);
             });
         }
-
-        grid.attach(&label, 0, 0, 1, 1);
-        grid.attach(&totp_label, 1, 0, 1, 1);
-        grid.attach(&copy_button, 2, 0, 1, 1);
-        grid.attach(&menu, 3, 0, 1, 1);
 
         AccountWidgets {
             account_id: self.id,
