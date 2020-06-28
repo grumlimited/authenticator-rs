@@ -3,11 +3,11 @@ use std::time::SystemTime;
 use base32::decode;
 use base32::Alphabet::RFC4648;
 
+use crate::NAMESPACE_PREFIX;
 use gtk::prelude::*;
 use gtk::{Align, Orientation};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
-use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Account {
@@ -66,7 +66,6 @@ impl Account {
 
         let label: gtk::Label = builder.get_object("account_name").unwrap();
         label.set_label(self.label.as_str());
-
 
         let edit_copy_img: gtk::Image = builder.get_object("edit_copy_img").unwrap();
         let dialog_ok_img: gtk::Image = builder.get_object("dialog_ok_img").unwrap();
