@@ -1,6 +1,6 @@
 use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
 
-use crate::helpers::LoadError::SaveError;
+use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use glib::Sender;
 use log::debug;
@@ -16,7 +16,7 @@ pub struct ConfigManager {
 #[derive(Debug, Clone, PartialEq)]
 pub enum LoadError {
     #[allow(dead_code)]
-    FileError,
+    FileError(String),
     #[allow(dead_code)]
     FormatError,
     #[allow(dead_code)]
@@ -79,7 +79,7 @@ impl ConfigManager {
 
         std::fs::create_dir_all(path)
             .map(|_| ())
-            .map_err(|_| LoadError::FileError)
+            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
@@ -104,7 +104,7 @@ impl ConfigManager {
     pub fn save_group(
         conn: Arc<Mutex<Connection>>,
         group: &mut AccountGroup,
-    ) -> Result<&mut AccountGroup, LoadError> {
+    ) -> Result<(), LoadError> {
         let conn = conn.lock().unwrap();
 
         conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group.name])
@@ -115,9 +115,36 @@ impl ConfigManager {
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
                 group.id = id;
-                group
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
+    pub fn save_group_and_accounts(
+        connection: Arc<Mutex<Connection>>,
+        group: &mut AccountGroup,
+    ) -> Result<(), LoadError> {
+        let group_saved_result: Result<(), LoadError> = {
+            let connection = connection.clone();
+            Self::save_group(connection, group)
+        };
+
+        let id = group.id;
+
+        let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
+            Ok(_) => group
+                .entries
+                .iter_mut()
+                .map(|account| {
+                    let connection = connection.clone();
+                    account.group_id = id;
+                    Self::save_account(connection, account)
+                })
+                .collect::<Vec<Result<(), LoadError>>>(),
+
+            Err(group_saved_error) => vec![Err(group_saved_error)],
+        };
+
+        accounts_saved_results.iter().cloned().collect()
     }
 
     pub fn get_group(
@@ -165,7 +192,7 @@ impl ConfigManager {
     pub fn save_account(
         conn: Arc<Mutex<Connection>>,
         account: &mut Account,
-    ) -> Result<&mut Account, LoadError> {
+    ) -> Result<(), LoadError> {
         let conn = conn.lock().unwrap();
 
         conn.execute(
@@ -180,7 +207,6 @@ impl ConfigManager {
             .map(|id| {
                 account.id = id;
                 account.group_id = account.group_id;
-                account
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
@@ -188,14 +214,14 @@ impl ConfigManager {
     pub fn update_account(
         connection: Arc<Mutex<Connection>>,
         account: &mut Account,
-    ) -> Result<&mut Account, LoadError> {
+    ) -> Result<(), LoadError> {
         let conn = connection.lock().unwrap();
 
         conn.execute(
             "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
             params![account.id, account.label, account.secret, account.group_id],
         )
-        .map(|_| account)
+        .map(|_| ())
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
@@ -288,11 +314,14 @@ impl ConfigManager {
     ) {
         let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
 
-        let path = path.as_path();
-        match ConfigManager::serialise_accounts(group_accounts, path) {
-            Ok(()) => tx.send(true).expect("Could not send message"),
-            Err(_) => tx.send(false).expect("Could not send message"),
-        };
+        async {
+            let path = path.as_path();
+            match ConfigManager::serialise_accounts(group_accounts, path) {
+                Ok(()) => tx.send(true).expect("Could not send message"),
+                Err(_) => tx.send(false).expect("Could not send message"),
+            }
+        }
+        .await;
     }
 
     pub fn serialise_accounts(
@@ -323,6 +352,53 @@ impl ConfigManager {
             })
         })
     }
+
+    pub async fn restore_account_and_signal_back(
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+        tx: Sender<bool>,
+    ) {
+        let results = Self::restore_accounts(path, connection).await;
+
+        match results {
+            Ok(_) => tx.send(true).expect("Could not send message"),
+            Err(_) => tx.send(false).expect("Could not send message"),
+        }
+    }
+
+    async fn restore_accounts(
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+    ) -> Result<(), LoadError> {
+        let r: Result<Vec<AccountGroup>, LoadError> =
+            ConfigManager::deserialise_accounts(path.as_path());
+
+        r.and_then(|ref mut account_groups| {
+            let results: Vec<Result<(), LoadError>> = account_groups
+                .iter_mut()
+                .map(|group| {
+                    let connection = connection.clone();
+                    Self::save_group_and_accounts(connection, group)
+                })
+                .collect();
+
+            results.iter().cloned().collect::<Result<(), LoadError>>()
+        })
+    }
+
+    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
+        let file = std::fs::File::open(out).map_err(|_| {
+            FileError(format!(
+                "Could not open file {} for reading.",
+                out.display()
+            ))
+        });
+
+        file.and_then(|file| {
+            serde_yaml::from_reader(file)
+                .map_err(|e| SaveError(format!("Could not serialise accounts: {}", e)))
+        })
+    }
 }
 
 #[cfg(test)]
@@ -334,35 +410,37 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
 
+    use async_std::task;
+
     #[test]
     fn create_new_account_and_new_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
+        {
             let conn = conn.clone();
             ConfigManager::init_tables(conn).expect("boom!");
-        };
+        }
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        let group = {
+        {
             let conn = conn.clone();
             ConfigManager::save_group(conn, &mut group).unwrap().clone()
-        };
+        }
 
         account.group_id = group.id;
 
-        let result = {
+        {
             let conn = conn.clone();
             ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
-        };
+        }
 
-        assert!(result.id > 0);
-        assert!(result.group_id > 0);
-        assert_eq!("label", result.label);
+        assert!(account.id > 0);
+        assert!(account.group_id > 0);
+        assert_eq!("label", account.label);
 
         let account_reloaded = {
             let conn = conn.clone();
@@ -374,7 +452,7 @@ mod tests {
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        let account_reloaded = ConfigManager::update_account(conn, &mut account_reloaded).unwrap();
+        ConfigManager::update_account(conn, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -384,17 +462,17 @@ mod tests {
     fn test_update_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
+        {
             let conn = conn.clone();
             ConfigManager::init_tables(conn).expect("boom!");
-        };
+        }
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
 
-        let mut group = {
+        {
             let conn = conn.clone();
             ConfigManager::save_group(conn, &mut group).unwrap().clone()
-        };
+        }
 
         assert_eq!("new group", group.name);
 
@@ -420,22 +498,23 @@ mod tests {
         };
 
         let mut group = AccountGroup::new(0, "existing_group2", vec![]);
-        let group = {
+
+        {
             let conn = conn.clone();
             ConfigManager::save_group(conn, &mut group).unwrap()
         };
 
         let mut account = Account::new(0, group.id, "label", "secret");
 
-        let result = {
+        {
             let conn = conn.clone();
             ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
         };
 
-        assert!(result.id > 0);
-        assert_eq!(group.id, result.group_id);
+        assert!(account.id > 0);
+        assert_eq!(group.id, account.group_id);
 
         let reloaded_group = ConfigManager::get_group(conn, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
@@ -493,14 +572,14 @@ mod tests {
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        let result = {
+        {
             let conn = conn.clone();
             ConfigManager::save_account(conn, &mut account)
                 .unwrap()
                 .clone()
-        };
+        }
 
-        assert_eq!(1, result.id);
+        assert_eq!(1, account.id);
 
         let result = ConfigManager::delete_account(conn, account.id).unwrap();
         assert!(result > 0);
@@ -511,10 +590,75 @@ mod tests {
         let account = Account::new(1, 0, "label", "secret");
         let account_group = AccountGroup::new(2, "group", vec![account]);
 
-        let p = PathBuf::from("test.yaml");
-        let p = p.as_path();
-        let r = ConfigManager::serialise_accounts(vec![account_group], p).unwrap();
+        let path = PathBuf::from("test.yaml");
+        let path = path.as_path();
+        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
 
-        assert_eq!((), r);
+        assert_eq!((), result);
+
+        let account_from_yaml = Account::new(0, 0, "label", "secret");
+        let account_group_from_yaml = AccountGroup::new(0, "group", vec![account_from_yaml]);
+
+        let result = ConfigManager::deserialise_accounts(path).unwrap();
+        assert_eq!(vec![account_group_from_yaml], result);
+    }
+
+    #[test]
+    fn save_group_and_accounts() {
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+
+        {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn).expect("boom!");
+        }
+
+        let account = Account::new(0, 0, "label", "secret");
+        let mut account_group = AccountGroup::new(0, "group", vec![account]);
+
+        ConfigManager::save_group_and_accounts(conn, &mut account_group).expect("could not save");
+
+        assert!(account_group.id > 0);
+        assert_eq!(1, account_group.entries.len());
+        assert!(account_group.entries.first().unwrap().id > 0);
+    }
+
+    #[test]
+    fn restore_accounts() {
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+
+        {
+            let conn = conn.clone();
+            ConfigManager::init_tables(conn).expect("boom!");
+        }
+
+        let account = Account::new(1, 0, "label", "secret");
+        let account_group = AccountGroup::new(2, "group", vec![account]);
+
+        let path = PathBuf::from("test.yaml");
+        let path = path.as_path();
+        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+
+        assert_eq!((), result);
+
+        let result = {
+            let conn = conn.clone();
+            task::block_on(ConfigManager::restore_accounts(
+                PathBuf::from("test.yaml"),
+                conn,
+            ))
+        };
+
+        assert_eq!(Ok(()), result);
+
+        let account_groups = {
+            let conn = conn.clone();
+            ConfigManager::load_account_groups(conn)
+        }
+        .unwrap();
+
+        assert_eq!(1, account_groups.len());
+        assert!(account_groups.first().unwrap().id > 0);
+        assert_eq!(1, account_groups.first().unwrap().entries.len());
+        assert!(account_groups.first().unwrap().entries.first().unwrap().id > 0);
     }
 }
