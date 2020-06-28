@@ -207,8 +207,6 @@ impl AccountGroup {
             })
             .collect();
 
-        let account_widgets: Vec<AccountWidgets> = vec![];
-
         let account_widgets = Rc::new(RefCell::new(account_widgets));
 
         {
