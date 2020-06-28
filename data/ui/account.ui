@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <object class="GtkImage" id="dialog_ok_img">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">blueman-trust</property>
+  </object>
+  <object class="GtkImage" id="edit_copy_img">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-copy</property>
+  </object>
+  <object class="GtkGrid" id="grid">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="margin_end">10</property>
+    <property name="margin_top">5</property>
+    <property name="margin_bottom">5</property>
+    <child>
+      <object class="GtkLabel" id="account_name">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_start">8</property>
+        <property name="hexpand">True</property>
+        <property name="label" translatable="yes">account</property>
+        <property name="width_chars">19</property>
+        <property name="single_line_mode">True</property>
+        <property name="max_width_chars">50</property>
+        <property name="track_visited_links">False</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="totp_label">
+        <property name="name">totp_label</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">end</property>
+        <property name="label" translatable="yes">totp</property>
+        <property name="justify">right</property>
+        <property name="width_chars">8</property>
+        <property name="xalign">0.8999999761581421</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkMenuButton" id="menu">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="focus_on_click">False</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">5</property>
+        <property name="margin_end">5</property>
+        <property name="popover">popover</property>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+      <packing>
+        <property name="left_attach">3</property>
+        <property name="top_attach">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="copy_button">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">5</property>
+        <property name="margin_end">5</property>
+        <property name="image">edit_copy_img</property>
+        <property name="always_show_image">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">2</property>
+        <property name="top_attach">0</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkPopoverMenu" id="popover">
+    <property name="name">popover</property>
+    <property name="can_focus">False</property>
+    <property name="relative_to">menu</property>
+    <property name="position">bottom</property>
+    <child>
+      <object class="GtkBox" id="buttons_container">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkButton" id="edit_button">
+            <property name="label" translatable="yes">Edit</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="delete_button">
+            <property name="label" translatable="yes">Delete</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="submenu">main</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
+</interface>
