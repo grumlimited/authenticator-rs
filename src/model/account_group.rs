@@ -1,4 +1,5 @@
 use crate::model::{Account, AccountWidgets};
+use crate::NAMESPACE_PREFIX;
 use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::BoxExt;
 use gtk::prelude::*;
@@ -6,7 +7,6 @@ use gtk::{Orientation, PositionType};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
@@ -83,7 +83,8 @@ impl AccountGroup {
         //     .text(self.name.as_str())
         //     .build();
 
-        let group_label_edit_form_box: gtk::Box = builder.get_object("group_label_edit_form_box").unwrap();
+        let group_label_edit_form_box: gtk::Box =
+            builder.get_object("group_label_edit_form_box").unwrap();
         // let group_label_edit_form_box = gtk::BoxBuilder::new()
         //     .orientation(Orientation::Horizontal)
         //     .height_request(32)
