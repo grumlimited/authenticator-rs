@@ -576,6 +576,8 @@ fn import_accounts(
 
         match dialog.run() {
             gtk::ResponseType::Accept => {
+                dialog.close();
+
                 let path = dialog.get_filename().unwrap();
                 let connection = connection.clone();
 
@@ -605,8 +607,6 @@ fn import_accounts(
 
                     glib::Continue(true)
                 });
-
-                dialog.close();
             }
             _ => dialog.close(),
         }

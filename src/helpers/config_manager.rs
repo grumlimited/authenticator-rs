@@ -8,6 +8,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use log::error;
+
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
     pub groups: Vec<AccountGroup>,
@@ -119,24 +121,54 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
+    fn group_by_name(
+        connection: Arc<Mutex<Connection>>,
+        name: &str,
+    ) -> Result<AccountGroup, LoadError> {
+        let connection = connection.lock().unwrap();
+
+        let mut stmt = connection
+            .prepare("SELECT id, name FROM groups WHERE name = :name")
+            .unwrap();
+
+        stmt.query_row_named(
+            named_params! {
+            ":name": name
+            },
+            |row| {
+                let group_id: u32 = row.get_unwrap(0);
+                let group_name: String = row.get_unwrap(1);
+
+                Ok(AccountGroup::new(group_id, group_name.as_str(), vec![]))
+            },
+        )
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     pub fn save_group_and_accounts(
         connection: Arc<Mutex<Connection>>,
         group: &mut AccountGroup,
     ) -> Result<(), LoadError> {
-        let group_saved_result: Result<(), LoadError> = {
+        let existing_group = {
             let connection = connection.clone();
-            Self::save_group(connection, group)
+            Self::group_by_name(connection, group.name.as_str())
         };
 
-        let id = group.id;
+        let group_saved_result = {
+            let connection = connection.clone();
+            match existing_group {
+                Ok(group) => Ok(group.id),
+                Err(_) => Self::save_group(connection, group).map(|_| group.id),
+            }
+        };
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
-            Ok(_) => group
+            Ok(group_id) => group
                 .entries
                 .iter_mut()
                 .map(|account| {
                     let connection = connection.clone();
-                    account.group_id = id;
+                    account.group_id = group_id;
                     Self::save_account(connection, account)
                 })
                 .collect::<Vec<Result<(), LoadError>>>(),
@@ -362,7 +394,10 @@ impl ConfigManager {
 
         match results {
             Ok(_) => tx.send(true).expect("Could not send message"),
-            Err(_) => tx.send(false).expect("Could not send message"),
+            Err(e) => {
+                tx.send(false).expect("Could not send message");
+                error!("{:?}", e);
+            }
         }
     }
 
@@ -370,10 +405,10 @@ impl ConfigManager {
         path: PathBuf,
         connection: Arc<Mutex<Connection>>,
     ) -> Result<(), LoadError> {
-        let r: Result<Vec<AccountGroup>, LoadError> =
+        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> =
             ConfigManager::deserialise_accounts(path.as_path());
 
-        r.and_then(|ref mut account_groups| {
+        deserialised_accounts.and_then(|ref mut account_groups| {
             let results: Vec<Result<(), LoadError>> = account_groups
                 .iter_mut()
                 .map(|group| {
