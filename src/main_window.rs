@@ -12,9 +12,7 @@ use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE_PREFIX};
 use futures_executor::ThreadPool;
-use gtk::{
-    Align, FileChooserAction, FileChooserDialog, Orientation, PositionType, ResponseType, Window,
-};
+use gtk::{Align, Orientation, PositionType, Window};
 use rusqlite::Connection;
 use std::rc::Rc;
 
@@ -466,25 +464,12 @@ fn export_accounts(
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
-        let filter = gtk::FileFilter::new();
-        filter.set_name(Some("Yaml"));
-        filter.add_mime_type("text/yaml");
-        filter.add_pattern("*.yaml");
-        filter.add_pattern("*.yml");
-
-        let dialog = FileChooserDialog::with_buttons::<Window>(
-            Some("Save File"),
-            None,
-            FileChooserAction::Save,
-            &[
-                ("_Cancel", ResponseType::Cancel),
-                ("_Save", ResponseType::Accept),
-            ],
-        );
 
         let builder = gtk::Builder::new_from_resource(
             format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
         );
+
+        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
         let export_account_error: Window = builder.get_object("error_popup").unwrap();
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
@@ -499,7 +484,7 @@ fn export_accounts(
             _ => Box::new(|_| None),
         });
 
-        dialog.add_filter(&filter);
+        // dialog.add_filter(&filter);
         dialog.show();
 
         match dialog.run() {
@@ -536,32 +521,19 @@ fn import_accounts(
 ) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
-        let filter = gtk::FileFilter::new();
-        filter.set_name(Some("Yaml"));
-        filter.add_mime_type("text/yaml");
-        filter.add_pattern("*.yaml");
-        filter.add_pattern("*.yml");
-
-        let dialog = FileChooserDialog::with_buttons::<Window>(
-            Some("Open File"),
-            None,
-            FileChooserAction::Open,
-            &[
-                ("_Cancel", ResponseType::Cancel),
-                ("_Open", ResponseType::Accept),
-            ],
-        );
 
         let builder = gtk::Builder::new_from_resource(
             format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
         );
+
+        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
         let export_account_error: Window = builder.get_object("error_popup").unwrap();
         export_account_error.set_title("Error");
 
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
-        export_account_error_body.set_label("Could not load accounts!");
+        export_account_error_body.set_label("Could not import accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => {
@@ -571,7 +543,6 @@ fn import_accounts(
             _ => Box::new(|_| None),
         });
 
-        dialog.add_filter(&filter);
         dialog.show();
 
         match dialog.run() {
