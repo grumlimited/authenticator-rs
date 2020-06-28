@@ -192,38 +192,15 @@ impl MainWindow {
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let menu_width = 130_i32;
+        let builder = gtk::Builder::new_from_resource(
+            format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str(),
+        );
 
-        let popover = gtk::PopoverMenuBuilder::new()
-            .position(PositionType::Bottom)
-            .build();
+        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
-        let buttons_container = gtk::BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .width_request(menu_width)
-            .hexpand(true)
-            .build();
+        let about_button: gtk::Button = builder.get_object("about_button").unwrap();
 
-        let about_button = gtk::ButtonBuilder::new()
-            .label("About")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
-
-        about_button
-            .get_child()
-            .unwrap()
-            .downcast_ref::<gtk::Label>()
-            .unwrap()
-            .set_xalign(0f32);
-
-        let export_button = gtk::ButtonBuilder::new()
-            .label("Export accounts")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
+        let export_button: gtk::Button = builder.get_object("export_button").unwrap();
 
         {
             let popover = popover.clone();
@@ -232,12 +209,7 @@ impl MainWindow {
             export_button.connect_clicked(export_accounts(popover, connection, threadpool));
         }
 
-        let import_button = gtk::ButtonBuilder::new()
-            .label("Import accounts")
-            .hexpand(true)
-            .hexpand_set(true)
-            .margin(3)
-            .build();
+        let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
         {
             let popover = popover.clone();
@@ -246,25 +218,9 @@ impl MainWindow {
             import_button.connect_clicked(import_accounts(gui, popover, connection, threadpool));
         }
 
-        let sep = gtk::SeparatorMenuItemBuilder::new()
-            .height_request(7)
-            .build();
-
-        buttons_container.pack_start(&import_button, false, false, 0);
-        buttons_container.pack_start(&export_button, false, false, 0);
-        buttons_container.pack_start(&sep, false, false, 0);
-        buttons_container.pack_start(&about_button, false, false, 0);
-        popover.add(&buttons_container);
-
-        let system_menu_image = gtk::ImageBuilder::new()
-            .icon_name("format-justify-fill")
-            .build();
-        let system_menu = gtk::MenuButtonBuilder::new()
-            .image(&system_menu_image)
-            .use_popover(true)
-            .halign(Align::Start)
-            .popover(&popover)
-            .build();
+        let system_menu_image: gtk::Image = builder.get_object("system_menu_image").unwrap();
+        let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
+        system_menu.set_image(Some(&system_menu_image));
 
         {
             let popover = popover.clone();
