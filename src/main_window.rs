@@ -244,7 +244,8 @@ impl MainWindow {
         {
             let popover = popover.clone();
             let threadpool = self.pool.clone();
-            import_button.connect_clicked(import_accounts(popover, connection, threadpool));
+            let gui = self.clone();
+            import_button.connect_clicked(import_accounts(gui, popover, connection, threadpool));
         }
 
         buttons_container.pack_start(&import_button, false, false, 0);
@@ -523,6 +524,7 @@ fn export_accounts(
 }
 
 fn import_accounts(
+    gui: MainWindow,
     popover: gtk::PopoverMenu,
     connection: Arc<Mutex<Connection>>,
     threadpool: ThreadPool,
@@ -575,14 +577,26 @@ fn import_accounts(
                 let (tx, rx): (Sender<bool>, Receiver<bool>) =
                     glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
-                    path, connection, tx,
-                ));
+                {
+                    let connection = connection.clone();
+                    threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
+                        path, connection, tx,
+                    ));
+                }
 
+                let gui = gui.clone();
                 rx.attach(None, move |success| {
                     if !success {
                         export_account_error.show_all();
                     }
+
+                    let connection = connection.clone();
+                    {
+                        let gui = gui.clone();
+                        AccountsWindow::replace_accounts_and_widgets(gui, connection);
+                    }
+                    let gui = gui.clone();
+                    MainWindow::switch_to(gui, State::DisplayAccounts);
 
                     glib::Continue(true)
                 });
