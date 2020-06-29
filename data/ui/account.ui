@@ -103,6 +103,10 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="margin_start">3</property>
+            <property name="margin_end">3</property>
+            <property name="margin_top">3</property>
+            <property name="margin_bottom">3</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -116,6 +120,10 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="margin_start">3</property>
+            <property name="margin_end">3</property>
+            <property name="margin_top">3</property>
+            <property name="margin_bottom">3</property>
           </object>
           <packing>
             <property name="expand">False</property>
