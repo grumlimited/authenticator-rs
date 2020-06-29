@@ -2,15 +2,15 @@
 <gresources>
   <gresource prefix="/uk/co/grumlimited/authenticator-rs">
     <file alias="authenticator-rs.svg">data/uk.co.grumlimited.authenticator-rs.svg</file>
-    <file alias="style.css">data/style.css</file>
-    <file alias="log4rs.yaml">data/log4rs.yaml</file>
+    <file alias="style.css">data/resources/style.css</file>
+    <file alias="log4rs.yaml">data/resources/log4rs.yaml</file>
 
     <!-- UI Files -->
-    <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/ui/main.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="error_popup.ui">data/ui/error_popup.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="account.ui">data/ui/account.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="account_group.ui">data/ui/account_group.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="system_menu.ui">data/ui/system_menu.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="action_menu.ui">data/ui/action_menu.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/resources/ui/main.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="error_popup.ui">data/resources/ui/error_popup.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="account.ui">data/resources/ui/account.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="account_group.ui">data/resources/ui/account_group.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="system_menu.ui">data/resources/ui/system_menu.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="action_menu.ui">data/resources/ui/action_menu.ui</file>
   </gresource>
 </gresources>
