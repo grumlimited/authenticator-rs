@@ -6,11 +6,11 @@
     <file alias="log4rs.yaml">data/resources/log4rs.yaml</file>
 
     <!-- UI Files -->
-    <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/resources/ui/main.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="error_popup.ui">data/resources/ui/error_popup.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="account.ui">data/resources/ui/account.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="account_group.ui">data/resources/ui/account_group.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="system_menu.ui">data/resources/ui/system_menu.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="action_menu.ui">data/resources/ui/action_menu.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/resources/gtk/ui/main.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="error_popup.ui">data/resources/gtk/ui/error_popup.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="account.ui">data/resources/gtk/ui/account.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="account_group.ui">data/resources/gtk/ui/account_group.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="system_menu.ui">data/resources/gtk/ui/system_menu.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="action_menu.ui">data/resources/gtk/ui/action_menu.ui</file>
   </gresource>
 </gresources>
