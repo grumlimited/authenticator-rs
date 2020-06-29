@@ -270,6 +270,7 @@
                     </child>
                     <child>
                       <object class="GtkTextView" id="edit_account_input_secret">
+                        <property name="name">edit_account_input_secret</property>
                         <property name="width_request">15</property>
                         <property name="height_request">140</property>
                         <property name="visible">True</property>
@@ -277,9 +278,13 @@
                         <property name="margin_end">5</property>
                         <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
+                        <property name="border_width">1</property>
                         <property name="vadjustment">edit_account_input_secret_scrollable</property>
                         <property name="wrap_mode">char</property>
                         <property name="monospace">True</property>
+                        <style>
+                          <class name="edit_account_input_secret"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>

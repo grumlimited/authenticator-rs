@@ -13,13 +13,16 @@
 }
 
 .account_box, .form_container {
-}
-
-.group_label_button:hover {
+    background-color: @content_view_bg;
+    border-radius: 3px;
 }
 
 .totp_label {
     font-family: monospace;
+}
+
+.edit_account_input_secret {
+    background-color: @borders;
 }
 
 #export_account_error_title, #about_textbuffer_title {
