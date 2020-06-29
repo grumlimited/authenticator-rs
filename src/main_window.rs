@@ -46,16 +46,35 @@ impl MainWindow {
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
 
-        builder.connect_signals(|_, handler_name| {
-            match handler_name {
-                // handler_name as defined in the glade file
-                "about_popup_close" => {
-                    let popup = about_popup.clone();
-                    Box::new(about_popup_close(popup))
+        {
+            let popup = about_popup.clone();
+            let add_group_save: gtk::Button = builder.get_object("add_group_save").unwrap();
+            let edit_account_save: gtk::Button = builder.get_object("edit_account_save").unwrap();
+            builder.connect_signals(move |_, handler_name| {
+                match handler_name {
+                    // handler_name as defined in the glade file
+                    "about_popup_close" => {
+                        let popup = popup.clone();
+                        Box::new(about_popup_close(popup))
+                    }
+                    "save_group" => {
+                        let add_group_save = add_group_save.clone();
+                        Box::new(move |_| {
+                            add_group_save.clicked();
+                            None
+                        })
+                    }
+                    "save_account" => {
+                        let edit_account_save = edit_account_save.clone();
+                        Box::new(move |_| {
+                            edit_account_save.clicked();
+                            None
+                        })
+                    }
+                    _ => Box::new(move |_| None),
                 }
-                _ => Box::new(|_| None),
-            }
-        });
+            });
+        }
 
         MainWindow {
             window,
