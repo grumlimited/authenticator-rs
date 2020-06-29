@@ -232,6 +232,7 @@
                         <property name="margin_end">5</property>
                         <property name="hexpand">True</property>
                         <property name="width_chars">23</property>
+                        <signal name="activate" handler="save_account" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -432,6 +433,7 @@
                         <property name="margin_bottom">20</property>
                         <property name="hexpand">True</property>
                         <property name="width_chars">23</property>
+                        <signal name="activate" handler="save_group" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
