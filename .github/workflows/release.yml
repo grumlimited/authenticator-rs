@@ -84,11 +84,11 @@ jobs:
 
       - name: Prepare arch package metadata
         run: |
-          wget https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb -O data/arch/authenticator-rs-bin/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
+          wget https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb -O build-aux/arch/authenticator-rs-bin/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
 
-          MD5_SUM=$(md5sum data/arch/authenticator-rs-bin/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb  | awk '{print $1}')
-          awk -v q="'" -v MD5_SUM=$MD5_SUM -i inplace 'BEGINFILE{print "md5sums=(" q MD5_SUM q ")"}{print}' data/arch/authenticator-rs-bin/PKGBUILD
-          awk -i inplace 'BEGINFILE{print "pkgver=${{ github.event.release.tag_name }}"}{print}' data/arch/authenticator-rs-bin/PKGBUILD
+          MD5_SUM=$(md5sum build-aux/arch/authenticator-rs-bin/authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb  | awk '{print $1}')
+          awk -v q="'" -v MD5_SUM=$MD5_SUM -i inplace 'BEGINFILE{print "md5sums=(" q MD5_SUM q ")"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
+          awk -i inplace 'BEGINFILE{print "pkgver=${{ github.event.release.tag_name }}"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
 
       - name: Validate PKGBUILD
         id: validate-pkgbuild
@@ -96,12 +96,12 @@ jobs:
         with:
           debug: true
           target: pkgbuild
-          pkgname: data/arch/authenticator-rs-bin/
+          pkgname: build-aux/arch/authenticator-rs-bin/
 
       - name: Create arch package checksum file
         run: |
           sudo chown -R $USER .
-          md5sum data/arch/authenticator-rs-bin/*.xz >> data/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum
+          md5sum build-aux/arch/authenticator-rs-bin/*.xz >> build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum
 
       - name: Upload Arch Linux release
         uses: actions/upload-release-asset@v1
@@ -109,7 +109,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'data/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz'
+          asset_path: 'build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz'
           asset_name: 'authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz'
           asset_content_type: application/octet-stream
 
@@ -119,6 +119,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'data/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum'
+          asset_path: 'build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum'
           asset_name: 'authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.xz.md5sum'
           asset_content_type: text/plain

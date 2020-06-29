@@ -120,20 +120,19 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">25</property>
+                <property name="spacing">20</property>
                 <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_top">25</property>
                     <child>
                       <object class="GtkLabel" id="add_accounts_container_edit">
                         <property name="name">add_accounts_container_edit</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="margin_start">10</property>
-                        <property name="margin_top">25</property>
-                        <property name="margin_bottom">25</property>
                         <property name="label" translatable="yes">Edit account</property>
                         <style>
                           <class name="section_title"/>
@@ -151,9 +150,6 @@
                         <property name="name">add_accounts_container_add</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="margin_start">10</property>
-                        <property name="margin_top">25</property>
-                        <property name="margin_bottom">25</property>
                         <property name="label" translatable="yes">Add account</property>
                         <style>
                           <class name="section_title"/>
@@ -193,7 +189,7 @@
                         <property name="halign">start</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
-                        <property name="margin_top">5</property>
+                        <property name="margin_top">20</property>
                         <property name="label" translatable="yes">Group</property>
                       </object>
                       <packing>
@@ -260,7 +256,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_top">5</property>
+                        <property name="margin_top">20</property>
                         <property name="hexpand">True</property>
                       </object>
                       <packing>
@@ -270,16 +266,21 @@
                     </child>
                     <child>
                       <object class="GtkTextView" id="edit_account_input_secret">
+                        <property name="name">edit_account_input_secret</property>
                         <property name="width_request">15</property>
                         <property name="height_request">140</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_bottom">5</property>
+                        <property name="margin_bottom">20</property>
                         <property name="hexpand">True</property>
+                        <property name="border_width">1</property>
                         <property name="vadjustment">edit_account_input_secret_scrollable</property>
                         <property name="wrap_mode">char</property>
                         <property name="monospace">True</property>
+                        <style>
+                          <class name="edit_account_input_secret"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -313,7 +314,6 @@
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_top">20</property>
                 <property name="column_homogeneous">True</property>
                 <child>
                   <object class="GtkButton" id="edit_account_cancel">
@@ -377,15 +377,14 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">25</property>
+                <property name="spacing">20</property>
                 <child>
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="halign">start</property>
-                    <property name="margin_start">5</property>
+                    <property name="margin_start">10</property>
                     <property name="margin_top">25</property>
-                    <property name="margin_bottom">25</property>
                     <property name="label" translatable="yes">Add group</property>
                     <style>
                       <class name="section_title"/>
@@ -414,8 +413,8 @@
                         <property name="can_focus">False</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
-                        <property name="margin_top">5</property>
-                        <property name="margin_bottom">5</property>
+                        <property name="margin_top">20</property>
+                        <property name="margin_bottom">20</property>
                         <property name="label" translatable="yes">Name</property>
                       </object>
                       <packing>
@@ -429,8 +428,8 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_top">5</property>
-                        <property name="margin_bottom">5</property>
+                        <property name="margin_top">20</property>
+                        <property name="margin_bottom">20</property>
                         <property name="hexpand">True</property>
                         <property name="width_chars">23</property>
                       </object>
@@ -469,7 +468,6 @@
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_top">20</property>
                 <property name="column_homogeneous">True</property>
                 <child>
                   <object class="GtkButton" id="add_group_cancel">

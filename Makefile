@@ -49,9 +49,9 @@ install : target/release/authenticator-rs gresource
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gresource $(sharedir)/uk.co.grumlimited.authenticator-rs/uk.co.grumlimited.authenticator-rs.gresource
 	
 	# Install icons
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
+	$(INSTALL_DATA) data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
+	$(INSTALL_DATA) data/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
+	$(INSTALL_DATA) data/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
 	# Force icon cache refresh
 	touch $(sharedir)/icons/hicolor
 	# Install application meta-data
@@ -82,9 +82,9 @@ clean :
 
 debian-pkg : install
 	mkdir -p $(DESTDIR)/DEBIAN
-	cp data/debian/control $(DESTDIR)/DEBIAN/
+	cp build-aux/debian/control $(DESTDIR)/DEBIAN/
 	echo "Version: $(RELEASE_VERSION)" >> $(DESTDIR)/DEBIAN/control
-	cp data/debian/postinst $(DESTDIR)/DEBIAN/
+	cp build-aux/debian/postinst $(DESTDIR)/DEBIAN/
 	chmod 775 $(DESTDIR)/DEBIAN/postinst
 	dpkg-deb --build $(DESTDIR) authenticator-rs-$(RELEASE_VERSION)-x86_64.deb
 	md5sum authenticator-rs-$(RELEASE_VERSION)-x86_64.deb > authenticator-rs-$(RELEASE_VERSION)-x86_64.deb.md5sum
