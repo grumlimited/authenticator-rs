@@ -49,9 +49,9 @@ install : target/release/authenticator-rs gresource
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gresource $(sharedir)/uk.co.grumlimited.authenticator-rs/uk.co.grumlimited.authenticator-rs.gresource
 	
 	# Install icons
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
+	$(INSTALL_DATA) data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
+	$(INSTALL_DATA) data/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
+	$(INSTALL_DATA) data/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
 	# Force icon cache refresh
 	touch $(sharedir)/icons/hicolor
 	# Install application meta-data

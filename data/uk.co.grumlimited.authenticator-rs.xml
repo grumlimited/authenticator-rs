@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/uk/co/grumlimited/authenticator-rs">
-    <file alias="authenticator-rs.svg">data/uk.co.grumlimited.authenticator-rs.svg</file>
+    <file alias="authenticator-rs.svg">data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg</file>
     <file alias="style.css">data/resources/style.css</file>
     <file alias="log4rs.yaml">data/resources/log4rs.yaml</file>
 
