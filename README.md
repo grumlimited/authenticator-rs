@@ -14,8 +14,6 @@ It is by no means as feature-rich as its python relative, more like a diamond in
 but definitely in the rough...
 
 ![authenticator-rs](./data/screenshots/screenshot1.png "Main view")
-![authenticator-rs](./data/screenshots/screenshot2.png "Add account")
-![authenticator-rs](./data/screenshots/screenshot3.png "Add group")
 
 ## License
 
