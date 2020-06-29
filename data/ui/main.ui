@@ -413,8 +413,8 @@
                         <property name="can_focus">False</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
-                        <property name="margin_top">5</property>
-                        <property name="margin_bottom">5</property>
+                        <property name="margin_top">20</property>
+                        <property name="margin_bottom">20</property>
                         <property name="label" translatable="yes">Name</property>
                       </object>
                       <packing>
@@ -428,8 +428,8 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_top">5</property>
-                        <property name="margin_bottom">5</property>
+                        <property name="margin_top">20</property>
+                        <property name="margin_bottom">20</property>
                         <property name="hexpand">True</property>
                         <property name="width_chars">23</property>
                       </object>

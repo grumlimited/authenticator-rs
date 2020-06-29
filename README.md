@@ -13,9 +13,9 @@ in the latest versions of python shipped with [Arch Linux](https://www.archlinux
 It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
 but definitely in the rough...
 
-![authenticator-rs](./authenticator-rs-main.png "Main view")
-![authenticator-rs](./authenticator-rs-edit-account.png "Main view")
-![authenticator-rs](./authenticator-rs-add-group.png "Main view")
+![authenticator-rs](./data/screenshots/screenshot1 "Main view")
+![authenticator-rs](./data/screenshots/screenshot2 "Add account")
+![authenticator-rs](./data/screenshots/screenshot3 "Add group")
 
 ## License
 

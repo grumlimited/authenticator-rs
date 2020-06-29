@@ -7,15 +7,17 @@
   <developer_name>Romain Gallet</developer_name>
   <summary>authenticator-rs.</summary>
   <url type="homepage">https://github.com/grumlimited/authenticator-rs/</url>
+  <url type="bugtracker">https://github.com/grumlimited/authenticator-rs/issues</url>
   <description>
-  <p>
-    Authenticator-rs
-  </p>
+    <p>Simple application that generates a two-factor authentication code, created for GNOME.</p>
+    <p>Rust version of its more feature complete cousin Authenticator</p>
   </description>
   <launchable type="desktop-id">uk.co.grumlimited.authenticator-rs.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/grumlimited/authenticator-rs/master/authenticator-rs-main.png</image>
+      <image type="source">https://raw.githubusercontent.com/grumlimited/authenticator-rs/master/data/screenshots/screenshot1</image>
+      <image type="source">https://raw.githubusercontent.com/grumlimited/authenticator-rs/master/data/screenshots/screenshot2</image>
+      <image type="source">https://raw.githubusercontent.com/grumlimited/authenticator-rs/master/data/screenshots/screenshot3</image>
     </screenshot>
   </screenshots>
   <releases>
@@ -23,4 +25,8 @@
   </releases>
   <update_contact>rgallet@grumlimited.co.uk</update_contact>
   <content_rating type="oars-1.0" />
+  <kudos>
+    <kudo>Bilal Elmoussaoui</kudo>
+  </kudos>
+
 </component>
