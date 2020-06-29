@@ -12,21 +12,24 @@ pub enum IconError {
 
 impl IconParser {
     // #[tokio::main]
-    async fn html(sender: Sender<String>, url: &str) {
-        let html: Result<String> = match reqwest::get(url).await {
-            Ok(response) => response.text().await,
-            Err(e) => Err(e),
-        };
+    async fn html(sender: Sender<String>, url: &str) -> Result<()> {
+        // let html: Result<String> = match reqwest::get(url).await {
+        //     Ok(response) => response.text().await,
+        //     Err(e) => Err(e),
+        // };
+        //
+        // match html {
+        //     Ok(html) => {
+        //         Self::icon(sender, url, html.as_str()).await;
+        //     }
+        //     Err(e) => {}
+        // };
 
-        match html {
-            Ok(html) => {
-                Self::icon(sender, url, html.as_str()).await;
-            }
-            Err(e) => {}
-        };
+        let html = reqwest::get(url).await?.text().await?;
+        Self::icon(sender, url, html.as_str()).await
     }
 
-    async fn icon(sender: Sender<String>, url: &str, html: &str) {
+    async fn icon(sender: Sender<String>, url: &str, html: &str) -> Result<()> {
         let icon_url: std::result::Result<String, IconError> = {
             let document = Html::parse_document(html);
 
@@ -42,20 +45,24 @@ impl IconParser {
                 None => Err(IconError::ParsingError),
             }
         };
-        Self::download(sender, icon_url.unwrap().as_str()).await;
+
+        Self::download(sender, icon_url.unwrap().as_str()).await
     }
 
-    async fn download(sender: Sender<String>, icon_url: &str) {
-        let mut resp = reqwest::get(icon_url).await;
+    async fn download(sender: Sender<String>, icon_url: &str) -> Result<()> {
+        // let mut resp = reqwest::get(icon_url).await;
+        //
+        // match resp {
+        //     Ok(response) => {
+        //         let bytes: Result<bytes::Bytes> = response.bytes().await;
+        //         let bytes = bytes.unwrap();
+        //         std::fs::write("/tmp/foo", bytes.to_vec()).expect("Unable to write file");
+        //     }
+        //     Err(e) => {}
+        // };
 
-        match resp {
-            Ok(response) => {
-                let bytes: Result<bytes::Bytes> = response.bytes().await;
-                let bytes = bytes.unwrap();
-                std::fs::write("/tmp/foo", bytes.to_vec()).expect("Unable to write file");
-            }
-            Err(e) => {}
-        };
+        let bytes = reqwest::get(icon_url).await?.bytes().await?;
+        Ok(())
     }
 }
 
