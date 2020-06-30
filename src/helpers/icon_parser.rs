@@ -1,35 +1,36 @@
+use regex::Regex;
 use reqwest::*;
 use scraper::*;
 use std::sync::mpsc::{channel, Sender};
-
 #[derive(Debug, Clone)]
 pub struct IconParser {}
+use crate::helpers::LoadError::SaveError;
+use reqwest::header::HeaderValue;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IconError {
     ParsingError,
 }
 
-impl IconParser {
-    // #[tokio::main]
-    async fn html(sender: Sender<String>, url: &str) -> Result<()> {
-        // let html: Result<String> = match reqwest::get(url).await {
-        //     Ok(response) => response.text().await,
-        //     Err(e) => Err(e),
-        // };
-        //
-        // match html {
-        //     Ok(html) => {
-        //         Self::icon(sender, url, html.as_str()).await;
-        //     }
-        //     Err(e) => {}
-        // };
+#[derive(Debug, Clone, PartialEq)]
+pub struct IconParserResult {
+    content: Vec<u8>,
+    extension: Option<String>,
+}
 
-        let html = reqwest::get(url).await?.text().await?;
+impl IconParser {
+    async fn html(sender: Sender<IconParserResult>, url: &str) -> Result<IconParserResult> {
+        let response = reqwest::get(url).await?;
+        let html = response.text().await?;
         Self::icon(sender, url, html.as_str()).await
     }
 
-    async fn icon(sender: Sender<String>, url: &str, html: &str) -> Result<()> {
+    async fn icon(
+        sender: Sender<IconParserResult>,
+        url: &str,
+        html: &str,
+    ) -> Result<IconParserResult> {
         let icon_url: std::result::Result<String, IconError> = {
             let document = Html::parse_document(html);
 
@@ -49,20 +50,38 @@ impl IconParser {
         Self::download(sender, icon_url.unwrap().as_str()).await
     }
 
-    async fn download(sender: Sender<String>, icon_url: &str) -> Result<()> {
-        // let mut resp = reqwest::get(icon_url).await;
-        //
-        // match resp {
-        //     Ok(response) => {
-        //         let bytes: Result<bytes::Bytes> = response.bytes().await;
-        //         let bytes = bytes.unwrap();
-        //         std::fs::write("/tmp/foo", bytes.to_vec()).expect("Unable to write file");
-        //     }
-        //     Err(e) => {}
-        // };
+    async fn download(
+        sender: Sender<IconParserResult>,
+        icon_url: &str,
+    ) -> Result<IconParserResult> {
+        let response = reqwest::get(icon_url).await?;
+        let content_type = response.headers().get("content-type");
 
-        let bytes = reqwest::get(icon_url).await?.bytes().await?;
-        Ok(())
+        let extension = content_type.and_then(|content_type| match content_type.to_str() {
+            Ok(content_type) => Self::extension(content_type).map(str::to_owned),
+            Err(_) => None,
+        });
+
+        let bytes = response.bytes().await?;
+
+        let result = IconParserResult {
+            content: bytes.to_vec(),
+            extension,
+        };
+
+        sender.send(result.clone());
+
+        Ok(result)
+    }
+
+    fn extension(content_type: &str) -> Option<&str> {
+        let regex = Regex::new(r"^.*/(?P<extension>.*?)$").unwrap();
+
+        regex.captures(content_type).and_then(|captures| {
+            captures
+                .name("extension")
+                .map(|extension| extension.as_str())
+        })
     }
 }
 
@@ -74,6 +93,33 @@ mod tests {
     use tokio::runtime::Runtime;
 
     #[test]
+    fn extension() {
+        assert_eq!("png", IconParser::extension("image/png").unwrap());
+        assert_eq!(None, IconParser::extension(""));
+        assert_eq!(None, IconParser::extension("no slash"));
+    }
+
+    #[test]
+    fn download() {
+        let mut rt = tokio::runtime::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (sender, receiver) = channel::<IconParserResult>();
+
+        let fut = IconParser::download(sender, "https://www.rust-lang.org/static/images/favicon-32x32.png");
+
+        let r: tokio::task::JoinHandle<_> = rt.spawn(fut);
+        let s = rt.block_on(r).unwrap().unwrap();
+        println!("{:?}", s);
+
+        let s = receiver.recv();
+        println!("{:?}", s)
+    }
+
+    #[test]
     fn xxx() {
         let mut rt = tokio::runtime::Builder::new()
             .threaded_scheduler()
@@ -81,7 +127,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let (sender, receiver) = channel::<String>();
+        let (sender, receiver) = channel::<IconParserResult>();
 
         let r: tokio::task::JoinHandle<_> =
             rt.spawn(IconParser::html(sender, "https://www.rust-lang.org"));
