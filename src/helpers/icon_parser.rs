@@ -111,12 +111,11 @@ mod tests {
 
         let fut = IconParser::download(sender, "https://www.rust-lang.org/static/images/favicon-32x32.png");
 
-        let r: tokio::task::JoinHandle<_> = rt.spawn(fut);
-        let s = rt.block_on(r).unwrap().unwrap();
-        println!("{:?}", s);
+        let icon_parser_result = rt.block_on(rt.spawn(fut)).unwrap().unwrap();
+        assert_eq!("png", icon_parser_result.extension.unwrap());
 
-        let s = receiver.recv();
-        println!("{:?}", s)
+        let icon_parser_result = receiver.recv().unwrap();
+        assert_eq!("png", icon_parser_result.extension.unwrap());
     }
 
     #[test]
