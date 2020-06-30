@@ -17,7 +17,6 @@
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-ok</property>
   </object>
-  <object class="GtkSizeGroup" id="add_account_inputs"/>
   <object class="GtkAdjustment" id="edit_account_input_secret_scrollable">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
@@ -412,15 +411,16 @@
                       <object class="GtkLabel" id="add_group_label_name">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="halign">start</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
                         <property name="margin_top">20</property>
-                        <property name="margin_bottom">20</property>
+                        <property name="margin_bottom">5</property>
                         <property name="label" translatable="yes">Name</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
+                        <property name="top_attach">0</property>
                       </packing>
                     </child>
                     <child>
@@ -430,10 +430,41 @@
                         <property name="can_focus">True</property>
                         <property name="margin_end">5</property>
                         <property name="margin_top">20</property>
-                        <property name="margin_bottom">20</property>
+                        <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
                         <property name="width_chars">23</property>
                         <signal name="activate" handler="save_group" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="add_group_url_label">
+                        <property name="name">add_group_url_label</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="margin_start">5</property>
+                        <property name="margin_end">5</property>
+                        <property name="margin_bottom">20</property>
+                        <property name="label" translatable="yes">URL</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="add_group_url_input">
+                        <property name="name">add_group_url_input</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="margin_end">5</property>
+                        <property name="margin_bottom">20</property>
+                        <property name="hexpand">True</property>
+                        <property name="input_purpose">url</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -441,7 +472,16 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkImage" id="add_group_image_input">
+                        <property name="width_request">128</property>
+                        <property name="height_request">128</property>
+                        <property name="can_focus">False</property>
+                        <property name="icon_name">content-loading-symbolic</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">2</property>
+                      </packing>
                     </child>
                     <child>
                       <placeholder/>
@@ -660,11 +700,22 @@ See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pu
       <placeholder/>
     </child>
   </object>
+  <object class="GtkSizeGroup" id="add_account_inputs">
+    <widgets>
+      <widget name="add_group_url_input"/>
+    </widgets>
+  </object>
   <object class="GtkSizeGroup" id="add_account_labels">
     <widgets>
       <widget name="edit_account_label_group"/>
       <widget name="edit_account_label_name"/>
       <widget name="edit_account_label_secret"/>
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="group_form_entries">
+    <property name="ignore_hidden">True</property>
+    <widgets>
+      <widget name="add_group_input_name"/>
     </widgets>
   </object>
 </interface>

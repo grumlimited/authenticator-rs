@@ -34,6 +34,13 @@ impl ConfigManager {
         path
     }
 
+    fn icons_path() -> std::path::PathBuf {
+        let mut path = ConfigManager::path();
+        path.push("icons");
+
+        path
+    }
+
     pub fn path() -> std::path::PathBuf {
         if let Some(project_dirs) =
             directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs")
@@ -69,6 +76,16 @@ impl ConfigManager {
 
     pub fn check_configuration_dir() -> Result<(), LoadError> {
         let path = Self::path();
+
+        if !path.exists() {
+            debug!("Creating directory {}", path.display());
+        }
+
+        std::fs::create_dir_all(path)
+            .map(|_| ())
+            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))?;
+
+        let path = Self::icons_path();
 
         if !path.exists() {
             debug!("Creating directory {}", path.display());
