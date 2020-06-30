@@ -484,6 +484,20 @@
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkLabel" id="add_group_icon_filename">
+                        <property name="name">add_group_icon_filename</property>
+                        <property name="can_focus">False</property>
+                        <property name="no_show_all">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
                       <placeholder/>
                     </child>
                     <style>

@@ -1,6 +1,10 @@
+use curl::easy::Easy;
+use curl::Error;
+use futures::AsyncWriteExt;
 use regex::Regex;
 use scraper::*;
-use std::sync::mpsc::Sender;
+use glib::Sender;
+
 #[derive(Debug, Clone)]
 pub struct IconParser {}
 
@@ -9,7 +13,7 @@ pub type IconParserResult<T> = std::result::Result<T, IconError>;
 #[derive(Debug)]
 pub enum IconError {
     ParsingError,
-    ReqwestError(reqwest::Error),
+    CurlError(Error),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -19,68 +23,94 @@ pub struct AccountGroupIcon {
 }
 
 impl IconParser {
-    async fn html(
-        sender: Sender<AccountGroupIcon>,
-        url: &str,
+    pub async fn html_notify(
+        sender: Sender<IconParserResult<AccountGroupIcon>>,
+        url: String,
+    ) {
+        let result = Self::html(url).await;
+        sender.send(result);
+    }
+
+    pub async fn html(
+        url: String,
     ) -> IconParserResult<AccountGroupIcon> {
-        let response = reqwest::get(url).await.map_err(IconError::ReqwestError)?;
-        let html = response.text().await.map_err(IconError::ReqwestError)?;
-        Self::icon(sender, url, html.as_str()).await
+        let mut data = Vec::new();
+        let mut handle = Easy::new();
+        handle.url(url.as_str()).unwrap();
+
+        {
+            let mut transfer = handle.transfer();
+            transfer
+                .write_function(|new_data| {
+                    data.extend_from_slice(new_data);
+                    Ok(new_data.len())
+                })
+                .unwrap();
+            transfer.perform().unwrap();
+        }
+
+        let html = String::from_utf8_lossy(data.as_slice()).into_owned();
+
+        Self::icon( url.as_str(), html.as_str()).await
     }
 
     async fn icon(
-        sender: Sender<AccountGroupIcon>,
         url: &str,
         html: &str,
     ) -> IconParserResult<AccountGroupIcon> {
-        let icon_url: std::result::Result<String, IconError> = {
+        let icon_url = {
             let document = Html::parse_document(html);
 
-            let selector = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
+            let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
+            let selector_2 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
 
-            match document
-                .select(&selector)
-                .into_iter()
-                .next()
-                .and_then(|v| v.value().attr("href"))
-            {
+            let option_1 = document.select(&selector_1).into_iter().next();
+
+            let option_2 = document.select(&selector_2).into_iter().next();
+
+            let choice = option_1.or(option_2);
+
+            match choice.and_then(|v| v.value().attr("href")) {
                 Some(href) if href.starts_with("/") => Ok(format!("{}/{}", url, href)),
                 Some(href) if href.starts_with("http") => Ok(format!("{}", href)),
                 Some(href) => Ok(format!("{}/{}", url, href)),
                 None => Err(IconError::ParsingError),
             }
-        };
-
-        match icon_url {
-            Ok(icon_url) => Self::download(sender, icon_url.as_str()).await,
-            Err(r) => Err(r),
         }
+        .map_err(|_| IconError::ParsingError)?;
+
+        Self::download(icon_url.as_str()).await
     }
 
     async fn download(
-        sender: Sender<AccountGroupIcon>,
         icon_url: &str,
     ) -> IconParserResult<AccountGroupIcon> {
-        let response = reqwest::get(icon_url)
-            .await
-            .map_err(IconError::ReqwestError)?;
-        let content_type = response.headers().get("content-type");
+        let mut data = Vec::new();
+        let mut handle = Easy::new();
 
-        let extension = content_type.and_then(|content_type| match content_type.to_str() {
-            Ok(content_type) => Self::extension(content_type).map(str::to_owned),
-            Err(_) => None,
-        });
+        handle.url(icon_url).map_err(IconError::CurlError)?;
 
-        let bytes = response.bytes().await.map_err(IconError::ReqwestError)?;
+        {
+            let mut transfer = handle.transfer();
+            transfer
+                .write_function(|new_data| {
+                    data.extend_from_slice(new_data);
+                    Ok(new_data.len())
+                })
+                .map_err(IconError::CurlError)?;
 
-        let result = AccountGroupIcon {
-            content: bytes.to_vec(),
+            transfer.perform().map_err(IconError::CurlError)?;
+        }
+
+        let extension = handle
+            .content_type()
+            .map_err(IconError::CurlError)
+            .map(|e| e.and_then(Self::extension).map(str::to_owned))?;
+
+        Ok(AccountGroupIcon {
+            content: data,
             extension,
-        };
-
-        sender.send(result.clone()).expect("Boom!");
-
-        Ok(result)
+        })
     }
 
     fn extension(content_type: &str) -> Option<&str> {
@@ -97,7 +127,7 @@ impl IconParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::mpsc::channel;
+    use async_std::task;
 
     #[test]
     fn extension() {
@@ -108,42 +138,21 @@ mod tests {
 
     #[test]
     fn download() {
-        let mut rt = tokio::runtime::Builder::new()
-            .threaded_scheduler()
-            .enable_all()
-            .build()
-            .unwrap();
 
-        let (sender, receiver) = channel::<AccountGroupIcon>();
 
         let fut = IconParser::download(
-            sender,
             "https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg",
         );
 
-        let icon_parser_result = rt.block_on(rt.spawn(fut)).unwrap().unwrap();
-        assert_eq!("jpeg", icon_parser_result.extension.unwrap());
-
-        let icon_parser_result = receiver.recv().unwrap();
+        let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());
     }
 
     #[test]
     fn html() {
-        let mut rt = tokio::runtime::Builder::new()
-            .threaded_scheduler()
-            .enable_all()
-            .build()
-            .unwrap();
+        let fut = IconParser::html("https://www.bbc.com".to_owned());
 
-        let (sender, receiver) = channel::<AccountGroupIcon>();
-
-        let fut = IconParser::html(sender, "https://www.bbc.com");
-
-        let icon_parser_result = rt.block_on(rt.spawn(fut)).unwrap().unwrap();
-        assert_eq!("jpeg", icon_parser_result.extension.unwrap());
-
-        let icon_parser_result = receiver.recv().unwrap();
+        let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());
     }
 }
