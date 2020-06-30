@@ -8,6 +8,9 @@ use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+use std::fs::File;
+use std::io::prelude::*;
+
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
     pub container: gtk::Box,
@@ -15,6 +18,7 @@ pub struct AddGroupWindow {
     pub url_input: gtk::Entry,
     pub cancel_button: gtk::Button,
     pub save_button: gtk::Button,
+    pub image_input: gtk::Image,
     pub icon_filename: gtk::Label,
 }
 
@@ -26,6 +30,7 @@ impl AddGroupWindow {
             url_input: builder.get_object("add_group_url_input").unwrap(),
             cancel_button: builder.get_object("add_group_cancel").unwrap(),
             save_button: builder.get_object("add_group_save").unwrap(),
+            image_input: builder.get_object("add_group_image_input").unwrap(),
             icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
         }
     }
@@ -82,21 +87,26 @@ impl AddGroupWindow {
         }
 
         rx.attach(None, move |v| {
-            let _icon_filename = gui.add_group.icon_filename.clone();
+            let icon_filename = gui.add_group.icon_filename.clone();
+            let image_input = gui.add_group.image_input.clone();
 
-            if _icon_filename.get_label().is_none() {
-                let r = uuid::Uuid::new_v4();
-                println!("bbb {:?}", r);
-                _icon_filename.set_label(r.to_string().as_str());
+            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty() {
+                let uuid = uuid::Uuid::new_v4();
+                icon_filename.set_label(uuid.to_string().as_str());
             }
 
             match v {
                 Ok(v) => {
-                    println!("xxx {:?}", v.extension)
-                }
-                Err(e) => {
-                    println!("ppp {:?}", e)
-                }
+                    let mut dir = ConfigManager::icons_path();
+                    dir.push(format!("{}.{}", icon_filename.get_label().unwrap(), v.extension.unwrap()));
+                    let dir_2 = dir.clone();
+
+                    let mut file = File::create(dir).expect("e");
+                    file.write_all(v.content.as_slice()).expect("e");
+
+                    image_input.set_from_file(dir_2);
+                },
+                Err(e) => println!("ppp {:?}", e),
             }
 
             glib::Continue(true)

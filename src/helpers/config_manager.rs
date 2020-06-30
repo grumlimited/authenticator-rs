@@ -34,7 +34,7 @@ impl ConfigManager {
         path
     }
 
-    fn icons_path() -> std::path::PathBuf {
+    pub fn icons_path() -> std::path::PathBuf {
         let mut path = ConfigManager::path();
         path.push("icons");
 

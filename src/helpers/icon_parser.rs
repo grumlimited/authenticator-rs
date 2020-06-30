@@ -1,10 +1,10 @@
 use curl::easy::Easy;
 use curl::Error;
 use futures::AsyncWriteExt;
+use gdk::enums::key::ht;
 use glib::Sender;
 use regex::Regex;
 use scraper::*;
-use gdk::enums::key::ht;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -31,8 +31,10 @@ impl IconParser {
 
     pub async fn html(url: String) -> IconParserResult<AccountGroupIcon> {
         let mut data = Vec::new();
+
         let mut handle = Easy::new();
         handle.follow_location(true);
+        handle.autoreferer(true);
         handle.url(url.as_str()).unwrap();
 
         {
@@ -48,11 +50,12 @@ impl IconParser {
 
         let html = String::from_utf8_lossy(data.as_slice()).into_owned();
 
-        Self::icon( url.as_str(), html.as_str()).await
+        Self::icon(url.as_str(), html.as_str()).await
     }
 
     async fn icon(url: &str, html: &str) -> IconParserResult<AccountGroupIcon> {
         let icon_url = {
+            //println!("{}", html);
             let document = Html::parse_document(html);
 
             let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
@@ -68,10 +71,11 @@ impl IconParser {
                 Some(href) if href.starts_with("/") => Ok(format!("{}/{}", url, href)),
                 Some(href) if href.starts_with("http") => Ok(format!("{}", href)),
                 Some(href) => Ok(format!("{}/{}", url, href)),
-                None => Err(IconError::ParsingError),
+                None => {
+                    Err(IconError::ParsingError)
+                },
             }
-        }
-        .map_err(|_| IconError::ParsingError)?;
+        }?;
 
         Self::download(icon_url.as_str()).await
     }
@@ -80,6 +84,8 @@ impl IconParser {
         let mut data = Vec::new();
         let mut handle = Easy::new();
 
+        handle.follow_location(true);
+        handle.autoreferer(true);
         handle.url(icon_url).map_err(IconError::CurlError)?;
 
         {
