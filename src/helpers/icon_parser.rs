@@ -109,7 +109,10 @@ mod tests {
 
         let (sender, receiver) = channel::<IconParserResult>();
 
-        let fut = IconParser::download(sender, "https://www.rust-lang.org/static/images/favicon-32x32.png");
+        let fut = IconParser::download(
+            sender,
+            "https://www.rust-lang.org/static/images/favicon-32x32.png",
+        );
 
         let icon_parser_result = rt.block_on(rt.spawn(fut)).unwrap().unwrap();
         assert_eq!("png", icon_parser_result.extension.unwrap());
@@ -119,7 +122,7 @@ mod tests {
     }
 
     #[test]
-    fn xxx() {
+    fn html() {
         let mut rt = tokio::runtime::Builder::new()
             .threaded_scheduler()
             .enable_all()
@@ -128,21 +131,12 @@ mod tests {
 
         let (sender, receiver) = channel::<IconParserResult>();
 
-        let r: tokio::task::JoinHandle<_> =
-            rt.spawn(IconParser::html(sender, "https://www.rust-lang.org"));
-        rt.block_on(r);
+        let fut = IconParser::html(sender, "https://www.rust-lang.org");
 
-        // let s = receiver.recv();
+        let icon_parser_result = rt.block_on(rt.spawn(fut)).unwrap().unwrap();
+        assert_eq!("png", icon_parser_result.extension.unwrap());
 
-        // println!("{:?}", s)
-
-        // let x1 = s.unwrap();
-        // // let html = x1.unwrap();
-        // let x = x1.to_owned();
-        // let html = x.as_str();
-        //
-        // let r: tokio::task::JoinHandle<_> = rt.spawn(IconParser::icon(html));
-        // let s = rt.block_on(r);
-        // println!("{:?}", s)
+        let icon_parser_result = receiver.recv().unwrap();
+        assert_eq!("png", icon_parser_result.extension.unwrap());
     }
 }
