@@ -1,9 +1,10 @@
 use curl::easy::Easy;
 use curl::Error;
 use futures::AsyncWriteExt;
+use glib::Sender;
 use regex::Regex;
 use scraper::*;
-use glib::Sender;
+use gdk::enums::key::ht;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -18,24 +19,20 @@ pub enum IconError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AccountGroupIcon {
-    content: Vec<u8>,
-    extension: Option<String>,
+    pub content: Vec<u8>,
+    pub extension: Option<String>,
 }
 
 impl IconParser {
-    pub async fn html_notify(
-        sender: Sender<IconParserResult<AccountGroupIcon>>,
-        url: String,
-    ) {
+    pub async fn html_notify(sender: Sender<IconParserResult<AccountGroupIcon>>, url: String) {
         let result = Self::html(url).await;
         sender.send(result);
     }
 
-    pub async fn html(
-        url: String,
-    ) -> IconParserResult<AccountGroupIcon> {
+    pub async fn html(url: String) -> IconParserResult<AccountGroupIcon> {
         let mut data = Vec::new();
         let mut handle = Easy::new();
+        handle.follow_location(true);
         handle.url(url.as_str()).unwrap();
 
         {
@@ -45,8 +42,8 @@ impl IconParser {
                     data.extend_from_slice(new_data);
                     Ok(new_data.len())
                 })
-                .unwrap();
-            transfer.perform().unwrap();
+                .map_err(IconError::CurlError)?;
+            transfer.perform().map_err(IconError::CurlError)?;
         }
 
         let html = String::from_utf8_lossy(data.as_slice()).into_owned();
@@ -54,10 +51,7 @@ impl IconParser {
         Self::icon( url.as_str(), html.as_str()).await
     }
 
-    async fn icon(
-        url: &str,
-        html: &str,
-    ) -> IconParserResult<AccountGroupIcon> {
+    async fn icon(url: &str, html: &str) -> IconParserResult<AccountGroupIcon> {
         let icon_url = {
             let document = Html::parse_document(html);
 
@@ -82,9 +76,7 @@ impl IconParser {
         Self::download(icon_url.as_str()).await
     }
 
-    async fn download(
-        icon_url: &str,
-    ) -> IconParserResult<AccountGroupIcon> {
+    async fn download(icon_url: &str) -> IconParserResult<AccountGroupIcon> {
         let mut data = Vec::new();
         let mut handle = Easy::new();
 
@@ -138,8 +130,6 @@ mod tests {
 
     #[test]
     fn download() {
-
-
         let fut = IconParser::download(
             "https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg",
         );
@@ -150,9 +140,9 @@ mod tests {
 
     #[test]
     fn html() {
-        let fut = IconParser::html("https://www.bbc.com".to_owned());
+        let fut = IconParser::html("https://www.free.fr".to_owned());
 
         let icon_parser_result = task::block_on(fut).unwrap();
-        assert_eq!("jpeg", icon_parser_result.extension.unwrap());
+        assert_eq!("png", icon_parser_result.extension.unwrap());
     }
 }

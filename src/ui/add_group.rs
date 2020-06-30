@@ -1,4 +1,4 @@
-use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
+use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
@@ -58,38 +58,50 @@ impl AddGroupWindow {
     }
 
     fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
-        // let url_input = gui.add_group.url_input.clone();
-        //
-        // let (sender, receiver) = std::sync::mpsc::channel::<AccountGroupIcon>();
-        //
-        // let r = uuid::Uuid::new_v4();
-        // println!("aaa {:?}", r);
-        //
-        // {
-        //     let gui_clone = gui.clone();
-        //     let runtime = gui.runtime.clone();
-        //
-        //     url_input.connect_focus_out_event(move |_, _| {
-        //         let r = uuid::Uuid::new_v4();
-        //         println!("bbb {:?}", r);
-        //
-        //         let gui_clone = gui_clone.clone();
-        //         let add_group = gui_clone.add_group;
-        //         let url: String = add_group.url_input.get_buffer().get_text();
-        //
-        //         let sender = sender.clone();
-        //         let fut = IconParser::html(sender, url.clone());
-        //
-        //         let runtime = runtime.lock().unwrap();
-        //         runtime.spawn(fut);
-        //
-        //         println!("{}", url);
-        //
-        //         // runtime.shutdown_timeout(Duration::from_millis(500));
-        //
-        //         Inhibit(true)
-        //     });
-        // }
+        let url_input = gui.add_group.url_input.clone();
+
+        let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
+            glib::PRIORITY_DEFAULT,
+        );
+
+        {
+            let gui_clone = gui.clone();
+            let pool = gui.pool.clone();
+            url_input.connect_focus_out_event(move |_, _| {
+                let gui_clone = gui_clone.clone();
+                let add_group = gui_clone.add_group;
+                let url: String = add_group.url_input.get_buffer().get_text();
+
+                let tx = tx.clone();
+                let fut = IconParser::html_notify(tx, url.clone());
+
+                pool.spawn_ok(fut);
+
+                Inhibit(true)
+            });
+        }
+
+        rx.attach(None, move |v| {
+            let _icon_filename = gui.add_group.icon_filename.clone();
+
+            if _icon_filename.get_label().is_none() {
+                let r = uuid::Uuid::new_v4();
+                println!("bbb {:?}", r);
+                _icon_filename.set_label(r.to_string().as_str());
+            }
+
+            match v {
+                Ok(v) => {
+                    println!("xxx {:?}", v.extension)
+                }
+                Err(e) => {
+                    println!("ppp {:?}", e)
+                }
+            }
+
+            glib::Continue(true)
+        });
+
         //
         // let runtime_2 = gui.runtime.clone();
         // let _icon_filename = gui.add_group.icon_filename.clone();

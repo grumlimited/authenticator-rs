@@ -475,6 +475,7 @@
                       <object class="GtkImage" id="add_group_image_input">
                         <property name="width_request">128</property>
                         <property name="height_request">128</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="icon_name">content-loading-symbolic</property>
                       </object>
@@ -486,8 +487,9 @@
                     <child>
                       <object class="GtkLabel" id="add_group_icon_filename">
                         <property name="name">add_group_icon_filename</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="no_show_all">True</property>
+                        <property name="label" translatable="yes">xxx</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
