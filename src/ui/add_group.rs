@@ -212,8 +212,8 @@ impl AddGroupWindow {
         //SAVE
         with_action(
             gui.clone(),
-            connection.clone(),
-            gui.add_group.save_button.clone(),
+            connection,
+            gui.add_group.save_button,
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {

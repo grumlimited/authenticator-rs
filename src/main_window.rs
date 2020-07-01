@@ -228,7 +228,7 @@ impl MainWindow {
         import_button.connect_clicked(import_accounts(
             self.clone(),
             popover.clone(),
-            connection.clone(),
+            connection,
             self.pool.clone(),
         ));
 

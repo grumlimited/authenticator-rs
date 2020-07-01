@@ -61,7 +61,7 @@ impl AccountsWindow {
 
         AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
 
-        AccountsWindow::delete_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::delete_buttons_actions(gui.clone(), connection);
 
         gui.accounts_window.accounts_container.show_all();
     }

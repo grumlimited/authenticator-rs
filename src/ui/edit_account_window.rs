@@ -122,8 +122,8 @@ impl EditAccountWindow {
 
         with_action(
             gui.clone(),
-            connection.clone(),
-            gui.edit_account_window.save_button.clone(),
+            connection,
+            gui.edit_account_window.save_button,
             |connection, gui| {
                 Box::new(move |_| {
                     gui.edit_account_window.reset();
