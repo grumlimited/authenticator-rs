@@ -62,6 +62,7 @@ impl AddGroupWindow {
         let icon_error = self.icon_error.clone();
         let icon_reload = self.icon_reload.clone();
         let image_input = self.image_input.clone();
+        let save_button = self.save_button.clone();
 
         input_group.set_text("");
 
@@ -70,6 +71,7 @@ impl AddGroupWindow {
         icon_error.set_label("");
         icon_error.set_visible(false);
 
+        save_button.set_sensitive(true);
         icon_reload.set_sensitive(true);
         image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
@@ -100,6 +102,7 @@ impl AddGroupWindow {
             icon_reload.connect_clicked(move |_| {
                 let gui_clone = gui_clone.clone();
                 let icon_reload = gui_clone.add_group.icon_reload.clone();
+                let save_button = gui_clone.add_group.save_button.clone();
                 let image_input = gui_clone.add_group.image_input.clone();
                 let icon_filename = gui_clone.add_group.icon_filename.clone();
                 let icon_error = gui_clone.add_group.icon_error.clone();
@@ -117,6 +120,7 @@ impl AddGroupWindow {
                 let tx = tx.clone();
                 let fut = IconParser::html_notify(tx, url);
 
+                save_button.set_sensitive(false);
                 icon_reload.set_sensitive(false);
                 image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
@@ -129,7 +133,10 @@ impl AddGroupWindow {
             let image_input = gui.add_group.image_input.clone();
             let icon_reload = gui.add_group.icon_reload.clone();
             let icon_error = gui.add_group.icon_error.clone();
+            let save_button = gui.add_group.save_button.clone();
+
             icon_reload.set_sensitive(true);
+            save_button.set_sensitive(true);
 
             if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
             {
