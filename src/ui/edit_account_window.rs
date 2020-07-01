@@ -165,18 +165,6 @@ impl EditAccountWindow {
                             .unwrap();
 
                         match account_id.get_buffer().get_text().parse() {
-                            Ok(account_id) if account_id == 0 => {
-                                let mut account = Account::new(
-                                    account_id,
-                                    group_id,
-                                    name.as_str(),
-                                    secret.as_str(),
-                                );
-
-                                let connection = connection.clone();
-                                let _ =
-                                    ConfigManager::save_account(connection, &mut account).unwrap();
-                            }
                             Ok(account_id) => {
                                 let mut account = Account::new(
                                     account_id,
@@ -189,7 +177,14 @@ impl EditAccountWindow {
                                 let _ = ConfigManager::update_account(connection, &mut account)
                                     .unwrap();
                             }
-                            Err(e) => panic!(e),
+                            Err(_) => {
+                                let mut account =
+                                    Account::new(0, group_id, name.as_str(), secret.as_str());
+
+                                let connection = connection.clone();
+                                let _ =
+                                    ConfigManager::save_account(connection, &mut account).unwrap();
+                            }
                         };
 
                         let connection = connection.clone();

@@ -273,8 +273,6 @@ impl MainWindow {
             format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str(),
         );
 
-        let add_image: gtk::Image = builder.get_object("add_image").unwrap();
-
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
         let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
@@ -303,7 +301,6 @@ impl MainWindow {
         }
 
         let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
-        action_menu.set_image(Some(&add_image));
 
         {
             let widgets = self.accounts_window.widgets.clone();
@@ -348,7 +345,6 @@ impl MainWindow {
                 let first_entry = first_entry.as_deref();
                 edit_account_window.input_group.set_active_id(first_entry);
 
-                edit_account_window.input_account_id.set_text("0");
                 edit_account_window.input_name.set_text("");
 
                 edit_account_window

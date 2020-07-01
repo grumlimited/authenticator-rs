@@ -258,11 +258,7 @@ impl AddGroupWindow {
 
                                     debug!("saving group {:?}", group);
 
-                                    {
-                                        let connection = connection.clone();
-                                        ConfigManager::update_group(connection, &mut group)
-                                            .unwrap();
-                                    }
+                                    ConfigManager::update_group(connection, &group).unwrap();
                                 }
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
@@ -272,7 +268,7 @@ impl AddGroupWindow {
                                         Some(url_input.as_str()),
                                         vec![],
                                     );
-                                    let connection = connection.clone();
+
                                     ConfigManager::save_group(connection, &mut group).unwrap();
                                 }
                             }

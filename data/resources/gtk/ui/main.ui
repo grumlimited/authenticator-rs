@@ -249,7 +249,7 @@
                     <child>
                       <object class="GtkEntry" id="edit_account_input_account_id">
                         <property name="name">edit_account_input_account_id</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
                         <property name="no_show_all">True</property>
                         <property name="width_chars">15</property>
                       </object>
