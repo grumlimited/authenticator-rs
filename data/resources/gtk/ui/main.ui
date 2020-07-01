@@ -457,7 +457,7 @@
                         <property name="halign">start</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_bottom">20</property>
+                        <property name="margin_bottom">5</property>
                         <property name="label" translatable="yes">URL</property>
                       </object>
                       <packing>
@@ -471,8 +471,10 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="margin_end">5</property>
-                        <property name="margin_bottom">20</property>
+                        <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
+                        <property name="text" translatable="yes">https://www.free.fr</property>
+                        <property name="placeholder_text" translatable="yes">https://</property>
                         <property name="input_purpose">url</property>
                       </object>
                       <packing>
@@ -489,6 +491,7 @@
                         <property name="can_focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
+                        <property name="margin_bottom">20</property>
                         <property name="icon_name">content-loading-symbolic</property>
                       </object>
                       <packing>
@@ -499,12 +502,13 @@
                     <child>
                       <object class="GtkLabel" id="add_group_icon_filename">
                         <property name="name">add_group_icon_filename</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="no_show_all">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">3</property>
+                        <property name="width">2</property>
                       </packing>
                     </child>
                     <child>
@@ -515,15 +519,13 @@
                         <property name="receives_default">True</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
+                        <property name="margin_bottom">20</property>
                         <property name="image">group_icon_reload_image</property>
                       </object>
                       <packing>
                         <property name="left_attach">2</property>
                         <property name="top_attach">2</property>
                       </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>

@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 use std::fs::File;
 use std::io::prelude::*;
+use gdk_pixbuf::Pixbuf;
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -91,7 +92,7 @@ impl AddGroupWindow {
             });
         }
 
-        rx.attach(None, move |v| {
+        rx.attach(None, move |account_group_icon| {
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
             let icon_reload = gui.add_group.icon_reload.clone();
@@ -104,20 +105,22 @@ impl AddGroupWindow {
                 icon_filename.set_label(uuid.to_string().as_str());
             }
 
-            match v {
-                Ok(v) => {
+            match account_group_icon {
+                Ok(account_group_icon) => {
                     let mut dir = ConfigManager::icons_path();
                     dir.push(format!(
                         "{}.{}",
                         icon_filename.get_label().unwrap(),
-                        v.extension.unwrap()
+                        account_group_icon.extension.unwrap()
                     ));
                     let dir_2 = dir.clone();
 
                     let mut file = File::create(dir).expect("e");
-                    file.write_all(v.content.as_slice()).expect("e");
+                    file.write_all(account_group_icon.content.as_slice()).expect("e");
 
-                    image_input.set_from_file(dir_2);
+                    let pixbuf = Pixbuf::new_from_file_at_scale(dir_2, 48, 48, true).unwrap();
+
+                    image_input.set_from_pixbuf(Some(&pixbuf));
                 }
                 Err(e) => println!("ppp {:?}", e),
             }

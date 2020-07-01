@@ -5,6 +5,7 @@ use gdk::enums::key::ht;
 use glib::Sender;
 use regex::Regex;
 use scraper::*;
+use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -75,7 +76,7 @@ impl IconParser {
             }
         }?;
 
-        println!("{}", icon_url);
+        debug!("{}", icon_url);
 
         Self::download(icon_url.as_str()).await
     }
