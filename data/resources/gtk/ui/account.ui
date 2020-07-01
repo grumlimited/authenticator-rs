@@ -63,7 +63,11 @@
         <property name="margin_end">5</property>
         <property name="popover">popover</property>
         <child>
-          <placeholder/>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="icon_name">view-more-symbolic</property>
+          </object>
         </child>
       </object>
       <packing>
