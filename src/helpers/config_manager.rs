@@ -479,28 +479,17 @@ mod tests {
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_group(conn, &mut group).unwrap().clone()
-        }
+        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
 
         account.group_id = group.id;
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_account(conn, &mut account)
-                .unwrap()
-                .clone()
-        }
+        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = {
-            let conn = conn.clone();
-            ConfigManager::get_account(conn, account.id).unwrap()
-        };
+        let account_reloaded = ConfigManager::get_account(conn.clone(), account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
@@ -521,10 +510,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_group(conn, &mut group).unwrap().clone()
-        }
+        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
 
         assert_eq!("new group", group.name);
 
@@ -549,19 +535,11 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_group(conn, &mut group).unwrap()
-        };
+        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "label", "secret");
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_account(conn, &mut account)
-                .unwrap()
-                .clone()
-        };
+        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
 
         assert!(account.id > 0);
         assert_eq!(group.id, account.group_id);
@@ -578,24 +556,16 @@ mod tests {
 
         runner::run(conn.clone()).unwrap();
 
-        {
-            let conn = conn.clone();
-            let conn2 = conn.clone();
-            let conn3 = conn.clone();
-            let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-            ConfigManager::save_group(conn, &mut group).unwrap();
+        let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
+        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
 
-            let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-            ConfigManager::save_account(conn2, &mut account1).expect("boom!");
-            let mut account2 = Account::new(0, group.id, "ccc", "secret3");
-            ConfigManager::save_account(conn3, &mut account2).expect("boom!");
-        };
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3");
+        ConfigManager::save_account(conn.clone(), &mut account1).expect("boom!");
+        let mut account2 = Account::new(0, group.id, "ccc", "secret3");
+        ConfigManager::save_account(conn.clone(), &mut account2).expect("boom!");
 
-        {
-            let conn = conn.clone();
-            let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
-            ConfigManager::save_group(conn, &mut group).expect("boom!");
-        };
+        let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
+        ConfigManager::save_group(conn.clone(), &mut group).expect("boom!");
 
         let results = ConfigManager::load_account_groups(conn).unwrap();
 
@@ -616,12 +586,7 @@ mod tests {
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        {
-            let conn = conn.clone();
-            ConfigManager::save_account(conn, &mut account)
-                .unwrap()
-                .clone()
-        }
+        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
 
         assert_eq!(1, account.id);
 
@@ -679,21 +644,14 @@ mod tests {
 
         assert_eq!((), result);
 
-        let result = {
-            let conn = conn.clone();
-            task::block_on(ConfigManager::restore_accounts(
-                PathBuf::from("test.yaml"),
-                conn,
-            ))
-        };
+        let result = task::block_on(ConfigManager::restore_accounts(
+            PathBuf::from("test.yaml"),
+            conn.clone(),
+        ));
 
         assert_eq!(Ok(()), result);
 
-        let account_groups = {
-            let conn = conn.clone();
-            ConfigManager::load_account_groups(conn)
-        }
-        .unwrap();
+        let account_groups = ConfigManager::load_account_groups(conn.clone()).unwrap();
 
         assert_eq!(1, account_groups.len());
         assert!(account_groups.first().unwrap().id > 0);
