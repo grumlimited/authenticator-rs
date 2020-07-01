@@ -86,7 +86,7 @@ impl IconParser {
             }
         }?;
 
-        debug!("{}", icon_url);
+        debug!("icon_url: {}", icon_url);
 
         Self::download(icon_url.as_str()).await
     }
