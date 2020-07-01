@@ -5,6 +5,8 @@ use log::debug;
 use regex::Regex;
 use scraper::*;
 use std::time::Duration;
+use std::path::Path;
+use gdk_pixbuf::Pixbuf;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -15,6 +17,7 @@ pub type IconParserResult<T> = std::result::Result<T, IconError>;
 pub enum IconError {
     ParsingError,
     CurlError(Error),
+    PixBufError,
 }
 
 impl std::fmt::Display for IconError {
@@ -22,6 +25,7 @@ impl std::fmt::Display for IconError {
         match self {
             IconError::ParsingError => "no icon found".fmt(f),
             IconError::CurlError(error) => error.fmt(f),
+            IconError::PixBufError => "invalid icon image".fmt(f),
         }
     }
 }
@@ -133,6 +137,12 @@ impl IconParser {
                 .name("extension")
                 .map(|extension| extension.as_str())
         })
+    }
+
+    pub fn load_icon(filepath: &Path) -> Result<Pixbuf, IconError> {
+        Pixbuf::new_from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| {
+            pixbuf.add_alpha(true, 255, 255, 255).unwrap_or(pixbuf)
+        }).map_err(|_| IconError::PixBufError)
     }
 }
 

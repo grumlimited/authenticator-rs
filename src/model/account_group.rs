@@ -1,7 +1,6 @@
-use crate::helpers::ConfigManager;
+use crate::helpers::{ConfigManager, IconParser};
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
-use gdk_pixbuf::Pixbuf;
 use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::*;
 use log::error;
@@ -68,11 +67,8 @@ impl AccountGroup {
         if let Some(image) = &self.icon {
             let mut dir = ConfigManager::icons_path();
             dir.push(&image);
-            match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
-                Ok(pixbuf) => {
-                    let transparent = pixbuf.add_alpha(true, 255, 255, 255).unwrap();
-                    group_image.set_from_pixbuf(Some(&transparent));
-                }
+            match IconParser::load_icon(&dir) {
+                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
             };
         } else {
