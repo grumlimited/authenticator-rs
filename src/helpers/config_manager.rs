@@ -117,8 +117,8 @@ impl ConfigManager {
         let conn = conn.lock().unwrap();
 
         conn.execute(
-            "UPDATE groups SET name = ?2 WHERE id = ?1",
-            params![group.id, group.name],
+            "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
+            params![group.id, group.name, group.icon, group.url],
         )
         .map(|_| ())
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
@@ -131,8 +131,8 @@ impl ConfigManager {
         let conn = conn.lock().unwrap();
 
         conn.execute(
-            "INSERT INTO groups (name, icon) VALUES (?1, ?2)",
-            params![group.name, group.icon],
+            "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
+            params![group.name, group.icon, group.url],
         )
         .unwrap();
 
@@ -532,12 +532,9 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        {
-            let conn = conn.clone();
-            ConfigManager::update_group(conn, &mut group)
-                .unwrap()
-                .clone()
-        }
+        ConfigManager::update_group(conn.clone(), &mut group).unwrap();
+
+        let group = ConfigManager::get_group(conn.clone(), group.id).unwrap();
 
         assert_eq!("other name", group.name);
         assert_eq!("url", group.url.unwrap());

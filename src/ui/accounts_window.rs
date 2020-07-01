@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
 use gtk::Builder;
-use log::error;
+use log::{debug, error};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -89,35 +89,38 @@ impl AccountsWindow {
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            let connection_1 = connection.clone();
-
             let group_widgets = group_widgets.clone();
             let widgets_list_clone = widgets_list_clone.clone();
 
-            delete_button.connect_clicked(move |_| {
-                let connection = connection_1.clone();
-                let _ = ConfigManager::delete_group(connection, group_id);
-                group_widgets.container.set_visible(false);
+            {
+                let connection = connection.clone();
+                delete_button.connect_clicked(move |_| {
+                    ConfigManager::delete_group(connection.clone(), group_id)
+                        .expect("Could not delete group");
+                    group_widgets.container.set_visible(false);
 
-                let mut group_widgets = widgets_list_clone.lock().unwrap();
-                group_widgets.retain(|x| x.id != group_id);
-            });
+                    let mut group_widgets = widgets_list_clone.lock().unwrap();
+                    group_widgets.retain(|x| x.id != group_id);
+                });
+            }
 
             {
                 let gui = gui.clone();
                 let connection = connection.clone();
                 let popover = popover.clone();
                 edit_button.connect_clicked(move |_| {
-                    let group = {
-                        let connection = connection.clone();
-                        ConfigManager::get_group(connection, group_id).unwrap()
-                    };
+                    let group = ConfigManager::get_group(connection.clone(), group_id).unwrap();
+
+                    debug!("Loading group {:?}", group);
 
                     popover.hide();
 
                     let gui = gui.clone();
                     let input_group = gui.add_group.input_group.clone();
                     input_group.set_text(group.name.as_str());
+
+                    let url_input = gui.add_group.url_input.clone();
+                    url_input.set_text(group.url.unwrap_or("".to_string()).as_str());
 
                     let group_id = gui.add_group.group_id.clone();
                     group_id.set_label(format!("{}", group.id).as_str());

@@ -255,6 +255,7 @@ impl AddGroupWindow {
                                     };
                                     group.name = name;
                                     group.icon = icon_filename.map(str::to_owned);
+                                    group.url = Some(url_input);
 
                                     debug!("saving group {:?}", group);
 
