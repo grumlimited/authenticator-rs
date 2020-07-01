@@ -23,7 +23,7 @@ impl std::fmt::Display for IconError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             IconError::ParsingError => "no icon found".fmt(f),
-            IconError::CurlError(error) => error.fmt(f)
+            IconError::CurlError(error) => error.fmt(f),
         }
     }
 }
