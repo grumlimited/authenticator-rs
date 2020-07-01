@@ -68,7 +68,7 @@ impl ConfigManager {
         stmt.query_map(params![], |row| {
             let id: u32 = row.get(0)?;
             let name: String = row.get(1)?;
-            let icon: Option<String> = row.get::<usize, String>(2).optional()?;
+            let icon = row.get::<usize, String>(2).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 id,
@@ -160,7 +160,7 @@ impl ConfigManager {
             |row| {
                 let group_id: u32 = row.get(0)?;
                 let group_name: String = row.get(1)?;
-                let group_icon: Option<String> = row.get(2).optional()?;
+                let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
 
                 Ok(AccountGroup::new(
                     group_id,
@@ -224,7 +224,7 @@ impl ConfigManager {
             |row| {
                 let group_id: u32 = row.get_unwrap(0);
                 let group_name: String = row.get_unwrap(1);
-                let group_icon: Option<String> = row.get(2).optional()?;
+                let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
 
                 let mut stmt = conn
                     .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
@@ -245,6 +245,7 @@ impl ConfigManager {
 
                 row.get::<usize, u32>(0).map(|id| {
                     AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), accounts)
+                    // AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), accounts)
                 })
             },
         )
