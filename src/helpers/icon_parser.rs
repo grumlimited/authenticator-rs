@@ -1,12 +1,12 @@
 use curl::easy::Easy;
 use curl::Error;
+use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
-use std::time::Duration;
 use std::path::Path;
-use gdk_pixbuf::Pixbuf;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -140,9 +140,9 @@ impl IconParser {
     }
 
     pub fn load_icon(filepath: &Path) -> Result<Pixbuf, IconError> {
-        Pixbuf::new_from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| {
-            pixbuf.add_alpha(true, 255, 255, 255).unwrap_or(pixbuf)
-        }).map_err(|_| IconError::PixBufError)
+        Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
+            .map(|pixbuf| pixbuf.add_alpha(true, 255, 255, 255).unwrap_or(pixbuf))
+            .map_err(|_| IconError::PixBufError)
     }
 }
 
