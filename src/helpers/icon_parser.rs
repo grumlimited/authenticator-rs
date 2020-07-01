@@ -49,7 +49,7 @@ impl IconParser {
         handle.follow_location(true).map_err(IconError::CurlError)?;
         handle.autoreferer(true).map_err(IconError::CurlError)?;
         handle
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_secs(5))
             .map_err(IconError::CurlError)?;
         handle.url(url.as_str()).map_err(IconError::CurlError)?;
 
@@ -102,7 +102,7 @@ impl IconParser {
         handle.follow_location(true).map_err(IconError::CurlError)?;
         handle.autoreferer(true).map_err(IconError::CurlError)?;
         handle
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_secs(5))
             .map_err(IconError::CurlError)?;
         handle.url(icon_url).map_err(IconError::CurlError)?;
 

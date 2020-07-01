@@ -242,20 +242,11 @@ impl AddGroupWindow {
 
                         let group_id = add_group.group_id.get_label().unwrap();
 
+                        debug!("group_id: {}", group_id);
+
                         {
                             let connection = connection.clone();
                             match group_id.parse() {
-                                Ok(group_id) if group_id == 0 => {
-                                    let mut group = AccountGroup::new(
-                                        0,
-                                        name.as_str(),
-                                        icon_filename,
-                                        Some(url_input.as_str()),
-                                        vec![],
-                                    );
-                                    let connection = connection.clone();
-                                    ConfigManager::save_group(connection, &mut group).unwrap();
-                                }
                                 Ok(group_id) => {
                                     let mut group = {
                                         let connection = connection.clone();
@@ -273,7 +264,17 @@ impl AddGroupWindow {
                                             .unwrap();
                                     }
                                 }
-                                Err(e) => panic!(e),
+                                Err(_) => {
+                                    let mut group = AccountGroup::new(
+                                        0,
+                                        name.as_str(),
+                                        icon_filename,
+                                        Some(url_input.as_str()),
+                                        vec![],
+                                    );
+                                    let connection = connection.clone();
+                                    ConfigManager::save_group(connection, &mut group).unwrap();
+                                }
                             }
                         }
 
