@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
-
+use log::debug;
 use gdk_pixbuf::Pixbuf;
 use std::fs::File;
 use std::io::prelude::*;
@@ -108,13 +108,11 @@ impl AddGroupWindow {
                 let icon_reload = gui_clone.add_group.icon_reload.clone();
                 let save_button = gui_clone.add_group.save_button.clone();
                 let image_input = gui_clone.add_group.image_input.clone();
-                let icon_filename = gui_clone.add_group.icon_filename.clone();
                 let icon_error = gui_clone.add_group.icon_error.clone();
                 let add_group = gui_clone.add_group;
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 icon_error.set_label("");
-                icon_filename.set_label("");
                 icon_error.set_visible(false);
 
                 if url.is_empty() {
