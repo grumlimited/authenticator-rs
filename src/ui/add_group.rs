@@ -163,22 +163,6 @@ impl AddGroupWindow {
 
             glib::Continue(true)
         });
-
-        //
-        // let runtime_2 = gui.runtime.clone();
-        // let _icon_filename = gui.add_group.icon_filename.clone();
-        // let rt = runtime_2.lock().unwrap();
-        //
-        // rt.spawn(async move {
-        //     loop {
-        //         let r = receiver.recv();
-        //         println!("ccc {:?}", r);
-        //
-        //         let r = uuid::Uuid::new_v4();
-        //         println!("ddd {:?}", r);
-        //     }
-        //
-        // });
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
