@@ -238,6 +238,7 @@ impl AddGroupWindow {
                         let icon_filename = icon_filename.as_deref();
 
                         let name: String = add_group.input_group.get_buffer().get_text();
+                        let url_input: String = add_group.url_input.get_buffer().get_text();
 
                         let group_id = add_group.group_id.get_label().unwrap();
 
@@ -245,8 +246,13 @@ impl AddGroupWindow {
                             let connection = connection.clone();
                             match group_id.parse() {
                                 Ok(group_id) if group_id == 0 => {
-                                    let mut group =
-                                        AccountGroup::new(0, name.as_str(), icon_filename, vec![]);
+                                    let mut group = AccountGroup::new(
+                                        0,
+                                        name.as_str(),
+                                        icon_filename,
+                                        Some(url_input.as_str()),
+                                        vec![],
+                                    );
                                     let connection = connection.clone();
                                     ConfigManager::save_group(connection, &mut group).unwrap();
                                 }
