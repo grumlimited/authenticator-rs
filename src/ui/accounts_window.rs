@@ -87,7 +87,7 @@ impl AccountsWindow {
                 gui.accounts_window.clone(),
                 gui.add_group.clone(),
                 gui.state.clone(),
-                Some(group_id)
+                Some(group_id),
             ));
 
             {
@@ -280,7 +280,7 @@ impl AccountsWindow {
         accounts_window: AccountsWindow,
         add_group: AddGroupWindow,
         state: Rc<RefCell<State>>,
-        group_id: Option<u32>
+        group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
         Box::new({
             move |_b: &gtk::Button| {
@@ -298,8 +298,7 @@ impl AccountsWindow {
                         .append(entry_id, group.name.as_str());
 
                     if group.id == group_id.unwrap_or(0) {
-                        edit_account_window
-                            .input_group.set_active_id(entry_id);
+                        edit_account_window.input_group.set_active_id(entry_id);
                     }
                 });
 

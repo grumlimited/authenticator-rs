@@ -317,7 +317,7 @@ impl MainWindow {
             self.accounts_window.clone(),
             self.add_group.clone(),
             self.state.clone(),
-            None
+            None,
         ));
 
         action_menu
