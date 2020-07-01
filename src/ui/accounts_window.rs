@@ -106,7 +106,7 @@ impl AccountsWindow {
                     input_group.set_text(group.name.as_str());
 
                     let url_input = gui.add_group.url_input.clone();
-                    url_input.set_text(group.url.unwrap_or("".to_string()).as_str());
+                    url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
 
                     let group_id = gui.add_group.group_id.clone();
                     group_id.set_label(format!("{}", group.id).as_str());
