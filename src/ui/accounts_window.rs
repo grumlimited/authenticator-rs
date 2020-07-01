@@ -73,11 +73,22 @@ impl AccountsWindow {
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
             let edit_button = group_widgets.edit_button.clone();
+            let add_account_button = group_widgets.add_account_button.clone();
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
             let group_widgets = group_widgets.clone();
             let widgets_list_clone = widgets_list_clone.clone();
+
+            add_account_button.connect_clicked(Self::display_add_account_form(
+                connection.clone(),
+                popover.clone(),
+                gui.edit_account_window.clone(),
+                gui.accounts_window.clone(),
+                gui.add_group.clone(),
+                gui.state.clone(),
+                Some(group_id)
+            ));
 
             {
                 let connection = connection.clone();
@@ -261,11 +272,73 @@ impl AccountsWindow {
     fn progress_bar_fraction_for(second: u32) -> f64 {
         (1_f64 - ((second % 30) as f64 / 30_f64)) as f64
     }
+
+    pub fn display_add_account_form(
+        connection: Arc<Mutex<Connection>>,
+        popover: gtk::PopoverMenu,
+        edit_account_window: EditAccountWindow,
+        accounts_window: AccountsWindow,
+        add_group: AddGroupWindow,
+        state: Rc<RefCell<State>>,
+        group_id: Option<u32>
+    ) -> Box<dyn Fn(&gtk::Button)> {
+        Box::new({
+            move |_b: &gtk::Button| {
+                debug!("Loading for group_id {:?}", group_id);
+                let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+
+                edit_account_window.reset();
+
+                edit_account_window.input_group.remove_all();
+                groups.iter().for_each(|group| {
+                    let string = format!("{}", group.id);
+                    let entry_id = Some(string.as_str());
+                    edit_account_window
+                        .input_group
+                        .append(entry_id, group.name.as_str());
+
+                    if group.id == group_id.unwrap_or(0) {
+                        edit_account_window
+                            .input_group.set_active_id(entry_id);
+                    }
+                });
+
+                // select 1st entry to avoid blank selection choice
+                if group_id.is_none() {
+                    let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+                    let first_entry = first_entry.as_deref();
+                    edit_account_window.input_group.set_active_id(first_entry);
+                }
+
+                edit_account_window.input_name.set_text("");
+
+                edit_account_window
+                    .add_accounts_container_edit
+                    .set_visible(false);
+                edit_account_window
+                    .add_accounts_container_add
+                    .set_visible(true);
+
+                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
+                buffer.set_text("");
+
+                let state = state.clone();
+                state.replace(State::DisplayAddAccount);
+
+                popover.hide();
+                accounts_window.container.set_visible(false);
+                add_group.container.set_visible(false);
+                edit_account_window.container.set_visible(true);
+            }
+        })
+    }
 }
 
+use crate::ui::{AddGroupWindow, EditAccountWindow};
 use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use std::ops::Deref;
+use std::rc::Rc;
 use std::{thread, time};
 
 /**

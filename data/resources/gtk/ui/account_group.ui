@@ -2,48 +2,6 @@
 <!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.22"/>
-  <object class="GtkBox" id="buttons_container">
-    <property name="name">buttons_container</property>
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="orientation">vertical</property>
-    <child>
-      <object class="GtkButton" id="edit_button">
-        <property name="label" translatable="yes">Edit</property>
-        <property name="name">edit_button</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-        <property name="margin_start">3</property>
-        <property name="margin_end">3</property>
-        <property name="margin_top">3</property>
-        <property name="margin_bottom">3</property>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="position">0</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkButton" id="delete_button">
-        <property name="label" translatable="yes">Delete</property>
-        <property name="name">delete_button</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-        <property name="margin_start">3</property>
-        <property name="margin_end">3</property>
-        <property name="margin_top">3</property>
-        <property name="margin_bottom">3</property>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="position">1</property>
-      </packing>
-    </child>
-  </object>
   <object class="GtkBox" id="group">
     <property name="name">group</property>
     <property name="visible">True</property>
@@ -138,6 +96,85 @@
     <property name="position">right</property>
     <child>
       <placeholder/>
+    </child>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">add</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkImage" id="image2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">albumfolder-user-trash</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkImage" id="image3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-map</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkBox" id="buttons_container">
+    <property name="name">buttons_container</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="GtkButton" id="edit_button">
+        <property name="label" translatable="yes">Edit</property>
+        <property name="name">edit_button</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">3</property>
+        <property name="margin_end">3</property>
+        <property name="margin_top">3</property>
+        <property name="margin_bottom">3</property>
+        <property name="image">image3</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="delete_button">
+        <property name="label" translatable="yes">Delete</property>
+        <property name="name">delete_button</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">3</property>
+        <property name="margin_end">3</property>
+        <property name="margin_top">3</property>
+        <property name="margin_bottom">3</property>
+        <property name="image">image2</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="add_account_button">
+        <property name="label" translatable="yes">Add account</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="image">image1</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">2</property>
+      </packing>
     </child>
   </object>
 </interface>

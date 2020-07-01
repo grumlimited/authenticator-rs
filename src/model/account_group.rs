@@ -24,6 +24,7 @@ pub struct AccountGroupWidgets {
     pub container: gtk::Box,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
+    pub add_account_button: gtk::Button,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
@@ -89,6 +90,7 @@ impl AccountGroup {
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
         let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
+        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
 
         let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
         delete_button.set_sensitive(self.entries.is_empty());
@@ -138,6 +140,7 @@ impl AccountGroup {
             container: group,
             edit_button,
             delete_button,
+            add_account_button,
             event_box,
             group_label,
             group_image,

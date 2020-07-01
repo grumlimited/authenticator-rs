@@ -23,7 +23,7 @@ pub struct MainWindow {
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
     pub pool: ThreadPool,
-    state: Rc<RefCell<State>>,
+    pub state: Rc<RefCell<State>>,
 }
 
 #[derive(Clone, Debug)]
@@ -281,7 +281,7 @@ impl MainWindow {
             let state = self.state.clone();
 
             add_group_button.connect_clicked(move |_| {
-                popover.hide();
+                popover.clone().hide();
 
                 add_group.reset();
 
@@ -310,52 +310,15 @@ impl MainWindow {
             });
         }
 
-        {
-            let edit_account_window = self.edit_account_window.clone();
-            let accounts_window = self.accounts_window.clone();
-            let add_group = self.add_group.clone();
-
-            let state = self.state.clone();
-
-            add_account_button.connect_clicked(move |_| {
-                let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
-
-                edit_account_window.reset();
-
-                edit_account_window.input_group.remove_all();
-                groups.iter().for_each(|group| {
-                    let string = format!("{}", group.id);
-                    let entry_id = Some(string.as_str());
-                    edit_account_window
-                        .input_group
-                        .append(entry_id, group.name.as_str());
-                });
-
-                let first_entry = groups.get(0).map(|e| format!("{}", e.id));
-                let first_entry = first_entry.as_deref();
-                edit_account_window.input_group.set_active_id(first_entry);
-
-                edit_account_window.input_name.set_text("");
-
-                edit_account_window
-                    .add_accounts_container_edit
-                    .set_visible(false);
-                edit_account_window
-                    .add_accounts_container_add
-                    .set_visible(true);
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
-
-                let state = state.clone();
-                state.replace(State::DisplayAddAccount);
-
-                popover.hide();
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(false);
-                edit_account_window.container.set_visible(true);
-            });
-        }
+        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(
+            connection,
+            popover,
+            self.edit_account_window.clone(),
+            self.accounts_window.clone(),
+            self.add_group.clone(),
+            self.state.clone(),
+            None
+        ));
 
         action_menu
     }
