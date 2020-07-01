@@ -54,10 +54,7 @@ impl ConfigManager {
     pub fn load_account_groups(
         conn: Arc<Mutex<Connection>>,
     ) -> Result<Vec<AccountGroup>, LoadError> {
-        {
-            let conn = conn.clone();
-            Self::init_tables(conn).unwrap();
-        }
+        Self::init_tables(conn.clone()).unwrap();
 
         let conn = conn.lock().unwrap();
 
@@ -181,10 +178,7 @@ impl ConfigManager {
         connection: Arc<Mutex<Connection>>,
         group: &mut AccountGroup,
     ) -> Result<(), LoadError> {
-        let existing_group = {
-            let connection = connection.clone();
-            Self::group_by_name(connection, group.name.as_str())
-        };
+        let existing_group = Self::group_by_name(connection.clone(), group.name.as_str());
 
         let group_saved_result = {
             let connection = connection.clone();
