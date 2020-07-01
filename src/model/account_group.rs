@@ -1,5 +1,7 @@
+use crate::helpers::ConfigManager;
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
+use gdk_pixbuf::Pixbuf;
 use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -26,6 +28,7 @@ pub struct AccountGroupWidgets {
     pub group_label_entry: gtk::Entry,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
+    pub group_image: gtk::Image,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -57,6 +60,15 @@ impl AccountGroup {
 
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
+
+        let group_image: gtk::Image = builder.get_object("group_image").unwrap();
+        group_image.set_visible(self.icon.is_some());
+        if let Some(image) = &self.icon {
+            let mut dir = ConfigManager::icons_path();
+            dir.push(&image);
+            let pixbuf = Pixbuf::new_from_file_at_scale(&dir, 48, 48, true).unwrap();
+            group_image.set_from_pixbuf(Some(&pixbuf));
+        }
 
         let group_label: gtk::Label = builder.get_object("group_label").unwrap();
         group_label.set_label(self.name.as_str());
@@ -151,6 +163,7 @@ impl AccountGroup {
             group_label_entry,
             event_box,
             group_label,
+            group_image,
             account_widgets,
         }
     }

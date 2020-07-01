@@ -138,28 +138,33 @@ impl AddGroupWindow {
             icon_reload.set_sensitive(true);
             save_button.set_sensitive(true);
 
+            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
+            {
+                let uuid = uuid::Uuid::new_v4();
+                icon_filename.set_label(uuid.to_string().as_str());
+            }
+
             match account_group_icon {
                 Ok(account_group_icon) => {
-                    let uuid = uuid::Uuid::new_v4();
+                    let icon_filepath = {
+                        let mut dir = ConfigManager::icons_path();
 
-                    let filename = format!("{}.{}", uuid, account_group_icon.extension.unwrap());
+                        dir.push(format!("{}", icon_filename.get_label().unwrap()));
 
-                    let mut dir = ConfigManager::icons_path();
+                        dir
+                    };
 
-                    dir.push(&filename);
-
-                    let mut file = File::create(&dir)
-                        .expect(format!("could not create file {}", dir.display()).as_str());
+                    let mut file = File::create(&icon_filepath)
+                        .expect(format!("could not create file {}", icon_filepath.display()).as_str());
 
                     file.write_all(account_group_icon.content.as_slice())
                         .expect(
-                            format!("could not write image to file {}", dir.display()).as_str(),
+                            format!("could not write image to file {}", icon_filepath.display()).as_str(),
                         );
 
-                    let pixbuf = Pixbuf::new_from_file_at_scale(&dir, 48, 48, true).unwrap();
+                    let pixbuf = Pixbuf::new_from_file_at_scale(&icon_filepath, 48, 48, true).unwrap();
 
                     image_input.set_from_pixbuf(Some(&pixbuf));
-                    icon_filename.set_label(filename.as_str());
                 }
                 Err(e) => {
                     icon_error.set_label(format!("{}", e).as_str());
