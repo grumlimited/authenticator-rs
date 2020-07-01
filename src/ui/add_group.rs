@@ -8,9 +8,9 @@ use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+use gdk_pixbuf::Pixbuf;
 use std::fs::File;
 use std::io::prelude::*;
-use gdk_pixbuf::Pixbuf;
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -116,7 +116,8 @@ impl AddGroupWindow {
                     let dir_2 = dir.clone();
 
                     let mut file = File::create(dir).expect("e");
-                    file.write_all(account_group_icon.content.as_slice()).expect("e");
+                    file.write_all(account_group_icon.content.as_slice())
+                        .expect("e");
 
                     let pixbuf = Pixbuf::new_from_file_at_scale(dir_2, 48, 48, true).unwrap();
 

@@ -3,9 +3,9 @@ use curl::Error;
 use futures::AsyncWriteExt;
 use gdk::enums::key::ht;
 use glib::Sender;
+use log::debug;
 use regex::Regex;
 use scraper::*;
-use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -56,7 +56,6 @@ impl IconParser {
 
     async fn icon(url: &str, html: &str) -> IconParserResult<AccountGroupIcon> {
         let icon_url = {
-            //println!("{}", html);
             let document = Html::parse_document(html);
 
             let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
