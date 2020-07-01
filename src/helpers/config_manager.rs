@@ -54,6 +54,11 @@ impl ConfigManager {
     pub fn load_account_groups(
         conn: Arc<Mutex<Connection>>,
     ) -> Result<Vec<AccountGroup>, LoadError> {
+        {
+            let conn = conn.clone();
+            Self::init_tables(conn).unwrap();
+        }
+
         let conn = conn.lock().unwrap();
 
         let mut stmt = conn
