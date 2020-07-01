@@ -6,7 +6,6 @@ use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
-use uuid::Uuid;
 
 use gdk_pixbuf::Pixbuf;
 use std::fs::File;
@@ -68,11 +67,19 @@ impl AddGroupWindow {
     }
 
     fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
+        let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
         );
+
+        {
+            let icon_reload = icon_reload.clone();
+            url_input.connect_activate(move |_| {
+                icon_reload.clicked();
+            });
+        }
 
         {
             let gui_clone = gui.clone();

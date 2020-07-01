@@ -1,7 +1,5 @@
 use curl::easy::Easy;
 use curl::Error;
-use futures::AsyncWriteExt;
-use gdk::enums::key::ht;
 use glib::Sender;
 use log::debug;
 use regex::Regex;
@@ -37,17 +35,17 @@ pub struct AccountGroupIcon {
 impl IconParser {
     pub async fn html_notify(sender: Sender<IconParserResult<AccountGroupIcon>>, url: String) {
         let result = Self::html(url).await;
-        sender.send(result);
+        sender.send(result).expect("Could not send results");
     }
 
     pub async fn html(url: String) -> IconParserResult<AccountGroupIcon> {
         let mut data = Vec::new();
 
         let mut handle = Easy::new();
-        handle.follow_location(true);
-        handle.autoreferer(true);
-        handle.timeout(Duration::from_secs(3));
-        handle.url(url.as_str()).unwrap();
+        handle.follow_location(true).map_err(IconError::CurlError)?;
+        handle.autoreferer(true).map_err(IconError::CurlError)?;
+        handle.timeout(Duration::from_secs(3)).map_err(IconError::CurlError)?;
+        handle.url(url.as_str()).map_err(IconError::CurlError)?;
 
         {
             let mut transfer = handle.transfer();
@@ -95,9 +93,9 @@ impl IconParser {
         let mut data = Vec::new();
         let mut handle = Easy::new();
 
-        handle.follow_location(true);
-        handle.autoreferer(true);
-        handle.timeout(Duration::from_secs(3));
+        handle.follow_location(true).map_err(IconError::CurlError)?;
+        handle.autoreferer(true).map_err(IconError::CurlError)?;
+        handle.timeout(Duration::from_secs(3)).map_err(IconError::CurlError)?;
         handle.url(icon_url).map_err(IconError::CurlError)?;
 
         {

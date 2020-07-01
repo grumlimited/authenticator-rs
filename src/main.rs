@@ -23,7 +23,6 @@ mod model;
 mod ui;
 
 use log::info;
-use std::time::Duration;
 
 const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
