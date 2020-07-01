@@ -44,7 +44,9 @@ impl IconParser {
         let mut handle = Easy::new();
         handle.follow_location(true).map_err(IconError::CurlError)?;
         handle.autoreferer(true).map_err(IconError::CurlError)?;
-        handle.timeout(Duration::from_secs(3)).map_err(IconError::CurlError)?;
+        handle
+            .timeout(Duration::from_secs(3))
+            .map_err(IconError::CurlError)?;
         handle.url(url.as_str()).map_err(IconError::CurlError)?;
 
         {
@@ -70,15 +72,15 @@ impl IconParser {
             let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
             let selector_2 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
 
-            let option_1 = document.select(&selector_1).into_iter().next();
+            let option_1 = document.select(&selector_1).next();
 
-            let option_2 = document.select(&selector_2).into_iter().next();
+            let option_2 = document.select(&selector_2).next();
 
             let choice = option_1.or(option_2);
 
             match choice.and_then(|v| v.value().attr("href")) {
-                Some(href) if href.starts_with("/") => Ok(format!("{}/{}", url, href)),
-                Some(href) if href.starts_with("http") => Ok(format!("{}", href)),
+                Some(href) if href.starts_with('/') => Ok(format!("{}/{}", url, href)),
+                Some(href) if href.starts_with("http") => Ok(href.to_string()),
                 Some(href) => Ok(format!("{}/{}", url, href)),
                 None => Err(IconError::ParsingError),
             }
@@ -95,7 +97,9 @@ impl IconParser {
 
         handle.follow_location(true).map_err(IconError::CurlError)?;
         handle.autoreferer(true).map_err(IconError::CurlError)?;
-        handle.timeout(Duration::from_secs(3)).map_err(IconError::CurlError)?;
+        handle
+            .timeout(Duration::from_secs(3))
+            .map_err(IconError::CurlError)?;
         handle.url(icon_url).map_err(IconError::CurlError)?;
 
         {

@@ -103,7 +103,7 @@ impl AddGroupWindow {
                 }
 
                 let tx = tx.clone();
-                let fut = IconParser::html_notify(tx, url.clone());
+                let fut = IconParser::html_notify(tx, url);
 
                 icon_reload.set_sensitive(false);
                 image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
