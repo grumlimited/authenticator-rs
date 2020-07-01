@@ -61,8 +61,6 @@ impl AccountGroup {
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
 
-        print!("{}", self.icon.is_some());
-
         let group_image: gtk::Image = builder.get_object("group_image").unwrap();
 
         if let Some(image) = &self.icon {
