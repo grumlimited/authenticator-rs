@@ -529,6 +529,8 @@ mod tests {
         assert_eq!("new group", group.name);
 
         group.name = "other name".to_owned();
+        group.url = Some("url".to_owned());
+        group.icon = Some("icon".to_owned());
 
         {
             let conn = conn.clone();
@@ -538,6 +540,8 @@ mod tests {
         }
 
         assert_eq!("other name", group.name);
+        assert_eq!("url", group.url.unwrap());
+        assert_eq!("icon", group.icon.unwrap());
     }
 
     #[test]
