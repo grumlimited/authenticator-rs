@@ -130,9 +130,9 @@ impl AddGroupWindow {
                     image_input.set_from_pixbuf(Some(&pixbuf));
                 }
                 Err(e) => {
-                    icon_error.set_label(format!("{:?}", e).as_str());
+                    icon_error.set_label(format!("{}", e).as_str());
                     icon_error.set_visible(true);
-                },
+                }
             }
 
             glib::Continue(true)
