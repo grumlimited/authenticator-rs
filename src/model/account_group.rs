@@ -4,10 +4,10 @@ use crate::NAMESPACE_PREFIX;
 use gdk_pixbuf::Pixbuf;
 use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::*;
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
-use log::error;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
@@ -69,10 +69,9 @@ impl AccountGroup {
             let mut dir = ConfigManager::icons_path();
             dir.push(&image);
             match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
-              Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
-                Err(_) => error!("Could not load image {}", dir.display())
+                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", dir.display()),
             };
-
         } else {
             let grid: gtk::Grid = builder.get_object("group_label_box").unwrap();
             group_image.clear();
