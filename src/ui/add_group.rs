@@ -154,15 +154,10 @@ impl AddGroupWindow {
                         dir
                     };
 
-                    let mut file = File::create(&icon_filepath).expect(
-                        format!("could not create file {}", icon_filepath.display()).as_str(),
-                    );
+                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
 
                     file.write_all(account_group_icon.content.as_slice())
-                        .expect(
-                            format!("could not write image to file {}", icon_filepath.display())
-                                .as_str(),
-                        );
+                        .unwrap_or_else(|_| panic!("could not write image to file {}", icon_filepath.display()));
 
                     let pixbuf =
                         Pixbuf::new_from_file_at_scale(&icon_filepath, 48, 48, true).unwrap();
