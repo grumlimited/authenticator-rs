@@ -69,7 +69,10 @@ impl AccountGroup {
             let mut dir = ConfigManager::icons_path();
             dir.push(&image);
             match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
-                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                Ok(pixbuf) => {
+                    let transparent = pixbuf.add_alpha(true, 255, 255, 255).unwrap();
+                    group_image.set_from_pixbuf(Some(&transparent));
+                },
                 Err(_) => error!("Could not load image {}", dir.display()),
             };
         } else {
