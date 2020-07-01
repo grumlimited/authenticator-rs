@@ -72,7 +72,7 @@ impl AccountGroup {
                 Ok(pixbuf) => {
                     let transparent = pixbuf.add_alpha(true, 255, 255, 255).unwrap();
                     group_image.set_from_pixbuf(Some(&transparent));
-                },
+                }
                 Err(_) => error!("Could not load image {}", dir.display()),
             };
         } else {
