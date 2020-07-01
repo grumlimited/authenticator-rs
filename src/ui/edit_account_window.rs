@@ -99,48 +99,37 @@ impl EditAccountWindow {
         ) where
             F: 'static + Fn(Arc<Mutex<Connection>>, MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
-            let button_closure = button_closure(connection, gui);
-
-            button.connect_clicked(button_closure);
+            button.connect_clicked(button_closure(connection, gui));
         }
 
-        let gui_clone = gui.clone();
-        let connection_clone = connection.clone();
-        let edit_account_cancel = gui.edit_account_window.cancel_button.clone();
+        with_action(
+            gui.clone(),
+            connection.clone(),
+            gui.edit_account_window.cancel_button.clone(),
+            |_, gui| {
+                Box::new(move |_| {
+                    let edit_account_window = gui.edit_account_window.clone();
+                    edit_account_window.reset();
+                    edit_account_window.input_name.set_text("");
 
-        with_action(gui, connection, edit_account_cancel, |_, gui| {
-            Box::new(move |_| {
-                let gui = gui.clone();
-                let gui2 = gui.clone();
-                let edit_account_window = gui.edit_account_window;
-                edit_account_window.reset();
+                    let buffer = edit_account_window.input_secret.get_buffer().unwrap();
+                    buffer.set_text("");
 
-                edit_account_window.input_name.set_text("");
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
-
-                MainWindow::switch_to(gui2, State::DisplayAccounts);
-            })
-        });
-
-        let edit_account_save = gui_clone.edit_account_window.save_button.clone();
+                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                })
+            },
+        );
 
         with_action(
-            gui_clone,
-            connection_clone,
-            edit_account_save,
+            gui.clone(),
+            connection.clone(),
+            gui.edit_account_window.save_button.clone(),
             |connection, gui| {
                 Box::new(move |_| {
-                    let gui_1 = gui.clone();
-                    let gui_2 = gui_1.clone();
-                    let gui_3 = gui_1.clone();
-                    let gui_4 = gui_1.clone();
+                    gui.edit_account_window.reset();
 
-                    gui_4.edit_account_window.reset();
-
-                    if let Ok(()) = gui_4.edit_account_window.validate() {
-                        let edit_account_window = gui_1.edit_account_window;
+                    if let Ok(()) = gui.edit_account_window.validate() {
+                        let edit_account_window = gui.edit_account_window.clone();
 
                         let name = edit_account_window.input_name.clone();
                         let secret = edit_account_window.input_secret.clone();
@@ -173,25 +162,22 @@ impl EditAccountWindow {
                                     secret.as_str(),
                                 );
 
-                                let connection = connection.clone();
-                                let _ = ConfigManager::update_account(connection, &mut account)
+                                ConfigManager::update_account(connection.clone(), &mut account)
                                     .unwrap();
                             }
                             Err(_) => {
                                 let mut account =
                                     Account::new(0, group_id, name.as_str(), secret.as_str());
 
-                                let connection = connection.clone();
-                                let _ =
-                                    ConfigManager::save_account(connection, &mut account).unwrap();
+                                ConfigManager::save_account(connection.clone(), &mut account)
+                                    .unwrap();
                             }
                         };
 
-                        let connection = connection.clone();
-                        AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
+                        AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
 
                         edit_account_window.reset();
-                        MainWindow::switch_to(gui_3, State::DisplayAccounts);
+                        MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
                     }
                 })
             },

@@ -180,12 +180,9 @@ impl ConfigManager {
     ) -> Result<(), LoadError> {
         let existing_group = Self::group_by_name(connection.clone(), group.name.as_str());
 
-        let group_saved_result = {
-            let connection = connection.clone();
-            match existing_group {
-                Ok(group) => Ok(group.id),
-                Err(_) => Self::save_group(connection, group).map(|_| group.id),
-            }
+        let group_saved_result = match existing_group {
+            Ok(group) => Ok(group.id),
+            Err(_) => Self::save_group(connection.clone(), group).map(|_| group.id),
         };
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
@@ -193,9 +190,8 @@ impl ConfigManager {
                 .entries
                 .iter_mut()
                 .map(|account| {
-                    let connection = connection.clone();
                     account.group_id = group_id;
-                    Self::save_account(connection, account)
+                    Self::save_account(connection.clone(), account)
                 })
                 .collect::<Vec<Result<(), LoadError>>>(),
 
@@ -427,10 +423,7 @@ impl ConfigManager {
         deserialised_accounts.and_then(|ref mut account_groups| {
             let results: Vec<Result<(), LoadError>> = account_groups
                 .iter_mut()
-                .map(|group| {
-                    let connection = connection.clone();
-                    Self::save_group_and_accounts(connection, group)
-                })
+                .map(|group| Self::save_group_and_accounts(connection.clone(), group))
                 .collect();
 
             results.iter().cloned().collect::<Result<(), LoadError>>()

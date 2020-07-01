@@ -181,11 +181,7 @@ impl AddGroupWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        {
-            let connection = connection.clone();
-            let gui = gui.clone();
-            Self::url_input_action(gui, connection);
-        }
+        Self::url_input_action(gui.clone(), connection.clone());
 
         fn with_action<F>(
             gui: MainWindow,
@@ -195,63 +191,49 @@ impl AddGroupWindow {
         ) where
             F: 'static + Fn(Arc<Mutex<Connection>>, MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
-            let button_closure = button_closure(connection, gui);
-
-            button.connect_clicked(button_closure);
+            button.connect_clicked(button_closure(connection, gui));
         }
 
-        let gui_clone = gui.clone();
-        let connection_clone = connection.clone();
-        let add_group_account_cancel = gui.add_group.cancel_button.clone();
-
         // CANCEL
-        with_action(gui, connection, add_group_account_cancel, |_, gui| {
-            Box::new(move |_| {
-                let gui_1 = gui.clone();
-                gui.add_group.reset();
+        with_action(
+            gui.clone(),
+            connection.clone(),
+            gui.add_group.cancel_button.clone(),
+            |_, gui| {
+                Box::new(move |_| {
+                    gui.add_group.reset();
+                    gui.add_group.input_group.set_text("");
 
-                gui_1.add_group.input_group.set_text("");
-
-                MainWindow::switch_to(gui_1, State::DisplayAccounts);
-            })
-        });
-
-        let add_group_account_save = gui_clone.add_group.save_button.clone();
+                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                })
+            },
+        );
 
         //SAVE
         with_action(
-            gui_clone,
-            connection_clone,
-            add_group_account_save,
+            gui.clone(),
+            connection.clone(),
+            gui.add_group.save_button.clone(),
             |connection, gui| {
                 Box::new(move |_| {
-                    let connection = connection.clone();
-                    let gui_1 = gui.clone();
-                    let gui_2 = gui_1.clone();
-                    let gui_3 = gui_1.clone();
-
-                    if let Ok(()) = gui_1.add_group.validate() {
-                        let add_group = gui_1.add_group;
-
-                        let icon_filename = add_group.icon_filename.clone();
+                    if let Ok(()) = gui.add_group.validate() {
+                        let icon_filename = gui.add_group.icon_filename.clone();
                         let icon_filename = icon_filename.get_label().map(|e| e.to_string());
                         let icon_filename = icon_filename.as_deref();
 
-                        let name: String = add_group.input_group.get_buffer().get_text();
-                        let url_input: String = add_group.url_input.get_buffer().get_text();
+                        let name: String = gui.add_group.input_group.get_buffer().get_text();
+                        let url_input: String = gui.add_group.url_input.get_buffer().get_text();
 
-                        let group_id = add_group.group_id.get_label().unwrap();
+                        let group_id = gui.add_group.group_id.get_label().unwrap();
 
                         debug!("group_id: {}", group_id);
 
                         {
-                            let connection = connection.clone();
                             match group_id.parse() {
                                 Ok(group_id) => {
                                     let mut group = {
-                                        let connection = connection.clone();
-
-                                        ConfigManager::get_group(connection, group_id).unwrap()
+                                        ConfigManager::get_group(connection.clone(), group_id)
+                                            .unwrap()
                                     };
                                     group.name = name;
                                     group.icon = icon_filename.map(str::to_owned);
@@ -259,7 +241,8 @@ impl AddGroupWindow {
 
                                     debug!("saving group {:?}", group);
 
-                                    ConfigManager::update_group(connection, &group).unwrap();
+                                    ConfigManager::update_group(connection.clone(), &group)
+                                        .unwrap();
                                 }
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
@@ -270,14 +253,18 @@ impl AddGroupWindow {
                                         vec![],
                                     );
 
-                                    ConfigManager::save_group(connection, &mut group).unwrap();
+                                    ConfigManager::save_group(connection.clone(), &mut group)
+                                        .unwrap();
                                 }
                             }
                         }
 
-                        gui_3.add_group.reset();
-                        AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
-                        MainWindow::switch_to(gui_3, State::DisplayAccounts);
+                        gui.add_group.reset();
+                        AccountsWindow::replace_accounts_and_widgets(
+                            gui.clone(),
+                            connection.clone(),
+                        );
+                        MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
                     }
                 })
             },
