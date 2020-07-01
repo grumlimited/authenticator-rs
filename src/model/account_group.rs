@@ -96,21 +96,6 @@ impl AccountGroup {
 
         let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
 
-        // {
-        //     let group_label_entry = group_label_entry.clone();
-        //     let group_label_edit_form_box = group_label_edit_form_box.clone();
-        //     let event_box = event_box.clone();
-        //     let popover = popover.clone();
-        //     edit_button.connect_clicked(move |_| {
-        //         group_label_edit_form_box.set_visible(true);
-        //
-        //         group_label_entry.grab_focus();
-        //
-        //         event_box.set_visible(false);
-        //         popover.set_visible(false);
-        //     });
-        // }
-
         {
             let group_label_edit_form_box = group_label_edit_form_box.clone();
             let event_box = event_box.clone();

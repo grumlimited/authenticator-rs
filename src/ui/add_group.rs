@@ -22,6 +22,7 @@ pub struct AddGroupWindow {
     pub icon_filename: gtk::Label,
     pub icon_reload: gtk::Button,
     pub icon_error: gtk::Label,
+    pub group_id: gtk::Label,
 }
 
 impl AddGroupWindow {
@@ -36,6 +37,7 @@ impl AddGroupWindow {
             icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
             icon_reload: builder.get_object("group_icon_reload").unwrap(),
             icon_error: builder.get_object("add_group_icon_error").unwrap(),
+            group_id: builder.get_object("add_group_input_group_id").unwrap(),
         }
     }
 
@@ -63,10 +65,12 @@ impl AddGroupWindow {
         let icon_reload = self.icon_reload.clone();
         let image_input = self.image_input.clone();
         let save_button = self.save_button.clone();
+        let group_id = self.group_id.clone();
 
         input_group.set_text("");
 
         icon_filename.set_label("");
+        group_id.set_label("");
 
         icon_error.set_label("");
         icon_error.set_visible(false);

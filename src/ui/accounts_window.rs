@@ -149,6 +149,9 @@ impl AccountsWindow {
                     let icon_filename = gui.add_group.icon_filename.clone();
                     icon_filename.set_label(group.icon.unwrap_or("".to_owned()).as_str());
 
+                    let group_id = gui.add_group.group_id.clone();
+                    group_id.set_label(format!("{}", group.id).as_str());
+
                     MainWindow::switch_to(gui, State::DisplayAddGroup);
                 });
             }
