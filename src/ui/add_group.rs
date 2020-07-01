@@ -22,6 +22,7 @@ pub struct AddGroupWindow {
     pub image_input: gtk::Image,
     pub icon_filename: gtk::Label,
     pub icon_reload: gtk::Button,
+    pub icon_error: gtk::Label,
 }
 
 impl AddGroupWindow {
@@ -35,6 +36,7 @@ impl AddGroupWindow {
             image_input: builder.get_object("add_group_image_input").unwrap(),
             icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
             icon_reload: builder.get_object("group_icon_reload").unwrap(),
+            icon_error: builder.get_object("add_group_icon_error").unwrap(),
         }
     }
 
@@ -80,8 +82,12 @@ impl AddGroupWindow {
             icon_reload.connect_clicked(move |_| {
                 let gui_clone = gui_clone.clone();
                 let icon_reload = gui_clone.add_group.icon_reload.clone();
+                let icon_error = gui_clone.add_group.icon_error.clone();
                 let add_group = gui_clone.add_group;
                 let url: String = add_group.url_input.get_buffer().get_text();
+
+                icon_error.set_label("");
+                icon_error.set_visible(false);
 
                 let tx = tx.clone();
                 let fut = IconParser::html_notify(tx, url.clone());
@@ -96,7 +102,7 @@ impl AddGroupWindow {
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
             let icon_reload = gui.add_group.icon_reload.clone();
-
+            let icon_error = gui.add_group.icon_error.clone();
             icon_reload.set_sensitive(true);
 
             if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
@@ -123,7 +129,10 @@ impl AddGroupWindow {
 
                     image_input.set_from_pixbuf(Some(&pixbuf));
                 }
-                Err(e) => println!("ppp {:?}", e),
+                Err(e) => {
+                    icon_error.set_label(format!("{:?}", e).as_str());
+                    icon_error.set_visible(true);
+                },
             }
 
             glib::Continue(true)

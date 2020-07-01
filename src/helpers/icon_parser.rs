@@ -6,6 +6,7 @@ use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
@@ -36,6 +37,7 @@ impl IconParser {
         let mut handle = Easy::new();
         handle.follow_location(true);
         handle.autoreferer(true);
+        handle.timeout(Duration::from_secs(3));
         handle.url(url.as_str()).unwrap();
 
         {
@@ -86,6 +88,7 @@ impl IconParser {
 
         handle.follow_location(true);
         handle.autoreferer(true);
+        handle.timeout(Duration::from_secs(3));
         handle.url(icon_url).map_err(IconError::CurlError)?;
 
         {
