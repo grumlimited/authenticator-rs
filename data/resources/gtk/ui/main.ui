@@ -27,6 +27,14 @@
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-cancel</property>
   </object>
+  <object class="GtkImage" id="group_icon_reload_image">
+    <property name="name">group_icon_reload_image</property>
+    <property name="width_request">32</property>
+    <property name="height_request">32</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">chronometer-reset</property>
+  </object>
   <object class="GtkImage" id="group_save">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -438,6 +446,7 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">0</property>
+                        <property name="width">2</property>
                       </packing>
                     </child>
                     <child>
@@ -469,14 +478,17 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">1</property>
+                        <property name="width">2</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkImage" id="add_group_image_input">
-                        <property name="width_request">128</property>
-                        <property name="height_request">128</property>
+                        <property name="width_request">64</property>
+                        <property name="height_request">64</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="halign">center</property>
+                        <property name="valign">center</property>
                         <property name="icon_name">content-loading-symbolic</property>
                       </object>
                       <packing>
@@ -494,6 +506,24 @@
                         <property name="left_attach">1</property>
                         <property name="top_attach">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="group_icon_reload">
+                        <property name="name">group_icon_reload</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="halign">center</property>
+                        <property name="valign">center</property>
+                        <property name="image">group_icon_reload_image</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>

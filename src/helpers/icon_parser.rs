@@ -71,11 +71,11 @@ impl IconParser {
                 Some(href) if href.starts_with("/") => Ok(format!("{}/{}", url, href)),
                 Some(href) if href.starts_with("http") => Ok(format!("{}", href)),
                 Some(href) => Ok(format!("{}/{}", url, href)),
-                None => {
-                    Err(IconError::ParsingError)
-                },
+                None => Err(IconError::ParsingError),
             }
         }?;
+
+        println!("{}", icon_url);
 
         Self::download(icon_url.as_str()).await
     }
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn html() {
-        let fut = IconParser::html("https://www.free.fr".to_owned());
+        let fut = IconParser::html("https://www.bbc.co.uk".to_owned());
 
         let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("png", icon_parser_result.extension.unwrap());

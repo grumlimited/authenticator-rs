@@ -20,6 +20,7 @@ pub struct AddGroupWindow {
     pub save_button: gtk::Button,
     pub image_input: gtk::Image,
     pub icon_filename: gtk::Label,
+    pub icon_reload: gtk::Button,
 }
 
 impl AddGroupWindow {
@@ -32,6 +33,7 @@ impl AddGroupWindow {
             save_button: builder.get_object("add_group_save").unwrap(),
             image_input: builder.get_object("add_group_image_input").unwrap(),
             icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
+            icon_reload: builder.get_object("group_icon_reload").unwrap(),
         }
     }
 
@@ -64,6 +66,7 @@ impl AddGroupWindow {
 
     fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
         let url_input = gui.add_group.url_input.clone();
+        let icon_reload = gui.add_group.icon_reload.clone();
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
@@ -72,25 +75,31 @@ impl AddGroupWindow {
         {
             let gui_clone = gui.clone();
             let pool = gui.pool.clone();
-            url_input.connect_focus_out_event(move |_, _| {
+
+            icon_reload.connect_clicked(move |_| {
                 let gui_clone = gui_clone.clone();
+                let icon_reload = gui_clone.add_group.icon_reload.clone();
                 let add_group = gui_clone.add_group;
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 let tx = tx.clone();
                 let fut = IconParser::html_notify(tx, url.clone());
 
-                pool.spawn_ok(fut);
+                icon_reload.set_sensitive(false);
 
-                Inhibit(true)
+                pool.spawn_ok(fut);
             });
         }
 
         rx.attach(None, move |v| {
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
+            let icon_reload = gui.add_group.icon_reload.clone();
 
-            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty() {
+            icon_reload.set_sensitive(true);
+
+            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
+            {
                 let uuid = uuid::Uuid::new_v4();
                 icon_filename.set_label(uuid.to_string().as_str());
             }
@@ -98,14 +107,18 @@ impl AddGroupWindow {
             match v {
                 Ok(v) => {
                     let mut dir = ConfigManager::icons_path();
-                    dir.push(format!("{}.{}", icon_filename.get_label().unwrap(), v.extension.unwrap()));
+                    dir.push(format!(
+                        "{}.{}",
+                        icon_filename.get_label().unwrap(),
+                        v.extension.unwrap()
+                    ));
                     let dir_2 = dir.clone();
 
                     let mut file = File::create(dir).expect("e");
                     file.write_all(v.content.as_slice()).expect("e");
 
                     image_input.set_from_file(dir_2);
-                },
+                }
                 Err(e) => println!("ppp {:?}", e),
             }
 
