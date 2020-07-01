@@ -2,14 +2,14 @@ use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResu
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
+use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
-use rusqlite::Connection;
-use std::sync::{Arc, Mutex};
 use log::debug;
-use gdk_pixbuf::Pixbuf;
+use rusqlite::Connection;
 use std::fs::File;
 use std::io::prelude::*;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
