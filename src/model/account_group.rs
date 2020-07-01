@@ -7,6 +7,7 @@ use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
+use log::error;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
@@ -29,6 +30,7 @@ pub struct AccountGroupWidgets {
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
+    pub popover: gtk::PopoverMenu,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -66,8 +68,11 @@ impl AccountGroup {
         if let Some(image) = &self.icon {
             let mut dir = ConfigManager::icons_path();
             dir.push(&image);
-            let pixbuf = Pixbuf::new_from_file_at_scale(&dir, 48, 48, true).unwrap();
-            group_image.set_from_pixbuf(Some(&pixbuf));
+            match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
+              Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", dir.display())
+            };
+
         } else {
             let grid: gtk::Grid = builder.get_object("group_label_box").unwrap();
             group_image.clear();
@@ -92,20 +97,20 @@ impl AccountGroup {
 
         let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
 
-        {
-            let group_label_entry = group_label_entry.clone();
-            let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let event_box = event_box.clone();
-            let popover = popover.clone();
-            edit_button.connect_clicked(move |_| {
-                group_label_edit_form_box.set_visible(true);
-
-                group_label_entry.grab_focus();
-
-                event_box.set_visible(false);
-                popover.set_visible(false);
-            });
-        }
+        // {
+        //     let group_label_entry = group_label_entry.clone();
+        //     let group_label_edit_form_box = group_label_edit_form_box.clone();
+        //     let event_box = event_box.clone();
+        //     let popover = popover.clone();
+        //     edit_button.connect_clicked(move |_| {
+        //         group_label_edit_form_box.set_visible(true);
+        //
+        //         group_label_entry.grab_focus();
+        //
+        //         event_box.set_visible(false);
+        //         popover.set_visible(false);
+        //     });
+        // }
 
         {
             let group_label_edit_form_box = group_label_edit_form_box.clone();
@@ -142,6 +147,7 @@ impl AccountGroup {
         {
             let account_widgets = account_widgets.clone();
             let delete_button = delete_button.clone();
+            let popover = popover.clone();
 
             event_box
                 .connect_local("button-press-event", false, move |_| {
@@ -169,6 +175,7 @@ impl AccountGroup {
             event_box,
             group_label,
             group_image,
+            popover,
             account_widgets,
         }
     }

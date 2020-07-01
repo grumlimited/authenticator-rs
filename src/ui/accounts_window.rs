@@ -85,10 +85,12 @@ impl AccountsWindow {
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
             let update_button = group_widgets.update_button.clone();
+            let edit_button = group_widgets.edit_button.clone();
             let group_label_entry = group_widgets.group_label_entry.clone();
             let event_box = group_widgets.event_box.clone();
             let group_label = group_widgets.group_label.clone();
             let edit_form_box = group_widgets.edit_form_box.clone();
+            let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
             let connection_1 = connection.clone();
@@ -127,6 +129,29 @@ impl AccountsWindow {
                     event_box.set_visible(true);
                 }
             });
+
+            {
+                let gui = gui.clone();
+                let connection = connection.clone();
+                let popover = popover.clone();
+                edit_button.connect_clicked(move |_| {
+                    let group = {
+                        let connection = connection.clone();
+                        ConfigManager::get_group(connection, group_id).unwrap()
+                    };
+
+                    popover.hide();
+
+                    let gui = gui.clone();
+                    let input_group = gui.add_group.input_group.clone();
+                    input_group.set_text(group.name.as_str());
+
+                    let icon_filename = gui.add_group.icon_filename.clone();
+                    icon_filename.set_label(group.icon.unwrap_or("".to_owned()).as_str());
+
+                    MainWindow::switch_to(gui, State::DisplayAddGroup);
+                });
+            }
         }
     }
 
@@ -154,28 +179,32 @@ impl AccountsWindow {
 
                     let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                     let edit_copy_img = account_widgets.edit_copy_img.clone();
-                    let copy_button_1 = account_widgets.copy_button.clone();
-                    let copy_button_2 = account_widgets.copy_button.clone();
 
                     let pool = gui.pool.clone();
 
-                    rx.attach(None, move |_| {
-                        let edit_copy_img = edit_copy_img.lock().unwrap();
-                        let edit_copy_img = edit_copy_img.deref();
-                        let copy_button = copy_button_2.lock().unwrap();
-                        copy_button.set_image(Some(edit_copy_img));
-                        glib::Continue(true)
-                    });
+                    {
+                        let copy_button = account_widgets.copy_button.clone();
+                        rx.attach(None, move |_| {
+                            let edit_copy_img = edit_copy_img.lock().unwrap();
+                            let edit_copy_img = edit_copy_img.deref();
+                            let copy_button = copy_button.lock().unwrap();
+                            copy_button.set_image(Some(edit_copy_img));
+                            glib::Continue(true)
+                        });
+                    }
 
-                    let copy_button = copy_button_1.lock().unwrap();
-                    copy_button.connect_clicked(move |b| {
-                        let dialog_ok_img = dialog_ok_img.lock().unwrap();
-                        let dialog_ok_img = dialog_ok_img.deref();
-                        b.set_image(Some(dialog_ok_img));
+                    {
+                        let copy_button = account_widgets.copy_button.clone();
+                        let copy_button = copy_button.lock().unwrap();
+                        copy_button.connect_clicked(move |button| {
+                            let dialog_ok_img = dialog_ok_img.lock().unwrap();
+                            let dialog_ok_img = dialog_ok_img.deref();
+                            button.set_image(Some(dialog_ok_img));
 
-                        let tx = tx.clone();
-                        pool.spawn_ok(times_up(tx, 2000));
-                    });
+                            let tx = tx.clone();
+                            pool.spawn_ok(times_up(tx, 2000));
+                        });
+                    }
                 }
 
                 account_widgets.edit_button.connect_clicked(move |_| {
