@@ -138,29 +138,28 @@ impl AddGroupWindow {
             icon_reload.set_sensitive(true);
             save_button.set_sensitive(true);
 
-            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
-            {
-                let uuid = uuid::Uuid::new_v4();
-                icon_filename.set_label(uuid.to_string().as_str());
-            }
-
             match account_group_icon {
                 Ok(account_group_icon) => {
+                    let uuid = uuid::Uuid::new_v4();
+
+                    let filename = format!("{}.{}", uuid, account_group_icon.extension.unwrap());
+
                     let mut dir = ConfigManager::icons_path();
-                    dir.push(format!(
-                        "{}.{}",
-                        icon_filename.get_label().unwrap(),
-                        account_group_icon.extension.unwrap()
-                    ));
-                    let dir_2 = dir.clone();
 
-                    let mut file = File::create(dir).expect("e");
+                    dir.push(&filename);
+
+                    let mut file = File::create(&dir)
+                        .expect(format!("could not create file {}", dir.display()).as_str());
+
                     file.write_all(account_group_icon.content.as_slice())
-                        .expect("e");
+                        .expect(
+                            format!("could not write image to file {}", dir.display()).as_str(),
+                        );
 
-                    let pixbuf = Pixbuf::new_from_file_at_scale(dir_2, 48, 48, true).unwrap();
+                    let pixbuf = Pixbuf::new_from_file_at_scale(&dir, 48, 48, true).unwrap();
 
                     image_input.set_from_pixbuf(Some(&pixbuf));
+                    icon_filename.set_label(filename.as_str());
                 }
                 Err(e) => {
                     icon_error.set_label(format!("{}", e).as_str());
@@ -220,24 +219,28 @@ impl AddGroupWindow {
                     let connection = connection.clone();
                     let gui_1 = gui.clone();
                     let gui_2 = gui_1.clone();
-                    let gui3 = gui_1.clone();
-
-                    gui_1.add_group.reset();
+                    let gui_3 = gui_1.clone();
 
                     if let Ok(()) = gui_1.add_group.validate() {
                         let add_group = gui_1.add_group;
 
+                        let icon_filename = add_group.icon_filename.clone();
+                        let icon_filename: Option<String> =
+                            icon_filename.get_label().map(|e| e.to_string());
+                        let icon_filename = icon_filename.as_deref();
+
                         let name: String = add_group.input_group.get_buffer().get_text();
 
-                        let mut group = AccountGroup::new(0, name.as_str(), vec![]);
+                        let mut group = AccountGroup::new(0, name.as_str(), icon_filename, vec![]);
 
                         {
                             let connection = connection.clone();
                             ConfigManager::save_group(connection, &mut group).unwrap();
                         }
 
+                        gui_3.add_group.reset();
                         AccountsWindow::replace_accounts_and_widgets(gui_2, connection);
-                        MainWindow::switch_to(gui3, State::DisplayAccounts);
+                        MainWindow::switch_to(gui_3, State::DisplayAccounts);
                     }
                 })
             },

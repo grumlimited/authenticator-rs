@@ -11,6 +11,7 @@ pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,
     pub name: String,
+    pub icon: Option<String>,
     pub entries: Vec<Account>,
 }
 
@@ -37,10 +38,11 @@ impl AccountGroupWidgets {
 }
 
 impl AccountGroup {
-    pub fn new(id: u32, name: &str, entries: Vec<Account>) -> Self {
+    pub fn new(id: u32, name: &str, icon: Option<&str>, entries: Vec<Account>) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
+            icon: icon.map(str::to_owned),
             entries,
         }
     }

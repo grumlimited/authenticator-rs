@@ -1,4 +1,4 @@
-use rusqlite::{named_params, params, Connection, OpenFlags, Result, NO_PARAMS};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 
 use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
@@ -62,16 +62,18 @@ impl ConfigManager {
         let conn = conn.lock().unwrap();
 
         let mut stmt = conn
-            .prepare("SELECT id, name FROM groups ORDER BY LOWER(name)")
+            .prepare("SELECT id, name, icon FROM groups ORDER BY LOWER(name)")
             .unwrap();
 
         stmt.query_map(params![], |row| {
             let id: u32 = row.get(0)?;
             let name: String = row.get(1)?;
+            let icon: Option<String> = row.get::<usize, String>(2).optional()?;
 
             Ok(AccountGroup::new(
                 id,
                 name.as_str(),
+                icon.as_deref(),
                 Self::get_accounts(&conn, id)?,
             ))
         })
@@ -126,8 +128,11 @@ impl ConfigManager {
     ) -> Result<(), LoadError> {
         let conn = conn.lock().unwrap();
 
-        conn.execute("INSERT INTO groups (name) VALUES (?1)", params![group.name])
-            .unwrap();
+        conn.execute(
+            "INSERT INTO groups (name, icon) VALUES (?1, ?2)",
+            params![group.name, group.icon],
+        )
+        .unwrap();
 
         let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
 
@@ -145,7 +150,7 @@ impl ConfigManager {
         let connection = connection.lock().unwrap();
 
         let mut stmt = connection
-            .prepare("SELECT id, name FROM groups WHERE name = :name")
+            .prepare("SELECT id, name, icon FROM groups WHERE name = :name")
             .unwrap();
 
         stmt.query_row_named(
@@ -153,10 +158,16 @@ impl ConfigManager {
             ":name": name
             },
             |row| {
-                let group_id: u32 = row.get_unwrap(0);
-                let group_name: String = row.get_unwrap(1);
+                let group_id: u32 = row.get(0)?;
+                let group_name: String = row.get(1)?;
+                let group_icon: Option<String> = row.get(2).optional()?;
 
-                Ok(AccountGroup::new(group_id, group_name.as_str(), vec![]))
+                Ok(AccountGroup::new(
+                    group_id,
+                    group_name.as_str(),
+                    group_icon.as_deref(),
+                    vec![],
+                ))
             },
         )
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
@@ -203,7 +214,7 @@ impl ConfigManager {
         let conn = conn.lock().unwrap();
 
         let mut stmt = conn
-            .prepare("SELECT id, name FROM groups WHERE id = :group_id")
+            .prepare("SELECT id, name, icon FROM groups WHERE id = :group_id")
             .unwrap();
 
         stmt.query_row_named(
@@ -213,6 +224,7 @@ impl ConfigManager {
             |row| {
                 let group_id: u32 = row.get_unwrap(0);
                 let group_name: String = row.get_unwrap(1);
+                let group_icon: Option<String> = row.get(2).optional()?;
 
                 let mut stmt = conn
                     .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
@@ -220,9 +232,9 @@ impl ConfigManager {
 
                 let accounts = stmt
                     .query_map(params![group_id], |row| {
-                        let label = row.get_unwrap::<usize, String>(1);
-                        let secret = row.get_unwrap::<usize, String>(3);
-                        let id = row.get(0)?;
+                        let label: String = row.get_unwrap(1);
+                        let secret: String = row.get_unwrap(3);
+                        let id: u32 = row.get(0)?;
                         let account = Account::new(id, group_id, label.as_str(), secret.as_str());
 
                         Ok(account)
@@ -231,8 +243,9 @@ impl ConfigManager {
                     .map(|e| e.unwrap())
                     .collect();
 
-                row.get::<usize, u32>(0)
-                    .map(|id| AccountGroup::new(id, group_name.as_str(), accounts))
+                row.get::<usize, u32>(0).map(|id| {
+                    AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), accounts)
+                })
             },
         )
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
@@ -451,7 +464,7 @@ mod tests {
 
         runner::run(conn.clone()).unwrap();
 
-        let mut group = AccountGroup::new(0, "new group", vec![]);
+        let mut group = AccountGroup::new(0, "new group", None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
         {
@@ -494,7 +507,7 @@ mod tests {
 
         runner::run(conn.clone()).unwrap();
 
-        let mut group = AccountGroup::new(0, "new group", vec![]);
+        let mut group = AccountGroup::new(0, "new group", None, vec![]);
 
         {
             let conn = conn.clone();
@@ -521,7 +534,7 @@ mod tests {
 
         runner::run(conn.clone()).unwrap();
 
-        let mut group = AccountGroup::new(0, "existing_group2", vec![]);
+        let mut group = AccountGroup::new(0, "existing_group2", None, vec![]);
 
         {
             let conn = conn.clone();
@@ -556,7 +569,7 @@ mod tests {
             let conn = conn.clone();
             let conn2 = conn.clone();
             let conn3 = conn.clone();
-            let mut group = AccountGroup::new(0, "bbb", vec![]);
+            let mut group = AccountGroup::new(0, "bbb", None, vec![]);
             ConfigManager::save_group(conn, &mut group).unwrap();
 
             let mut account1 = Account::new(0, group.id, "hhh", "secret3");
@@ -567,7 +580,7 @@ mod tests {
 
         {
             let conn = conn.clone();
-            let mut group = AccountGroup::new(0, "AAA", vec![]);
+            let mut group = AccountGroup::new(0, "AAA", None, vec![]);
             ConfigManager::save_group(conn, &mut group).expect("boom!");
         };
 
@@ -606,7 +619,7 @@ mod tests {
     #[test]
     fn serialise_accounts() {
         let account = Account::new(1, 0, "label", "secret");
-        let account_group = AccountGroup::new(2, "group", vec![account]);
+        let account_group = AccountGroup::new(2, "group", None, vec![account]);
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
@@ -615,7 +628,7 @@ mod tests {
         assert_eq!((), result);
 
         let account_from_yaml = Account::new(0, 0, "label", "secret");
-        let account_group_from_yaml = AccountGroup::new(0, "group", vec![account_from_yaml]);
+        let account_group_from_yaml = AccountGroup::new(0, "group", None, vec![account_from_yaml]);
 
         let result = ConfigManager::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
@@ -628,7 +641,7 @@ mod tests {
         runner::run(conn.clone()).unwrap();
 
         let account = Account::new(0, 0, "label", "secret");
-        let mut account_group = AccountGroup::new(0, "group", vec![account]);
+        let mut account_group = AccountGroup::new(0, "group", None, vec![account]);
 
         ConfigManager::save_group_and_accounts(conn, &mut account_group).expect("could not save");
 
@@ -644,7 +657,7 @@ mod tests {
         runner::run(conn.clone()).unwrap();
 
         let account = Account::new(1, 0, "label", "secret");
-        let account_group = AccountGroup::new(2, "group", vec![account]);
+        let account_group = AccountGroup::new(2, "group", None, vec![account]);
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
