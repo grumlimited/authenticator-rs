@@ -21,6 +21,7 @@ pub struct AddGroupWindow {
     pub image_input: gtk::Image,
     pub icon_filename: gtk::Label,
     pub icon_reload: gtk::Button,
+    pub icon_delete: gtk::Button,
     pub icon_error: gtk::Label,
     pub group_id: gtk::Label,
 }
@@ -36,6 +37,7 @@ impl AddGroupWindow {
             image_input: builder.get_object("add_group_image_input").unwrap(),
             icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
             icon_reload: builder.get_object("group_icon_reload").unwrap(),
+            icon_delete: builder.get_object("group_icon_delete").unwrap(),
             icon_error: builder.get_object("add_group_icon_error").unwrap(),
             group_id: builder.get_object("add_group_input_group_id").unwrap(),
         }
@@ -63,6 +65,7 @@ impl AddGroupWindow {
         let input_group = self.input_group.clone();
         let icon_error = self.icon_error.clone();
         let icon_reload = self.icon_reload.clone();
+        let icon_delete = self.icon_delete.clone();
         let image_input = self.image_input.clone();
         let save_button = self.save_button.clone();
         let group_id = self.group_id.clone();
@@ -77,6 +80,7 @@ impl AddGroupWindow {
 
         save_button.set_sensitive(true);
         icon_reload.set_sensitive(true);
+        icon_delete.set_sensitive(true);
         image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
         name.set_property_primary_icon_name(None);
@@ -87,6 +91,8 @@ impl AddGroupWindow {
     fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
         let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
+        let icon_delete = gui.add_group.icon_delete.clone();
+
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
@@ -96,6 +102,26 @@ impl AddGroupWindow {
             let icon_reload = icon_reload.clone();
             url_input.connect_activate(move |_| {
                 icon_reload.clicked();
+            });
+        }
+
+        {
+            let gui = gui.clone();
+            let url_input = gui.add_group.url_input.clone();
+            let icon_filename = gui.add_group.icon_filename.clone();
+
+            icon_delete.connect_clicked(move |_| {
+                let image_input = gui.add_group.image_input.clone();
+                let icon_error = gui.add_group.icon_error.clone();
+
+                url_input.set_text("");
+
+                icon_filename.set_label("");
+
+                icon_error.set_label("");
+                icon_error.set_visible(false);
+
+                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
             });
         }
 
