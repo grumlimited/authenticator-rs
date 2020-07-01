@@ -3,7 +3,7 @@ use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
-use gtk::Builder;
+use gtk::{Builder, IconSize};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -68,7 +68,6 @@ impl AddGroupWindow {
     }
 
     fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
-        let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
@@ -82,17 +81,25 @@ impl AddGroupWindow {
             icon_reload.connect_clicked(move |_| {
                 let gui_clone = gui_clone.clone();
                 let icon_reload = gui_clone.add_group.icon_reload.clone();
+                let image_input = gui_clone.add_group.image_input.clone();
+                let icon_filename = gui_clone.add_group.icon_filename.clone();
                 let icon_error = gui_clone.add_group.icon_error.clone();
                 let add_group = gui_clone.add_group;
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 icon_error.set_label("");
+                icon_filename.set_label("");
                 icon_error.set_visible(false);
+
+                if url.is_empty() {
+                    return;
+                }
 
                 let tx = tx.clone();
                 let fut = IconParser::html_notify(tx, url.clone());
 
                 icon_reload.set_sensitive(false);
+                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
                 pool.spawn_ok(fut);
             });

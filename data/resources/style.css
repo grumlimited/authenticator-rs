@@ -42,3 +42,7 @@
 .about_textbuffer_gnu {
     font-size: 7pt;
 }
+
+#add_group_icon_error {
+    color: crimson;
+}
