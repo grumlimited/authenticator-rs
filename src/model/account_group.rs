@@ -61,13 +61,21 @@ impl AccountGroup {
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
 
+
+        print!("{}", self.icon.is_some());
+
         let group_image: gtk::Image = builder.get_object("group_image").unwrap();
-        group_image.set_visible(self.icon.is_some());
+
         if let Some(image) = &self.icon {
             let mut dir = ConfigManager::icons_path();
             dir.push(&image);
             let pixbuf = Pixbuf::new_from_file_at_scale(&dir, 48, 48, true).unwrap();
             group_image.set_from_pixbuf(Some(&pixbuf));
+        } else {
+            let grid: gtk::Grid = builder.get_object("group_label_box").unwrap();
+            group_image.clear();
+            group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
+            grid.remove(&group_image);
         }
 
         let group_label: gtk::Label = builder.get_object("group_label").unwrap();
