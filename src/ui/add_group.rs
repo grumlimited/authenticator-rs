@@ -58,16 +58,19 @@ impl AddGroupWindow {
     pub fn reset(&self) {
         let name = self.input_group.clone();
         let icon_filename = self.icon_filename.clone();
+        let input_group = self.input_group.clone();
         let icon_error = self.icon_error.clone();
         let icon_reload = self.icon_reload.clone();
         let image_input = self.image_input.clone();
+
+        input_group.set_text("");
 
         icon_filename.set_label("");
 
         icon_error.set_label("");
         icon_error.set_visible(false);
 
-        icon_reload.set_sensitive(false);
+        icon_reload.set_sensitive(true);
         image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
         name.set_property_primary_icon_name(None);

@@ -292,7 +292,7 @@ impl MainWindow {
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
 
-                add_group.input_group.set_text("");
+                add_group.reset();
 
                 edit_account_window.container.set_visible(false);
                 accounts_window.container.set_visible(false);
@@ -334,8 +334,8 @@ impl MainWindow {
                 };
 
                 edit_account_window.reset();
-                edit_account_window.input_group.remove_all();
 
+                edit_account_window.input_group.remove_all();
                 groups.iter().for_each(|group| {
                     let string = format!("{}", group.id);
                     let entry_id = Some(string.as_str());
