@@ -258,6 +258,9 @@ impl AddGroupWindow {
                                     };
                                     group.name = name;
                                     group.icon = icon_filename.map(str::to_owned);
+
+                                    debug!("saving group {:?}", group);
+
                                     {
                                         let connection = connection.clone();
                                         ConfigManager::update_group(connection, &mut group)
