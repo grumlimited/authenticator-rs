@@ -147,7 +147,6 @@ impl AccountsWindow {
                     let input_group = gui.add_group.input_group.clone();
                     input_group.set_text(group.name.as_str());
 
-
                     let group_id = gui.add_group.group_id.clone();
                     group_id.set_label(format!("{}", group.id).as_str());
 

@@ -236,17 +236,38 @@ impl AddGroupWindow {
                         let add_group = gui_1.add_group;
 
                         let icon_filename = add_group.icon_filename.clone();
-                        let icon_filename: Option<String> =
-                            icon_filename.get_label().map(|e| e.to_string());
+                        let icon_filename = icon_filename.get_label().map(|e| e.to_string());
                         let icon_filename = icon_filename.as_deref();
 
                         let name: String = add_group.input_group.get_buffer().get_text();
 
-                        let mut group = AccountGroup::new(0, name.as_str(), icon_filename, vec![]);
+                        let group_id = add_group.group_id.get_label().unwrap();
 
                         {
                             let connection = connection.clone();
-                            ConfigManager::save_group(connection, &mut group).unwrap();
+                            match group_id.parse() {
+                                Ok(group_id) if group_id == 0 => {
+                                    let mut group =
+                                        AccountGroup::new(0, name.as_str(), icon_filename, vec![]);
+                                    let connection = connection.clone();
+                                    ConfigManager::save_group(connection, &mut group).unwrap();
+                                }
+                                Ok(group_id) => {
+                                    let mut group = {
+                                        let connection = connection.clone();
+
+                                        ConfigManager::get_group(connection, group_id).unwrap()
+                                    };
+                                    group.name = name;
+                                    group.icon = icon_filename.map(str::to_owned);
+                                    {
+                                        let connection = connection.clone();
+                                        ConfigManager::update_group(connection, &mut group)
+                                            .unwrap();
+                                    }
+                                }
+                                Err(e) => panic!(e),
+                            }
                         }
 
                         gui_3.add_group.reset();
