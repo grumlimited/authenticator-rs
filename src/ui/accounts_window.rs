@@ -85,17 +85,11 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
-            let update_button = group_widgets.update_button.clone();
             let edit_button = group_widgets.edit_button.clone();
-            let group_label_entry = group_widgets.group_label_entry.clone();
-            let event_box = group_widgets.event_box.clone();
-            let group_label = group_widgets.group_label.clone();
-            let edit_form_box = group_widgets.edit_form_box.clone();
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
             let connection_1 = connection.clone();
-            let connection_2 = connection_1.clone();
 
             let group_widgets = group_widgets.clone();
             let widgets_list_clone = widgets_list_clone.clone();
@@ -107,28 +101,6 @@ impl AccountsWindow {
 
                 let mut group_widgets = widgets_list_clone.lock().unwrap();
                 group_widgets.retain(|x| x.id != group_id);
-            });
-
-            {
-                let update_button = update_button.clone();
-                group_label_entry.connect_activate(move |_| {
-                    update_button.clicked();
-                });
-            }
-
-            update_button.connect_clicked(move |_| {
-                let connection = connection_2.clone();
-                let connection2 = connection.clone();
-                if let Some(s) = group_label_entry.get_text() {
-                    let mut group = ConfigManager::get_group(connection, group_id).unwrap();
-                    group.name = s.to_string();
-
-                    let _ = ConfigManager::update_group(connection2, &group).unwrap();
-
-                    edit_form_box.set_visible(false);
-                    group_label.set_label(group.name.as_str());
-                    event_box.set_visible(true);
-                }
             });
 
             {
