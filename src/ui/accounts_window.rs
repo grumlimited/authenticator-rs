@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
 use gtk::Builder;
+use log::error;
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -146,11 +147,22 @@ impl AccountsWindow {
                     let input_group = gui.add_group.input_group.clone();
                     input_group.set_text(group.name.as_str());
 
-                    let icon_filename = gui.add_group.icon_filename.clone();
-                    icon_filename.set_label(group.icon.unwrap_or("".to_owned()).as_str());
 
                     let group_id = gui.add_group.group_id.clone();
                     group_id.set_label(format!("{}", group.id).as_str());
+
+                    let image_input = gui.add_group.image_input.clone();
+                    let icon_filename = gui.add_group.icon_filename.clone();
+                    if let Some(image) = &group.icon {
+                        icon_filename.set_label(image.as_str());
+
+                        let mut dir = ConfigManager::icons_path();
+                        dir.push(&image);
+                        match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
+                            Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                            Err(_) => error!("Could not load image {}", dir.display()),
+                        };
+                    }
 
                     MainWindow::switch_to(gui, State::DisplayAddGroup);
                 });
@@ -300,6 +312,7 @@ impl AccountsWindow {
     }
 }
 
+use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use std::ops::Deref;
 use std::{thread, time};
