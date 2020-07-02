@@ -93,7 +93,6 @@ impl AddGroupWindow {
         let icon_reload = gui.add_group.icon_reload.clone();
         let icon_delete = gui.add_group.icon_delete.clone();
 
-
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
         );
@@ -245,10 +244,19 @@ impl AddGroupWindow {
                     if let Ok(()) = gui.add_group.validate() {
                         let icon_filename = gui.add_group.icon_filename.clone();
                         let icon_filename = icon_filename.get_label().map(|e| e.to_string());
-                        let icon_filename = icon_filename.as_deref();
+                        let icon_filename =
+                            icon_filename.as_deref().and_then(|value| match value {
+                                "" => None,
+                                _ => Some(value),
+                            });
 
                         let name: String = gui.add_group.input_group.get_buffer().get_text();
-                        let url_input: String = gui.add_group.url_input.get_buffer().get_text();
+                        let url_input: Option<String> =
+                            Some(gui.add_group.url_input.get_buffer().get_text());
+                        let url_input = url_input.as_deref().and_then(|value| match value {
+                            "" => None,
+                            _ => Some(value),
+                        });
 
                         let group_id = gui.add_group.group_id.get_label().unwrap();
 
@@ -263,7 +271,7 @@ impl AddGroupWindow {
                                     };
                                     group.name = name;
                                     group.icon = icon_filename.map(str::to_owned);
-                                    group.url = Some(url_input);
+                                    group.url = url_input.map(str::to_owned);
 
                                     debug!("saving group {:?}", group);
 
@@ -275,7 +283,7 @@ impl AddGroupWindow {
                                         0,
                                         name.as_str(),
                                         icon_filename,
-                                        Some(url_input.as_str()),
+                                        url_input,
                                         vec![],
                                     );
 
