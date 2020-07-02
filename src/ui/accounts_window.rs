@@ -166,8 +166,6 @@ impl AccountsWindow {
                     let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                     let edit_copy_img = account_widgets.edit_copy_img.clone();
 
-
-
                     {
                         let copy_button = account_widgets.copy_button.clone();
                         rx.attach(None, move |_| {
