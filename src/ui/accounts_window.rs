@@ -1,4 +1,4 @@
-use crate::helpers::ConfigManager;
+use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
@@ -125,9 +125,8 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         icon_filename.set_label(image.as_str());
 
-                        let mut dir = ConfigManager::icons_path();
-                        dir.push(&image);
-                        match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
+                        let dir = ConfigManager::icons_path(&image);
+                        match IconParser::load_icon(&dir) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
@@ -305,7 +304,6 @@ impl AccountsWindow {
 }
 
 use crate::ui::EditAccountWindow;
-use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use std::ops::Deref;
 use std::{thread, time};

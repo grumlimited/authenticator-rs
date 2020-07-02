@@ -71,8 +71,7 @@ impl AccountGroup {
         let group_image: gtk::Image = builder.get_object("group_image").unwrap();
 
         if let Some(image) = &self.icon {
-            let mut dir = ConfigManager::icons_path();
-            dir.push(&image);
+            let dir = ConfigManager::icons_path(&image);
             match IconParser::load_icon(&dir) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),

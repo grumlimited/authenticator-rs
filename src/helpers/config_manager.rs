@@ -34,9 +34,10 @@ impl ConfigManager {
         path
     }
 
-    pub fn icons_path() -> std::path::PathBuf {
+    pub fn icons_path(filename: &str) -> std::path::PathBuf {
         let mut path = ConfigManager::path();
         path.push("icons");
+        path.push(filename);
 
         path
     }
@@ -89,7 +90,7 @@ impl ConfigManager {
             .map(|_| ())
             .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))?;
 
-        let path = Self::icons_path();
+        let path = Self::icons_path("");
 
         if !path.exists() {
             debug!("Creating directory {}", path.display());
