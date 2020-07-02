@@ -305,10 +305,8 @@ impl MainWindow {
         add_account_button.connect_clicked(AccountsWindow::display_add_account_form(
             connection,
             popover,
+            self.clone(),
             self.edit_account_window.clone(),
-            self.accounts_window.clone(),
-            self.add_group.clone(),
-            self.state.clone(),
             None,
         ));
 

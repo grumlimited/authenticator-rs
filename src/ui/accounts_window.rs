@@ -83,10 +83,8 @@ impl AccountsWindow {
             add_account_button.connect_clicked(Self::display_add_account_form(
                 connection.clone(),
                 popover.clone(),
+                gui.clone(),
                 gui.edit_account_window.clone(),
-                gui.accounts_window.clone(),
-                gui.add_group.clone(),
-                gui.state.clone(),
                 Some(group_id),
             ));
 
@@ -275,10 +273,8 @@ impl AccountsWindow {
     pub fn display_add_account_form(
         connection: Arc<Mutex<Connection>>,
         popover: gtk::PopoverMenu,
+        main_window: MainWindow,
         edit_account_window: EditAccountWindow,
-        accounts_window: AccountsWindow,
-        add_group: AddGroupWindow,
-        state: Rc<RefCell<State>>,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
         Box::new({
@@ -301,23 +297,17 @@ impl AccountsWindow {
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                 buffer.set_text("");
 
-                let state = state.clone();
-                state.replace(State::DisplayAddAccount);
-
                 popover.hide();
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(false);
-                edit_account_window.container.set_visible(true);
+                MainWindow::switch_to(main_window.clone(), State::DisplayAddAccount);
             }
         })
     }
 }
 
-use crate::ui::{AddGroupWindow, EditAccountWindow};
+use crate::ui::EditAccountWindow;
 use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use std::ops::Deref;
-use std::rc::Rc;
 use std::{thread, time};
 
 /**
