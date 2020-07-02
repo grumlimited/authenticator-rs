@@ -6,6 +6,7 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
+use crate::helpers::runner;
 use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
@@ -68,6 +69,8 @@ fn main() {
 
         let connection: Arc<Mutex<Connection>> =
             Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
+
+        runner::run(connection.clone()).unwrap();
 
         let conn = connection.clone();
         let groups = ConfigManager::load_account_groups(conn).unwrap();
