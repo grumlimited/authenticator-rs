@@ -273,7 +273,7 @@ impl MainWindow {
             let state = self.state.clone();
 
             add_group_button.connect_clicked(move |_| {
-                popover.clone().hide();
+                popover.hide();
 
                 add_group.reset();
 
@@ -346,7 +346,7 @@ fn export_accounts(
         let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
-        export_account_error_body.set_label("Could not save accounts!");
+        export_account_error_body.set_label("Could not export accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => {
