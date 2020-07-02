@@ -12,7 +12,7 @@
     background-color: #ffccd2;
 }
 
-.account_box, .form_container {
+.account_row, .form_container {
     background-color: @content_view_bg;
     border-radius: 3px;
 }

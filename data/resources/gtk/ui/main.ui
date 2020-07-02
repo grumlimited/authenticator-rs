@@ -83,7 +83,6 @@
                 <property name="can_focus">True</property>
                 <property name="vadjustment">edit_account_input_secret_scrollable</property>
                 <property name="hscrollbar_policy">never</property>
-                <property name="shadow_type">out</property>
                 <property name="min_content_height">600</property>
                 <property name="propagate_natural_width">True</property>
                 <property name="propagate_natural_height">True</property>
