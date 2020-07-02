@@ -48,7 +48,7 @@ impl AccountsWindow {
 
             *m_widgets = groups
                 .iter_mut()
-                .map(|account_group| account_group.widget())
+                .map(|account_group| account_group.widget(gui.state.clone()))
                 .collect();
 
             // add updated accounts back to list
@@ -126,7 +126,7 @@ impl AccountsWindow {
                         icon_filename.set_label(image.as_str());
 
                         let dir = ConfigManager::icons_path(&image);
-                        match IconParser::load_icon(&dir) {
+                        match IconParser::load_icon(&dir, gui.state.clone()) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };

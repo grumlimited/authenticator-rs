@@ -28,8 +28,8 @@ pub struct MainWindow {
 
 #[derive(Clone, Debug)]
 pub struct State {
-    dark_mode: bool,
-    display: Display,
+    pub dark_mode: bool,
+    pub display: Display,
 }
 
 #[derive(Clone, Debug)]
@@ -164,7 +164,7 @@ impl MainWindow {
 
         let widgets: Vec<AccountGroupWidgets> = groups
             .iter_mut()
-            .map(|account_group| account_group.widget())
+            .map(|account_group| account_group.widget(self.state.clone()))
             .collect();
 
         widgets

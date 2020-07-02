@@ -1,3 +1,4 @@
+use crate::main_window::State;
 use curl::easy::Easy;
 use curl::Error;
 use gdk_pixbuf::Pixbuf;
@@ -5,7 +6,9 @@ use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -140,9 +143,16 @@ impl IconParser {
         })
     }
 
-    pub fn load_icon(filepath: &Path) -> Result<Pixbuf, IconError> {
+    pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf, IconError> {
+        let state = state.borrow();
+
+        let alpha = match state.dark_mode {
+            true => (0, 0, 0), // opaque
+            false => (255, 255, 255), // transparent
+        };
+
         Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
-            .map(|pixbuf| pixbuf.add_alpha(true, 255, 255, 255).unwrap_or(pixbuf))
+            .map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2).unwrap_or(pixbuf))
             .map_err(|_| IconError::PixBufError)
     }
 }

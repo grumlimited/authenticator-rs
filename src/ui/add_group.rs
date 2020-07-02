@@ -185,7 +185,7 @@ impl AddGroupWindow {
                             panic!("could not write image to file {}", icon_filepath.display())
                         });
 
-                    match IconParser::load_icon(&icon_filepath) {
+                    match IconParser::load_icon(&icon_filepath, gui.state.clone()) {
                         Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                         Err(_) => error!("Could not load image {}", icon_filepath.display()),
                     };
