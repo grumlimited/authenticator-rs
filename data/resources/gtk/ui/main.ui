@@ -495,7 +495,6 @@
                         <property name="margin_end">5</property>
                         <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
-                        <property name="text" translatable="yes">https://www.free.fr</property>
                         <property name="placeholder_text" translatable="yes">https://</property>
                         <property name="input_purpose">url</property>
                       </object>
