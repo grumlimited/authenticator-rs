@@ -147,12 +147,16 @@ impl IconParser {
         let state = state.borrow();
 
         let alpha = match state.dark_mode {
-            true => (0, 0, 0), // opaque
+            true => (0, 0, 0),        // opaque
             false => (255, 255, 255), // transparent
         };
 
         Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
-            .map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2).unwrap_or(pixbuf))
+            .map(|pixbuf| {
+                pixbuf
+                    .add_alpha(true, alpha.0, alpha.1, alpha.2)
+                    .unwrap_or(pixbuf)
+            })
             .map_err(|_| IconError::PixBufError)
     }
 }
