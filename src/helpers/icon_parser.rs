@@ -146,9 +146,10 @@ impl IconParser {
     pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf, IconError> {
         let state = state.borrow();
 
-        let alpha = match state.dark_mode {
-            true => (0, 0, 0),        // opaque
-            false => (255, 255, 255), // transparent
+        let alpha = if state.dark_mode {
+            (0, 0, 0)
+        } else {
+            (255, 255, 255)
         };
 
         Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)

@@ -73,7 +73,7 @@ impl AccountGroup {
 
         if let Some(image) = &self.icon {
             let dir = ConfigManager::icons_path(&image);
-            match IconParser::load_icon(&dir, state.clone()) {
+            match IconParser::load_icon(&dir, state) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
             };
