@@ -23,7 +23,7 @@ pub struct MainWindow {
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
     pub pool: ThreadPool,
-    state: Rc<RefCell<State>>,
+    pub state: Rc<RefCell<State>>,
 }
 
 #[derive(Clone, Debug)]
@@ -198,10 +198,7 @@ impl MainWindow {
             .title("Authenticator RS")
             .build();
 
-        {
-            let connection = connection.clone();
-            titlebar.pack_start(&self.build_action_menu(connection));
-        }
+        titlebar.pack_start(&self.build_action_menu(connection.clone()));
 
         titlebar.pack_end(&self.build_system_menu(connection));
         self.window.set_titlebar(Some(&titlebar));
@@ -220,25 +217,22 @@ impl MainWindow {
 
         let export_button: gtk::Button = builder.get_object("export_button").unwrap();
 
-        {
-            let popover = popover.clone();
-            let threadpool = self.pool.clone();
-            let connection = connection.clone();
-            export_button.connect_clicked(export_accounts(popover, connection, threadpool));
-        }
+        export_button.connect_clicked(export_accounts(
+            popover.clone(),
+            connection.clone(),
+            self.pool.clone(),
+        ));
 
         let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
-        {
-            let popover = popover.clone();
-            let threadpool = self.pool.clone();
-            let gui = self.clone();
-            import_button.connect_clicked(import_accounts(gui, popover, connection, threadpool));
-        }
+        import_button.connect_clicked(import_accounts(
+            self.clone(),
+            popover.clone(),
+            connection,
+            self.pool.clone(),
+        ));
 
-        let system_menu_image: gtk::Image = builder.get_object("system_menu_image").unwrap();
         let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
-        system_menu.set_image(Some(&system_menu_image));
 
         {
             let popover = popover.clone();
@@ -247,15 +241,12 @@ impl MainWindow {
             });
         }
 
-        {
-            let titlebar = gtk::HeaderBarBuilder::new()
-                .decoration_layout(":")
-                .title("About")
-                .build();
+        let titlebar = gtk::HeaderBarBuilder::new()
+            .decoration_layout(":")
+            .title("About")
+            .build();
 
-            let popup = self.about_popup.clone();
-            popup.set_titlebar(Some(&titlebar));
-        }
+        self.about_popup.clone().set_titlebar(Some(&titlebar));
         {
             let popup = self.about_popup.clone();
             about_button.connect_clicked(move |_| {
@@ -273,8 +264,6 @@ impl MainWindow {
             format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str(),
         );
 
-        let add_image: gtk::Image = builder.get_object("add_image").unwrap();
-
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
         let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
@@ -290,9 +279,9 @@ impl MainWindow {
             let state = self.state.clone();
 
             add_group_button.connect_clicked(move |_| {
-                popover.hide();
+                popover.clone().hide();
 
-                add_group.input_group.set_text("");
+                add_group.reset();
 
                 edit_account_window.container.set_visible(false);
                 accounts_window.container.set_visible(false);
@@ -303,7 +292,6 @@ impl MainWindow {
         }
 
         let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
-        action_menu.set_image(Some(&add_image));
 
         {
             let widgets = self.accounts_window.widgets.clone();
@@ -320,56 +308,15 @@ impl MainWindow {
             });
         }
 
-        {
-            let edit_account_window = self.edit_account_window.clone();
-            let accounts_window = self.accounts_window.clone();
-            let add_group = self.add_group.clone();
-
-            let state = self.state.clone();
-
-            add_account_button.connect_clicked(move |_| {
-                let groups = {
-                    let connection = connection.clone();
-                    ConfigManager::load_account_groups(connection).unwrap()
-                };
-
-                edit_account_window.reset();
-                edit_account_window.input_group.remove_all();
-
-                groups.iter().for_each(|group| {
-                    let string = format!("{}", group.id);
-                    let entry_id = Some(string.as_str());
-                    edit_account_window
-                        .input_group
-                        .append(entry_id, group.name.as_str());
-                });
-
-                let first_entry = groups.get(0).map(|e| format!("{}", e.id));
-                let first_entry = first_entry.as_deref();
-                edit_account_window.input_group.set_active_id(first_entry);
-
-                edit_account_window.input_account_id.set_text("0");
-                edit_account_window.input_name.set_text("");
-
-                edit_account_window
-                    .add_accounts_container_edit
-                    .set_visible(false);
-                edit_account_window
-                    .add_accounts_container_add
-                    .set_visible(true);
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
-
-                let state = state.clone();
-                state.replace(State::DisplayAddAccount);
-
-                popover.hide();
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(false);
-                edit_account_window.container.set_visible(true);
-            });
-        }
+        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(
+            connection,
+            popover,
+            self.edit_account_window.clone(),
+            self.accounts_window.clone(),
+            self.add_group.clone(),
+            self.state.clone(),
+            None,
+        ));
 
         action_menu
     }
@@ -417,18 +364,16 @@ fn export_accounts(
             _ => Box::new(|_| None),
         });
 
-        // dialog.add_filter(&filter);
         dialog.show();
 
         match dialog.run() {
             gtk::ResponseType::Accept => {
                 let path = dialog.get_filename().unwrap();
-                let connection = connection.clone();
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) =
                     glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection, tx));
+                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
 
                 rx.attach(None, move |success| {
                     if !success {
@@ -488,12 +433,11 @@ fn import_accounts(
                 let (tx, rx): (Sender<bool>, Receiver<bool>) =
                     glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                {
-                    let connection = connection.clone();
-                    threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
-                        path, connection, tx,
-                    ));
-                }
+                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
+                    path,
+                    connection.clone(),
+                    tx,
+                ));
 
                 let gui = gui.clone();
                 rx.attach(None, move |success| {
@@ -501,13 +445,9 @@ fn import_accounts(
                         export_account_error.show_all();
                     }
 
-                    let connection = connection.clone();
-                    {
-                        let gui = gui.clone();
-                        AccountsWindow::replace_accounts_and_widgets(gui, connection);
-                    }
-                    let gui = gui.clone();
-                    MainWindow::switch_to(gui, State::DisplayAccounts);
+                    AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
+
+                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
 
                     glib::Continue(true)
                 });

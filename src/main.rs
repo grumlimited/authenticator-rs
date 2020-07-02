@@ -64,7 +64,7 @@ fn main() {
         }
     });
 
-    application.connect_activate(|app| {
+    application.connect_activate(move |app| {
         let mut gui = MainWindow::new();
 
         let connection: Arc<Mutex<Connection>> =
@@ -72,40 +72,22 @@ fn main() {
 
         runner::run(connection.clone()).unwrap();
 
-        let conn = connection.clone();
-        let groups = ConfigManager::load_account_groups(conn).unwrap();
+        let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
 
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));
 
         gui.display(groups);
 
-        {
-            let conn = connection.clone();
-            gui.set_application(&app, conn);
-        }
+        gui.set_application(&app, connection.clone());
 
-        {
-            let conn = connection.clone();
-            AccountsWindow::edit_buttons_actions(gui.clone(), conn);
-        }
+        AccountsWindow::edit_buttons_actions(gui.clone(), connection.clone());
 
-        {
-            let conn = connection.clone();
-            AccountsWindow::group_edit_buttons_actions(gui.clone(), conn);
-        }
+        AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
 
-        {
-            let gui = gui.clone();
-            let conn = connection.clone();
-            EditAccountWindow::edit_account_buttons_actions(gui, conn);
-        }
+        EditAccountWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
 
-        {
-            let gui = gui.clone();
-            let conn = connection.clone();
-            AddGroupWindow::edit_account_buttons_actions(gui, conn);
-        }
+        AddGroupWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
 
         AccountsWindow::delete_buttons_actions(gui, connection);
 

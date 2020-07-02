@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use chrono::Local;
 use gtk::prelude::*;
 use gtk::Builder;
+use log::{debug, error};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
@@ -40,11 +41,9 @@ impl AccountsWindow {
         let children = accounts_container.get_children();
         children.iter().for_each(|e| accounts_container.remove(e));
 
-        let connection_clone = connection.clone();
-        let mut groups = ConfigManager::load_account_groups(connection_clone).unwrap();
+        let mut groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
 
         {
-            let gui = gui.clone();
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
             *m_widgets = groups
@@ -53,27 +52,16 @@ impl AccountsWindow {
                 .collect();
 
             // add updated accounts back to list
-            m_widgets
-                .iter()
-                .for_each(|w| accounts_container.add(&w.container));
+            m_widgets.iter().for_each(|account_group_widget| {
+                accounts_container.add(&account_group_widget.container)
+            });
         }
 
-        {
-            let gui = gui.clone();
-            let connection = connection.clone();
-            AccountsWindow::edit_buttons_actions(gui, connection);
-        }
+        AccountsWindow::edit_buttons_actions(gui.clone(), connection.clone());
 
-        {
-            let gui = gui.clone();
-            let connection = connection.clone();
-            AccountsWindow::group_edit_buttons_actions(gui, connection);
-        }
+        AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
 
-        {
-            let gui = gui.clone();
-            AccountsWindow::delete_buttons_actions(gui, connection);
-        }
+        AccountsWindow::delete_buttons_actions(gui.clone(), connection);
 
         gui.accounts_window.accounts_container.show_all();
     }
@@ -84,49 +72,72 @@ impl AccountsWindow {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter_mut() {
             let delete_button = group_widgets.delete_button.clone();
-            let update_button = group_widgets.update_button.clone();
-            let group_label_entry = group_widgets.group_label_entry.clone();
-            let event_box = group_widgets.event_box.clone();
-            let group_label = group_widgets.group_label.clone();
-            let edit_form_box = group_widgets.edit_form_box.clone();
+            let edit_button = group_widgets.edit_button.clone();
+            let add_account_button = group_widgets.add_account_button.clone();
+            let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
-
-            let connection_1 = connection.clone();
-            let connection_2 = connection_1.clone();
 
             let group_widgets = group_widgets.clone();
             let widgets_list_clone = widgets_list_clone.clone();
 
-            delete_button.connect_clicked(move |_| {
-                let connection = connection_1.clone();
-                let _ = ConfigManager::delete_group(connection, group_id);
-                group_widgets.container.set_visible(false);
-
-                let mut group_widgets = widgets_list_clone.lock().unwrap();
-                group_widgets.retain(|x| x.id != group_id);
-            });
+            add_account_button.connect_clicked(Self::display_add_account_form(
+                connection.clone(),
+                popover.clone(),
+                gui.edit_account_window.clone(),
+                gui.accounts_window.clone(),
+                gui.add_group.clone(),
+                gui.state.clone(),
+                Some(group_id),
+            ));
 
             {
-                let update_button = update_button.clone();
-                group_label_entry.connect_activate(move |_| {
-                    update_button.clicked();
+                let connection = connection.clone();
+                delete_button.connect_clicked(move |_| {
+                    ConfigManager::delete_group(connection.clone(), group_id)
+                        .expect("Could not delete group");
+                    group_widgets.container.set_visible(false);
+
+                    let mut group_widgets = widgets_list_clone.lock().unwrap();
+                    group_widgets.retain(|x| x.id != group_id);
                 });
             }
 
-            update_button.connect_clicked(move |_| {
-                let connection = connection_2.clone();
-                let connection2 = connection.clone();
-                if let Some(s) = group_label_entry.get_text() {
-                    let mut group = ConfigManager::get_group(connection, group_id).unwrap();
-                    group.name = s.to_string();
+            {
+                let gui = gui.clone();
+                let connection = connection.clone();
+                let popover = popover.clone();
+                edit_button.connect_clicked(move |_| {
+                    let group = ConfigManager::get_group(connection.clone(), group_id).unwrap();
 
-                    let _ = ConfigManager::update_group(connection2, &group).unwrap();
+                    debug!("Loading group {:?}", group);
 
-                    edit_form_box.set_visible(false);
-                    group_label.set_label(group.name.as_str());
-                    event_box.set_visible(true);
-                }
-            });
+                    popover.hide();
+
+                    let input_group = gui.add_group.input_group.clone();
+                    input_group.set_text(group.name.as_str());
+
+                    let url_input = gui.add_group.url_input.clone();
+                    url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
+
+                    let group_id = gui.add_group.group_id.clone();
+                    group_id.set_label(format!("{}", group.id).as_str());
+
+                    let image_input = gui.add_group.image_input.clone();
+                    let icon_filename = gui.add_group.icon_filename.clone();
+                    if let Some(image) = &group.icon {
+                        icon_filename.set_label(image.as_str());
+
+                        let mut dir = ConfigManager::icons_path();
+                        dir.push(&image);
+                        match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
+                            Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                            Err(_) => error!("Could not load image {}", dir.display()),
+                        };
+                    }
+
+                    MainWindow::switch_to(gui.clone(), State::DisplayAddGroup);
+                });
+            }
         }
     }
 
@@ -154,41 +165,38 @@ impl AccountsWindow {
 
                     let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                     let edit_copy_img = account_widgets.edit_copy_img.clone();
-                    let copy_button_1 = account_widgets.copy_button.clone();
-                    let copy_button_2 = account_widgets.copy_button.clone();
 
                     let pool = gui.pool.clone();
 
-                    rx.attach(None, move |_| {
-                        let edit_copy_img = edit_copy_img.lock().unwrap();
-                        let edit_copy_img = edit_copy_img.deref();
-                        let copy_button = copy_button_2.lock().unwrap();
-                        copy_button.set_image(Some(edit_copy_img));
-                        glib::Continue(true)
-                    });
+                    {
+                        let copy_button = account_widgets.copy_button.clone();
+                        rx.attach(None, move |_| {
+                            let edit_copy_img = edit_copy_img.lock().unwrap();
+                            let edit_copy_img = edit_copy_img.deref();
+                            let copy_button = copy_button.lock().unwrap();
+                            copy_button.set_image(Some(edit_copy_img));
+                            glib::Continue(true)
+                        });
+                    }
 
-                    let copy_button = copy_button_1.lock().unwrap();
-                    copy_button.connect_clicked(move |b| {
-                        let dialog_ok_img = dialog_ok_img.lock().unwrap();
-                        let dialog_ok_img = dialog_ok_img.deref();
-                        b.set_image(Some(dialog_ok_img));
+                    {
+                        let copy_button = account_widgets.copy_button.clone();
+                        let copy_button = copy_button.lock().unwrap();
+                        copy_button.connect_clicked(move |button| {
+                            let dialog_ok_img = dialog_ok_img.lock().unwrap();
+                            let dialog_ok_img = dialog_ok_img.deref();
+                            button.set_image(Some(dialog_ok_img));
 
-                        let tx = tx.clone();
-                        pool.spawn_ok(times_up(tx, 2000));
-                    });
+                            let tx = tx.clone();
+                            pool.spawn_ok(times_up(tx, 2000));
+                        });
+                    }
                 }
 
                 account_widgets.edit_button.connect_clicked(move |_| {
-                    let groups = {
-                        let connection = connection.clone();
-                        ConfigManager::load_account_groups(connection).unwrap()
-                    };
+                    let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
 
-                    let account = {
-                        let connection = connection.clone();
-                        ConfigManager::get_account(connection, id)
-                    }
-                    .unwrap();
+                    let account = ConfigManager::get_account(connection.clone(), id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
 
@@ -210,8 +218,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    let gui = gui.clone();
-                    MainWindow::switch_to(gui, State::DisplayEditAccount);
+                    MainWindow::switch_to(gui.clone(), State::DisplayEditAccount);
                 });
             }
         }
@@ -234,8 +241,7 @@ impl AccountsWindow {
                 let gui = gui.clone();
 
                 account_widgets.delete_button.connect_clicked(move |_| {
-                    let connection = connection.clone();
-                    let _ = ConfigManager::delete_account(connection, account_id).unwrap();
+                    ConfigManager::delete_account(connection.clone(), account_id).unwrap();
 
                     let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
@@ -266,10 +272,72 @@ impl AccountsWindow {
     fn progress_bar_fraction_for(second: u32) -> f64 {
         (1_f64 - ((second % 30) as f64 / 30_f64)) as f64
     }
+
+    pub fn display_add_account_form(
+        connection: Arc<Mutex<Connection>>,
+        popover: gtk::PopoverMenu,
+        edit_account_window: EditAccountWindow,
+        accounts_window: AccountsWindow,
+        add_group: AddGroupWindow,
+        state: Rc<RefCell<State>>,
+        group_id: Option<u32>,
+    ) -> Box<dyn Fn(&gtk::Button)> {
+        Box::new({
+            move |_b: &gtk::Button| {
+                debug!("Loading for group_id {:?}", group_id);
+                let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+
+                edit_account_window.reset();
+
+                edit_account_window.input_group.remove_all();
+                groups.iter().for_each(|group| {
+                    let string = format!("{}", group.id);
+                    let entry_id = Some(string.as_str());
+                    edit_account_window
+                        .input_group
+                        .append(entry_id, group.name.as_str());
+
+                    if group.id == group_id.unwrap_or(0) {
+                        edit_account_window.input_group.set_active_id(entry_id);
+                    }
+                });
+
+                // select 1st entry to avoid blank selection choice
+                if group_id.is_none() {
+                    let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+                    let first_entry = first_entry.as_deref();
+                    edit_account_window.input_group.set_active_id(first_entry);
+                }
+
+                edit_account_window.input_name.set_text("");
+
+                edit_account_window
+                    .add_accounts_container_edit
+                    .set_visible(false);
+                edit_account_window
+                    .add_accounts_container_add
+                    .set_visible(true);
+
+                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
+                buffer.set_text("");
+
+                let state = state.clone();
+                state.replace(State::DisplayAddAccount);
+
+                popover.hide();
+                accounts_window.container.set_visible(false);
+                add_group.container.set_visible(false);
+                edit_account_window.container.set_visible(true);
+            }
+        })
+    }
 }
 
+use crate::ui::{AddGroupWindow, EditAccountWindow};
+use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use std::ops::Deref;
+use std::rc::Rc;
 use std::{thread, time};
 
 /**

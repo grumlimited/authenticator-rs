@@ -13,16 +13,18 @@
     <property name="icon_name">edit-copy</property>
   </object>
   <object class="GtkGrid" id="grid">
+    <property name="height_request">50</property>
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="margin_end">10</property>
-    <property name="margin_top">5</property>
-    <property name="margin_bottom">5</property>
+    <property name="margin_end">2</property>
+    <property name="margin_top">2</property>
+    <property name="row_homogeneous">True</property>
     <child>
       <object class="GtkLabel" id="account_name">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">start</property>
+        <property name="valign">center</property>
         <property name="margin_start">8</property>
         <property name="hexpand">True</property>
         <property name="label" translatable="yes">account</property>
@@ -43,6 +45,7 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">end</property>
+        <property name="valign">center</property>
         <property name="label" translatable="yes">totp</property>
         <property name="justify">right</property>
         <property name="width_chars">8</property>
@@ -59,11 +62,16 @@
         <property name="can_focus">True</property>
         <property name="focus_on_click">False</property>
         <property name="receives_default">True</property>
+        <property name="valign">center</property>
         <property name="margin_start">5</property>
         <property name="margin_end">5</property>
         <property name="popover">popover</property>
         <child>
-          <placeholder/>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="icon_name">view-more-symbolic</property>
+          </object>
         </child>
       </object>
       <packing>
@@ -76,6 +84,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
+        <property name="valign">center</property>
         <property name="margin_start">5</property>
         <property name="margin_end">5</property>
         <property name="image">edit_copy_img</property>
@@ -86,6 +95,9 @@
         <property name="top_attach">0</property>
       </packing>
     </child>
+    <style>
+      <class name="account_row"/>
+    </style>
   </object>
   <object class="GtkPopoverMenu" id="popover">
     <property name="name">popover</property>

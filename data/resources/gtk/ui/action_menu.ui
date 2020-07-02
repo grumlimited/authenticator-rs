@@ -2,13 +2,6 @@
 <!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.22"/>
-  <object class="GtkImage" id="add_image">
-    <property name="name">add_image</property>
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">list-add</property>
-    <property name="use_fallback">True</property>
-  </object>
   <object class="GtkPopoverMenu" id="popover">
     <property name="name">popover</property>
     <property name="can_focus">False</property>
@@ -28,6 +21,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Add account</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
@@ -47,6 +41,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Agg group</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
@@ -76,7 +71,13 @@
     <property name="margin_start">15</property>
     <property name="popover">popover</property>
     <child>
-      <placeholder/>
+      <object class="GtkImage" id="add_image">
+        <property name="name">add_image</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="icon_name">list-add</property>
+        <property name="use_fallback">True</property>
+      </object>
     </child>
   </object>
 </interface>

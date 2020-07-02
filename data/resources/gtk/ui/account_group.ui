@@ -1,196 +1,177 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.36.0 -->
 <interface>
-    <requires lib="gtk+" version="3.22"/>
-    <object class="GtkImage" id="cancel_image">
-        <property name="name">cancel_image</property>
+  <requires lib="gtk+" version="3.22"/>
+  <object class="GtkBox" id="group">
+    <property name="name">group</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="GtkGrid" id="group_label_box">
+        <property name="name">group_label_box</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="icon_name">dialog-cancel</property>
-    </object>
-    <object class="GtkImage" id="dialog_ok_image">
-        <property name="name">dialog_ok_image</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="icon_name">dialog-ok</property>
-    </object>
-    <object class="GtkBox" id="group">
-        <property name="name">group</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="margin_start">5</property>
+        <property name="margin_top">10</property>
+        <property name="margin_bottom">20</property>
         <property name="orientation">vertical</property>
         <child>
-            <object class="GtkGrid" id="group_label_box">
-                <property name="name">group_label_box</property>
+          <object class="GtkEventBox" id="event_box">
+            <property name="name">event_box</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkLabel" id="group_label">
+                <property name="name">group_label</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_start">5</property>
-                <property name="margin_top">10</property>
-                <property name="margin_bottom">10</property>
-                <property name="orientation">vertical</property>
-                <child>
-                    <object class="GtkEventBox" id="event_box">
-                        <property name="name">event_box</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                            <object class="GtkLabel" id="group_label">
-                                <property name="name">group_label</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">label</property>
-                                <style>
-                                    <class name="group_label_button"/>
-                                </style>
-                            </object>
-                        </child>
-                    </object>
-                    <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">0</property>
-                    </packing>
-                </child>
-                <child>
-                    <object class="GtkBox" id="group_label_edit_form_box">
-                        <property name="name">group_label_edit_form_box</property>
-                        <property name="height_request">32</property>
-                        <property name="can_focus">False</property>
-                        <property name="no_show_all">True</property>
-                        <child>
-                            <object class="GtkEntry" id="group_label_entry">
-                                <property name="name">group_label_entry</property>
-                                <property name="height_request">32</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="margin_end">5</property>
-                                <property name="width_chars">15</property>
-                                <style>
-                                    <class name="group_label_entry"/>
-                                </style>
-                            </object>
-                            <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                            </packing>
-                        </child>
-                        <child>
-                            <object class="GtkButton" id="cancel_button">
-                                <property name="name">cancel_button</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="margin_end">5</property>
-                                <property name="image">cancel_image</property>
-                                <property name="always_show_image">True</property>
-                            </object>
-                            <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                            </packing>
-                        </child>
-                        <child>
-                            <object class="GtkButton" id="update_button">
-                                <property name="name">update_button</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="margin_end">5</property>
-                                <property name="image">dialog_ok_image</property>
-                                <property name="always_show_image">True</property>
-                            </object>
-                            <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">2</property>
-                            </packing>
-                        </child>
-                    </object>
-                    <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">0</property>
-                    </packing>
-                </child>
                 <style>
-                    <class name="account_group_label"/>
+                  <class name="group_label_button"/>
                 </style>
-            </object>
-            <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-            </packing>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+          </packing>
         </child>
         <child>
-            <object class="GtkBox" id="accounts">
-                <property name="name">accounts</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="margin_start">5</property>
-                <property name="margin_end">5</property>
-                <property name="orientation">vertical</property>
-                <child>
-                    <placeholder/>
-                </child>
-                <style>
-                    <class name="account_box"/>
-                </style>
-            </object>
-            <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-            </packing>
+          <object class="GtkImage" id="group_image">
+            <property name="name">group_image</property>
+            <property name="width_request">0</property>
+            <property name="height_request">0</property>
+            <property name="can_focus">False</property>
+            <property name="margin_end">10</property>
+            <property name="icon_size">0</property>
+            <style>
+              <class name="group_image"/>
+            </style>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
         </child>
-    </object>
-    <object class="GtkBox" id="buttons_container">
-        <property name="name">buttons_container</property>
+        <style>
+          <class name="account_group_label"/>
+        </style>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="accounts">
+        <property name="name">accounts</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="margin_start">5</property>
+        <property name="margin_end">5</property>
         <property name="orientation">vertical</property>
         <child>
-            <object class="GtkButton" id="edit_button">
-                <property name="label" translatable="yes">Edit</property>
-                <property name="name">edit_button</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="margin_start">3</property>
-                <property name="margin_end">3</property>
-                <property name="margin_top">3</property>
-                <property name="margin_bottom">3</property>
-            </object>
-            <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-            </packing>
+          <placeholder/>
         </child>
-        <child>
-            <object class="GtkButton" id="delete_button">
-                <property name="label" translatable="yes">Delete</property>
-                <property name="name">delete_button</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="margin_start">3</property>
-                <property name="margin_end">3</property>
-                <property name="margin_top">3</property>
-                <property name="margin_bottom">3</property>
-            </object>
-            <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-            </packing>
-        </child>
-    </object>
-    <object class="GtkPopoverMenu" id="popover">
-        <property name="name">popover</property>
-        <property name="can_focus">False</property>
-        <property name="relative_to">event_box</property>
-        <property name="position">right</property>
-        <child/>
-    </object>
+        <style>
+          <class name="account_box"/>
+        </style>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkPopoverMenu" id="popover">
+    <property name="name">popover</property>
+    <property name="can_focus">False</property>
+    <property name="relative_to">event_box</property>
+    <property name="position">right</property>
+    <child>
+      <placeholder/>
+    </child>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">add</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkImage" id="image2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">albumfolder-user-trash</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkImage" id="image3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-map</property>
+    <property name="use_fallback">True</property>
+  </object>
+  <object class="GtkBox" id="buttons_container">
+    <property name="name">buttons_container</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="GtkButton" id="edit_button">
+        <property name="label" translatable="yes">Edit</property>
+        <property name="name">edit_button</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">3</property>
+        <property name="margin_end">3</property>
+        <property name="margin_top">3</property>
+        <property name="margin_bottom">3</property>
+        <property name="image">image3</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="delete_button">
+        <property name="label" translatable="yes">Delete</property>
+        <property name="name">delete_button</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="margin_start">3</property>
+        <property name="margin_end">3</property>
+        <property name="margin_top">3</property>
+        <property name="margin_bottom">3</property>
+        <property name="image">image2</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="add_account_button">
+        <property name="label" translatable="yes">Add account</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="image">image1</property>
+        <property name="xalign">0</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">2</property>
+      </packing>
+    </child>
+  </object>
 </interface>

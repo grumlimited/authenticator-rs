@@ -1,7 +1,9 @@
+use crate::helpers::{ConfigManager, IconParser};
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
 use glib::prelude::*; // or `use gtk::prelude::*;`
 use gtk::prelude::*;
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -11,6 +13,8 @@ pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,
     pub name: String,
+    pub icon: Option<String>,
+    pub url: Option<String>,
     pub entries: Vec<Account>,
 }
 
@@ -18,13 +22,13 @@ pub struct AccountGroup {
 pub struct AccountGroupWidgets {
     pub id: u32,
     pub container: gtk::Box,
-    pub edit_form_box: gtk::Box,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
-    pub update_button: gtk::Button,
-    pub group_label_entry: gtk::Entry,
+    pub add_account_button: gtk::Button,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
+    pub group_image: gtk::Image,
+    pub popover: gtk::PopoverMenu,
     pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
 }
 
@@ -37,10 +41,18 @@ impl AccountGroupWidgets {
 }
 
 impl AccountGroup {
-    pub fn new(id: u32, name: &str, entries: Vec<Account>) -> Self {
+    pub fn new(
+        id: u32,
+        name: &str,
+        icon: Option<&str>,
+        url: Option<&str>,
+        entries: Vec<Account>,
+    ) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
+            icon: icon.map(str::to_owned),
+            url: url.map(str::to_owned),
             entries,
         }
     }
@@ -56,46 +68,29 @@ impl AccountGroup {
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
 
+        let group_image: gtk::Image = builder.get_object("group_image").unwrap();
+
+        if let Some(image) = &self.icon {
+            let mut dir = ConfigManager::icons_path();
+            dir.push(&image);
+            match IconParser::load_icon(&dir) {
+                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", dir.display()),
+            };
+        } else {
+            let grid: gtk::Grid = builder.get_object("group_label_box").unwrap();
+            group_image.clear();
+            group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
+            grid.remove(&group_image);
+        }
+
         let group_label: gtk::Label = builder.get_object("group_label").unwrap();
         group_label.set_label(self.name.as_str());
-
-        let group_label_entry: gtk::Entry = builder.get_object("group_label_entry").unwrap();
-        group_label_entry.set_text(self.name.as_str());
-
-        let group_label_edit_form_box: gtk::Box =
-            builder.get_object("group_label_edit_form_box").unwrap();
-
-        let cancel_button: gtk::Button = builder.get_object("cancel_button").unwrap();
-
-        let update_button: gtk::Button = builder.get_object("update_button").unwrap();
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
         let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
-
-        {
-            let group_label_entry = group_label_entry.clone();
-            let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let event_box = event_box.clone();
-            let popover = popover.clone();
-            edit_button.connect_clicked(move |_| {
-                group_label_edit_form_box.set_visible(true);
-
-                group_label_entry.grab_focus();
-
-                event_box.set_visible(false);
-                popover.set_visible(false);
-            });
-        }
-
-        {
-            let group_label_edit_form_box = group_label_edit_form_box.clone();
-            let event_box = event_box.clone();
-            cancel_button.connect_clicked(move |_| {
-                group_label_edit_form_box.set_visible(false);
-                event_box.set_visible(true);
-            });
-        }
+        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
 
         let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
         delete_button.set_sensitive(self.entries.is_empty());
@@ -123,6 +118,7 @@ impl AccountGroup {
         {
             let account_widgets = account_widgets.clone();
             let delete_button = delete_button.clone();
+            let popover = popover.clone();
 
             event_box
                 .connect_local("button-press-event", false, move |_| {
@@ -142,13 +138,13 @@ impl AccountGroup {
         AccountGroupWidgets {
             id: self.id,
             container: group,
-            edit_form_box: group_label_edit_form_box,
             edit_button,
             delete_button,
-            update_button,
-            group_label_entry,
+            add_account_button,
             event_box,
             group_label,
+            group_image,
+            popover,
             account_widgets,
         }
     }
