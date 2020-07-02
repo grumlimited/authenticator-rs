@@ -166,7 +166,7 @@ impl AccountsWindow {
                     let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                     let edit_copy_img = account_widgets.edit_copy_img.clone();
 
-                    let pool = gui.pool.clone();
+
 
                     {
                         let copy_button = account_widgets.copy_button.clone();
@@ -182,6 +182,7 @@ impl AccountsWindow {
                     {
                         let copy_button = account_widgets.copy_button.clone();
                         let copy_button = copy_button.lock().unwrap();
+                        let pool = gui.pool.clone();
                         copy_button.connect_clicked(move |button| {
                             let dialog_ok_img = dialog_ok_img.lock().unwrap();
                             let dialog_ok_img = dialog_ok_img.deref();
@@ -288,26 +289,7 @@ impl AccountsWindow {
                 let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
 
                 edit_account_window.reset();
-
-                edit_account_window.input_group.remove_all();
-                groups.iter().for_each(|group| {
-                    let string = format!("{}", group.id);
-                    let entry_id = Some(string.as_str());
-                    edit_account_window
-                        .input_group
-                        .append(entry_id, group.name.as_str());
-
-                    if group.id == group_id.unwrap_or(0) {
-                        edit_account_window.input_group.set_active_id(entry_id);
-                    }
-                });
-
-                // select 1st entry to avoid blank selection choice
-                if group_id.is_none() {
-                    let first_entry = groups.get(0).map(|e| format!("{}", e.id));
-                    let first_entry = first_entry.as_deref();
-                    edit_account_window.input_group.set_active_id(first_entry);
-                }
+                edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
                 edit_account_window.input_name.set_text("");
 

@@ -53,10 +53,7 @@ impl MainWindow {
             builder.connect_signals(move |_, handler_name| {
                 match handler_name {
                     // handler_name as defined in the glade file
-                    "about_popup_close" => {
-                        let popup = popup.clone();
-                        Box::new(about_popup_close(popup))
-                    }
+                    "about_popup_close" => Box::new(about_popup_close(popup.clone())),
                     "save_group" => {
                         let add_group_save = add_group_save.clone();
                         Box::new(move |_| {
@@ -132,10 +129,7 @@ impl MainWindow {
         application: &gtk::Application,
         connection: Arc<Mutex<Connection>>,
     ) {
-        {
-            let application = application.clone();
-            self.window.set_application(Some(&application));
-        }
+        self.window.set_application(Some(&application.clone()));
 
         self.build_menus(connection);
 
@@ -357,10 +351,7 @@ fn export_accounts(
         export_account_error_body.set_label("Could not save accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => {
-                let popup = export_account_error.clone();
-                Box::new(about_popup_close(popup))
-            }
+            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
             _ => Box::new(|_| None),
         });
 
@@ -414,10 +405,7 @@ fn import_accounts(
         export_account_error_body.set_label("Could not import accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => {
-                let popup = export_account_error.clone();
-                Box::new(about_popup_close(popup))
-            }
+            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
             _ => Box::new(|_| None),
         });
 
@@ -428,7 +416,6 @@ fn import_accounts(
                 dialog.close();
 
                 let path = dialog.get_filename().unwrap();
-                let connection = connection.clone();
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) =
                     glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
@@ -440,6 +427,7 @@ fn import_accounts(
                 ));
 
                 let gui = gui.clone();
+                let connection = connection.clone();
                 rx.attach(None, move |success| {
                     if !success {
                         export_account_error.show_all();
