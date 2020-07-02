@@ -65,7 +65,6 @@ fn main() {
     });
 
     application.connect_activate(move |app| {
-
         let mut gui = MainWindow::new();
 
         let connection: Arc<Mutex<Connection>> =
