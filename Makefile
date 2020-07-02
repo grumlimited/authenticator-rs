@@ -59,12 +59,17 @@ install : target/release/authenticator-rs gresource
 	# Install desktop file
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.desktop $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
 
+	# Install gschema file
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml /usr/share/glib-2.0/schemas/
+
 # Remove an existing install from the system
 uninstall :
 	# Remove the desktop file
 	rm -f $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
 	# Remove the application metadata
 	rm -f $(sharedir)/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml
+	# Remove gschema
+	rm -f /usr/share/glib-2.0/schemas/uk.co.grumlimited.authenticator-rs.gschema.xml
 	# Remove the icon
 	rm -f $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
 	rm -f $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png

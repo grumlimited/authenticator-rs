@@ -98,19 +98,19 @@
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">list-add</property>
+    <property name="icon_name">list-add-symbolic</property>
     <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">edit-delete</property>
+    <property name="icon_name">edit-delete-symbolic</property>
     <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">document-properties</property>
+    <property name="icon_name">document-properties-symbolic</property>
     <property name="use_fallback">True</property>
   </object>
   <object class="GtkBox" id="buttons_container">
