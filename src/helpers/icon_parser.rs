@@ -75,12 +75,13 @@ impl IconParser {
 
             let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
             let selector_2 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
+            let selector_3 = Selector::parse(r#"link[rel="shortcut icon"]"#).unwrap();
 
             let option_1 = document.select(&selector_1).next();
-
             let option_2 = document.select(&selector_2).next();
+            let option_3 = document.select(&selector_3).next();
 
-            let choice = option_1.or(option_2);
+            let choice = option_1.or(option_2).or(option_3);
 
             match choice.and_then(|v| v.value().attr("href")) {
                 Some(href) if href.starts_with('/') => Ok(format!("{}/{}", url, href)),
