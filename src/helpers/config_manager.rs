@@ -47,11 +47,6 @@ impl ConfigManager {
     pub fn load_account_groups(
         conn: Arc<Mutex<Connection>>,
     ) -> Result<Vec<AccountGroup>, LoadError> {
-        {
-            let conn = conn.clone();
-            Self::init_tables(conn).unwrap();
-        }
-
         let conn = conn.lock().unwrap();
 
         let mut stmt = conn
@@ -257,26 +252,6 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn init_tables(conn: Arc<Mutex<Connection>>) -> Result<usize, rusqlite::Error> {
-        let conn = conn.lock().unwrap();
-
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS accounts (
-                  id              INTEGER PRIMARY KEY,
-                  label           TEXT NOT NULL,
-                  group_id        INTEGER NOT NULL,
-                  secret          TEXT NOT NULL
-                  )",
-            params![],
-        )
-        .and(conn.execute(
-            "CREATE TABLE IF NOT EXISTS groups (
-                  id             INTEGER PRIMARY KEY,
-                  name           TEXT NOT NULL)",
-            params![],
-        ))
-    }
-
     pub fn get_account(
         connection: Arc<Mutex<Connection>>,
         account_id: u32,
@@ -439,6 +414,7 @@ impl ConfigManager {
 #[cfg(test)]
 mod tests {
     use super::ConfigManager;
+    use crate::helpers::runner;
     use rusqlite::Connection;
 
     use crate::model::{Account, AccountGroup};
@@ -451,10 +427,7 @@ mod tests {
     fn create_new_account_and_new_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
@@ -497,10 +470,7 @@ mod tests {
     fn test_update_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
 
@@ -527,10 +497,7 @@ mod tests {
     fn create_new_account_with_existing_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "existing_group2", vec![]);
 
@@ -561,10 +528,7 @@ mod tests {
     fn save_group_ordering() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         {
             let conn = conn.clone();
@@ -600,10 +564,7 @@ mod tests {
     fn delete_account() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         let mut account = Account::new(0, 0, "label", "secret");
 
@@ -642,10 +603,7 @@ mod tests {
     fn save_group_and_accounts() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", vec![account]);
@@ -661,10 +619,7 @@ mod tests {
     fn restore_accounts() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let account = Account::new(1, 0, "label", "secret");
         let account_group = AccountGroup::new(2, "group", vec![account]);
