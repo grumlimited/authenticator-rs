@@ -73,9 +73,9 @@ impl IconParser {
         let icon_url = {
             let document = Html::parse_document(html);
 
-            let selector_1 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
-            let selector_2 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
-            let selector_3 = Selector::parse(r#"link[rel="shortcut icon"]"#).unwrap();
+            let selector_1 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
+            let selector_2 = Selector::parse(r#"link[rel="shortcut icon"]"#).unwrap();
+            let selector_3 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
 
             let option_1 = document.select(&selector_1).next();
             let option_2 = document.select(&selector_2).next();
