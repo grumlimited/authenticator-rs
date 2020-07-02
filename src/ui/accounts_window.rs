@@ -1,5 +1,5 @@
 use crate::helpers::{ConfigManager, IconParser};
-use crate::main_window::{MainWindow, Display};
+use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;

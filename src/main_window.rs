@@ -44,7 +44,7 @@ impl Default for State {
     fn default() -> Self {
         State {
             dark_mode: true,
-            display: Display::DisplayAccounts
+            display: Display::DisplayAccounts,
         }
     }
 }

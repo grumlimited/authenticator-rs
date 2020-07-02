@@ -1,5 +1,5 @@
 use crate::helpers::ConfigManager;
-use crate::main_window::{MainWindow, Display};
+use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;

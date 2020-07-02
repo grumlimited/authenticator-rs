@@ -1,5 +1,5 @@
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
-use crate::main_window::{MainWindow, Display};
+use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
