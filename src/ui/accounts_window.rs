@@ -1,5 +1,5 @@
 use crate::helpers::{ConfigManager, IconParser};
-use crate::main_window::{MainWindow, State};
+use crate::main_window::{MainWindow, Display};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
@@ -132,7 +132,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAddGroup);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
                 });
             }
         }
@@ -214,7 +214,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayEditAccount);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayEditAccount);
                 });
             }
         }
@@ -297,7 +297,7 @@ impl AccountsWindow {
                 buffer.set_text("");
 
                 popover.hide();
-                MainWindow::switch_to(main_window.clone(), State::DisplayAddAccount);
+                MainWindow::switch_to(main_window.clone(), Display::DisplayAddAccount);
             }
         })
     }

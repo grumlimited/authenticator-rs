@@ -1,5 +1,5 @@
 use crate::helpers::ConfigManager;
-use crate::main_window::{MainWindow, State};
+use crate::main_window::{MainWindow, Display};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
@@ -136,7 +136,7 @@ impl EditAccountWindow {
                     let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                     buffer.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                 })
             },
         );
@@ -201,7 +201,7 @@ impl EditAccountWindow {
                         );
 
                         edit_account_window.reset();
-                        MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                     }
                 })
             },

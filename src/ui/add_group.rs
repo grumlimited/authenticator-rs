@@ -1,5 +1,5 @@
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
-use crate::main_window::{MainWindow, State};
+use crate::main_window::{MainWindow, Display};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
@@ -224,7 +224,7 @@ impl AddGroupWindow {
                     gui.add_group.reset();
                     gui.add_group.input_group.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                 })
             },
         );
@@ -293,7 +293,7 @@ impl AddGroupWindow {
                             gui.clone(),
                             connection.clone(),
                         );
-                        MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                     }
                 })
             },
