@@ -232,9 +232,7 @@ impl MainWindow {
             self.pool.clone(),
         ));
 
-        let system_menu_image: gtk::Image = builder.get_object("system_menu_image").unwrap();
         let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
-        system_menu.set_image(Some(&system_menu_image));
 
         {
             let popover = popover.clone();
