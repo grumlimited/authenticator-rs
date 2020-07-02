@@ -427,10 +427,7 @@ mod tests {
     fn create_new_account_and_new_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
@@ -473,10 +470,7 @@ mod tests {
     fn test_update_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", vec![]);
 
@@ -503,10 +497,7 @@ mod tests {
     fn create_new_account_with_existing_group() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "existing_group2", vec![]);
 
@@ -537,10 +528,7 @@ mod tests {
     fn save_group_ordering() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         {
             let conn = conn.clone();
@@ -576,10 +564,7 @@ mod tests {
     fn delete_account() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        let _ = {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        };
+        runner::run(conn.clone()).unwrap();
 
         let mut account = Account::new(0, 0, "label", "secret");
 
@@ -618,10 +603,7 @@ mod tests {
     fn save_group_and_accounts() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", vec![account]);
@@ -637,10 +619,7 @@ mod tests {
     fn restore_accounts() {
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let conn = conn.clone();
-            ConfigManager::init_tables(conn).expect("boom!");
-        }
+        runner::run(conn.clone()).unwrap();
 
         let account = Account::new(1, 0, "label", "secret");
         let account_group = AccountGroup::new(2, "group", vec![account]);
