@@ -21,7 +21,6 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="tooltip_text" translatable="yes">Add account</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
@@ -41,7 +40,6 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="tooltip_text" translatable="yes">Agg group</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
@@ -67,6 +65,7 @@
     <property name="can_focus">True</property>
     <property name="focus_on_click">False</property>
     <property name="receives_default">True</property>
+    <property name="tooltip_text" translatable="yes">Action menu</property>
     <property name="halign">start</property>
     <property name="margin_start">15</property>
     <property name="popover">popover</property>

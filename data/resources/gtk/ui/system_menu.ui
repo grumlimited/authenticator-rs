@@ -21,13 +21,13 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="tooltip_text" translatable="yes">Import accounts</property>
             <property name="halign">start</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
             <property name="margin_bottom">3</property>
             <property name="xalign">0</property>
+            <property name="always_show_image">True</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -42,12 +42,12 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="tooltip_text" translatable="yes">Export accounts</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
             <property name="margin_bottom">3</property>
             <property name="xalign">0</property>
+            <property name="always_show_image">True</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -75,13 +75,13 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="tooltip_text" translatable="yes">About</property>
             <property name="margin_start">3</property>
             <property name="margin_end">3</property>
             <property name="margin_top">3</property>
             <property name="margin_bottom">3</property>
             <property name="hexpand">True</property>
             <property name="xalign">0</property>
+            <property name="always_show_image">True</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -102,6 +102,7 @@
     <property name="can_focus">True</property>
     <property name="focus_on_click">False</property>
     <property name="receives_default">True</property>
+    <property name="tooltip_text" translatable="yes">System menu</property>
     <property name="halign">start</property>
     <property name="hexpand">True</property>
     <property name="popover">popover</property>

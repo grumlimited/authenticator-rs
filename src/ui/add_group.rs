@@ -2,10 +2,9 @@ use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResu
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
-use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
-use log::debug;
+use log::{debug, error};
 use rusqlite::Connection;
 use std::fs::File;
 use std::io::prelude::*;
@@ -173,13 +172,9 @@ impl AddGroupWindow {
 
             match account_group_icon {
                 Ok(account_group_icon) => {
-                    let icon_filepath = {
-                        let mut dir = ConfigManager::icons_path();
-
-                        dir.push(format!("{}", icon_filename.get_label().unwrap()));
-
-                        dir
-                    };
+                    let icon_filepath = ConfigManager::icons_path(
+                        format!("{}", icon_filename.get_label().unwrap()).as_str(),
+                    );
 
                     let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
                         panic!("could not create file {}", icon_filepath.display())
@@ -190,10 +185,10 @@ impl AddGroupWindow {
                             panic!("could not write image to file {}", icon_filepath.display())
                         });
 
-                    let pixbuf =
-                        Pixbuf::new_from_file_at_scale(&icon_filepath, 48, 48, true).unwrap();
-
-                    image_input.set_from_pixbuf(Some(&pixbuf));
+                    match IconParser::load_icon(&icon_filepath) {
+                        Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                        Err(_) => error!("Could not load image {}", icon_filepath.display()),
+                    };
                 }
                 Err(e) => {
                     icon_error.set_label(format!("{}", e).as_str());

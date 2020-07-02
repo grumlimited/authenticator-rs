@@ -1,6 +1,6 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::{MainWindow, State};
-use crate::model::Account;
+use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
 use gtk::Builder;
@@ -88,6 +88,27 @@ impl EditAccountWindow {
 
         let style_context = group.get_style_context();
         style_context.remove_class("error");
+    }
+
+    pub fn set_group_dropdown(&self, group_id: Option<u32>, groups: &[AccountGroup]) {
+        self.input_group.remove_all();
+
+        groups.iter().for_each(|group| {
+            let string = format!("{}", group.id);
+            let entry_id = Some(string.as_str());
+            self.input_group.append(entry_id, group.name.as_str());
+
+            if group.id == group_id.unwrap_or(0) {
+                self.input_group.set_active_id(entry_id);
+            }
+        });
+
+        // select 1st entry to avoid blank selection choice
+        if group_id.is_none() {
+            let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+            let first_entry = first_entry.as_deref();
+            self.input_group.set_active_id(first_entry);
+        }
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {

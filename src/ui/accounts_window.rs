@@ -1,4 +1,4 @@
-use crate::helpers::ConfigManager;
+use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{MainWindow, State};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
@@ -83,10 +83,8 @@ impl AccountsWindow {
             add_account_button.connect_clicked(Self::display_add_account_form(
                 connection.clone(),
                 popover.clone(),
+                gui.clone(),
                 gui.edit_account_window.clone(),
-                gui.accounts_window.clone(),
-                gui.add_group.clone(),
-                gui.state.clone(),
                 Some(group_id),
             ));
 
@@ -127,9 +125,8 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         icon_filename.set_label(image.as_str());
 
-                        let mut dir = ConfigManager::icons_path();
-                        dir.push(&image);
-                        match Pixbuf::new_from_file_at_scale(&dir, 48, 48, true) {
+                        let dir = ConfigManager::icons_path(&image);
+                        match IconParser::load_icon(&dir) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
@@ -166,8 +163,6 @@ impl AccountsWindow {
                     let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                     let edit_copy_img = account_widgets.edit_copy_img.clone();
 
-                    let pool = gui.pool.clone();
-
                     {
                         let copy_button = account_widgets.copy_button.clone();
                         rx.attach(None, move |_| {
@@ -182,6 +177,7 @@ impl AccountsWindow {
                     {
                         let copy_button = account_widgets.copy_button.clone();
                         let copy_button = copy_button.lock().unwrap();
+                        let pool = gui.pool.clone();
                         copy_button.connect_clicked(move |button| {
                             let dialog_ok_img = dialog_ok_img.lock().unwrap();
                             let dialog_ok_img = dialog_ok_img.deref();
@@ -276,10 +272,8 @@ impl AccountsWindow {
     pub fn display_add_account_form(
         connection: Arc<Mutex<Connection>>,
         popover: gtk::PopoverMenu,
+        main_window: MainWindow,
         edit_account_window: EditAccountWindow,
-        accounts_window: AccountsWindow,
-        add_group: AddGroupWindow,
-        state: Rc<RefCell<State>>,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
         Box::new({
@@ -288,26 +282,7 @@ impl AccountsWindow {
                 let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
 
                 edit_account_window.reset();
-
-                edit_account_window.input_group.remove_all();
-                groups.iter().for_each(|group| {
-                    let string = format!("{}", group.id);
-                    let entry_id = Some(string.as_str());
-                    edit_account_window
-                        .input_group
-                        .append(entry_id, group.name.as_str());
-
-                    if group.id == group_id.unwrap_or(0) {
-                        edit_account_window.input_group.set_active_id(entry_id);
-                    }
-                });
-
-                // select 1st entry to avoid blank selection choice
-                if group_id.is_none() {
-                    let first_entry = groups.get(0).map(|e| format!("{}", e.id));
-                    let first_entry = first_entry.as_deref();
-                    edit_account_window.input_group.set_active_id(first_entry);
-                }
+                edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
                 edit_account_window.input_name.set_text("");
 
@@ -321,23 +296,16 @@ impl AccountsWindow {
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                 buffer.set_text("");
 
-                let state = state.clone();
-                state.replace(State::DisplayAddAccount);
-
                 popover.hide();
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(false);
-                edit_account_window.container.set_visible(true);
+                MainWindow::switch_to(main_window.clone(), State::DisplayAddAccount);
             }
         })
     }
 }
 
-use crate::ui::{AddGroupWindow, EditAccountWindow};
-use gdk_pixbuf::Pixbuf;
+use crate::ui::EditAccountWindow;
 use glib::Sender;
 use std::ops::Deref;
-use std::rc::Rc;
 use std::{thread, time};
 
 /**
