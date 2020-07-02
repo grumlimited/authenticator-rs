@@ -44,6 +44,7 @@ install : target/release/authenticator-rs gresource
 	mkdir -p $(sharedir)/applications/
 	mkdir -p $(sharedir)/metainfo/
 	mkdir -p $(sharedir)/uk.co.grumlimited.authenticator-rs/
+	mkdir -p $(sharedir)/glib-2.0/schemas/
 
 	# Install gResource
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gresource $(sharedir)/uk.co.grumlimited.authenticator-rs/uk.co.grumlimited.authenticator-rs.gresource
@@ -60,7 +61,7 @@ install : target/release/authenticator-rs gresource
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.desktop $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
 
 	# Install gschema file
-	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml /usr/share/glib-2.0/schemas/
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml $(sharedir)/glib-2.0/schemas/
 
 # Remove an existing install from the system
 uninstall :
