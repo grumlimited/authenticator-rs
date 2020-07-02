@@ -14,7 +14,8 @@ use crate::{ui, NAMESPACE_PREFIX};
 use futures_executor::ThreadPool;
 use rusqlite::Connection;
 use std::rc::Rc;
-use gio::SettingsSchemaSource;
+
+use gio::prelude::SettingsExt;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -43,14 +44,10 @@ pub enum Display {
 
 impl Default for State {
     fn default() -> Self {
-        let g = SettingsSchemaSource::get_default().unwrap();
-
-        let h = g.lookup("uk.co.grumlimited.authenticator-rs", false).unwrap();
-
-        println!("{:?}", h);
+        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
 
         State {
-            dark_mode: true,
+            dark_mode: g_settings.get_boolean("dark-theme"),
             display: Display::DisplayAccounts,
         }
     }
