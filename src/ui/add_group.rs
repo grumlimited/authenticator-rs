@@ -205,7 +205,6 @@ impl AddGroupWindow {
             });
         }
 
-
         {
             let url_input = gui.add_group.url_input.clone();
             let icon_filename = gui.add_group.icon_filename.clone();
