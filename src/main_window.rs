@@ -153,7 +153,7 @@ impl MainWindow {
         {
             let add_group = self.add_group.clone();
             self.window.connect_delete_event(move |_, _| {
-                add_group.reset();
+                add_group.reset(); // to ensure temp files deletion
                 Inhibit(false)
             });
         }
