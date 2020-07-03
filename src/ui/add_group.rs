@@ -1,5 +1,5 @@
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
-use crate::main_window::{Display, MainWindow};
+use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
@@ -9,8 +9,9 @@ use rusqlite::Connection;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::process::exit;
 use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -113,7 +114,7 @@ impl AddGroupWindow {
             });
         }
 
-        fn reuse_filename(icon_filename: &gtk::Label) -> String {
+        fn reuse_filename(icon_filename: gtk::Label) -> String {
             let existing: String = icon_filename
                 .get_label()
                 .map(|s| s.to_string())
@@ -122,10 +123,33 @@ impl AddGroupWindow {
             debug!("existing icon filename: {}", existing);
 
             if existing.is_empty() {
-                uuid::Uuid::new_v4().to_string()
+                let uuid = uuid::Uuid::new_v4().to_string();
+                icon_filename.set_label(&uuid);
+                uuid
             } else {
                 existing
             }
+        }
+
+        fn write_icon(state: Rc<RefCell<State>>, icon_filename: gtk::Label, image_input: gtk::Image, buf: &[u8]) {
+            let reused_filename = reuse_filename(icon_filename.clone());
+
+            let icon_filepath = ConfigManager::icons_path(&format!("{}", reused_filename));
+            debug!("icon_filepath: {}", icon_filepath.display());
+
+            let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
+                panic!("could not create file {}", icon_filepath.display())
+            });
+
+            file.write_all(buf)
+                .unwrap_or_else(|_| {
+                    panic!("could not write image to file {}", icon_filepath.display())
+                });
+
+            match IconParser::load_icon(&icon_filepath, state) {
+                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", icon_filepath.display()),
+            };
         }
 
         {
@@ -144,26 +168,11 @@ impl AddGroupWindow {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
 
-                            let reused_filename = reuse_filename(&icon_filename);
-                            icon_filename.set_label(&reused_filename);
-
-                            let icon_filepath = ConfigManager::icons_path(&reused_filename);
-                            debug!("icon_filepath: {}", icon_filepath.display());
-
-                            let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
-                                panic!("could not create file {}", icon_filepath.display())
-                            });
-
-                            file.write_all(bytes.as_slice()).unwrap_or_else(|_| {
-                                panic!("could not write image to file {}", icon_filepath.display())
-                            });
-
-                            match IconParser::load_icon(&icon_filepath, state.clone()) {
-                                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                                Err(_) => {
-                                    error!("Could not load image {}", icon_filepath.display())
-                                }
-                            };
+                            write_icon(state.clone(),
+                                       icon_filename.clone(),
+                                       image_input.clone(),
+                                       bytes.as_slice()
+                            );
                         }
                         Err(_) => error!("Could not read file {}", &path.display()),
                     }
@@ -233,31 +242,13 @@ impl AddGroupWindow {
             icon_reload.set_sensitive(true);
             save_button.set_sensitive(true);
 
-            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
-            {
-                let uuid = uuid::Uuid::new_v4();
-                icon_filename.set_label(uuid.to_string().as_str());
-            }
-
             match account_group_icon {
                 Ok(account_group_icon) => {
-                    let icon_filepath = ConfigManager::icons_path(
-                        format!("{}", icon_filename.get_label().unwrap()).as_str(),
+                    write_icon(gui.state.clone(),
+                               icon_filename.clone(),
+                               image_input.clone(),
+                               account_group_icon.content.as_slice()
                     );
-
-                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
-                        panic!("could not create file {}", icon_filepath.display())
-                    });
-
-                    file.write_all(account_group_icon.content.as_slice())
-                        .unwrap_or_else(|_| {
-                            panic!("could not write image to file {}", icon_filepath.display())
-                        });
-
-                    match IconParser::load_icon(&icon_filepath, gui.state.clone()) {
-                        Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                        Err(_) => error!("Could not load image {}", icon_filepath.display()),
-                    };
                 }
                 Err(e) => {
                     icon_error.set_label(format!("{}", e).as_str());
