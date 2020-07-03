@@ -78,6 +78,8 @@ impl AddGroupWindow {
         let url_input = self.url_input.clone();
         let group_id = self.group_id.clone();
 
+        Self::remove_tmp_file(icon_filename.clone());
+
         input_group.set_text("");
         url_input.set_text("");
 

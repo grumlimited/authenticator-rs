@@ -150,7 +150,12 @@ impl MainWindow {
 
         self.build_menus(connection);
 
-        self.window.connect_delete_event(|_, _| Inhibit(false));
+        {
+            let add_group = self.add_group.clone();
+            self.window.connect_delete_event(move |_, _| {
+                add_group.reset();
+                Inhibit(false)});
+        }
 
         self.start_progress_bar();
 
