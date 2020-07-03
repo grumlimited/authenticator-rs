@@ -125,8 +125,8 @@ impl AddGroupWindow {
 
                     match fs::read(&path) {
                         Ok(bytes) => {
-                            let filename = path.file_name().unwrap().to_str().unwrap().to_owned();
-                            debug!("filename: {}", filename);
+                            let filename = path.file_name().unwrap();
+                            debug!("filename: {:?}", filename);
 
                             let uuid = uuid::Uuid::new_v4();
                             icon_filename.set_label(uuid.to_string().as_str());
