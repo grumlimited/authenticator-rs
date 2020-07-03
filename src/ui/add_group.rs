@@ -334,10 +334,18 @@ impl AddGroupWindow {
 
                                     //had an icon but none is set now -> delete icon file
                                     if group.icon.is_some() && icon_filename.is_none() {
-                                        let icon_filepath = ConfigManager::icons_path(&group.icon.unwrap());
-                                        match std::fs::remove_file(&icon_filepath){
-                                            Ok(_) =>  debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-                                            Err(e) => error!("could not delete file {}: {:?}", &icon_filepath.display(), e)
+                                        let icon_filepath =
+                                            ConfigManager::icons_path(&group.icon.unwrap());
+                                        match std::fs::remove_file(&icon_filepath) {
+                                            Ok(_) => debug!(
+                                                "deleted icon_filepath: {}",
+                                                &icon_filepath.display()
+                                            ),
+                                            Err(e) => error!(
+                                                "could not delete file {}: {:?}",
+                                                &icon_filepath.display(),
+                                                e
+                                            ),
                                         }
                                     }
 
