@@ -67,9 +67,11 @@ impl AddGroupWindow {
         let icon_delete = self.icon_delete.clone();
         let image_input = self.image_input.clone();
         let save_button = self.save_button.clone();
+        let url_input = self.url_input.clone();
         let group_id = self.group_id.clone();
 
         input_group.set_text("");
+        url_input.set_text("");
 
         icon_filename.set_label("");
         group_id.set_label("");
