@@ -311,7 +311,8 @@ impl AddGroupWindow {
                                 _ => Some(value),
                             });
 
-                        let name: String = gui.add_group.input_group.get_buffer().get_text();
+                        let group_name: String = gui.add_group.input_group.get_buffer().get_text();
+
                         let url_input: Option<String> =
                             Some(gui.add_group.url_input.get_buffer().get_text());
                         let url_input = url_input.as_deref().and_then(|value| match value {
@@ -321,7 +322,7 @@ impl AddGroupWindow {
 
                         let group_id = gui.add_group.group_id.get_label().unwrap();
 
-                        debug!("group_id: {}", group_id);
+                        debug!("saving group_id: {}", group_id);
 
                         {
                             match group_id.parse() {
@@ -330,7 +331,17 @@ impl AddGroupWindow {
                                         ConfigManager::get_group(connection.clone(), group_id)
                                             .unwrap()
                                     };
-                                    group.name = name;
+
+                                    //had an icon but none is set now -> delete icon file
+                                    if group.icon.is_some() && icon_filename.is_none() {
+                                        let icon_filepath = ConfigManager::icons_path(&group.icon.unwrap());
+                                        match std::fs::remove_file(&icon_filepath){
+                                            Ok(_) =>  debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+                                            Err(e) => error!("could not delete file {}: {:?}", &icon_filepath.display(), e)
+                                        }
+                                    }
+
+                                    group.name = group_name;
                                     group.icon = icon_filename.map(str::to_owned);
                                     group.url = url_input.map(str::to_owned);
 
@@ -342,7 +353,7 @@ impl AddGroupWindow {
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
                                         0,
-                                        name.as_str(),
+                                        group_name.as_str(),
                                         icon_filename,
                                         url_input,
                                         vec![],
