@@ -111,7 +111,7 @@
         <property name="name">system_menu_image</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="icon_name">format-justify-fill</property>
+        <property name="icon_name">format-justify-fill-symbolic</property>
         <property name="use_fallback">True</property>
       </object>
     </child>

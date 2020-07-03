@@ -1,4 +1,5 @@
 use crate::helpers::{ConfigManager, IconParser};
+use crate::main_window::State;
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
 use glib::prelude::*; // or `use gtk::prelude::*;`
@@ -57,7 +58,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&mut self) -> AccountGroupWidgets {
+    pub fn widget(&mut self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
         let builder = gtk::Builder::new_from_resource(
             format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str(),
         );
@@ -72,7 +73,7 @@ impl AccountGroup {
 
         if let Some(image) = &self.icon {
             let dir = ConfigManager::icons_path(&image);
-            match IconParser::load_icon(&dir) {
+            match IconParser::load_icon(&dir, state) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
             };

@@ -1,5 +1,5 @@
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
-use crate::main_window::{MainWindow, State};
+use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
@@ -185,7 +185,7 @@ impl AddGroupWindow {
                             panic!("could not write image to file {}", icon_filepath.display())
                         });
 
-                    match IconParser::load_icon(&icon_filepath) {
+                    match IconParser::load_icon(&icon_filepath, gui.state.clone()) {
                         Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                         Err(_) => error!("Could not load image {}", icon_filepath.display()),
                     };
@@ -224,7 +224,7 @@ impl AddGroupWindow {
                     gui.add_group.reset();
                     gui.add_group.input_group.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                 })
             },
         );
@@ -293,7 +293,7 @@ impl AddGroupWindow {
                             gui.clone(),
                             connection.clone(),
                         );
-                        MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
                     }
                 })
             },

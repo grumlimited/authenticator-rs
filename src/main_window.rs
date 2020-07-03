@@ -15,6 +15,8 @@ use futures_executor::ThreadPool;
 use rusqlite::Connection;
 use std::rc::Rc;
 
+use gio::prelude::SettingsExt;
+
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
@@ -27,11 +29,28 @@ pub struct MainWindow {
 }
 
 #[derive(Clone, Debug)]
-pub enum State {
+pub struct State {
+    pub dark_mode: bool,
+    pub display: Display,
+}
+
+#[derive(Clone, Debug)]
+pub enum Display {
     DisplayAccounts,
     DisplayEditAccount,
     DisplayAddAccount,
     DisplayAddGroup,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+
+        State {
+            dark_mode: g_settings.get_boolean("dark-theme"),
+            display: Display::DisplayAccounts,
+        }
+    }
 }
 
 impl MainWindow {
@@ -39,8 +58,6 @@ impl MainWindow {
         // Initialize the UI from the Glade XML.
         let builder =
             gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
-        let builder_clone_1 = builder.clone();
-        let builder_clone_2 = builder.clone();
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
@@ -76,25 +93,25 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
-            edit_account_window: EditAccountWindow::new(builder),
-            accounts_window: AccountsWindow::new(builder_clone_1),
-            add_group: AddGroupWindow::new(builder_clone_2),
+            edit_account_window: EditAccountWindow::new(builder.clone()),
+            accounts_window: AccountsWindow::new(builder.clone()),
+            add_group: AddGroupWindow::new(builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
-            state: Rc::new(RefCell::new(State::DisplayAccounts)),
+            state: Rc::new(RefCell::new(State::default())),
         }
     }
 
-    pub fn switch_to(gui: MainWindow, state: State) {
+    pub fn switch_to(gui: MainWindow, display: Display) {
         let mut t = gui.state.borrow_mut();
-        *t = state.clone();
+        (*t).display = display.clone();
 
-        match state {
-            State::DisplayAccounts => {
+        match display {
+            Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(false);
             }
-            State::DisplayEditAccount => {
+            Display::DisplayEditAccount => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
@@ -105,7 +122,7 @@ impl MainWindow {
                     .add_accounts_container_add
                     .set_visible(false);
             }
-            State::DisplayAddAccount => {
+            Display::DisplayAddAccount => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
@@ -116,7 +133,7 @@ impl MainWindow {
                     .add_accounts_container_add
                     .set_visible(true);
             }
-            State::DisplayAddGroup => {
+            Display::DisplayAddGroup => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(true);
                 gui.edit_account_window.container.set_visible(false);
@@ -151,7 +168,7 @@ impl MainWindow {
 
         let widgets: Vec<AccountGroupWidgets> = groups
             .iter_mut()
-            .map(|account_group| account_group.widget())
+            .map(|account_group| account_group.widget(self.state.clone()))
             .collect();
 
         widgets
@@ -270,7 +287,7 @@ impl MainWindow {
             let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
 
-            let state = self.state.clone();
+            let gui = self.clone();
 
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
@@ -281,7 +298,7 @@ impl MainWindow {
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
 
-                state.replace(State::DisplayAddGroup);
+                MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
             });
         }
 
@@ -437,7 +454,7 @@ fn import_accounts(
 
                     AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAccounts);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
 
                     glib::Continue(true)
                 });

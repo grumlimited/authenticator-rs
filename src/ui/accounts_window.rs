@@ -1,5 +1,5 @@
 use crate::helpers::{ConfigManager, IconParser};
-use crate::main_window::{MainWindow, State};
+use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroupWidgets;
 use chrono::prelude::*;
 use chrono::Local;
@@ -48,7 +48,7 @@ impl AccountsWindow {
 
             *m_widgets = groups
                 .iter_mut()
-                .map(|account_group| account_group.widget())
+                .map(|account_group| account_group.widget(gui.state.clone()))
                 .collect();
 
             // add updated accounts back to list
@@ -126,13 +126,13 @@ impl AccountsWindow {
                         icon_filename.set_label(image.as_str());
 
                         let dir = ConfigManager::icons_path(&image);
-                        match IconParser::load_icon(&dir) {
+                        match IconParser::load_icon(&dir, gui.state.clone()) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
                     }
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayAddGroup);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
                 });
             }
         }
@@ -214,7 +214,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(gui.clone(), State::DisplayEditAccount);
+                    MainWindow::switch_to(gui.clone(), Display::DisplayEditAccount);
                 });
             }
         }
@@ -297,7 +297,7 @@ impl AccountsWindow {
                 buffer.set_text("");
 
                 popover.hide();
-                MainWindow::switch_to(main_window.clone(), State::DisplayAddAccount);
+                MainWindow::switch_to(main_window.clone(), Display::DisplayAddAccount);
             }
         })
     }

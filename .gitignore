@@ -9,3 +9,4 @@ Cargo.lock
 *.swp
 /data/uk.co.grumlimited.authenticator-rs.gresource
 /test.yaml
+/data/gschemas.compiled
