@@ -216,10 +216,10 @@ impl AddGroupWindow {
                 url_input.set_text("");
 
                 {
-                    let icon_filename = get_label_text(icon_filename.clone());
+                    let icon_filename = Self::get_label_text(icon_filename.clone());
 
                     if icon_filename.is_some() {
-                        delete_icon_file(&icon_filename.unwrap());
+                        Self::delete_icon_file(&icon_filename.unwrap());
                     }
                 }
 
@@ -311,7 +311,7 @@ impl AddGroupWindow {
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {
-                        let icon_filename = get_label_text(gui.add_group.icon_filename.clone());
+                        let icon_filename = Self::get_label_text(gui.add_group.icon_filename.clone());
 
                         let group_name: String = gui.add_group.input_group.get_buffer().get_text();
 
@@ -329,10 +329,8 @@ impl AddGroupWindow {
                         {
                             match group_id.parse() {
                                 Ok(group_id) => {
-                                    let mut group = {
-                                        ConfigManager::get_group(connection.clone(), group_id)
-                                            .unwrap()
-                                    };
+                                    let mut group = ConfigManager::get_group(connection.clone(), group_id)
+                                        .unwrap();
 
                                     group.name = group_name;
                                     group.icon = icon_filename;
@@ -359,7 +357,7 @@ impl AddGroupWindow {
 
                                     //has no icon -> delete icon file if any
                                     if group.icon.is_none() && icon_filename.is_some() {
-                                        delete_icon_file(&icon_filename.unwrap());
+                                        Self::delete_icon_file(&icon_filename.unwrap());
                                     }
                                 }
                             }
@@ -376,35 +374,28 @@ impl AddGroupWindow {
             },
         );
     }
-}
 
-fn get_label_text(label: gtk::Label) -> Option<String> {
-    let icon_filename = label.get_label().map(|e| e.to_string());
+    fn get_label_text(label: gtk::Label) -> Option<String> {
+        let icon_filename = label.get_label().map(|e| e.to_string());
 
-    icon_filename.as_deref().and_then(|value| match value {
-        "" => None,
-        _ => Some(value.to_owned()),
-    })
-}
+        icon_filename.as_deref().and_then(|value| match value {
+            "" => None,
+            _ => Some(value.to_owned()),
+        })
+    }
 
-// fn get_entry_text(label: gtk::Entry) -> Option<String> {
-//     let icon_filename = label.get_buffer().get_text();
-//
-//     icon_filename.as_deref().and_then(|value| match value {
-//         "" => None,
-//         _ => Some(value.to_owned()),
-//     })
-// }
+    pub fn delete_icon_file(icon_filename: &str) {
+        let icon_filepath = ConfigManager::icons_path(icon_filename);
 
-fn delete_icon_file(icon_filename: &str) {
-    let icon_filepath = ConfigManager::icons_path(icon_filename);
-
-    match std::fs::remove_file(&icon_filepath) {
-        Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-        Err(e) => error!(
-            "could not delete file {}: {:?}",
-            &icon_filepath.display(),
-            e
-        ),
+        match std::fs::remove_file(&icon_filepath) {
+            Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+            Err(e) => error!(
+                "could not delete file {}: {:?}",
+                &icon_filepath.display(),
+                e
+            ),
+        }
     }
 }
+
+
