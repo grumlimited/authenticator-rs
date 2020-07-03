@@ -350,17 +350,34 @@ impl AddGroupWindow {
         }
     }
 
-    fn write_icon(icon_filename: gtk::Label) {
+    fn remove_tmp_file(icon_filename: gtk::Label) {
         if let Some(icon_filename) = Self::get_label_text(icon_filename) {
-            debug!("icon_filename: {}", icon_filename);
-
             let mut temp_filepath = PathBuf::new();
             temp_filepath.push(std::env::temp_dir());
             temp_filepath.push(&icon_filename);
 
+            match std::fs::remove_file(&temp_filepath) {
+                Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
+                Err(e) => error!(
+                    "could not delete temp file {}: {:?}",
+                    temp_filepath.display(),
+                    e
+                ),
+            };
+        }
+    }
+
+    fn write_icon(icon_filename: gtk::Label) {
+        if let Some(icon_filename_text) = Self::get_label_text(icon_filename.clone()) {
+            debug!("icon_filename: {}", icon_filename_text);
+
+            let mut temp_filepath = PathBuf::new();
+            temp_filepath.push(std::env::temp_dir());
+            temp_filepath.push(&icon_filename_text);
+
             match std::fs::read(&temp_filepath) {
                 Ok(bytes) => {
-                    let icon_filepath = ConfigManager::icons_path(&icon_filename);
+                    let icon_filepath = ConfigManager::icons_path(&icon_filename_text);
                     debug!("icon_filepath: {}", icon_filepath.display());
 
                     let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
@@ -371,14 +388,7 @@ impl AddGroupWindow {
                         panic!("could not write image to file {}", icon_filepath.display())
                     });
 
-                    match std::fs::remove_file(&temp_filepath) {
-                        Ok(_) => {}
-                        Err(e) => error!(
-                            "could not delete temp file {}: {:?}",
-                            temp_filepath.display(),
-                            e
-                        ),
-                    };
+                    Self::remove_tmp_file(icon_filename);
                 }
                 Err(_) => error!(
                     "temp file {} not found. Did you call write_tmp_icon() first ?",
@@ -396,10 +406,8 @@ impl AddGroupWindow {
     ) {
         let mut temp_filepath = PathBuf::new();
 
-        let reused_filename = Self::reuse_filename(icon_filename);
-
         temp_filepath.push(std::env::temp_dir());
-        temp_filepath.push(reused_filename);
+        temp_filepath.push(Self::reuse_filename(icon_filename));
 
         let mut tempfile = tempfile_fast::Sponge::new_for(&temp_filepath).unwrap();
         tempfile.write_all(buf).unwrap();
