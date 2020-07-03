@@ -6,12 +6,12 @@ use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use log::{debug, error};
 use rusqlite::Connection;
+use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::sync::{Arc, Mutex};
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -114,44 +114,6 @@ impl AddGroupWindow {
             });
         }
 
-        fn reuse_filename(icon_filename: gtk::Label) -> String {
-            let existing: String = icon_filename
-                .get_label()
-                .map(|s| s.to_string())
-                .unwrap_or("".to_owned());
-
-            debug!("existing icon filename: {}", existing);
-
-            if existing.is_empty() {
-                let uuid = uuid::Uuid::new_v4().to_string();
-                icon_filename.set_label(&uuid);
-                uuid
-            } else {
-                existing
-            }
-        }
-
-        fn write_icon(state: Rc<RefCell<State>>, icon_filename: gtk::Label, image_input: gtk::Image, buf: &[u8]) {
-            let reused_filename = reuse_filename(icon_filename.clone());
-
-            let icon_filepath = ConfigManager::icons_path(&format!("{}", reused_filename));
-            debug!("icon_filepath: {}", icon_filepath.display());
-
-            let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
-                panic!("could not create file {}", icon_filepath.display())
-            });
-
-            file.write_all(buf)
-                .unwrap_or_else(|_| {
-                    panic!("could not write image to file {}", icon_filepath.display())
-                });
-
-            match IconParser::load_icon(&icon_filepath, state) {
-                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                Err(_) => error!("Could not load image {}", icon_filepath.display()),
-            };
-        }
-
         {
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
@@ -168,10 +130,11 @@ impl AddGroupWindow {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
 
-                            write_icon(state.clone(),
-                                       icon_filename.clone(),
-                                       image_input.clone(),
-                                       bytes.as_slice()
+                            write_icon(
+                                state.clone(),
+                                icon_filename.clone(),
+                                image_input.clone(),
+                                bytes.as_slice(),
                             );
                         }
                         Err(_) => error!("Could not read file {}", &path.display()),
@@ -244,10 +207,11 @@ impl AddGroupWindow {
 
             match account_group_icon {
                 Ok(account_group_icon) => {
-                    write_icon(gui.state.clone(),
-                               icon_filename.clone(),
-                               image_input.clone(),
-                               account_group_icon.content.as_slice()
+                    write_icon(
+                        gui.state.clone(),
+                        icon_filename.clone(),
+                        image_input.clone(),
+                        account_group_icon.content.as_slice(),
                     );
                 }
                 Err(e) => {
@@ -258,6 +222,47 @@ impl AddGroupWindow {
 
             glib::Continue(true)
         });
+
+        fn reuse_filename(icon_filename: gtk::Label) -> String {
+            let existing: String = icon_filename
+                .get_label()
+                .map(|s| s.to_string())
+                .unwrap_or("".to_owned());
+
+            debug!("existing icon filename: {}", existing);
+
+            if existing.is_empty() {
+                let uuid = uuid::Uuid::new_v4().to_string();
+                icon_filename.set_label(&uuid);
+                uuid
+            } else {
+                existing
+            }
+        }
+
+        fn write_icon(
+            state: Rc<RefCell<State>>,
+            icon_filename: gtk::Label,
+            image_input: gtk::Image,
+            buf: &[u8],
+        ) {
+            let reused_filename = reuse_filename(icon_filename.clone());
+
+            let icon_filepath = ConfigManager::icons_path(&format!("{}", reused_filename));
+            debug!("icon_filepath: {}", icon_filepath.display());
+
+            let mut file = File::create(&icon_filepath)
+                .unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
+
+            file.write_all(buf).unwrap_or_else(|_| {
+                panic!("could not write image to file {}", icon_filepath.display())
+            });
+
+            match IconParser::load_icon(&icon_filepath, state) {
+                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", icon_filepath.display()),
+            };
+        }
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
