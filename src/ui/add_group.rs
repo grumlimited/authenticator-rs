@@ -23,6 +23,8 @@ pub struct AddGroupWindow {
     pub icon_delete: gtk::Button,
     pub icon_error: gtk::Label,
     pub group_id: gtk::Label,
+    pub image_button: gtk::Button,
+    pub image_dialog: gtk::FileChooserDialog,
 }
 
 impl AddGroupWindow {
@@ -39,6 +41,8 @@ impl AddGroupWindow {
             icon_delete: builder.get_object("group_icon_delete").unwrap(),
             icon_error: builder.get_object("add_group_icon_error").unwrap(),
             group_id: builder.get_object("add_group_input_group_id").unwrap(),
+            image_button: builder.get_object("add_group_image_button").unwrap(),
+            image_dialog: builder.get_object("add_group_image_dialog").unwrap(),
         }
     }
 
@@ -93,6 +97,8 @@ impl AddGroupWindow {
         let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
         let icon_delete = gui.add_group.icon_delete.clone();
+        let image_button = gui.add_group.image_button.clone();
+        let dialog = gui.add_group.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
@@ -102,6 +108,23 @@ impl AddGroupWindow {
             let icon_reload = icon_reload.clone();
             url_input.connect_activate(move |_| {
                 icon_reload.clicked();
+            });
+        }
+
+        {
+            let dialog = dialog.clone();
+            image_button.connect_clicked(move |_| {
+
+                match dialog.run() {
+                    gtk::ResponseType::Accept => {
+
+                        dialog.hide();
+
+                        let path = dialog.get_filename().unwrap();
+                        println!("{}", path.display());
+                    }
+                    _ => dialog.hide(),
+                }
             });
         }
 

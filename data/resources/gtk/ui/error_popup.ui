@@ -5,7 +5,7 @@
   <object class="GtkImage" id="cancel_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">button_cancel</property>
+    <property name="icon_name">window-close-symbolic</property>
     <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="export_account_error_image">
@@ -92,7 +92,7 @@
   <object class="GtkImage" id="save_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">browser-download</property>
+    <property name="icon_name">object-select-symbolic</property>
     <property name="use_fallback">True</property>
   </object>
   <object class="GtkFileFilter" id="yaml_filter">
@@ -144,6 +144,7 @@
                 <property name="name">_Save</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="can_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="image">save_image</property>
                 <property name="always_show_image">True</property>
