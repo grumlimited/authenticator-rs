@@ -96,7 +96,7 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
+    fn url_input_action(gui: MainWindow) {
         let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
         let icon_delete = gui.add_group.icon_delete.clone();
@@ -146,35 +146,14 @@ impl AddGroupWindow {
 
         {
             let gui = gui.clone();
-            let url_input = gui.add_group.url_input.clone();
-            let icon_filename = gui.add_group.icon_filename.clone();
-
-            icon_delete.connect_clicked(move |_| {
-                let image_input = gui.add_group.image_input.clone();
-                let icon_error = gui.add_group.icon_error.clone();
-
-                url_input.set_text("");
-
-                icon_filename.set_label("");
-
-                icon_error.set_label("");
-                icon_error.set_visible(false);
-
-                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
-            });
-        }
-
-        {
-            let gui_clone = gui.clone();
             let pool = gui.pool.clone();
 
             icon_reload.connect_clicked(move |_| {
-                let gui_clone = gui_clone.clone();
-                let icon_reload = gui_clone.add_group.icon_reload.clone();
-                let save_button = gui_clone.add_group.save_button.clone();
-                let image_input = gui_clone.add_group.image_input.clone();
-                let icon_error = gui_clone.add_group.icon_error.clone();
-                let add_group = gui_clone.add_group;
+                let icon_reload = gui.add_group.icon_reload.clone();
+                let save_button = gui.add_group.save_button.clone();
+                let image_input = gui.add_group.image_input.clone();
+                let icon_error = gui.add_group.icon_error.clone();
+                let add_group = gui.add_group.clone();
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 icon_error.set_label("");
@@ -195,39 +174,62 @@ impl AddGroupWindow {
             });
         }
 
-        rx.attach(None, move |account_group_icon| {
+        {
+            let gui = gui.clone();
+            rx.attach(None, move |account_group_icon| {
+                let icon_filename = gui.add_group.icon_filename.clone();
+                let image_input = gui.add_group.image_input.clone();
+                let icon_reload = gui.add_group.icon_reload.clone();
+                let icon_error = gui.add_group.icon_error.clone();
+                let save_button = gui.add_group.save_button.clone();
+
+                icon_reload.set_sensitive(true);
+                save_button.set_sensitive(true);
+
+                match account_group_icon {
+                    Ok(account_group_icon) => {
+                        write_icon(
+                            gui.state.clone(),
+                            icon_filename,
+                            image_input,
+                            account_group_icon.content.as_slice(),
+                        );
+                    }
+                    Err(e) => {
+                        icon_error.set_label(format!("{}", e).as_str());
+                        icon_error.set_visible(true);
+                    }
+                }
+
+                glib::Continue(true)
+            });
+        }
+
+
+        {
+            let url_input = gui.add_group.url_input.clone();
             let icon_filename = gui.add_group.icon_filename.clone();
-            let image_input = gui.add_group.image_input.clone();
-            let icon_reload = gui.add_group.icon_reload.clone();
-            let icon_error = gui.add_group.icon_error.clone();
-            let save_button = gui.add_group.save_button.clone();
 
-            icon_reload.set_sensitive(true);
-            save_button.set_sensitive(true);
+            icon_delete.connect_clicked(move |_| {
+                let image_input = gui.add_group.image_input.clone();
+                let icon_error = gui.add_group.icon_error.clone();
 
-            match account_group_icon {
-                Ok(account_group_icon) => {
-                    write_icon(
-                        gui.state.clone(),
-                        icon_filename.clone(),
-                        image_input.clone(),
-                        account_group_icon.content.as_slice(),
-                    );
-                }
-                Err(e) => {
-                    icon_error.set_label(format!("{}", e).as_str());
-                    icon_error.set_visible(true);
-                }
-            }
+                url_input.set_text("");
 
-            glib::Continue(true)
-        });
+                icon_filename.set_label("");
+
+                icon_error.set_label("");
+                icon_error.set_visible(false);
+
+                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+            });
+        }
 
         fn reuse_filename(icon_filename: gtk::Label) -> String {
             let existing: String = icon_filename
                 .get_label()
                 .map(|s| s.to_string())
-                .unwrap_or("".to_owned());
+                .unwrap_or_else(|| "".to_owned());
 
             debug!("existing icon filename: {}", existing);
 
@@ -246,9 +248,9 @@ impl AddGroupWindow {
             image_input: gtk::Image,
             buf: &[u8],
         ) {
-            let reused_filename = reuse_filename(icon_filename.clone());
+            let reused_filename = reuse_filename(icon_filename);
 
-            let icon_filepath = ConfigManager::icons_path(&format!("{}", reused_filename));
+            let icon_filepath = ConfigManager::icons_path(&reused_filename);
             debug!("icon_filepath: {}", icon_filepath.display());
 
             let mut file = File::create(&icon_filepath)
@@ -266,7 +268,7 @@ impl AddGroupWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        Self::url_input_action(gui.clone(), connection.clone());
+        Self::url_input_action(gui.clone());
 
         fn with_action<F>(
             gui: MainWindow,
