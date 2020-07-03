@@ -154,7 +154,8 @@ impl MainWindow {
             let add_group = self.add_group.clone();
             self.window.connect_delete_event(move |_, _| {
                 add_group.reset();
-                Inhibit(false)});
+                Inhibit(false)
+            });
         }
 
         self.start_progress_bar();
