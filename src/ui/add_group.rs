@@ -215,6 +215,14 @@ impl AddGroupWindow {
 
                 url_input.set_text("");
 
+                {
+                    let icon_filename = get_label_text(icon_filename.clone());
+
+                    if icon_filename.is_some() {
+                        delete_icon_file(&icon_filename.unwrap());
+                    }
+                }
+
                 icon_filename.set_label("");
 
                 icon_error.set_label("");
@@ -303,13 +311,7 @@ impl AddGroupWindow {
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {
-                        let icon_filename = gui.add_group.icon_filename.clone();
-                        let icon_filename = icon_filename.get_label().map(|e| e.to_string());
-                        let icon_filename =
-                            icon_filename.as_deref().and_then(|value| match value {
-                                "" => None,
-                                _ => Some(value),
-                            });
+                        let icon_filename = get_label_text(gui.add_group.icon_filename.clone());
 
                         let group_name: String = gui.add_group.input_group.get_buffer().get_text();
 
@@ -332,25 +334,8 @@ impl AddGroupWindow {
                                             .unwrap()
                                     };
 
-                                    //had an icon but none is set now -> delete icon file
-                                    if group.icon.is_some() && icon_filename.is_none() {
-                                        let icon_filepath =
-                                            ConfigManager::icons_path(&group.icon.unwrap());
-                                        match std::fs::remove_file(&icon_filepath) {
-                                            Ok(_) => debug!(
-                                                "deleted icon_filepath: {}",
-                                                &icon_filepath.display()
-                                            ),
-                                            Err(e) => error!(
-                                                "could not delete file {}: {:?}",
-                                                &icon_filepath.display(),
-                                                e
-                                            ),
-                                        }
-                                    }
-
                                     group.name = group_name;
-                                    group.icon = icon_filename.map(str::to_owned);
+                                    group.icon = icon_filename;
                                     group.url = url_input.map(str::to_owned);
 
                                     debug!("saving group {:?}", group);
@@ -361,14 +346,21 @@ impl AddGroupWindow {
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
                                         0,
-                                        group_name.as_str(),
-                                        icon_filename,
+                                        &group_name,
+                                        icon_filename.as_deref(),
                                         url_input,
                                         vec![],
                                     );
 
                                     ConfigManager::save_group(connection.clone(), &mut group)
                                         .unwrap();
+
+                                    debug!("saving group {:?}", group);
+
+                                    //has no icon -> delete icon file if any
+                                    if group.icon.is_none() && icon_filename.is_some() {
+                                        delete_icon_file(&icon_filename.unwrap());
+                                    }
                                 }
                             }
                         }
@@ -383,5 +375,36 @@ impl AddGroupWindow {
                 })
             },
         );
+    }
+}
+
+fn get_label_text(label: gtk::Label) -> Option<String> {
+    let icon_filename = label.get_label().map(|e| e.to_string());
+
+    icon_filename.as_deref().and_then(|value| match value {
+        "" => None,
+        _ => Some(value.to_owned()),
+    })
+}
+
+// fn get_entry_text(label: gtk::Entry) -> Option<String> {
+//     let icon_filename = label.get_buffer().get_text();
+//
+//     icon_filename.as_deref().and_then(|value| match value {
+//         "" => None,
+//         _ => Some(value.to_owned()),
+//     })
+// }
+
+fn delete_icon_file(icon_filename: &str) {
+    let icon_filepath = ConfigManager::icons_path(icon_filename);
+
+    match std::fs::remove_file(&icon_filepath) {
+        Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+        Err(e) => error!(
+            "could not delete file {}: {:?}",
+            &icon_filepath.display(),
+            e
+        ),
     }
 }
