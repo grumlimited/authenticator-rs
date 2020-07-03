@@ -91,8 +91,7 @@ impl AccountsWindow {
             {
                 let connection = connection.clone();
                 delete_button.connect_clicked(move |_| {
-                    let group = ConfigManager::get_group(connection.clone(), group_id)
-                        .unwrap();
+                    let group = ConfigManager::get_group(connection.clone(), group_id).unwrap();
 
                     ConfigManager::delete_group(connection.clone(), group_id)
                         .expect("Could not delete group");
@@ -311,7 +310,7 @@ impl AccountsWindow {
     }
 }
 
-use crate::ui::{EditAccountWindow, AddGroupWindow};
+use crate::ui::{AddGroupWindow, EditAccountWindow};
 use glib::Sender;
 use std::ops::Deref;
 use std::{thread, time};

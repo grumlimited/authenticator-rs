@@ -311,7 +311,8 @@ impl AddGroupWindow {
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {
-                        let icon_filename = Self::get_label_text(gui.add_group.icon_filename.clone());
+                        let icon_filename =
+                            Self::get_label_text(gui.add_group.icon_filename.clone());
 
                         let group_name: String = gui.add_group.input_group.get_buffer().get_text();
 
@@ -329,8 +330,9 @@ impl AddGroupWindow {
                         {
                             match group_id.parse() {
                                 Ok(group_id) => {
-                                    let mut group = ConfigManager::get_group(connection.clone(), group_id)
-                                        .unwrap();
+                                    let mut group =
+                                        ConfigManager::get_group(connection.clone(), group_id)
+                                            .unwrap();
 
                                     group.name = group_name;
                                     group.icon = icon_filename;
@@ -397,5 +399,3 @@ impl AddGroupWindow {
         }
     }
 }
-
-
