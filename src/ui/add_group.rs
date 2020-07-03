@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
@@ -130,7 +131,7 @@ impl AddGroupWindow {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
 
-                            write_icon(
+                            Self::write_tmp_icon(
                                 state.clone(),
                                 icon_filename.clone(),
                                 image_input.clone(),
@@ -188,7 +189,7 @@ impl AddGroupWindow {
 
                 match account_group_icon {
                     Ok(account_group_icon) => {
-                        write_icon(
+                        Self::write_tmp_icon(
                             gui.state.clone(),
                             icon_filename,
                             image_input,
@@ -215,14 +216,6 @@ impl AddGroupWindow {
 
                 url_input.set_text("");
 
-                {
-                    let icon_filename = Self::get_label_text(icon_filename.clone());
-
-                    if let Some(icon_filename) = icon_filename {
-                        Self::delete_icon_file(&icon_filename);
-                    }
-                }
-
                 icon_filename.set_label("");
 
                 icon_error.set_label("");
@@ -230,47 +223,6 @@ impl AddGroupWindow {
 
                 image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
             });
-        }
-
-        fn reuse_filename(icon_filename: gtk::Label) -> String {
-            let existing: String = icon_filename
-                .get_label()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| "".to_owned());
-
-            debug!("existing icon filename: {}", existing);
-
-            if existing.is_empty() {
-                let uuid = uuid::Uuid::new_v4().to_string();
-                icon_filename.set_label(&uuid);
-                uuid
-            } else {
-                existing
-            }
-        }
-
-        fn write_icon(
-            state: Rc<RefCell<State>>,
-            icon_filename: gtk::Label,
-            image_input: gtk::Image,
-            buf: &[u8],
-        ) {
-            let reused_filename = reuse_filename(icon_filename);
-
-            let icon_filepath = ConfigManager::icons_path(&reused_filename);
-            debug!("icon_filepath: {}", icon_filepath.display());
-
-            let mut file = File::create(&icon_filepath)
-                .unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
-
-            file.write_all(buf).unwrap_or_else(|_| {
-                panic!("could not write image to file {}", icon_filepath.display())
-            });
-
-            match IconParser::load_icon(&icon_filepath, state) {
-                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                Err(_) => error!("Could not load image {}", icon_filepath.display()),
-            };
         }
     }
 
@@ -338,6 +290,8 @@ impl AddGroupWindow {
                                     group.icon = icon_filename;
                                     group.url = url_input.map(str::to_owned);
 
+                                    Self::write_icon(gui.add_group.icon_filename.clone());
+
                                     debug!("saving group {:?}", group);
 
                                     ConfigManager::update_group(connection.clone(), &group)
@@ -377,6 +331,84 @@ impl AddGroupWindow {
                 })
             },
         );
+    }
+
+    fn reuse_filename(icon_filename: gtk::Label) -> String {
+        let existing: String = icon_filename
+            .get_label()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "".to_owned());
+
+        debug!("existing icon filename: {}", existing);
+
+        if existing.is_empty() {
+            let uuid = uuid::Uuid::new_v4().to_string();
+            icon_filename.set_label(&uuid);
+            uuid
+        } else {
+            existing
+        }
+    }
+
+    fn write_icon(icon_filename: gtk::Label) {
+        if let Some(icon_filename) = Self::get_label_text(icon_filename) {
+            debug!("icon_filename: {}", icon_filename);
+
+            let mut temp_filepath = PathBuf::new();
+            temp_filepath.push(std::env::temp_dir());
+            temp_filepath.push(&icon_filename);
+
+            match std::fs::read(&temp_filepath) {
+                Ok(bytes) => {
+                    let icon_filepath = ConfigManager::icons_path(&icon_filename);
+                    debug!("icon_filepath: {}", icon_filepath.display());
+
+                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
+                        panic!("could not create file {}", icon_filepath.display())
+                    });
+
+                    file.write_all(&bytes).unwrap_or_else(|_| {
+                        panic!("could not write image to file {}", icon_filepath.display())
+                    });
+
+                    match std::fs::remove_file(&temp_filepath) {
+                        Ok(_) => {}
+                        Err(e) => error!(
+                            "could not delete temp file {}: {:?}",
+                            temp_filepath.display(),
+                            e
+                        ),
+                    };
+                }
+                Err(_) => error!(
+                    "temp file {} not found. Did you call write_tmp_icon() first ?",
+                    &temp_filepath.display()
+                ),
+            }
+        }
+    }
+
+    fn write_tmp_icon(
+        state: Rc<RefCell<State>>,
+        icon_filename: gtk::Label,
+        image_input: gtk::Image,
+        buf: &[u8],
+    ) {
+        let mut temp_filepath = PathBuf::new();
+
+        let reused_filename = Self::reuse_filename(icon_filename);
+
+        temp_filepath.push(std::env::temp_dir());
+        temp_filepath.push(reused_filename);
+
+        let mut tempfile = tempfile_fast::Sponge::new_for(&temp_filepath).unwrap();
+        tempfile.write_all(buf).unwrap();
+        tempfile.commit().unwrap();
+
+        match IconParser::load_icon(&temp_filepath, state) {
+            Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+            Err(e) => error!("Could not load image {}", e),
+        };
     }
 
     fn get_label_text(label: gtk::Label) -> Option<String> {
