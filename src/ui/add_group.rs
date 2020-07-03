@@ -218,8 +218,8 @@ impl AddGroupWindow {
                 {
                     let icon_filename = Self::get_label_text(icon_filename.clone());
 
-                    if icon_filename.is_some() {
-                        Self::delete_icon_file(&icon_filename.unwrap());
+                    if let Some(icon_filename) = icon_filename {
+                        Self::delete_icon_file(&icon_filename);
                     }
                 }
 
@@ -358,8 +358,10 @@ impl AddGroupWindow {
                                     debug!("saving group {:?}", group);
 
                                     //has no icon -> delete icon file if any
-                                    if group.icon.is_none() && icon_filename.is_some() {
-                                        Self::delete_icon_file(&icon_filename.unwrap());
+                                    if group.icon.is_none() {
+                                        if let Some(icon_filename) = icon_filename {
+                                            Self::delete_icon_file(&icon_filename);
+                                        }
                                     }
                                 }
                             }
