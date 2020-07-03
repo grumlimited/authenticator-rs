@@ -6,6 +6,7 @@ use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use log::{debug, error};
 use rusqlite::Connection;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
@@ -113,18 +114,48 @@ impl AddGroupWindow {
 
         {
             let dialog = dialog.clone();
-            image_button.connect_clicked(move |_| {
+            let icon_filename = gui.add_group.icon_filename.clone();
+            let image_input = gui.add_group.image_input.clone();
+            let state = gui.state.clone();
+            image_button.connect_clicked(move |_| match dialog.run() {
+                gtk::ResponseType::Accept => {
+                    dialog.hide();
 
-                match dialog.run() {
-                    gtk::ResponseType::Accept => {
+                    let path = dialog.get_filename().unwrap();
+                    debug!("path: {}", path.display());
 
-                        dialog.hide();
+                    match fs::read(&path) {
+                        Ok(bytes) => {
+                            let filename = path.file_name().unwrap().to_str().unwrap().to_owned();
+                            debug!("filename: {}", filename);
 
-                        let path = dialog.get_filename().unwrap();
-                        println!("{}", path.display());
+                            let uuid = uuid::Uuid::new_v4();
+                            icon_filename.set_label(uuid.to_string().as_str());
+
+                            let icon_filepath = ConfigManager::icons_path(&uuid.to_string());
+                            debug!("icon_filepath: {}", icon_filepath.display());
+
+                            let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
+                                panic!("could not create file {}", icon_filepath.display())
+                            });
+
+                            file.write_all(bytes.as_slice())
+                                .unwrap_or_else(|_| {
+                                    panic!(
+                                        "could not write image to file {}",
+                                        icon_filepath.display()
+                                    )
+                                });
+
+                            match IconParser::load_icon(&icon_filepath, state.clone()) {
+                                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                                Err(_) => error!("Could not load image {}", icon_filepath.display()),
+                            };
+                        }
+                        Err(_) => error!("Could not read file {}", &path.display()),
                     }
-                    _ => dialog.hide(),
                 }
+                _ => dialog.hide(),
             });
         }
 
