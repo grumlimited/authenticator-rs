@@ -113,7 +113,6 @@ impl AddGroupWindow {
         }
 
         {
-            let dialog = dialog.clone();
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
             let state = gui.state.clone();
