@@ -1,13 +1,16 @@
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
-use crate::main_window::{Display, MainWindow};
+use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use log::{debug, error};
 use rusqlite::Connection;
+use std::cell::RefCell;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
@@ -23,6 +26,8 @@ pub struct AddGroupWindow {
     pub icon_delete: gtk::Button,
     pub icon_error: gtk::Label,
     pub group_id: gtk::Label,
+    pub image_button: gtk::Button,
+    pub image_dialog: gtk::FileChooserDialog,
 }
 
 impl AddGroupWindow {
@@ -39,6 +44,8 @@ impl AddGroupWindow {
             icon_delete: builder.get_object("group_icon_delete").unwrap(),
             icon_error: builder.get_object("add_group_icon_error").unwrap(),
             group_id: builder.get_object("add_group_input_group_id").unwrap(),
+            image_button: builder.get_object("add_group_image_button").unwrap(),
+            image_dialog: builder.get_object("add_group_image_dialog").unwrap(),
         }
     }
 
@@ -67,9 +74,11 @@ impl AddGroupWindow {
         let icon_delete = self.icon_delete.clone();
         let image_input = self.image_input.clone();
         let save_button = self.save_button.clone();
+        let url_input = self.url_input.clone();
         let group_id = self.group_id.clone();
 
         input_group.set_text("");
+        url_input.set_text("");
 
         icon_filename.set_label("");
         group_id.set_label("");
@@ -87,10 +96,12 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(gui: MainWindow, _connection: Arc<Mutex<Connection>>) {
+    fn url_input_action(gui: MainWindow) {
         let url_input = gui.add_group.url_input.clone();
         let icon_reload = gui.add_group.icon_reload.clone();
         let icon_delete = gui.add_group.icon_delete.clone();
+        let image_button = gui.add_group.image_button.clone();
+        let dialog = gui.add_group.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
             glib::PRIORITY_DEFAULT,
@@ -104,36 +115,45 @@ impl AddGroupWindow {
         }
 
         {
-            let gui = gui.clone();
-            let url_input = gui.add_group.url_input.clone();
             let icon_filename = gui.add_group.icon_filename.clone();
+            let image_input = gui.add_group.image_input.clone();
+            let state = gui.state.clone();
+            image_button.connect_clicked(move |_| match dialog.run() {
+                gtk::ResponseType::Accept => {
+                    dialog.hide();
 
-            icon_delete.connect_clicked(move |_| {
-                let image_input = gui.add_group.image_input.clone();
-                let icon_error = gui.add_group.icon_error.clone();
+                    let path = dialog.get_filename().unwrap();
+                    debug!("path: {}", path.display());
 
-                url_input.set_text("");
+                    match fs::read(&path) {
+                        Ok(bytes) => {
+                            let filename = path.file_name().unwrap();
+                            debug!("filename: {:?}", filename);
 
-                icon_filename.set_label("");
-
-                icon_error.set_label("");
-                icon_error.set_visible(false);
-
-                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+                            write_icon(
+                                state.clone(),
+                                icon_filename.clone(),
+                                image_input.clone(),
+                                bytes.as_slice(),
+                            );
+                        }
+                        Err(_) => error!("Could not read file {}", &path.display()),
+                    }
+                }
+                _ => dialog.hide(),
             });
         }
 
         {
-            let gui_clone = gui.clone();
+            let gui = gui.clone();
             let pool = gui.pool.clone();
 
             icon_reload.connect_clicked(move |_| {
-                let gui_clone = gui_clone.clone();
-                let icon_reload = gui_clone.add_group.icon_reload.clone();
-                let save_button = gui_clone.add_group.save_button.clone();
-                let image_input = gui_clone.add_group.image_input.clone();
-                let icon_error = gui_clone.add_group.icon_error.clone();
-                let add_group = gui_clone.add_group;
+                let icon_reload = gui.add_group.icon_reload.clone();
+                let save_button = gui.add_group.save_button.clone();
+                let image_input = gui.add_group.image_input.clone();
+                let icon_error = gui.add_group.icon_error.clone();
+                let add_group = gui.add_group.clone();
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 icon_error.set_label("");
@@ -154,54 +174,108 @@ impl AddGroupWindow {
             });
         }
 
-        rx.attach(None, move |account_group_icon| {
+        {
+            let gui = gui.clone();
+            rx.attach(None, move |account_group_icon| {
+                let icon_filename = gui.add_group.icon_filename.clone();
+                let image_input = gui.add_group.image_input.clone();
+                let icon_reload = gui.add_group.icon_reload.clone();
+                let icon_error = gui.add_group.icon_error.clone();
+                let save_button = gui.add_group.save_button.clone();
+
+                icon_reload.set_sensitive(true);
+                save_button.set_sensitive(true);
+
+                match account_group_icon {
+                    Ok(account_group_icon) => {
+                        write_icon(
+                            gui.state.clone(),
+                            icon_filename,
+                            image_input,
+                            account_group_icon.content.as_slice(),
+                        );
+                    }
+                    Err(e) => {
+                        icon_error.set_label(format!("{}", e).as_str());
+                        icon_error.set_visible(true);
+                    }
+                }
+
+                glib::Continue(true)
+            });
+        }
+
+        {
+            let url_input = gui.add_group.url_input.clone();
             let icon_filename = gui.add_group.icon_filename.clone();
-            let image_input = gui.add_group.image_input.clone();
-            let icon_reload = gui.add_group.icon_reload.clone();
-            let icon_error = gui.add_group.icon_error.clone();
-            let save_button = gui.add_group.save_button.clone();
 
-            icon_reload.set_sensitive(true);
-            save_button.set_sensitive(true);
+            icon_delete.connect_clicked(move |_| {
+                let image_input = gui.add_group.image_input.clone();
+                let icon_error = gui.add_group.icon_error.clone();
 
-            if icon_filename.get_label().is_none() || icon_filename.get_label().unwrap().is_empty()
-            {
-                let uuid = uuid::Uuid::new_v4();
-                icon_filename.set_label(uuid.to_string().as_str());
-            }
+                url_input.set_text("");
 
-            match account_group_icon {
-                Ok(account_group_icon) => {
-                    let icon_filepath = ConfigManager::icons_path(
-                        format!("{}", icon_filename.get_label().unwrap()).as_str(),
-                    );
+                {
+                    let icon_filename = Self::get_label_text(icon_filename.clone());
 
-                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
-                        panic!("could not create file {}", icon_filepath.display())
-                    });
-
-                    file.write_all(account_group_icon.content.as_slice())
-                        .unwrap_or_else(|_| {
-                            panic!("could not write image to file {}", icon_filepath.display())
-                        });
-
-                    match IconParser::load_icon(&icon_filepath, gui.state.clone()) {
-                        Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                        Err(_) => error!("Could not load image {}", icon_filepath.display()),
-                    };
+                    if let Some(icon_filename) = icon_filename {
+                        Self::delete_icon_file(&icon_filename);
+                    }
                 }
-                Err(e) => {
-                    icon_error.set_label(format!("{}", e).as_str());
-                    icon_error.set_visible(true);
-                }
-            }
 
-            glib::Continue(true)
-        });
+                icon_filename.set_label("");
+
+                icon_error.set_label("");
+                icon_error.set_visible(false);
+
+                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+            });
+        }
+
+        fn reuse_filename(icon_filename: gtk::Label) -> String {
+            let existing: String = icon_filename
+                .get_label()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "".to_owned());
+
+            debug!("existing icon filename: {}", existing);
+
+            if existing.is_empty() {
+                let uuid = uuid::Uuid::new_v4().to_string();
+                icon_filename.set_label(&uuid);
+                uuid
+            } else {
+                existing
+            }
+        }
+
+        fn write_icon(
+            state: Rc<RefCell<State>>,
+            icon_filename: gtk::Label,
+            image_input: gtk::Image,
+            buf: &[u8],
+        ) {
+            let reused_filename = reuse_filename(icon_filename);
+
+            let icon_filepath = ConfigManager::icons_path(&reused_filename);
+            debug!("icon_filepath: {}", icon_filepath.display());
+
+            let mut file = File::create(&icon_filepath)
+                .unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
+
+            file.write_all(buf).unwrap_or_else(|_| {
+                panic!("could not write image to file {}", icon_filepath.display())
+            });
+
+            match IconParser::load_icon(&icon_filepath, state) {
+                Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                Err(_) => error!("Could not load image {}", icon_filepath.display()),
+            };
+        }
     }
 
     pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
-        Self::url_input_action(gui.clone(), connection.clone());
+        Self::url_input_action(gui.clone());
 
         fn with_action<F>(
             gui: MainWindow,
@@ -237,15 +311,11 @@ impl AddGroupWindow {
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {
-                        let icon_filename = gui.add_group.icon_filename.clone();
-                        let icon_filename = icon_filename.get_label().map(|e| e.to_string());
                         let icon_filename =
-                            icon_filename.as_deref().and_then(|value| match value {
-                                "" => None,
-                                _ => Some(value),
-                            });
+                            Self::get_label_text(gui.add_group.icon_filename.clone());
 
-                        let name: String = gui.add_group.input_group.get_buffer().get_text();
+                        let group_name: String = gui.add_group.input_group.get_buffer().get_text();
+
                         let url_input: Option<String> =
                             Some(gui.add_group.url_input.get_buffer().get_text());
                         let url_input = url_input.as_deref().and_then(|value| match value {
@@ -255,17 +325,17 @@ impl AddGroupWindow {
 
                         let group_id = gui.add_group.group_id.get_label().unwrap();
 
-                        debug!("group_id: {}", group_id);
+                        debug!("saving group_id: {}", group_id);
 
                         {
                             match group_id.parse() {
                                 Ok(group_id) => {
-                                    let mut group = {
+                                    let mut group =
                                         ConfigManager::get_group(connection.clone(), group_id)
-                                            .unwrap()
-                                    };
-                                    group.name = name;
-                                    group.icon = icon_filename.map(str::to_owned);
+                                            .unwrap();
+
+                                    group.name = group_name;
+                                    group.icon = icon_filename;
                                     group.url = url_input.map(str::to_owned);
 
                                     debug!("saving group {:?}", group);
@@ -276,14 +346,23 @@ impl AddGroupWindow {
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
                                         0,
-                                        name.as_str(),
-                                        icon_filename,
+                                        &group_name,
+                                        icon_filename.as_deref(),
                                         url_input,
                                         vec![],
                                     );
 
                                     ConfigManager::save_group(connection.clone(), &mut group)
                                         .unwrap();
+
+                                    debug!("saving group {:?}", group);
+
+                                    //has no icon -> delete icon file if any
+                                    if group.icon.is_none() {
+                                        if let Some(icon_filename) = icon_filename {
+                                            Self::delete_icon_file(&icon_filename);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -298,5 +377,27 @@ impl AddGroupWindow {
                 })
             },
         );
+    }
+
+    fn get_label_text(label: gtk::Label) -> Option<String> {
+        let icon_filename = label.get_label().map(|e| e.to_string());
+
+        icon_filename.as_deref().and_then(|value| match value {
+            "" => None,
+            _ => Some(value.to_owned()),
+        })
+    }
+
+    pub fn delete_icon_file(icon_filename: &str) {
+        let icon_filepath = ConfigManager::icons_path(icon_filename);
+
+        match std::fs::remove_file(&icon_filepath) {
+            Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+            Err(e) => error!(
+                "could not delete file {}: {:?}",
+                &icon_filepath.display(),
+                e
+            ),
+        }
     }
 }
