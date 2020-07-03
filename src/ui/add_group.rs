@@ -139,17 +139,15 @@ impl AddGroupWindow {
                                 panic!("could not create file {}", icon_filepath.display())
                             });
 
-                            file.write_all(bytes.as_slice())
-                                .unwrap_or_else(|_| {
-                                    panic!(
-                                        "could not write image to file {}",
-                                        icon_filepath.display()
-                                    )
-                                });
+                            file.write_all(bytes.as_slice()).unwrap_or_else(|_| {
+                                panic!("could not write image to file {}", icon_filepath.display())
+                            });
 
                             match IconParser::load_icon(&icon_filepath, state.clone()) {
                                 Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-                                Err(_) => error!("Could not load image {}", icon_filepath.display()),
+                                Err(_) => {
+                                    error!("Could not load image {}", icon_filepath.display())
+                                }
                             };
                         }
                         Err(_) => error!("Could not read file {}", &path.display()),
