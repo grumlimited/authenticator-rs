@@ -9,6 +9,7 @@ use rusqlite::Connection;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::process::exit;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
@@ -112,6 +113,21 @@ impl AddGroupWindow {
             });
         }
 
+        fn reuse_filename(icon_filename: &gtk::Label) -> String {
+            let existing: String = icon_filename
+                .get_label()
+                .map(|s| s.to_string())
+                .unwrap_or("".to_owned());
+
+            debug!("existing icon filename: {}", existing);
+
+            if existing.is_empty() {
+                uuid::Uuid::new_v4().to_string()
+            } else {
+                existing
+            }
+        }
+
         {
             let icon_filename = gui.add_group.icon_filename.clone();
             let image_input = gui.add_group.image_input.clone();
@@ -128,10 +144,10 @@ impl AddGroupWindow {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
 
-                            let uuid = uuid::Uuid::new_v4();
-                            icon_filename.set_label(uuid.to_string().as_str());
+                            let reused_filename = reuse_filename(&icon_filename);
+                            icon_filename.set_label(&reused_filename);
 
-                            let icon_filepath = ConfigManager::icons_path(&uuid.to_string());
+                            let icon_filepath = ConfigManager::icons_path(&reused_filename);
                             debug!("icon_filepath: {}", icon_filepath.display());
 
                             let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
