@@ -76,13 +76,15 @@ impl Account {
         let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-        let popover_clone = popover.clone();
 
         let menu: gtk::MenuButton = builder.get_object("menu").unwrap();
 
-        menu.connect_clicked(move |_| {
-            popover.show_all();
-        });
+        {
+            let popover = popover.clone();
+            menu.connect_clicked(move |_| {
+                popover.show_all();
+            });
+        }
 
         let totp = match Self::generate_time_based_password(self.secret.as_str()) {
             Ok(totp) => totp,
@@ -119,7 +121,7 @@ impl Account {
             copy_button: Arc::new(Mutex::new(copy_button)),
             edit_copy_img: Arc::new(Mutex::new(edit_copy_img)),
             dialog_ok_img: Arc::new(Mutex::new(dialog_ok_img)),
-            popover: popover_clone,
+            popover,
             totp_label,
             totp_secret: self.secret.clone(),
         }

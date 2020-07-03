@@ -34,7 +34,7 @@ pub struct State {
     pub display: Display,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Display {
     DisplayAccounts,
     DisplayEditAccount,
@@ -314,12 +314,27 @@ impl MainWindow {
             let widgets = self.accounts_window.widgets.clone();
             let add_account_button = add_account_button.clone();
             let popover = popover.clone();
+            let state = self.state.clone();
 
             action_menu.connect_clicked(move |_| {
                 let widgets = widgets.lock().unwrap();
 
+                /*
+                * Both add group and account buttons are available only if on
+                * main accounts display. This is to avoid having to clean temp files
+                * (ie. group icons) if switching half-way editing/adding a group.
+                *
+                * Todo: consider hiding the action menu altogether.
+                */
+
+                let state = state.borrow();
+                let display = (&state.display).clone();
                 // can't add account if no groups
-                add_account_button.set_sensitive(!widgets.is_empty());
+                add_account_button.set_sensitive(!widgets.is_empty() &&
+                    display == Display::DisplayAccounts
+                );
+
+                add_group_button.set_sensitive(display == Display::DisplayAccounts);
 
                 popover.show_all();
             });
