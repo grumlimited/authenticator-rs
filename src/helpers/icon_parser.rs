@@ -152,7 +152,11 @@ impl IconParser {
             (196, 196, 196)
         };
 
-        debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
+        debug!(
+            "loading icon {} with alpha channels {:?}",
+            filepath.display(),
+            &alpha
+        );
 
         Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
             .map(|pixbuf| {
