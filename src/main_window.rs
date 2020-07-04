@@ -234,6 +234,26 @@ impl MainWindow {
 
         let export_button: gtk::Button = builder.get_object("export_button").unwrap();
 
+        let dark_mode_slider: gtk::Switch = {
+            let switch: gtk::Switch = builder.get_object("dark_mode_slider").unwrap();
+            let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+            switch.set_state(g_settings.get_boolean("dark-theme"));
+            switch
+        };
+
+        {
+            let gui = self.clone();
+            dark_mode_slider.connect_state_set(move|_, state| {
+                let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+
+                g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
+
+                MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+
+                Inhibit(false)
+            });
+        }
+
         export_button.connect_clicked(export_accounts(
             popover.clone(),
             connection.clone(),
