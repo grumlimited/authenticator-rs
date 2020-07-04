@@ -243,10 +243,12 @@ impl MainWindow {
 
         {
             let gui = self.clone();
-            dark_mode_slider.connect_state_set(move|_, state| {
+            dark_mode_slider.connect_state_set(move |_, state| {
                 let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
 
-                g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
+                g_settings
+                    .set_boolean("dark-theme", state)
+                    .expect("Could not find setting dark-theme");
 
                 MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
 
