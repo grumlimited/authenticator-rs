@@ -106,7 +106,7 @@ impl MainWindow {
         (*t).display = display.clone();
 
         let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
-        (*t).dark_mode =  g_settings.get_boolean("dark-theme");
+        (*t).dark_mode = g_settings.get_boolean("dark-theme");
 
         match display {
             Display::DisplayAccounts => {
@@ -257,10 +257,7 @@ impl MainWindow {
                 // switch first then redraw - to take into account state change
                 MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
 
-                AccountsWindow::replace_accounts_and_widgets(
-                    gui.clone(),
-                    connection.clone(),
-                );
+                AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
 
                 Inhibit(false)
             });
