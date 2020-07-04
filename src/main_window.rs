@@ -105,6 +105,9 @@ impl MainWindow {
         let mut t = gui.state.borrow_mut();
         (*t).display = display.clone();
 
+        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+        (*t).dark_mode =  g_settings.get_boolean("dark-theme");
+
         match display {
             Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
@@ -243,6 +246,7 @@ impl MainWindow {
 
         {
             let gui = self.clone();
+            let connection = connection.clone();
             dark_mode_slider.connect_state_set(move |_, state| {
                 let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
 
@@ -250,7 +254,13 @@ impl MainWindow {
                     .set_boolean("dark-theme", state)
                     .expect("Could not find setting dark-theme");
 
+                // switch first then redraw - to take into account state change
                 MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+
+                AccountsWindow::replace_accounts_and_widgets(
+                    gui.clone(),
+                    connection.clone(),
+                );
 
                 Inhibit(false)
             });
