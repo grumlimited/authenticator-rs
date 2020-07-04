@@ -13,6 +13,7 @@ in the latest versions of python shipped with [Arch Linux](https://www.archlinux
 It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
 but definitely in the rough...
 
+![authenticator-rs](./data/screenshots/screenshot1.png "Main view")
 ![authenticator-rs](./data/screenshots/screenshot2.png "Main view")
 
 ## License
@@ -26,21 +27,6 @@ See [releases](https://github.com/grumlimited/authenticator-rs/releases).
 ## Installing
 
 Download from the [release](https://github.com/grumlimited/authenticator-rs/releases) page.
-
-## Dark themes (initial support)
-
-Authenticator RS will for the most part honor your gtk theme. However, to render group icons with no transparency, so they look better
-on a dark background, run:
-
-    gsettings set uk.co.grumlimited.authenticator-rs dark-theme true
-
-Conversely, run
-
-    gsettings set uk.co.grumlimited.authenticator-rs dark-theme false
-
-to switch back.
-
-_Note: I will make this a GUI setting at some point._
 
 #### Debian
 

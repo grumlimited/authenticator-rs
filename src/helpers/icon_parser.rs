@@ -147,10 +147,16 @@ impl IconParser {
         let state = state.borrow();
 
         let alpha = if state.dark_mode {
-            (0, 0, 0)
+            (32, 32, 32)
         } else {
-            (255, 255, 255)
+            (196, 196, 196)
         };
+
+        debug!(
+            "loading icon {} with alpha channels {:?}",
+            filepath.display(),
+            &alpha
+        );
 
         Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
             .map(|pixbuf| {
