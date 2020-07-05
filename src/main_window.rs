@@ -471,7 +471,9 @@ fn import_accounts(
         export_account_error_body.set_label("Could not import accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
+            "export_account_error_close" => {
+                Box::new(about_popup_close(export_account_error.clone()))
+            }
             _ => Box::new(|_| None),
         });
 
