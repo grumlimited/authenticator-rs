@@ -101,7 +101,7 @@ impl MainWindow {
         }
     }
 
-    pub fn switch_to(gui: MainWindow, display: Display) {
+    pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut t = gui.state.borrow_mut();
         (*t).display = display.clone();
 
@@ -255,7 +255,7 @@ impl MainWindow {
                     .expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
-                MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
                 AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
 
@@ -333,7 +333,7 @@ impl MainWindow {
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
 
-                MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
+                MainWindow::switch_to(&gui, Display::DisplayAddGroup);
             });
         }
 
@@ -503,7 +503,7 @@ fn import_accounts(
 
                     AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
                     glib::Continue(true)
                 });

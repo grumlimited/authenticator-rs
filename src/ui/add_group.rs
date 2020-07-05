@@ -252,7 +252,7 @@ impl AddGroupWindow {
                     gui.add_group.reset();
                     gui.add_group.input_group.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 })
             },
         );
@@ -328,7 +328,7 @@ impl AddGroupWindow {
                             gui.clone(),
                             connection.clone(),
                         );
-                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                        MainWindow::switch_to(&gui, Display::DisplayAccounts);
                     }
                 })
             },

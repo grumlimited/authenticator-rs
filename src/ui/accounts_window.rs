@@ -139,7 +139,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
+                    MainWindow::switch_to(&gui, Display::DisplayAddGroup);
                 });
             }
         }
@@ -221,7 +221,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayEditAccount);
+                    MainWindow::switch_to(&gui, Display::DisplayEditAccount);
                 });
             }
         }
@@ -304,7 +304,7 @@ impl AccountsWindow {
                 buffer.set_text("");
 
                 popover.hide();
-                MainWindow::switch_to(main_window.clone(), Display::DisplayAddAccount);
+                MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
             }
         })
     }

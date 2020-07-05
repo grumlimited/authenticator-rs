@@ -136,7 +136,7 @@ impl EditAccountWindow {
                     let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                     buffer.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 })
             },
         );
@@ -201,7 +201,7 @@ impl EditAccountWindow {
                         );
 
                         edit_account_window.reset();
-                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                        MainWindow::switch_to(&gui, Display::DisplayAccounts);
                     }
                 })
             },
