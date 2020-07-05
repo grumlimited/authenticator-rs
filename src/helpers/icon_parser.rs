@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn html() {
-        let fut = IconParser::html("https://www.bbc.com".to_owned());
+        let fut = IconParser::html("https://www.bbc.com");
 
         let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());
