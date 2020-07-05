@@ -61,7 +61,7 @@ impl ConfigManager {
             let id: u32 = row.get(0)?;
             let name: String = row.get(1)?;
             let icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-            let url = row.get::<usize, String>(2).optional().unwrap_or(None);
+            let url = row.get::<usize, String>(3).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 id,
@@ -506,6 +506,20 @@ mod tests {
     }
 
     #[test]
+    fn load_account_groups() {
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        runner::run(&mut connection).unwrap();
+
+        let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
+        ConfigManager::save_group(&connection, &mut group).unwrap();
+
+        let groups = ConfigManager::load_account_groups(&connection).unwrap();
+
+        assert_eq!(vec![group], groups);
+    }
+
+    #[test]
     fn save_group_ordering() {
         let mut connection = Connection::open_in_memory().unwrap();
 
@@ -552,7 +566,7 @@ mod tests {
     #[test]
     fn serialise_accounts() {
         let account = Account::new(1, 0, "label", "secret");
-        let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
+        let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), vec![account]);
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
@@ -562,7 +576,7 @@ mod tests {
 
         let account_from_yaml = Account::new(0, 0, "label", "secret");
         let account_group_from_yaml =
-            AccountGroup::new(0, "group", None, None, vec![account_from_yaml]);
+            AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
         let result = ConfigManager::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
