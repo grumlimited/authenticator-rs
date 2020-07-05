@@ -41,7 +41,10 @@ impl AccountsWindow {
         let children = accounts_container.get_children();
         children.iter().for_each(|e| accounts_container.remove(e));
 
-        let mut groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+        let mut groups = {
+            let connection = connection.lock().unwrap();
+            ConfigManager::load_account_groups(&connection).unwrap()
+        };
 
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
@@ -91,9 +94,10 @@ impl AccountsWindow {
             {
                 let connection = connection.clone();
                 delete_button.connect_clicked(move |_| {
-                    let group = ConfigManager::get_group(connection.clone(), group_id).unwrap();
+                    let connection = connection.lock().unwrap();
+                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
 
-                    ConfigManager::delete_group(connection.clone(), group_id)
+                    ConfigManager::delete_group(&connection, group_id)
                         .expect("Could not delete group");
 
                     if let Some(path) = group.icon {
@@ -112,7 +116,8 @@ impl AccountsWindow {
                 let connection = connection.clone();
                 let popover = popover.clone();
                 edit_button.connect_clicked(move |_| {
-                    let group = ConfigManager::get_group(connection.clone(), group_id).unwrap();
+                    let connection = connection.lock().unwrap();
+                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
 
                     debug!("Loading group {:?}", group);
 
@@ -197,9 +202,10 @@ impl AccountsWindow {
                 }
 
                 account_widgets.edit_button.connect_clicked(move |_| {
-                    let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+                    let connection = connection.lock().unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection).unwrap();
 
-                    let account = ConfigManager::get_account(connection.clone(), id).unwrap();
+                    let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
 
@@ -244,7 +250,8 @@ impl AccountsWindow {
                 let gui = gui.clone();
 
                 account_widgets.delete_button.connect_clicked(move |_| {
-                    ConfigManager::delete_account(connection.clone(), account_id).unwrap();
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::delete_account(&connection, account_id).unwrap();
 
                     let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
@@ -286,7 +293,10 @@ impl AccountsWindow {
         Box::new({
             move |_b: &gtk::Button| {
                 debug!("Loading for group_id {:?}", group_id);
-                let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+                let groups = {
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::load_account_groups(&connection).unwrap()
+                };
 
                 edit_account_window.reset();
                 edit_account_window.set_group_dropdown(group_id, groups.as_slice());

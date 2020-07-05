@@ -284,11 +284,12 @@ impl AddGroupWindow {
                         debug!("saving group_id: {}", group_id);
 
                         {
+                            let connection = connection.lock().unwrap();
+
                             match group_id.parse() {
                                 Ok(group_id) => {
                                     let mut group =
-                                        ConfigManager::get_group(connection.clone(), group_id)
-                                            .unwrap();
+                                        ConfigManager::get_group(&connection, group_id).unwrap();
 
                                     group.name = group_name;
                                     group.icon = icon_filename;
@@ -298,8 +299,7 @@ impl AddGroupWindow {
 
                                     debug!("saving group {:?}", group);
 
-                                    ConfigManager::update_group(connection.clone(), &group)
-                                        .unwrap();
+                                    ConfigManager::update_group(&connection, &group).unwrap();
                                 }
                                 Err(_) => {
                                     let mut group = AccountGroup::new(
@@ -310,8 +310,7 @@ impl AddGroupWindow {
                                         vec![],
                                     );
 
-                                    ConfigManager::save_group(connection.clone(), &mut group)
-                                        .unwrap();
+                                    ConfigManager::save_group(&connection, &mut group).unwrap();
 
                                     debug!("saving group {:?}", group);
 
