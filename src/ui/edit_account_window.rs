@@ -113,21 +113,23 @@ impl EditAccountWindow {
 
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         fn with_action<F>(
-            gui: MainWindow,
+            gui: &MainWindow,
             connection: Arc<Mutex<Connection>>,
             button: gtk::Button,
             button_closure: F,
         ) where
-            F: 'static + Fn(Arc<Mutex<Connection>>, MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
 
+        // CANCEL
         with_action(
-            gui.clone(),
+            &gui,
             connection.clone(),
             gui.edit_account_window.cancel_button.clone(),
             |_, gui| {
+                let gui = gui.clone();
                 Box::new(move |_| {
                     let edit_account_window = gui.edit_account_window.clone();
                     edit_account_window.reset();
@@ -141,11 +143,13 @@ impl EditAccountWindow {
             },
         );
 
+        // SAVE
         with_action(
-            gui.clone(),
+            &gui,
             connection,
             gui.edit_account_window.save_button.clone(),
             |connection, gui| {
+                let gui = gui.clone();
                 Box::new(move |_| {
                     gui.edit_account_window.reset();
 

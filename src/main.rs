@@ -70,6 +70,7 @@ fn main() {
         let connection: Arc<Mutex<Connection>> =
             Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
+        // SQL migrations
         runner::run(connection.clone()).unwrap();
 
         let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
