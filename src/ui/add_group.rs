@@ -434,11 +434,7 @@ impl AddGroupWindow {
 
         match std::fs::remove_file(&icon_filepath) {
             Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-            Err(e) => error!(
-                "could not delete file {}: {:?}",
-                icon_filepath.display(),
-                e
-            ),
+            Err(e) => error!("could not delete file {}: {:?}", icon_filepath.display(), e),
         }
     }
 }
