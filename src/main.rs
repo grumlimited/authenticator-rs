@@ -85,11 +85,11 @@ fn main() {
 
         AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
 
-        EditAccountWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
+        EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AddGroupWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
+        AddGroupWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::delete_buttons_actions(gui, connection);
+        AccountsWindow::delete_buttons_actions(&gui, connection);
 
         info!("Authenticator RS initialised");
     });

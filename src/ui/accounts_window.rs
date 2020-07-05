@@ -61,7 +61,7 @@ impl AccountsWindow {
 
         AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::delete_buttons_actions(gui.clone(), connection);
+        AccountsWindow::delete_buttons_actions(&gui, connection);
 
         gui.accounts_window.accounts_container.show_all();
     }
@@ -227,7 +227,7 @@ impl AccountsWindow {
         }
     }
 
-    pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {

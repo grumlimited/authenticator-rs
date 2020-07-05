@@ -228,7 +228,7 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(
@@ -261,7 +261,7 @@ impl AddGroupWindow {
         with_action(
             gui.clone(),
             connection,
-            gui.add_group.save_button,
+            gui.add_group.save_button.clone(),
             |connection, gui| {
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {

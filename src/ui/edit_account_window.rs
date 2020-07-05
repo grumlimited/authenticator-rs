@@ -111,7 +111,7 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         fn with_action<F>(
             gui: MainWindow,
             connection: Arc<Mutex<Connection>>,
@@ -144,7 +144,7 @@ impl EditAccountWindow {
         with_action(
             gui.clone(),
             connection,
-            gui.edit_account_window.save_button,
+            gui.edit_account_window.save_button.clone(),
             |connection, gui| {
                 Box::new(move |_| {
                     gui.edit_account_window.reset();
