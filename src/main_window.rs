@@ -103,12 +103,12 @@ impl MainWindow {
 
     pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut t = gui.state.borrow_mut();
-        (*t).display = display.clone();
+        (*t).display = display;
 
         let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
         (*t).dark_mode = g_settings.get_boolean("dark-theme");
 
-        match display {
+        match t.display {
             Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
@@ -149,17 +149,15 @@ impl MainWindow {
         application: &gtk::Application,
         connection: Arc<Mutex<Connection>>,
     ) {
-        self.window.set_application(Some(&application.clone()));
+        self.window.set_application(Some(application));
 
         self.build_menus(connection);
 
-        {
-            let add_group = self.add_group.clone();
-            self.window.connect_delete_event(move |_, _| {
-                add_group.reset(); // to ensure temp files deletion
-                Inhibit(false)
-            });
-        }
+        let add_group = self.add_group.clone();
+        self.window.connect_delete_event(move |_, _| {
+            add_group.reset(); // to ensure temp files deletion
+            Inhibit(false)
+        });
 
         self.start_progress_bar();
 
