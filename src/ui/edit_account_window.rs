@@ -196,7 +196,7 @@ impl EditAccountWindow {
                         };
 
                         AccountsWindow::replace_accounts_and_widgets(
-                            gui.clone(),
+                            &gui,
                             connection.clone(),
                         );
 

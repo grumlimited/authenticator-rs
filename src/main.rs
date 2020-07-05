@@ -81,9 +81,9 @@ fn main() {
 
         gui.set_application(&app, connection.clone());
 
-        AccountsWindow::edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
 
         EditAccountWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
 

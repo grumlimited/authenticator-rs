@@ -325,7 +325,7 @@ impl AddGroupWindow {
 
                         gui.add_group.reset();
                         AccountsWindow::replace_accounts_and_widgets(
-                            gui.clone(),
+                            &gui,
                             connection.clone(),
                         );
                         MainWindow::switch_to(&gui, Display::DisplayAccounts);

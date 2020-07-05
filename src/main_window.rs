@@ -257,7 +257,7 @@ impl MainWindow {
                 // switch first then redraw - to take into account state change
                 MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
-                AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
+                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 
                 Inhibit(false)
             });
@@ -501,7 +501,7 @@ fn import_accounts(
                         export_account_error.show_all();
                     }
 
-                    AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
