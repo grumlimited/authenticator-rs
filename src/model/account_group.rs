@@ -14,8 +14,12 @@ pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,
     pub name: String,
+
+    #[serde(skip)]
     pub icon: Option<String>,
+
     pub url: Option<String>,
+
     pub entries: Vec<Account>,
 }
 

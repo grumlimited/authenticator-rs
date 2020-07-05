@@ -67,13 +67,14 @@ fn main() {
     application.connect_activate(move |app| {
         let mut gui = MainWindow::new();
 
-        let connection: Arc<Mutex<Connection>> =
-            Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
+        let mut connection = ConfigManager::create_connection().unwrap();
 
         // SQL migrations
-        runner::run(connection.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
-        let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
+        let groups = ConfigManager::load_account_groups(&connection).unwrap();
+
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
         let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
             Arc::new(Mutex::new(RefCell::new(groups)));

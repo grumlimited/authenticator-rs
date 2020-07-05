@@ -178,26 +178,29 @@ impl EditAccountWindow {
                             .parse()
                             .unwrap();
 
-                        match account_id.get_buffer().get_text().parse() {
-                            Ok(account_id) => {
-                                let mut account = Account::new(
-                                    account_id,
-                                    group_id,
-                                    name.as_str(),
-                                    secret.as_str(),
-                                );
+                        {
+                            let connection = connection.lock().unwrap();
 
-                                ConfigManager::update_account(connection.clone(), &mut account)
-                                    .unwrap();
-                            }
-                            Err(_) => {
-                                let mut account =
-                                    Account::new(0, group_id, name.as_str(), secret.as_str());
+                            match account_id.get_buffer().get_text().parse() {
+                                Ok(account_id) => {
+                                    let mut account = Account::new(
+                                        account_id,
+                                        group_id,
+                                        name.as_str(),
+                                        secret.as_str(),
+                                    );
 
-                                ConfigManager::save_account(connection.clone(), &mut account)
-                                    .unwrap();
-                            }
-                        };
+                                    ConfigManager::update_account(&connection, &mut account)
+                                        .unwrap();
+                                }
+                                Err(_) => {
+                                    let mut account =
+                                        Account::new(0, group_id, name.as_str(), secret.as_str());
+
+                                    ConfigManager::save_account(&connection, &mut account).unwrap();
+                                }
+                            };
+                        }
 
                         AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 

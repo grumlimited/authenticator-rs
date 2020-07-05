@@ -52,12 +52,8 @@ impl ConfigManager {
         }
     }
 
-    pub fn load_account_groups(
-        conn: Arc<Mutex<Connection>>,
-    ) -> Result<Vec<AccountGroup>, LoadError> {
-        let conn = conn.lock().unwrap();
-
-        let mut stmt = conn
+    pub fn load_account_groups(connection: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
+        let mut stmt = connection
             .prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)")
             .unwrap();
 
@@ -65,14 +61,14 @@ impl ConfigManager {
             let id: u32 = row.get(0)?;
             let name: String = row.get(1)?;
             let icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-            let url = row.get::<usize, String>(2).optional().unwrap_or(None);
+            let url = row.get::<usize, String>(3).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 id,
                 name.as_str(),
                 icon.as_deref(),
                 url.as_deref(),
-                Self::get_accounts(&conn, id)?,
+                Self::get_accounts(&connection, id)?,
             ))
         })
         .map(|rows| rows.map(|each| each.unwrap()).collect())
@@ -106,33 +102,25 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn update_group(
-        conn: Arc<Mutex<Connection>>,
-        group: &AccountGroup,
-    ) -> Result<(), LoadError> {
-        let conn = conn.lock().unwrap();
-
-        conn.execute(
-            "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
-            params![group.id, group.name, group.icon, group.url],
-        )
-        .map(|_| ())
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), LoadError> {
+        connection
+            .execute(
+                "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
+                params![group.id, group.name, group.icon, group.url],
+            )
+            .map(|_| ())
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn save_group(
-        conn: Arc<Mutex<Connection>>,
-        group: &mut AccountGroup,
-    ) -> Result<(), LoadError> {
-        let conn = conn.lock().unwrap();
+    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
+        connection
+            .execute(
+                "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
+                params![group.name, group.icon, group.url],
+            )
+            .unwrap();
 
-        conn.execute(
-            "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
-            params![group.name, group.icon, group.url],
-        )
-        .unwrap();
-
-        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
@@ -141,12 +129,7 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn group_by_name(
-        connection: Arc<Mutex<Connection>>,
-        name: &str,
-    ) -> Result<AccountGroup, LoadError> {
-        let connection = connection.lock().unwrap();
-
+    fn group_by_name(connection: &Connection, name: &str) -> Result<AccountGroup, LoadError> {
         let mut stmt = connection
             .prepare("SELECT id, name, icon, url FROM groups WHERE name = :name")
             .unwrap();
@@ -174,14 +157,14 @@ impl ConfigManager {
     }
 
     pub fn save_group_and_accounts(
-        connection: Arc<Mutex<Connection>>,
+        connection: &Connection,
         group: &mut AccountGroup,
     ) -> Result<(), LoadError> {
-        let existing_group = Self::group_by_name(connection.clone(), group.name.as_str());
+        let existing_group = Self::group_by_name(connection, group.name.as_str());
 
         let group_saved_result = match existing_group {
             Ok(group) => Ok(group.id),
-            Err(_) => Self::save_group(connection.clone(), group).map(|_| group.id),
+            Err(_) => Self::save_group(connection, group).map(|_| group.id),
         };
 
         let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
@@ -190,7 +173,7 @@ impl ConfigManager {
                 .iter_mut()
                 .map(|account| {
                     account.group_id = group_id;
-                    Self::save_account(connection.clone(), account)
+                    Self::save_account(&connection, account)
                 })
                 .collect::<Vec<Result<(), LoadError>>>(),
 
@@ -200,13 +183,8 @@ impl ConfigManager {
         accounts_saved_results.iter().cloned().collect()
     }
 
-    pub fn get_group(
-        conn: Arc<Mutex<Connection>>,
-        group_id: u32,
-    ) -> Result<AccountGroup, LoadError> {
-        let conn = conn.lock().unwrap();
-
-        let mut stmt = conn
+    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {
+        let mut stmt = connection
             .prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id")
             .unwrap();
 
@@ -220,7 +198,7 @@ impl ConfigManager {
                 let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
                 let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
 
-                let mut stmt = conn
+                let mut stmt = connection
                     .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
                     .unwrap();
 
@@ -252,19 +230,15 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn save_account(
-        conn: Arc<Mutex<Connection>>,
-        account: &mut Account,
-    ) -> Result<(), LoadError> {
-        let conn = conn.lock().unwrap();
+    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+        connection
+            .execute(
+                "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
+                params![account.label, account.group_id, account.secret],
+            )
+            .unwrap();
 
-        conn.execute(
-            "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
-            params![account.label, account.group_id, account.secret],
-        )
-        .unwrap();
-
-        let mut stmt = conn.prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
@@ -274,27 +248,18 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn update_account(
-        connection: Arc<Mutex<Connection>>,
-        account: &mut Account,
-    ) -> Result<(), LoadError> {
-        let conn = connection.lock().unwrap();
-
-        conn.execute(
-            "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
-            params![account.id, account.label, account.secret, account.group_id],
-        )
-        .map(|_| ())
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+        connection
+            .execute(
+                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
+                params![account.id, account.label, account.secret, account.group_id],
+            )
+            .map(|_| ())
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn get_account(
-        connection: Arc<Mutex<Connection>>,
-        account_id: u32,
-    ) -> Result<Account, LoadError> {
-        let conn = connection.lock().unwrap();
-
-        let mut stmt = conn
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, LoadError> {
+        let mut stmt = connection
             .prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1")
             .unwrap();
 
@@ -311,30 +276,29 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn delete_group(
-        connection: Arc<Mutex<Connection>>,
-        group_id: u32,
-    ) -> Result<usize, LoadError> {
-        let conn = connection.lock().unwrap();
-        let mut stmt = conn.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
+    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, LoadError> {
+        let mut stmt = connection
+            .prepare("DELETE FROM groups WHERE id = ?1")
+            .unwrap();
 
         stmt.execute(params![group_id])
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn delete_account(
-        connection: Arc<Mutex<Connection>>,
-        account_id: u32,
-    ) -> Result<usize, LoadError> {
-        let conn = connection.lock().unwrap();
-        let mut stmt = conn.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
+    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, LoadError> {
+        let mut stmt = connection
+            .prepare("DELETE FROM accounts WHERE id = ?1")
+            .unwrap();
 
         stmt.execute(params![account_id])
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn get_accounts(conn: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt = conn.prepare(
+    fn get_accounts(
+        connection: &Connection,
+        group_id: u32,
+    ) -> Result<Vec<Account>, rusqlite::Error> {
+        let mut stmt = connection.prepare(
             "SELECT id, label, secret FROM accounts WHERE group_id = ?1 ORDER BY LOWER(label)",
         )?;
 
@@ -355,7 +319,10 @@ impl ConfigManager {
         connection: Arc<Mutex<Connection>>,
         tx: Sender<bool>,
     ) {
-        let group_accounts = ConfigManager::load_account_groups(connection).unwrap();
+        let group_accounts = {
+            let connection = connection.lock().unwrap();
+            ConfigManager::load_account_groups(&connection).unwrap()
+        };
 
         async {
             let path = path.as_path();
@@ -419,10 +386,12 @@ impl ConfigManager {
         let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> =
             ConfigManager::deserialise_accounts(path.as_path());
 
+        let connection = connection.lock().unwrap();
+
         deserialised_accounts.and_then(|ref mut account_groups| {
             let results: Vec<Result<(), LoadError>> = account_groups
                 .iter_mut()
-                .map(|group| Self::save_group_and_accounts(connection.clone(), group))
+                .map(|group| Self::save_group_and_accounts(&connection, group))
                 .collect();
 
             results.iter().cloned().collect::<Result<(), LoadError>>()
@@ -458,31 +427,31 @@ mod tests {
 
     #[test]
     fn create_new_account_and_new_group() {
-        let connection = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(connection.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        ConfigManager::save_group(connection.clone(), &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         account.group_id = group.id;
 
-        ConfigManager::save_account(connection.clone(), &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = ConfigManager::get_account(connection.clone(), account.id).unwrap();
+        let account_reloaded = ConfigManager::get_account(&connection, account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        ConfigManager::update_account(connection, &mut account_reloaded).unwrap();
+        ConfigManager::update_account(&connection, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -490,13 +459,13 @@ mod tests {
 
     #[test]
     fn test_update_group() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
 
-        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         assert_eq!("new group", group.name);
 
@@ -504,9 +473,9 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        ConfigManager::update_group(conn.clone(), &mut group).unwrap();
+        ConfigManager::update_group(&connection, &mut group).unwrap();
 
-        let group = ConfigManager::get_group(conn.clone(), group.id).unwrap();
+        let group = ConfigManager::get_group(&connection, group.id).unwrap();
 
         assert_eq!("other name", group.name);
         assert_eq!("url", group.url.unwrap());
@@ -515,45 +484,59 @@ mod tests {
 
     #[test]
     fn create_new_account_with_existing_group() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
 
-        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "label", "secret");
 
-        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert_eq!(group.id, account.group_id);
 
-        let reloaded_group = ConfigManager::get_group(conn, group.id).unwrap();
+        let reloaded_group = ConfigManager::get_group(&connection, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
     }
 
     #[test]
-    fn save_group_ordering() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+    fn load_account_groups() {
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
+
+        let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
+        ConfigManager::save_group(&connection, &mut group).unwrap();
+
+        let groups = ConfigManager::load_account_groups(&connection).unwrap();
+
+        assert_eq!(vec![group], groups);
+    }
+
+    #[test]
+    fn save_group_ordering() {
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(conn.clone(), &mut account1).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
         let mut account2 = Account::new(0, group.id, "ccc", "secret3");
-        ConfigManager::save_account(conn.clone(), &mut account2).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account2).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
-        ConfigManager::save_group(conn.clone(), &mut group).expect("boom!");
+        ConfigManager::save_group(&connection, &mut group).expect("boom!");
 
-        let results = ConfigManager::load_account_groups(conn).unwrap();
+        let results = ConfigManager::load_account_groups(&connection).unwrap();
 
         //groups in order
         assert_eq!("AAA", results.get(0).unwrap().name);
@@ -566,24 +549,24 @@ mod tests {
 
     #[test]
     fn delete_account() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert_eq!(1, account.id);
 
-        let result = ConfigManager::delete_account(conn, account.id).unwrap();
+        let result = ConfigManager::delete_account(&connection, account.id).unwrap();
         assert!(result > 0);
     }
 
     #[test]
     fn serialise_accounts() {
         let account = Account::new(1, 0, "label", "secret");
-        let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
+        let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), vec![account]);
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
@@ -593,7 +576,7 @@ mod tests {
 
         let account_from_yaml = Account::new(0, 0, "label", "secret");
         let account_group_from_yaml =
-            AccountGroup::new(0, "group", None, None, vec![account_from_yaml]);
+            AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
         let result = ConfigManager::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
@@ -601,14 +584,15 @@ mod tests {
 
     #[test]
     fn save_group_and_accounts() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let mut connection = Connection::open_in_memory().unwrap();
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(&mut connection).unwrap();
 
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
 
-        ConfigManager::save_group_and_accounts(conn, &mut account_group).expect("could not save");
+        ConfigManager::save_group_and_accounts(&connection, &mut account_group)
+            .expect("could not save");
 
         assert!(account_group.id > 0);
         assert_eq!(1, account_group.entries.len());
@@ -617,31 +601,39 @@ mod tests {
 
     #[test]
     fn restore_accounts() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let connection = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        runner::run(conn.clone()).unwrap();
+        {
+            let mut connection = connection.lock().unwrap();
+            runner::run(&mut connection).unwrap();
 
-        let account = Account::new(1, 0, "label", "secret");
-        let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
+            let account = Account::new(1, 0, "label", "secret");
+            let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
 
-        let path = PathBuf::from("test.yaml");
-        let path = path.as_path();
-        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+            let path = PathBuf::from("test.yaml");
+            let path = path.as_path();
+            let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
 
-        assert_eq!((), result);
+            assert_eq!((), result);
+        }
 
-        let result = task::block_on(ConfigManager::restore_accounts(
-            PathBuf::from("test.yaml"),
-            conn.clone(),
-        ));
+        let result = {
+            task::block_on(ConfigManager::restore_accounts(
+                PathBuf::from("test.yaml"),
+                connection.clone(),
+            ))
+        };
 
         assert_eq!(Ok(()), result);
 
-        let account_groups = ConfigManager::load_account_groups(conn.clone()).unwrap();
+        {
+            let connection = connection.lock().unwrap();
+            let account_groups = ConfigManager::load_account_groups(&connection).unwrap();
 
-        assert_eq!(1, account_groups.len());
-        assert!(account_groups.first().unwrap().id > 0);
-        assert_eq!(1, account_groups.first().unwrap().entries.len());
-        assert!(account_groups.first().unwrap().entries.first().unwrap().id > 0);
+            assert_eq!(1, account_groups.len());
+            assert!(account_groups.first().unwrap().id > 0);
+            assert_eq!(1, account_groups.first().unwrap().entries.len());
+            assert!(account_groups.first().unwrap().entries.first().unwrap().id > 0);
+        }
     }
 }
