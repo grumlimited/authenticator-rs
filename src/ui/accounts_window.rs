@@ -34,7 +34,7 @@ impl AccountsWindow {
         }
     }
 
-    pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let accounts_container = gui.accounts_window.accounts_container.clone();
 
         // empty list of accounts first
@@ -57,16 +57,16 @@ impl AccountsWindow {
             });
         }
 
-        AccountsWindow::edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::delete_buttons_actions(gui.clone(), connection);
+        AccountsWindow::delete_buttons_actions(&gui, connection);
 
         gui.accounts_window.accounts_container.show_all();
     }
 
-    pub fn group_edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list_clone = gui.accounts_window.widgets.clone();
 
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
@@ -139,13 +139,13 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
+                    MainWindow::switch_to(&gui, Display::DisplayAddGroup);
                 });
             }
         }
     }
 
-    pub fn edit_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
@@ -221,13 +221,13 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayEditAccount);
+                    MainWindow::switch_to(&gui, Display::DisplayEditAccount);
                 });
             }
         }
     }
 
-    pub fn delete_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widgets in widgets_list.iter_mut() {
@@ -304,7 +304,7 @@ impl AccountsWindow {
                 buffer.set_text("");
 
                 popover.hide();
-                MainWindow::switch_to(main_window.clone(), Display::DisplayAddAccount);
+                MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
             }
         })
     }

@@ -70,6 +70,7 @@ fn main() {
         let connection: Arc<Mutex<Connection>> =
             Arc::new(Mutex::new(ConfigManager::create_connection().unwrap()));
 
+        // SQL migrations
         runner::run(connection.clone()).unwrap();
 
         let groups = ConfigManager::load_account_groups(connection.clone()).unwrap();
@@ -81,15 +82,15 @@ fn main() {
 
         gui.set_application(&app, connection.clone());
 
-        AccountsWindow::edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::group_edit_buttons_actions(gui.clone(), connection.clone());
+        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
 
-        EditAccountWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
+        EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AddGroupWindow::edit_account_buttons_actions(gui.clone(), connection.clone());
+        AddGroupWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AccountsWindow::delete_buttons_actions(gui, connection);
+        AccountsWindow::delete_buttons_actions(&gui, connection);
 
         info!("Authenticator RS initialised");
     });

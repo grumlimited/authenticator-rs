@@ -101,14 +101,14 @@ impl MainWindow {
         }
     }
 
-    pub fn switch_to(gui: MainWindow, display: Display) {
+    pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut t = gui.state.borrow_mut();
-        (*t).display = display.clone();
+        (*t).display = display;
 
         let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
         (*t).dark_mode = g_settings.get_boolean("dark-theme");
 
-        match display {
+        match t.display {
             Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
@@ -149,17 +149,15 @@ impl MainWindow {
         application: &gtk::Application,
         connection: Arc<Mutex<Connection>>,
     ) {
-        self.window.set_application(Some(&application.clone()));
+        self.window.set_application(Some(application));
 
         self.build_menus(connection);
 
-        {
-            let add_group = self.add_group.clone();
-            self.window.connect_delete_event(move |_, _| {
-                add_group.reset(); // to ensure temp files deletion
-                Inhibit(false)
-            });
-        }
+        let add_group = self.add_group.clone();
+        self.window.connect_delete_event(move |_, _| {
+            add_group.reset(); // to ensure temp files deletion
+            Inhibit(false)
+        });
 
         self.start_progress_bar();
 
@@ -205,8 +203,8 @@ impl MainWindow {
             let fraction = AccountsWindow::progress_bar_fraction();
             progress_bar.set_fraction(fraction);
 
-            let mut w = widgets.lock().unwrap();
-            w.iter_mut().for_each(|group| group.update());
+            let mut widgets = widgets.lock().unwrap();
+            widgets.iter_mut().for_each(|group| group.update());
 
             glib::Continue(true)
         });
@@ -255,9 +253,9 @@ impl MainWindow {
                     .expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
-                MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
-                AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
+                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 
                 Inhibit(false)
             });
@@ -292,7 +290,7 @@ impl MainWindow {
             .title("About")
             .build();
 
-        self.about_popup.clone().set_titlebar(Some(&titlebar));
+        self.about_popup.set_titlebar(Some(&titlebar));
         {
             let popup = self.about_popup.clone();
             about_button.connect_clicked(move |_| {
@@ -333,7 +331,7 @@ impl MainWindow {
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
 
-                MainWindow::switch_to(gui.clone(), Display::DisplayAddGroup);
+                MainWindow::switch_to(&gui, Display::DisplayAddGroup);
             });
         }
 
@@ -501,9 +499,9 @@ fn import_accounts(
                         export_account_error.show_all();
                     }
 
-                    AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone());
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
                     glib::Continue(true)
                 });

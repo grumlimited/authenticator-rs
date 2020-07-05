@@ -41,11 +41,11 @@ pub struct AccountGroupIcon {
 
 impl IconParser {
     pub async fn html_notify(sender: Sender<IconParserResult<AccountGroupIcon>>, url: String) {
-        let result = Self::html(url).await;
+        let result = Self::html(&url).await;
         sender.send(result).expect("Could not send results");
     }
 
-    pub async fn html(url: String) -> IconParserResult<AccountGroupIcon> {
+    pub async fn html(url: &str) -> IconParserResult<AccountGroupIcon> {
         let mut data = Vec::new();
 
         let mut handle = Easy::new();
@@ -54,7 +54,7 @@ impl IconParser {
         handle
             .timeout(Duration::from_secs(5))
             .map_err(IconError::CurlError)?;
-        handle.url(url.as_str()).map_err(IconError::CurlError)?;
+        handle.url(url).map_err(IconError::CurlError)?;
 
         {
             let mut transfer = handle.transfer();
@@ -69,7 +69,7 @@ impl IconParser {
 
         let html = String::from_utf8_lossy(data.as_slice()).into_owned();
 
-        Self::icon(url.as_str(), html.as_str()).await
+        Self::icon(url, html.as_str()).await
     }
 
     async fn icon(url: &str, html: &str) -> IconParserResult<AccountGroupIcon> {
@@ -149,7 +149,7 @@ impl IconParser {
         let alpha = if state.dark_mode {
             (32, 32, 32)
         } else {
-            (196, 196, 196)
+            (255, 255, 255)
         };
 
         debug!(
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn html() {
-        let fut = IconParser::html("https://www.bbc.com".to_owned());
+        let fut = IconParser::html("https://www.bbc.com");
 
         let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());

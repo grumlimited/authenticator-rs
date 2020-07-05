@@ -458,31 +458,31 @@ mod tests {
 
     #[test]
     fn create_new_account_and_new_group() {
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let connection = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        runner::run(conn.clone()).unwrap();
+        runner::run(connection.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        ConfigManager::save_group(conn.clone(), &mut group).unwrap();
+        ConfigManager::save_group(connection.clone(), &mut group).unwrap();
 
         account.group_id = group.id;
 
-        ConfigManager::save_account(conn.clone(), &mut account).unwrap();
+        ConfigManager::save_account(connection.clone(), &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = ConfigManager::get_account(conn.clone(), account.id).unwrap();
+        let account_reloaded = ConfigManager::get_account(connection.clone(), account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        ConfigManager::update_account(conn, &mut account_reloaded).unwrap();
+        ConfigManager::update_account(connection, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);

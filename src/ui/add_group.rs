@@ -228,41 +228,43 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(
-            gui: MainWindow,
+            gui: &MainWindow,
             connection: Arc<Mutex<Connection>>,
             button: gtk::Button,
             button_closure: F,
         ) where
-            F: 'static + Fn(Arc<Mutex<Connection>>, MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
 
         // CANCEL
         with_action(
-            gui.clone(),
+            &gui,
             connection.clone(),
             gui.add_group.cancel_button.clone(),
             |_, gui| {
+                let gui = gui.clone();
                 Box::new(move |_| {
                     gui.add_group.reset();
                     gui.add_group.input_group.set_text("");
 
-                    MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 })
             },
         );
 
         //SAVE
         with_action(
-            gui.clone(),
+            &gui,
             connection,
-            gui.add_group.save_button,
+            gui.add_group.save_button.clone(),
             |connection, gui| {
+                let gui = gui.clone();
                 Box::new(move |_| {
                     if let Ok(()) = gui.add_group.validate() {
                         let icon_filename =
@@ -324,11 +326,8 @@ impl AddGroupWindow {
                         }
 
                         gui.add_group.reset();
-                        AccountsWindow::replace_accounts_and_widgets(
-                            gui.clone(),
-                            connection.clone(),
-                        );
-                        MainWindow::switch_to(gui.clone(), Display::DisplayAccounts);
+                        AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                        MainWindow::switch_to(&gui, Display::DisplayAccounts);
                     }
                 })
             },
@@ -394,7 +393,7 @@ impl AddGroupWindow {
                 }
                 Err(_) => error!(
                     "temp file {} not found. Did you call write_tmp_icon() first ?",
-                    &temp_filepath.display()
+                    temp_filepath.display()
                 ),
             }
         }
@@ -435,11 +434,7 @@ impl AddGroupWindow {
 
         match std::fs::remove_file(&icon_filepath) {
             Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-            Err(e) => error!(
-                "could not delete file {}: {:?}",
-                &icon_filepath.display(),
-                e
-            ),
+            Err(e) => error!("could not delete file {}: {:?}", icon_filepath.display(), e),
         }
     }
 }
