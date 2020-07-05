@@ -203,8 +203,8 @@ impl MainWindow {
             let fraction = AccountsWindow::progress_bar_fraction();
             progress_bar.set_fraction(fraction);
 
-            let mut w = widgets.lock().unwrap();
-            w.iter_mut().for_each(|group| group.update());
+            let mut widgets = widgets.lock().unwrap();
+            widgets.iter_mut().for_each(|group| group.update());
 
             glib::Continue(true)
         });
@@ -290,7 +290,7 @@ impl MainWindow {
             .title("About")
             .build();
 
-        self.about_popup.clone().set_titlebar(Some(&titlebar));
+        self.about_popup.set_titlebar(Some(&titlebar));
         {
             let popup = self.about_popup.clone();
             about_button.connect_clicked(move |_| {
