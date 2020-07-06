@@ -1,6 +1,6 @@
 use crate::main_window::State;
 use curl::easy::Easy;
-use curl::Error;
+use curl::Error as CurlError;
 use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use log::debug;
@@ -9,28 +9,25 @@ use scraper::*;
 use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
+use std::result::Result;
 use std::time::Duration;
+use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
 
-pub type IconParserResult<T> = std::result::Result<T, IconError>;
+pub type IconParserResult<T> = Result<T, IconError>;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum IconError {
+    #[error("parsing error")]
     ParsingError,
-    CurlError(Error),
-    PixBufError,
-}
 
-impl std::fmt::Display for IconError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            IconError::ParsingError => "no icon found".fmt(f),
-            IconError::CurlError(error) => error.fmt(f),
-            IconError::PixBufError => "invalid icon image".fmt(f),
-        }
-    }
+    #[error("http error `{0}`")]
+    CurlError(CurlError),
+
+    #[error("pixbuf error")]
+    PixBufError(glib::Error),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -164,7 +161,7 @@ impl IconParser {
                     .add_alpha(true, alpha.0, alpha.1, alpha.2)
                     .unwrap_or(pixbuf)
             })
-            .map_err(|_| IconError::PixBufError)
+            .map_err(|e| IconError::PixBufError(e))
     }
 }
 

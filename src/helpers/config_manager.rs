@@ -7,6 +7,7 @@ use log::debug;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use thiserror::Error;
 
 use log::error;
 
@@ -15,14 +16,15 @@ pub struct ConfigManager {
     pub groups: Vec<AccountGroup>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Error)]
 pub enum LoadError {
-    #[allow(dead_code)]
+    #[error("file error `{0}`")]
     FileError(String),
-    #[allow(dead_code)]
-    FormatError,
-    #[allow(dead_code)]
+
+    #[error("file saving error `{0}`")]
     SaveError(String),
+
+    #[error("database error `{0}`")]
     DbError(String),
 }
 
