@@ -10,6 +10,7 @@ use crate::helpers::runner;
 use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
+use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
 use log4rs::config::Config;
@@ -27,7 +28,16 @@ use log::info;
 const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
+const GETTEXT_PACKAGE: &str = "authenticator-rs";
+const LOCALEDIR: &str = "build-aux/po/usr/local/share/locale";
+
 fn main() {
+    // Prepare i18n
+    setlocale(LocaleCategory::LcAll, "");
+    bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
+    textdomain(GETTEXT_PACKAGE);
+    println!("{:?}", gettext("SVG imadssqsqdsdsgesDSQDSQ2"));
+
     let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
 
     let resource = {

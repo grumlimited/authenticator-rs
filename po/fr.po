@@ -1,0 +1,21 @@
+# French translation for authenticator-rs.
+# Copyright (C) 2019 icon-library's COPYRIGHT HOLDER
+# This file is distributed under the same license as the authenticator-rs package.
+# (null) <>, 2020.
+# Romain Gallet <rgallet@grumlimited.co.uk>, 2020.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Project-Id-Version: authenticator-rs\n"
+"PO-Revision-Date: 2020-07-07 00:43+0100\n"
+"X-Generator: Gtranslator 3.36.0\n"
+"Language-Team: fr <>\n"
+"Language: fr\n"
+"Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
+
+msgid "SVG imadssqsqdsdsgesDSQDSQ2"
+msgstr "En français"

@@ -1,0 +1,14 @@
+src/helpers/mod.rs
+src/helpers/migrations.rs
+src/helpers/config_manager.rs
+src/helpers/icon_parser.rs
+src/ui/mod.rs
+src/ui/accounts_window.rs
+src/ui/add_group.rs
+src/ui/edit_account_window.rs
+src/ui/form_errors.rs
+src/model/mod.rs
+src/model/account.rs
+src/model/account_group.rs
+src/main.rs
+src/main_window.rs
