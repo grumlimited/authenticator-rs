@@ -46,7 +46,7 @@ impl EditAccountWindow {
             name.set_property_primary_icon_name(Some("gtk-dialog-error"));
             let style_context = name.get_style_context();
             style_context.add_class("error");
-            result = Err(ValidationError::FieldError);
+            result = Err(ValidationError::FieldError("name".to_owned()));
         }
 
         let buffer = secret.get_buffer().unwrap();
@@ -59,14 +59,14 @@ impl EditAccountWindow {
         if secret_value.is_empty() {
             let style_context = secret.get_style_context();
             style_context.add_class("error");
-            result = Err(ValidationError::FieldError);
+            result = Err(ValidationError::FieldError("secret".to_owned()));
         } else {
             match Account::generate_time_based_password(secret_value.as_str()) {
                 Ok(_) => {}
                 Err(_) => {
                     let style_context = secret.get_style_context();
                     style_context.add_class("error");
-                    result = Err(ValidationError::FieldError);
+                    result = Err(ValidationError::FieldError("secret".to_owned()));
                 }
             }
         }

@@ -60,7 +60,7 @@ impl AddGroupWindow {
             name.set_property_primary_icon_name(Some("gtk-dialog-error"));
             let style_context = name.get_style_context();
             style_context.add_class("error");
-            result = Err(ValidationError::FieldError);
+            result = Err(ValidationError::FieldError("name".to_owned()));
         }
 
         result
