@@ -1,6 +1,6 @@
 use crate::main_window::State;
+use anyhow::Result;
 use curl::easy::Easy;
-use curl::Error as CurlError;
 use gdk_pixbuf::Pixbuf;
 use glib::Sender;
 use log::debug;
@@ -9,25 +9,16 @@ use scraper::*;
 use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
-use std::result::Result;
 use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
 
-pub type IconParserResult<T> = Result<T, IconError>;
-
 #[derive(Debug, Error)]
 pub enum IconError {
     #[error("parsing error")]
     ParsingError,
-
-    #[error("http error `{0}`")]
-    CurlError(CurlError),
-
-    #[error("pixbuf error")]
-    PixBufError(glib::Error),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,31 +28,27 @@ pub struct AccountGroupIcon {
 }
 
 impl IconParser {
-    pub async fn html_notify(sender: Sender<IconParserResult<AccountGroupIcon>>, url: String) {
+    pub async fn html_notify(sender: Sender<Result<AccountGroupIcon>>, url: String) {
         let result = Self::html(&url).await;
         sender.send(result).expect("Could not send results");
     }
 
-    pub async fn html(url: &str) -> IconParserResult<AccountGroupIcon> {
+    pub async fn html(url: &str) -> Result<AccountGroupIcon> {
         let mut data = Vec::new();
 
         let mut handle = Easy::new();
-        handle.follow_location(true).map_err(IconError::CurlError)?;
-        handle.autoreferer(true).map_err(IconError::CurlError)?;
-        handle
-            .timeout(Duration::from_secs(5))
-            .map_err(IconError::CurlError)?;
-        handle.url(url).map_err(IconError::CurlError)?;
+        handle.follow_location(true)?;
+        handle.autoreferer(true)?;
+        handle.timeout(Duration::from_secs(5))?;
+        handle.url(url)?;
 
         {
             let mut transfer = handle.transfer();
-            transfer
-                .write_function(|new_data| {
-                    data.extend_from_slice(new_data);
-                    Ok(new_data.len())
-                })
-                .map_err(IconError::CurlError)?;
-            transfer.perform().map_err(IconError::CurlError)?;
+            transfer.write_function(|new_data| {
+                data.extend_from_slice(new_data);
+                Ok(new_data.len())
+            })?;
+            transfer.perform()?;
         }
 
         let html = String::from_utf8_lossy(data.as_slice()).into_owned();
@@ -69,7 +56,7 @@ impl IconParser {
         Self::icon(url, html.as_str()).await
     }
 
-    async fn icon(url: &str, html: &str) -> IconParserResult<AccountGroupIcon> {
+    async fn icon(url: &str, html: &str) -> Result<AccountGroupIcon> {
         let icon_url = {
             let document = Html::parse_document(html);
 
@@ -96,32 +83,27 @@ impl IconParser {
         Self::download(icon_url.as_str()).await
     }
 
-    async fn download(icon_url: &str) -> IconParserResult<AccountGroupIcon> {
+    async fn download(icon_url: &str) -> Result<AccountGroupIcon> {
         let mut data = Vec::new();
         let mut handle = Easy::new();
 
-        handle.follow_location(true).map_err(IconError::CurlError)?;
-        handle.autoreferer(true).map_err(IconError::CurlError)?;
-        handle
-            .timeout(Duration::from_secs(5))
-            .map_err(IconError::CurlError)?;
-        handle.url(icon_url).map_err(IconError::CurlError)?;
+        handle.follow_location(true)?;
+        handle.autoreferer(true)?;
+        handle.timeout(Duration::from_secs(5))?;
+        handle.url(icon_url)?;
 
         {
             let mut transfer = handle.transfer();
-            transfer
-                .write_function(|new_data| {
-                    data.extend_from_slice(new_data);
-                    Ok(new_data.len())
-                })
-                .map_err(IconError::CurlError)?;
+            transfer.write_function(|new_data| {
+                data.extend_from_slice(new_data);
+                Ok(new_data.len())
+            })?;
 
-            transfer.perform().map_err(IconError::CurlError)?;
+            transfer.perform()?;
         }
 
         let extension = handle
             .content_type()
-            .map_err(IconError::CurlError)
             .map(|e| e.and_then(Self::extension).map(str::to_owned))?;
 
         Ok(AccountGroupIcon {
@@ -140,7 +122,7 @@ impl IconParser {
         })
     }
 
-    pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf, IconError> {
+    pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf> {
         let state = state.borrow();
 
         let alpha = if state.dark_mode {
@@ -155,13 +137,13 @@ impl IconParser {
             &alpha
         );
 
-        Pixbuf::new_from_file_at_scale(filepath, 48, 48, true)
-            .map(|pixbuf| {
-                pixbuf
-                    .add_alpha(true, alpha.0, alpha.1, alpha.2)
-                    .unwrap_or(pixbuf)
-            })
-            .map_err(|e| IconError::PixBufError(e))
+        let pixbuf = Pixbuf::new_from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| {
+            pixbuf
+                .add_alpha(true, alpha.0, alpha.1, alpha.2)
+                .unwrap_or(pixbuf)
+        })?;
+
+        Ok(pixbuf)
     }
 }
 

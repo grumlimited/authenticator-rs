@@ -1,4 +1,4 @@
-use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, IconParserResult};
+use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
@@ -106,9 +106,8 @@ impl AddGroupWindow {
         let image_button = gui.add_group.image_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<IconParserResult<AccountGroupIcon>>(
-            glib::PRIORITY_DEFAULT,
-        );
+        let (tx, rx) =
+            glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
 
         {
             let icon_reload = icon_reload.clone();

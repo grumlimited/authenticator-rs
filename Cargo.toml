@@ -10,6 +10,7 @@ authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0.31"
 base32 = "0.4.0"
 bytes = "0.5.5"
 chrono = "0.4.12"
