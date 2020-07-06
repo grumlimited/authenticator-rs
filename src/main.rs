@@ -28,16 +28,12 @@ const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
 fn main() {
-    let application = gtk::Application::new(Some(NAMESPACE), Default::default())
-        .expect("Initialization failed...");
+    let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
 
     let resource = {
         match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
             Ok(resource) => resource,
-            Err(_) => {
-                gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE))
-                    .unwrap()
-            }
+            Err(_) => gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap(),
         }
     };
 
@@ -56,10 +52,7 @@ fn main() {
         configure_logging();
 
         match ConfigManager::check_configuration_dir() {
-            Ok(()) => info!(
-                "Reading configuration from {}",
-                ConfigManager::path().display()
-            ),
+            Ok(()) => info!("Reading configuration from {}", ConfigManager::path().display()),
             Err(e) => panic!(e),
         }
     });
@@ -76,8 +69,7 @@ fn main() {
 
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> =
-            Arc::new(Mutex::new(RefCell::new(groups)));
+        let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> = Arc::new(Mutex::new(RefCell::new(groups)));
 
         gui.display(groups);
 
@@ -104,11 +96,8 @@ fn main() {
 * And in the most convoluted possible way, feeds it to Log4rs.
 */
 fn configure_logging() {
-    let log4rs_yaml = gio::functions::resources_lookup_data(
-        format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(),
-        gio::ResourceLookupFlags::NONE,
-    )
-    .unwrap();
+    let log4rs_yaml =
+        gio::functions::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
     let log4rs_yaml = log4rs_yaml.to_vec();
     let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
 
@@ -117,11 +106,7 @@ fn configure_logging() {
     let (appenders, _) = config.appenders_lossy(&Deserializers::default());
 
     // log4rs-0.12.0/src/priv_file.rs#deserialize(config: &RawConfig, deserializers: &Deserializers)#186
-    let config = Config::builder()
-        .appenders(appenders)
-        .loggers(config.loggers())
-        .build(config.root())
-        .unwrap();
+    let config = Config::builder().appenders(appenders).loggers(config.loggers()).build(config.root()).unwrap();
 
     log4rs::init_config(config).unwrap();
 }

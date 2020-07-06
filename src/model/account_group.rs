@@ -46,13 +46,7 @@ impl AccountGroupWidgets {
 }
 
 impl AccountGroup {
-    pub fn new(
-        id: u32,
-        name: &str,
-        icon: Option<&str>,
-        url: Option<&str>,
-        entries: Vec<Account>,
-    ) -> Self {
+    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, entries: Vec<Account>) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
@@ -63,9 +57,7 @@ impl AccountGroup {
     }
 
     pub fn widget(&mut self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         let group: gtk::Box = builder.get_object("group").unwrap();
         group.set_widget_name(format!("group_id_{}", self.id).as_str());

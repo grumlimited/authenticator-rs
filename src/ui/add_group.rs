@@ -106,8 +106,7 @@ impl AddGroupWindow {
         let image_button = gui.add_group.image_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
 
-        let (tx, rx) =
-            glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
 
         {
             let icon_reload = icon_reload.clone();
@@ -132,12 +131,7 @@ impl AddGroupWindow {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
 
-                            Self::write_tmp_icon(
-                                state.clone(),
-                                icon_filename.clone(),
-                                image_input.clone(),
-                                bytes.as_slice(),
-                            );
+                            Self::write_tmp_icon(state.clone(), icon_filename.clone(), image_input.clone(), bytes.as_slice());
                         }
                         Err(_) => error!("Could not read file {}", &path.display()),
                     }
@@ -190,12 +184,7 @@ impl AddGroupWindow {
 
                 match account_group_icon {
                     Ok(account_group_icon) => {
-                        Self::write_tmp_icon(
-                            gui.state.clone(),
-                            icon_filename,
-                            image_input,
-                            account_group_icon.content.as_slice(),
-                        );
+                        Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice());
                     }
                     Err(e) => {
                         icon_error.set_label(format!("{}", e).as_str());
@@ -230,113 +219,87 @@ impl AddGroupWindow {
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         Self::url_input_action(gui.clone());
 
-        fn with_action<F>(
-            gui: &MainWindow,
-            connection: Arc<Mutex<Connection>>,
-            button: gtk::Button,
-            button_closure: F,
-        ) where
+        fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: gtk::Button, button_closure: F)
+        where
             F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
 
         // CANCEL
-        with_action(
-            &gui,
-            connection.clone(),
-            gui.add_group.cancel_button.clone(),
-            |_, gui| {
-                let gui = gui.clone();
-                Box::new(move |_| {
-                    gui.add_group.reset();
-                    gui.add_group.input_group.set_text("");
+        with_action(&gui, connection.clone(), gui.add_group.cancel_button.clone(), |_, gui| {
+            let gui = gui.clone();
+            Box::new(move |_| {
+                gui.add_group.reset();
+                gui.add_group.input_group.set_text("");
 
-                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
-                })
-            },
-        );
+                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+            })
+        });
 
         //SAVE
-        with_action(
-            &gui,
-            connection,
-            gui.add_group.save_button.clone(),
-            |connection, gui| {
-                let gui = gui.clone();
-                Box::new(move |_| {
-                    if let Ok(()) = gui.add_group.validate() {
-                        let icon_filename =
-                            Self::get_label_text(gui.add_group.icon_filename.clone());
+        with_action(&gui, connection, gui.add_group.save_button.clone(), |connection, gui| {
+            let gui = gui.clone();
+            Box::new(move |_| {
+                if let Ok(()) = gui.add_group.validate() {
+                    let icon_filename = Self::get_label_text(gui.add_group.icon_filename.clone());
 
-                        let group_name: String = gui.add_group.input_group.get_buffer().get_text();
+                    let group_name: String = gui.add_group.input_group.get_buffer().get_text();
 
-                        let url_input: Option<String> =
-                            Some(gui.add_group.url_input.get_buffer().get_text());
-                        let url_input = url_input.as_deref().and_then(|value| match value {
-                            "" => None,
-                            _ => Some(value),
-                        });
+                    let url_input: Option<String> = Some(gui.add_group.url_input.get_buffer().get_text());
+                    let url_input = url_input.as_deref().and_then(|value| match value {
+                        "" => None,
+                        _ => Some(value),
+                    });
 
-                        let group_id = gui.add_group.group_id.get_label().unwrap();
+                    let group_id = gui.add_group.group_id.get_label().unwrap();
 
-                        debug!("saving group_id: {}", group_id);
+                    debug!("saving group_id: {}", group_id);
 
-                        {
-                            let connection = connection.lock().unwrap();
+                    {
+                        let connection = connection.lock().unwrap();
 
-                            match group_id.parse() {
-                                Ok(group_id) => {
-                                    let mut group =
-                                        ConfigManager::get_group(&connection, group_id).unwrap();
+                        match group_id.parse() {
+                            Ok(group_id) => {
+                                let mut group = ConfigManager::get_group(&connection, group_id).unwrap();
 
-                                    group.name = group_name;
-                                    group.icon = icon_filename;
-                                    group.url = url_input.map(str::to_owned);
+                                group.name = group_name;
+                                group.icon = icon_filename;
+                                group.url = url_input.map(str::to_owned);
 
-                                    Self::write_icon(gui.add_group.icon_filename.clone());
+                                Self::write_icon(gui.add_group.icon_filename.clone());
 
-                                    debug!("saving group {:?}", group);
+                                debug!("saving group {:?}", group);
 
-                                    ConfigManager::update_group(&connection, &group).unwrap();
-                                }
-                                Err(_) => {
-                                    let mut group = AccountGroup::new(
-                                        0,
-                                        &group_name,
-                                        icon_filename.as_deref(),
-                                        url_input,
-                                        vec![],
-                                    );
+                                ConfigManager::update_group(&connection, &group).unwrap();
+                            }
+                            Err(_) => {
+                                let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input, vec![]);
 
-                                    ConfigManager::save_group(&connection, &mut group).unwrap();
+                                ConfigManager::save_group(&connection, &mut group).unwrap();
 
-                                    debug!("saving group {:?}", group);
+                                debug!("saving group {:?}", group);
 
-                                    //has no icon -> delete icon file if any
-                                    if group.icon.is_none() {
-                                        if let Some(icon_filename) = icon_filename {
-                                            Self::delete_icon_file(&icon_filename);
-                                        }
+                                //has no icon -> delete icon file if any
+                                if group.icon.is_none() {
+                                    if let Some(icon_filename) = icon_filename {
+                                        Self::delete_icon_file(&icon_filename);
                                     }
                                 }
                             }
                         }
-
-                        gui.add_group.reset();
-                        AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
-                        MainWindow::switch_to(&gui, Display::DisplayAccounts);
                     }
-                })
-            },
-        );
+
+                    gui.add_group.reset();
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                }
+            })
+        });
     }
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
-        let existing: String = icon_filename
-            .get_label()
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| "".to_owned());
+        let existing: String = icon_filename.get_label().map(|s| s.to_string()).unwrap_or_else(|| "".to_owned());
 
         debug!("existing icon filename: {}", existing);
 
@@ -357,11 +320,7 @@ impl AddGroupWindow {
 
             match std::fs::remove_file(&temp_filepath) {
                 Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
-                Err(e) => error!(
-                    "could not delete temp file {}: {:?}",
-                    temp_filepath.display(),
-                    e
-                ),
+                Err(e) => error!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
             };
         }
     }
@@ -379,30 +338,19 @@ impl AddGroupWindow {
                     let icon_filepath = ConfigManager::icons_path(&icon_filename_text);
                     debug!("icon_filepath: {}", icon_filepath.display());
 
-                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| {
-                        panic!("could not create file {}", icon_filepath.display())
-                    });
+                    let mut file = File::create(&icon_filepath).unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
 
-                    file.write_all(&bytes).unwrap_or_else(|_| {
-                        panic!("could not write image to file {}", icon_filepath.display())
-                    });
+                    file.write_all(&bytes)
+                        .unwrap_or_else(|_| panic!("could not write image to file {}", icon_filepath.display()));
 
                     Self::remove_tmp_file(icon_filename);
                 }
-                Err(_) => error!(
-                    "temp file {} not found. Did you call write_tmp_icon() first ?",
-                    temp_filepath.display()
-                ),
+                Err(_) => error!("temp file {} not found. Did you call write_tmp_icon() first ?", temp_filepath.display()),
             }
         }
     }
 
-    fn write_tmp_icon(
-        state: Rc<RefCell<State>>,
-        icon_filename: gtk::Label,
-        image_input: gtk::Image,
-        buf: &[u8],
-    ) {
+    fn write_tmp_icon(state: Rc<RefCell<State>>, icon_filename: gtk::Label, image_input: gtk::Image, buf: &[u8]) {
         let mut temp_filepath = PathBuf::new();
 
         temp_filepath.push(std::env::temp_dir());

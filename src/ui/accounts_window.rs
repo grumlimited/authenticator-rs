@@ -49,15 +49,12 @@ impl AccountsWindow {
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
-            *m_widgets = groups
-                .iter_mut()
-                .map(|account_group| account_group.widget(gui.state.clone()))
-                .collect();
+            *m_widgets = groups.iter_mut().map(|account_group| account_group.widget(gui.state.clone())).collect();
 
             // add updated accounts back to list
-            m_widgets.iter().for_each(|account_group_widget| {
-                accounts_container.add(&account_group_widget.container)
-            });
+            m_widgets
+                .iter()
+                .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
         }
 
         AccountsWindow::edit_buttons_actions(&gui, connection.clone());
@@ -97,8 +94,7 @@ impl AccountsWindow {
                     let connection = connection.lock().unwrap();
                     let group = ConfigManager::get_group(&connection, group_id).unwrap();
 
-                    ConfigManager::delete_group(&connection, group_id)
-                        .expect("Could not delete group");
+                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
 
                     if let Some(path) = group.icon {
                         AddGroupWindow::delete_icon_file(&path);
@@ -261,10 +257,7 @@ impl AccountsWindow {
                         let account_widgets = widgets_group.account_widgets.clone();
                         let mut account_widgets = account_widgets.borrow_mut();
 
-                        if let Some(pos) = account_widgets
-                            .iter()
-                            .position(|x| x.account_id == account_id)
-                        {
+                        if let Some(pos) = account_widgets.iter().position(|x| x.account_id == account_id) {
                             account_widgets.remove(pos);
                         }
                     }
@@ -303,12 +296,8 @@ impl AccountsWindow {
 
                 edit_account_window.input_name.set_text("");
 
-                edit_account_window
-                    .add_accounts_container_edit
-                    .set_visible(false);
-                edit_account_window
-                    .add_accounts_container_add
-                    .set_visible(true);
+                edit_account_window.add_accounts_container_edit.set_visible(false);
+                edit_account_window.add_accounts_container_add.set_visible(true);
 
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                 buffer.set_text("");
@@ -340,9 +329,6 @@ mod tests {
 
     #[test]
     fn progress_bar_fraction() {
-        assert_eq!(
-            0.5333333333333333_f64,
-            AccountsWindow::progress_bar_fraction_for(14)
-        );
+        assert_eq!(0.5333333333333333_f64, AccountsWindow::progress_bar_fraction_for(14));
     }
 }

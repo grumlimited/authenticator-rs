@@ -102,46 +102,28 @@ impl IconParser {
             transfer.perform()?;
         }
 
-        let extension = handle
-            .content_type()
-            .map(|e| e.and_then(Self::extension).map(str::to_owned))?;
+        let extension = handle.content_type().map(|e| e.and_then(Self::extension).map(str::to_owned))?;
 
-        Ok(AccountGroupIcon {
-            content: data,
-            extension,
-        })
+        Ok(AccountGroupIcon { content: data, extension })
     }
 
     fn extension(content_type: &str) -> Option<&str> {
         let regex = Regex::new(r"^.*/(?P<extension>.*?)$").unwrap();
 
-        regex.captures(content_type).and_then(|captures| {
-            captures
-                .name("extension")
-                .map(|extension| extension.as_str())
-        })
+        regex
+            .captures(content_type)
+            .and_then(|captures| captures.name("extension").map(|extension| extension.as_str()))
     }
 
     pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf> {
         let state = state.borrow();
 
-        let alpha = if state.dark_mode {
-            (32, 32, 32)
-        } else {
-            (255, 255, 255)
-        };
+        let alpha = if state.dark_mode { (32, 32, 32) } else { (255, 255, 255) };
 
-        debug!(
-            "loading icon {} with alpha channels {:?}",
-            filepath.display(),
-            &alpha
-        );
+        debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
 
-        let pixbuf = Pixbuf::new_from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| {
-            pixbuf
-                .add_alpha(true, alpha.0, alpha.1, alpha.2)
-                .unwrap_or(pixbuf)
-        })?;
+        let pixbuf =
+            Pixbuf::new_from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2).unwrap_or(pixbuf))?;
 
         Ok(pixbuf)
     }
@@ -161,9 +143,7 @@ mod tests {
 
     #[test]
     fn download() {
-        let fut = IconParser::download(
-            "https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg",
-        );
+        let fut = IconParser::download("https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg");
 
         let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());

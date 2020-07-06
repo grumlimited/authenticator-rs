@@ -55,9 +55,7 @@ impl Account {
     }
 
     pub fn widget(&mut self) -> AccountWidgets {
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
         let grid: gtk::Grid = builder.get_object("grid").unwrap();
 
@@ -128,10 +126,7 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {
-        let time = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
         Self::generate_time_based_password_with_time(time, key)
     }

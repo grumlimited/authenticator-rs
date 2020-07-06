@@ -56,8 +56,7 @@ impl Default for State {
 impl MainWindow {
     pub fn new() -> MainWindow {
         // Initialize the UI from the Glade XML.
-        let builder =
-            gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
@@ -118,23 +117,15 @@ impl MainWindow {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
-                gui.edit_account_window
-                    .add_accounts_container_edit
-                    .set_visible(true);
-                gui.edit_account_window
-                    .add_accounts_container_add
-                    .set_visible(false);
+                gui.edit_account_window.add_accounts_container_edit.set_visible(true);
+                gui.edit_account_window.add_accounts_container_add.set_visible(false);
             }
             Display::DisplayAddAccount => {
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account_window.container.set_visible(true);
-                gui.edit_account_window
-                    .add_accounts_container_edit
-                    .set_visible(false);
-                gui.edit_account_window
-                    .add_accounts_container_add
-                    .set_visible(true);
+                gui.edit_account_window.add_accounts_container_edit.set_visible(false);
+                gui.edit_account_window.add_accounts_container_add.set_visible(true);
             }
             Display::DisplayAddGroup => {
                 gui.accounts_window.container.set_visible(false);
@@ -144,11 +135,7 @@ impl MainWindow {
         }
     }
 
-    pub fn set_application(
-        &mut self,
-        application: &gtk::Application,
-        connection: Arc<Mutex<Connection>>,
-    ) {
+    pub fn set_application(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>) {
         self.window.set_application(Some(application));
 
         self.build_menus(connection);
@@ -173,14 +160,9 @@ impl MainWindow {
         let mut guard = groups.lock().unwrap();
         let groups = guard.get_mut();
 
-        let widgets: Vec<AccountGroupWidgets> = groups
-            .iter_mut()
-            .map(|account_group| account_group.widget(self.state.clone()))
-            .collect();
+        let widgets: Vec<AccountGroupWidgets> = groups.iter_mut().map(|account_group| account_group.widget(self.state.clone())).collect();
 
-        widgets
-            .iter()
-            .for_each(|w| self.accounts_window.accounts_container.add(&w.container));
+        widgets.iter().for_each(|w| self.accounts_window.accounts_container.add(&w.container));
 
         let m_widgets = self.accounts_window.widgets.clone();
         let mut m_widgets = m_widgets.lock().unwrap();
@@ -211,10 +193,7 @@ impl MainWindow {
     }
 
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::HeaderBarBuilder::new()
-            .show_close_button(true)
-            .title("Authenticator RS")
-            .build();
+        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).title("Authenticator RS").build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
 
@@ -225,9 +204,7 @@ impl MainWindow {
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
@@ -248,9 +225,7 @@ impl MainWindow {
             dark_mode_slider.connect_state_set(move |_, state| {
                 let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
 
-                g_settings
-                    .set_boolean("dark-theme", state)
-                    .expect("Could not find setting dark-theme");
+                g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
                 MainWindow::switch_to(&gui, Display::DisplayAccounts);
@@ -261,20 +236,11 @@ impl MainWindow {
             });
         }
 
-        export_button.connect_clicked(export_accounts(
-            popover.clone(),
-            connection.clone(),
-            self.pool.clone(),
-        ));
+        export_button.connect_clicked(export_accounts(popover.clone(), connection.clone(), self.pool.clone()));
 
         let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
-        import_button.connect_clicked(import_accounts(
-            self.clone(),
-            popover.clone(),
-            connection,
-            self.pool.clone(),
-        ));
+        import_button.connect_clicked(import_accounts(self.clone(), popover.clone(), connection, self.pool.clone()));
 
         let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
 
@@ -285,10 +251,7 @@ impl MainWindow {
             });
         }
 
-        let titlebar = gtk::HeaderBarBuilder::new()
-            .decoration_layout(":")
-            .title("About")
-            .build();
+        let titlebar = gtk::HeaderBarBuilder::new().decoration_layout(":").title("About").build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
         {
@@ -304,9 +267,7 @@ impl MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
@@ -357,8 +318,7 @@ impl MainWindow {
                 let state = state.borrow();
                 let display = (&state.display).clone();
                 // can't add account if no groups
-                add_account_button
-                    .set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
+                add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 
                 add_group_button.set_sensitive(display == Display::DisplayAccounts);
 
@@ -381,8 +341,7 @@ impl MainWindow {
 async fn progress_bar_interval(tx: Sender<u8>) {
     loop {
         thread::sleep(time::Duration::from_secs(1));
-        tx.send(chrono::Local::now().second() as u8)
-            .expect("Couldn't send data to channel");
+        tx.send(chrono::Local::now().second() as u8).expect("Couldn't send data to channel");
     }
 }
 
@@ -393,17 +352,11 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
     })
 }
 
-fn export_accounts(
-    popover: gtk::PopoverMenu,
-    connection: Arc<Mutex<Connection>>,
-    threadpool: ThreadPool,
-) -> Box<dyn Fn(&gtk::Button)> {
+fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
 
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
@@ -413,9 +366,7 @@ fn export_accounts(
         export_account_error_body.set_label("Could not export accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => {
-                Box::new(about_popup_close(export_account_error.clone()))
-            }
+            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
             _ => Box::new(|_| None),
         });
 
@@ -425,8 +376,7 @@ fn export_accounts(
             gtk::ResponseType::Accept => {
                 let path = dialog.get_filename().unwrap();
 
-                let (tx, rx): (Sender<bool>, Receiver<bool>) =
-                    glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                 threadpool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
 
@@ -446,18 +396,11 @@ fn export_accounts(
     })
 }
 
-fn import_accounts(
-    gui: MainWindow,
-    popover: gtk::PopoverMenu,
-    connection: Arc<Mutex<Connection>>,
-    threadpool: ThreadPool,
-) -> Box<dyn Fn(&gtk::Button)> {
+fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
 
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str(),
-        );
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
@@ -469,9 +412,7 @@ fn import_accounts(
         export_account_error_body.set_label("Could not import accounts!");
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => {
-                Box::new(about_popup_close(export_account_error.clone()))
-            }
+            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
             _ => Box::new(|_| None),
         });
 
@@ -483,14 +424,9 @@ fn import_accounts(
 
                 let path = dialog.get_filename().unwrap();
 
-                let (tx, rx): (Sender<bool>, Receiver<bool>) =
-                    glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(
-                    path,
-                    connection.clone(),
-                    tx,
-                ));
+                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
 
                 let gui = gui.clone();
                 let connection = connection.clone();
