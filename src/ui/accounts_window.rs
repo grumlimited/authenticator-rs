@@ -41,7 +41,7 @@ impl AccountsWindow {
         let children = accounts_container.get_children();
         children.iter().for_each(|e| accounts_container.remove(e));
 
-        let mut groups = {
+        let groups = {
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection).unwrap()
         };
@@ -49,7 +49,7 @@ impl AccountsWindow {
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
-            *m_widgets = groups.iter_mut().map(|account_group| account_group.widget(gui.state.clone())).collect();
+            *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
 
             // add updated accounts back to list
             m_widgets
@@ -77,9 +77,6 @@ impl AccountsWindow {
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            let group_widgets = group_widgets.clone();
-            let widgets_list_clone = widgets_list_clone.clone();
-
             add_account_button.connect_clicked(Self::display_add_account_form(
                 connection.clone(),
                 popover.clone(),
@@ -90,6 +87,8 @@ impl AccountsWindow {
 
             {
                 let connection = connection.clone();
+                let widgets_list_clone = widgets_list_clone.clone();
+                let group_widgets = group_widgets.clone();
                 delete_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
                     let group = ConfigManager::get_group(&connection, group_id).unwrap();
