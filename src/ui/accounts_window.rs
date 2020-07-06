@@ -69,8 +69,8 @@ impl AccountsWindow {
     pub fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list_clone = gui.accounts_window.widgets.clone();
 
-        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
-        for group_widgets in widgets_list.iter_mut() {
+        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        for group_widgets in widgets_list.iter() {
             let delete_button = group_widgets.delete_button.clone();
             let edit_button = group_widgets.edit_button.clone();
             let add_account_button = group_widgets.add_account_button.clone();
@@ -147,13 +147,13 @@ impl AccountsWindow {
     }
 
     pub fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
-        for group_widgets in widgets_list.iter_mut() {
+        for group_widgets in widgets_list.iter() {
             let account_widgets = group_widgets.account_widgets.clone();
-            let mut account_widgets = account_widgets.borrow_mut();
+            let account_widgets = account_widgets.borrow();
 
-            for account_widgets in account_widgets.iter_mut() {
+            for account_widgets in account_widgets.iter() {
                 let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
 
@@ -230,13 +230,13 @@ impl AccountsWindow {
     }
 
     pub fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
-        for group_widgets in widgets_list.iter_mut() {
+        for group_widgets in widgets_list.iter() {
             let account_widgets = group_widgets.account_widgets.clone();
-            let mut account_widgets = account_widgets.borrow_mut();
+            let account_widgets = account_widgets.borrow();
 
-            for account_widgets in account_widgets.iter_mut() {
+            for account_widgets in account_widgets.iter() {
                 let account_id = account_widgets.account_id;
                 let group_id = account_widgets.group_id;
                 let popover = account_widgets.popover.clone();

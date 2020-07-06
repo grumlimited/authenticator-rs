@@ -39,9 +39,9 @@ pub struct AccountGroupWidgets {
 
 impl AccountGroupWidgets {
     pub fn update(&mut self) {
-        let r = self.account_widgets.clone();
-        let mut r = r.borrow_mut();
-        (*r).iter_mut().for_each(|x| x.update());
+        let account_widgets = self.account_widgets.clone();
+        let mut account_widgets = account_widgets.borrow_mut();
+        (*account_widgets).iter_mut().for_each(|account| account.update());
     }
 }
 
@@ -118,7 +118,7 @@ impl AccountGroup {
 
             event_box
                 .connect_local("button-press-event", false, move |_| {
-                    let account_widgets = account_widgets.borrow_mut();
+                    let account_widgets = account_widgets.borrow();
 
                     if account_widgets.is_empty() {
                         delete_button.set_sensitive(true);
