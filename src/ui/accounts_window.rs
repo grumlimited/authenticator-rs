@@ -118,14 +118,9 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    let input_group = gui.add_group.input_group.clone();
-                    input_group.set_text(group.name.as_str());
-
-                    let url_input = gui.add_group.url_input.clone();
-                    url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
-
-                    let group_id = gui.add_group.group_id.clone();
-                    group_id.set_label(format!("{}", group.id).as_str());
+                    gui.add_group.input_group.set_text(group.name.as_str());
+                    gui.add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
+                    gui.add_group.group_id.set_label(format!("{}", group.id).as_str());
 
                     let image_input = gui.add_group.image_input.clone();
                     let icon_filename = gui.add_group.icon_filename.clone();
@@ -167,11 +162,9 @@ impl AccountsWindow {
                 {
                     let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                    let dialog_ok_img = account_widgets.dialog_ok_img.clone();
-                    let edit_copy_img = account_widgets.edit_copy_img.clone();
-
                     {
                         let copy_button = account_widgets.copy_button.clone();
+                        let edit_copy_img = account_widgets.edit_copy_img.clone();
                         rx.attach(None, move |_| {
                             let edit_copy_img = edit_copy_img.lock().unwrap();
                             let edit_copy_img = edit_copy_img.deref();
@@ -185,6 +178,7 @@ impl AccountsWindow {
                         let copy_button = account_widgets.copy_button.clone();
                         let copy_button = copy_button.lock().unwrap();
                         let pool = gui.pool.clone();
+                        let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                         copy_button.connect_clicked(move |button| {
                             let dialog_ok_img = dialog_ok_img.lock().unwrap();
                             let dialog_ok_img = dialog_ok_img.deref();
@@ -199,7 +193,6 @@ impl AccountsWindow {
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection).unwrap();
-
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
