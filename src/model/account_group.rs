@@ -38,7 +38,7 @@ pub struct AccountGroupWidgets {
 }
 
 impl AccountGroupWidgets {
-    pub fn update(&mut self) {
+    pub fn update(&self) {
         let account_widgets = self.account_widgets.clone();
         let mut account_widgets = account_widgets.borrow_mut();
         (*account_widgets).iter_mut().for_each(|account| account.update());
@@ -56,7 +56,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&mut self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
+    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
         let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         let group: gtk::Box = builder.get_object("group").unwrap();
@@ -101,7 +101,7 @@ impl AccountGroup {
 
         let account_widgets: Vec<AccountWidgets> = self
             .entries
-            .iter_mut()
+            .iter()
             .map(|account| {
                 let widget = account.widget();
                 accounts.add(&widget.grid);

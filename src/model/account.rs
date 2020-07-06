@@ -54,7 +54,7 @@ impl Account {
         }
     }
 
-    pub fn widget(&mut self) -> AccountWidgets {
+    pub fn widget(&self) -> AccountWidgets {
         let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
         let grid: gtk::Grid = builder.get_object("grid").unwrap();
