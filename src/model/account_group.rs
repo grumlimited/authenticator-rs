@@ -38,21 +38,15 @@ pub struct AccountGroupWidgets {
 }
 
 impl AccountGroupWidgets {
-    pub fn update(&mut self) {
-        let r = self.account_widgets.clone();
-        let mut r = r.borrow_mut();
-        (*r).iter_mut().for_each(|x| x.update());
+    pub fn update(&self) {
+        let account_widgets = self.account_widgets.clone();
+        let mut account_widgets = account_widgets.borrow_mut();
+        (*account_widgets).iter_mut().for_each(|account| account.update());
     }
 }
 
 impl AccountGroup {
-    pub fn new(
-        id: u32,
-        name: &str,
-        icon: Option<&str>,
-        url: Option<&str>,
-        entries: Vec<Account>,
-    ) -> Self {
+    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, entries: Vec<Account>) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
@@ -62,10 +56,8 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&mut self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
-        let builder = gtk::Builder::new_from_resource(
-            format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str(),
-        );
+    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
+        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         let group: gtk::Box = builder.get_object("group").unwrap();
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
@@ -109,7 +101,7 @@ impl AccountGroup {
 
         let account_widgets: Vec<AccountWidgets> = self
             .entries
-            .iter_mut()
+            .iter()
             .map(|account| {
                 let widget = account.widget();
                 accounts.add(&widget.grid);
@@ -126,7 +118,7 @@ impl AccountGroup {
 
             event_box
                 .connect_local("button-press-event", false, move |_| {
-                    let account_widgets = account_widgets.borrow_mut();
+                    let account_widgets = account_widgets.borrow();
 
                     if account_widgets.is_empty() {
                         delete_button.set_sensitive(true);
