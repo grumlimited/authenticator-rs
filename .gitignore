@@ -11,4 +11,4 @@ Cargo.lock
 /test.yaml
 /data/gschemas.compiled
 /builddir/
-/build-aux/po/
+/build-aux/i18n/
