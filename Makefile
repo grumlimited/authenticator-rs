@@ -92,6 +92,7 @@ clean :
 	rm -rf target/*
 
 debian-pkg : install
+	find $(DESTDIR)
 	mkdir -p $(DESTDIR)/DEBIAN
 	cp build-aux/debian/control $(DESTDIR)/DEBIAN/
 	echo "Version: $(RELEASE_VERSION)" >> $(DESTDIR)/DEBIAN/control
