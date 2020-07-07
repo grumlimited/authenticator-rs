@@ -32,12 +32,6 @@ const GETTEXT_PACKAGE: &str = "authenticator-rs";
 const LOCALEDIR: &str = "build-aux/po/usr/local/share/locale";
 
 fn main() {
-    // Prepare i18n
-    setlocale(LocaleCategory::LcAll, "");
-    bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
-    textdomain(GETTEXT_PACKAGE);
-    println!("{:?}", gettext("SVG imadssqsqdsdsgesDSQDSQ2"));
-
     let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
 
     let resource = {
@@ -58,6 +52,11 @@ fn main() {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+
+        // Prepare i18n
+        setlocale(LocaleCategory::LcAll, "");
+        bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
+        textdomain(GETTEXT_PACKAGE);
 
         configure_logging();
 

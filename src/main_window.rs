@@ -12,10 +12,10 @@ use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE_PREFIX};
 use futures_executor::ThreadPool;
+use gettextrs::*;
+use gio::prelude::SettingsExt;
 use rusqlite::Connection;
 use std::rc::Rc;
-
-use gio::prelude::SettingsExt;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -382,7 +382,7 @@ fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>
 
                 rx.attach(None, move |success| {
                     if !success {
-                        export_account_error.set_title("Error");
+                        export_account_error.set_title(&gettext("Error"));
                         export_account_error.show_all();
                     }
 
@@ -405,7 +405,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
         let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
-        export_account_error.set_title("Error");
+        export_account_error.set_title(&gettext("Error"));
 
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 

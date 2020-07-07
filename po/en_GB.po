@@ -11,11 +11,104 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Project-Id-Version: authenticator-rs\n"
-"PO-Revision-Date: 2020-07-07 00:41+0100\n"
+"PO-Revision-Date: 2020-07-07 08:42+0100\n"
 "X-Generator: Gtranslator 3.36.0\n"
 "Language-Team: en_GB <>\n"
 "Language: en_GB\n"
 "Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
 
-msgid "SVG imadssqsqdsdsgesDSQDSQ2"
-msgstr "In new english"
+msgid "A Two-Factor Authentication application"
+msgstr "A Two-Factor Authentication application"
+
+msgid "About"
+msgstr "About"
+
+msgid "Account name"
+msgstr "Account name"
+
+msgid "Accounts"
+msgstr "Accounts"
+
+msgid "account"
+msgstr "account"
+
+msgid "Action menu"
+msgstr "Action menu"
+
+msgid "Add account"
+msgstr "Add account"
+
+msgid "Add group"
+msgstr "Add group"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Could not import accounts!"
+msgstr "Could not import accounts!"
+
+msgid "Could not export accounts!"
+msgstr "Could not export accounts!"
+
+msgid "Could not save accounts!"
+msgstr "Could not save accounts!"
+
+msgid "Dark mode"
+msgstr "Dark mode"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Edit account"
+msgstr "Edit account"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Export accounts"
+msgstr "Export accounts"
+
+msgid "Group"
+msgstr "Group"
+
+msgid "Group icon"
+msgstr "Group icon"
+
+msgid "Icon"
+msgstr "Icon"
+
+msgid "Icon URL"
+msgstr "Icon URL"
+
+msgid "Import accounts"
+msgstr "Import account"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Reload"
+msgstr "Reload"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Secret"
+msgstr "Secret"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "System menu"
+msgstr "System menu"
+
+msgid "Turns on dark-theme friendly features"
+msgstr "Turns on dark-theme friendly features"
