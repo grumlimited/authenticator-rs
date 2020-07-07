@@ -67,7 +67,7 @@ install : target/release/authenticator-rs gresource
 	rm -fr builddir/
 	meson builddir --prefix=/usr
 	DESTDIR=../build-aux/i18n meson install -C builddir
-	cp -fr build-aux/i18n $(DESTDIR)
+	cp -fr build-aux/i18n/usr $(DESTDIR)
 
 
 # Remove an existing install from the system
