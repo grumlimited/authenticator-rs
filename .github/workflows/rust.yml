@@ -1,10 +1,10 @@
 on:
   push:
     branches:
-      - xxx
+      - master
   pull_request:
     branches:
-      - xxx
+      - master
 
 name: Continuous integration
 
