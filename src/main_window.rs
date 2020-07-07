@@ -162,7 +162,7 @@ impl MainWindow {
 
         let widgets: Vec<AccountGroupWidgets> = groups.iter_mut().map(|account_group| account_group.widget(self.state.clone())).collect();
 
-        widgets.iter().for_each(|w| self.accounts_window.accounts_container.add(&w.container));
+        widgets.iter().for_each(|widget| self.accounts_window.accounts_container.add(&widget.container));
 
         let m_widgets = self.accounts_window.widgets.clone();
         let mut m_widgets = m_widgets.lock().unwrap();
@@ -363,7 +363,7 @@ fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>
         let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
-        export_account_error_body.set_label("Could not export accounts!");
+        export_account_error_body.set_label(&gettext("Could not export accounts!"));
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
@@ -409,7 +409,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
 
         let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
 
-        export_account_error_body.set_label("Could not import accounts!");
+        export_account_error_body.set_label(&gettext("Could not import accounts!"));
 
         builder.connect_signals(|_, handler_name| match handler_name {
             "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
