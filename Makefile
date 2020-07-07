@@ -62,6 +62,11 @@ install : target/release/authenticator-rs gresource
 
 	# Install gschema file
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml $(sharedir)/glib-2.0/schemas/
+	
+	# Install LOCALE files
+	rm -fr builddir/
+	meson builddir --prefix=${PREFIX}
+	meson install -C builddir
 
 # Remove an existing install from the system
 uninstall :
