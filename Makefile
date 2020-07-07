@@ -65,7 +65,7 @@ install : target/release/authenticator-rs gresource
 	
 	# Install LOCALE files
 	rm -fr builddir/
-	meson builddir --prefix=$(DESTDIR)
+	meson builddir --prefix=/usr
 	DESTDIR=../build-aux/i18n meson install -C builddir
 	cp -fr build-aux/i18n/usr $(DESTDIR)
 
