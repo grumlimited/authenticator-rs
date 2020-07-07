@@ -29,7 +29,7 @@ const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
 const GETTEXT_PACKAGE: &str = "authenticator-rs";
-const LOCALEDIR: &str = "build-aux/po/usr/local/share/locale";
+const LOCALEDIR: &str = "/usr/local/share/locale";
 
 fn main() {
     let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");

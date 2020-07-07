@@ -30,7 +30,7 @@ jobs:
       - name: System dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc make libsqlite3-dev libgtk-3-dev openssl libssl-dev
+          sudo apt-get install -y gcc make libsqlite3-dev libgtk-3-dev openssl libssl-dev meson
 
           mkdir -p ~/.cargo/release
 
