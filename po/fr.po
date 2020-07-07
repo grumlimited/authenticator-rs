@@ -60,7 +60,7 @@ msgid "Could not save accounts!"
 msgstr "Echec de l'enregistrement du compte"
 
 msgid "Dark mode"
-msgstr "Mode dark"
+msgstr "Mode sombre"
 
 msgid "Delete"
 msgstr "Supprimer"
@@ -111,4 +111,4 @@ msgid "System menu"
 msgstr "Menu système"
 
 msgid "Turns on dark-theme friendly features"
-msgstr "Activer le mode dark"
+msgstr "Activer le mode sombre"
