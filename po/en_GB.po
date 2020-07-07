@@ -83,6 +83,9 @@ msgstr "Group"
 msgid "Group icon"
 msgstr "Group icon"
 
+msgid "hostname, eg. github.com"
+msgstr "hostname, eg. github.com"
+
 msgid "Icon"
 msgstr "Icon"
 

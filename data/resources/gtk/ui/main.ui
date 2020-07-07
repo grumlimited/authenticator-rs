@@ -515,7 +515,8 @@
                         <property name="margin_end">5</property>
                         <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
-                        <property name="placeholder_text">https://</property>
+                        <property name="primary_icon_stock">gtk-connect</property>
+                        <property name="placeholder_text" translatable="yes">hostname, eg. github.com</property>
                         <property name="input_purpose">url</property>
                       </object>
                       <packing>
