@@ -142,7 +142,7 @@
           </object>
           <packing>
             <property name="name">main_box</property>
-            <property name="title" translatable="yes">main_box</property>
+            <property name="title" translatable="yes">Accounts</property>
           </packing>
         </child>
         <child>
@@ -228,6 +228,7 @@
                         <property name="margin_end">50</property>
                         <property name="margin_top">20</property>
                         <property name="label" translatable="yes">Group</property>
+                        <property name="xalign">0</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -241,6 +242,7 @@
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Name</property>
+                        <property name="xalign">0</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -255,6 +257,7 @@
                         <property name="margin_start">5</property>
                         <property name="margin_end">50</property>
                         <property name="label" translatable="yes">Secret</property>
+                        <property name="xalign">0</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -319,6 +322,7 @@
                         <property name="vadjustment">edit_account_input_secret_scrollable</property>
                         <property name="wrap_mode">char</property>
                         <property name="left_margin">5</property>
+                        <property name="top_margin">3</property>
                         <property name="monospace">True</property>
                         <style>
                           <class name="edit_account_input_secret"/>
@@ -405,7 +409,7 @@
           </object>
           <packing>
             <property name="name">edit_account</property>
-            <property name="title" translatable="yes">edit_account</property>
+            <property name="title" translatable="yes">Edit account</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -495,7 +499,7 @@
                         <property name="margin_start">5</property>
                         <property name="margin_end">5</property>
                         <property name="margin_bottom">5</property>
-                        <property name="label" translatable="yes">URL</property>
+                        <property name="label">URL</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -511,7 +515,7 @@
                         <property name="margin_end">5</property>
                         <property name="margin_bottom">5</property>
                         <property name="hexpand">True</property>
-                        <property name="placeholder_text" translatable="yes">https://</property>
+                        <property name="placeholder_text">https://</property>
                         <property name="input_purpose">url</property>
                       </object>
                       <packing>
@@ -526,7 +530,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Group image</property>
+                        <property name="tooltip_text" translatable="yes">Group icon</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="margin_bottom">20</property>
@@ -704,7 +708,7 @@
           </object>
           <packing>
             <property name="name">add_group</property>
-            <property name="title" translatable="yes">add_group</property>
+            <property name="title" translatable="yes">Add group</property>
             <property name="position">2</property>
           </packing>
         </child>
@@ -778,7 +782,7 @@
             <property name="valign">center</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="label" translatable="yes">Authenticator RS</property>
+            <property name="label">Authenticator RS</property>
           </object>
           <packing>
             <property name="left_attach">0</property>

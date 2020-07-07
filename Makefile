@@ -62,6 +62,13 @@ install : target/release/authenticator-rs gresource
 
 	# Install gschema file
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml $(sharedir)/glib-2.0/schemas/
+	
+	# Install LOCALE files
+	rm -fr builddir/
+	meson builddir --prefix=/usr
+	DESTDIR=../build-aux/i18n meson install -C builddir
+	cp -fr build-aux/i18n/usr $(DESTDIR)
+
 
 # Remove an existing install from the system
 uninstall :
@@ -77,6 +84,9 @@ uninstall :
 	rm -f $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
 	# Remove the binary
 	rm -f $(bindir)/bin/authenticator-rs
+
+	# Remove LOCALE files
+	find /usr/share/locale/ -name authenticator-rs.mo -exec rm {} \;
 
 # Remove all files
 clean-all : clean

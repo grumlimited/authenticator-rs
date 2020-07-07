@@ -1,0 +1,114 @@
+# French translation for authenticator-rs.
+# Copyright (C) 2019 icon-library's COPYRIGHT HOLDER
+# This file is distributed under the same license as the authenticator-rs package.
+# (null) <>, 2020.
+# Romain Gallet <rgallet@grumlimited.co.uk>, 2020.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Project-Id-Version: authenticator-rs\n"
+"PO-Revision-Date: 2020-07-07 00:43+0100\n"
+"X-Generator: Gtranslator 3.36.0\n"
+"Language-Team: fr <>\n"
+"Language: fr\n"
+"Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
+
+msgid "A Two-Factor Authentication application"
+msgstr "A Two-Factor Authentication application"
+
+msgid "About"
+msgstr "À propos"
+
+msgid "Account name"
+msgstr "Nom du compte"
+
+msgid "Accounts"
+msgstr "Comptes"
+
+msgid "account"
+msgstr "compte"
+
+msgid "Action menu"
+msgstr "Menu principal"
+
+msgid "Add account"
+msgstr "Ajouter un compte"
+
+msgid "Add group"
+msgstr "Ajouter un groupe"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Close"
+msgstr "Fermer"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Could not import accounts!"
+msgstr "L'importation des comptes a échoué!"
+
+msgid "Could not export accounts!"
+msgstr "L'exportation des comptes a échoué!"
+
+msgid "Could not save accounts!"
+msgstr "Echec de l'enregistrement du compte"
+
+msgid "Dark mode"
+msgstr "Mode sombre"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Edit"
+msgstr "Éditer"
+
+msgid "Edit account"
+msgstr "Éditer le compte"
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "Export accounts"
+msgstr "Exporter"
+
+msgid "Group"
+msgstr "Groupe"
+
+msgid "Group icon"
+msgstr "Icône du groupe"
+
+msgid "Icon"
+msgstr "Icône"
+
+msgid "Icon URL"
+msgstr "URL de l'icône"
+
+msgid "Import accounts"
+msgstr "Importer"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Reload"
+msgstr "Rafraichir"
+
+msgid "Save"
+msgstr "Sauvegarder"
+
+msgid "Secret"
+msgstr "Secret"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "System menu"
+msgstr "Menu système"
+
+msgid "Turns on dark-theme friendly features"
+msgstr "Activer le mode sombre"
