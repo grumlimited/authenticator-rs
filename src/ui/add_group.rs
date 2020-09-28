@@ -299,7 +299,7 @@ impl AddGroupWindow {
     }
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
-        let existing =  icon_filename.get_label().as_str().to_owned();
+        let existing = icon_filename.get_label().as_str().to_owned();
         // let existing: String = icon_filename.get_label().map(|s| s.to_string()).unwrap_or_else(|| "".to_owned());
 
         debug!("existing icon filename: {}", existing);
