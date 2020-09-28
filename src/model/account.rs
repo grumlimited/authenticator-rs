@@ -55,7 +55,7 @@ impl Account {
     }
 
     pub fn widget(&self) -> AccountWidgets {
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
         let grid: gtk::Grid = builder.get_object("grid").unwrap();
 
@@ -96,11 +96,7 @@ impl Account {
 
         copy_button.connect_clicked(move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-            let option = totp_label_clone.get_label();
-
-            if let Some(v) = option {
-                clipboard.set_text(v.as_str())
-            }
+            clipboard.set_text(totp_label_clone.get_label().as_str());
         });
 
         {
