@@ -1,21 +1,20 @@
-use gtk::prelude::*;
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-
-use chrono::prelude::*;
-
-use crate::model::{AccountGroup, AccountGroupWidgets};
-use glib::{Receiver, Sender};
 use std::{thread, time};
 
-use crate::helpers::ConfigManager;
-use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
+use chrono::prelude::*;
 use futures_executor::ThreadPool;
 use gettextrs::*;
 use gio::prelude::SettingsExt;
+use glib::{Receiver, Sender};
+use gtk::prelude::*;
 use rusqlite::Connection;
-use std::rc::Rc;
+
+use crate::helpers::ConfigManager;
+use crate::model::{AccountGroup, AccountGroupWidgets};
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
+use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -56,7 +55,7 @@ impl Default for State {
 impl MainWindow {
     pub fn new() -> MainWindow {
         // Initialize the UI from the Glade XML.
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
@@ -69,7 +68,7 @@ impl MainWindow {
             builder.connect_signals(move |_, handler_name| {
                 match handler_name {
                     // handler_name as defined in the glade file
-                    "about_popup_close" => Box::new(about_popup_close(popup.clone())),
+                    "about_popup_close" => about_popup_close(popup.clone()),
                     "save_group" => {
                         let add_group_save = add_group_save.clone();
                         Box::new(move |_| {
@@ -84,7 +83,7 @@ impl MainWindow {
                             None
                         })
                     }
-                    _ => Box::new(move |_| None),
+                    _ => Box::new(|_| None),
                 }
             });
         }
@@ -204,7 +203,7 @@ impl MainWindow {
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
@@ -267,7 +266,7 @@ impl MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
 
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
 
@@ -356,7 +355,7 @@ fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
 
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
@@ -366,7 +365,7 @@ fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>
         export_account_error_body.set_label(&gettext("Could not export accounts!"));
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
+            "export_account_error_close" => about_popup_close(export_account_error.clone()),
             _ => Box::new(|_| None),
         });
 
@@ -400,7 +399,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
 
-        let builder = gtk::Builder::new_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
         let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
 
@@ -412,7 +411,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
         export_account_error_body.set_label(&gettext("Could not import accounts!"));
 
         builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => Box::new(about_popup_close(export_account_error.clone())),
+            "export_account_error_close" => about_popup_close(export_account_error.clone()),
             _ => Box::new(|_| None),
         });
 

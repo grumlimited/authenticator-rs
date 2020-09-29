@@ -4,7 +4,7 @@ use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
-use log::{debug, error};
+use log::{debug, warn};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::fs;
@@ -67,7 +67,6 @@ impl AddGroupWindow {
     }
 
     pub fn reset(&self) {
-        let name = self.input_group.clone();
         let icon_filename = self.icon_filename.clone();
         let input_group = self.input_group.clone();
         let icon_error = self.icon_error.clone();
@@ -94,8 +93,8 @@ impl AddGroupWindow {
         icon_delete.set_sensitive(true);
         image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-        name.set_property_primary_icon_name(None);
-        let style_context = name.get_style_context();
+        input_group.set_property_primary_icon_name(None);
+        let style_context = input_group.get_style_context();
         style_context.remove_class("error");
     }
 
@@ -133,7 +132,7 @@ impl AddGroupWindow {
 
                             Self::write_tmp_icon(state.clone(), icon_filename.clone(), image_input.clone(), bytes.as_slice());
                         }
-                        Err(_) => error!("Could not read file {}", &path.display()),
+                        Err(_) => warn!("Could not read file {}", &path.display()),
                     }
                 }
                 _ => dialog.hide(),
@@ -252,7 +251,8 @@ impl AddGroupWindow {
                         _ => Some(value),
                     });
 
-                    let group_id = gui.add_group.group_id.get_label().unwrap();
+                    let group_id = gui.add_group.group_id.get_label();
+                    let group_id = group_id.as_str();
 
                     debug!("saving group_id: {}", group_id);
 
@@ -299,7 +299,8 @@ impl AddGroupWindow {
     }
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
-        let existing: String = icon_filename.get_label().map(|s| s.to_string()).unwrap_or_else(|| "".to_owned());
+        let existing = icon_filename.get_label().as_str().to_owned();
+        // let existing: String = icon_filename.get_label().map(|s| s.to_string()).unwrap_or_else(|| "".to_owned());
 
         debug!("existing icon filename: {}", existing);
 
@@ -320,7 +321,7 @@ impl AddGroupWindow {
 
             match std::fs::remove_file(&temp_filepath) {
                 Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
-                Err(e) => error!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
+                Err(e) => warn!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
             };
         }
     }
@@ -345,7 +346,7 @@ impl AddGroupWindow {
 
                     Self::remove_tmp_file(icon_filename);
                 }
-                Err(_) => error!("temp file {} not found. Did you call write_tmp_icon() first ?", temp_filepath.display()),
+                Err(_) => warn!("temp file {} not found. Did you call write_tmp_icon() first ?", temp_filepath.display()),
             }
         }
     }
@@ -362,17 +363,18 @@ impl AddGroupWindow {
 
         match IconParser::load_icon(&temp_filepath, state) {
             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
-            Err(e) => error!("Could not load image {}", e),
+            Err(e) => warn!("Could not load image {}", e),
         };
     }
 
     fn get_label_text(label: gtk::Label) -> Option<String> {
-        let icon_filename = label.get_label().map(|e| e.to_string());
+        let icon_filename = label.get_label();
+        let icon_filename = icon_filename.as_str();
 
-        icon_filename.as_deref().and_then(|value| match value {
+        match icon_filename {
             "" => None,
-            _ => Some(value.to_owned()),
-        })
+            v => Some(v.to_owned()),
+        }
     }
 
     pub fn delete_icon_file(icon_filename: &str) {
@@ -380,7 +382,7 @@ impl AddGroupWindow {
 
         match std::fs::remove_file(&icon_filepath) {
             Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-            Err(e) => error!("could not delete file {}: {:?}", icon_filepath.display(), e),
+            Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
         }
     }
 }
