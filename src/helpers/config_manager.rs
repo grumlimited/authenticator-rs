@@ -227,7 +227,6 @@ impl ConfigManager {
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
                 account.id = id;
-                account.group_id = account.group_id;
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }

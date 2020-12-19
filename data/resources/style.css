@@ -12,6 +12,10 @@
     background-color: #ffccd2;
 }
 
+.version_number {
+    font-size: 80%;
+}
+
 .account_row, .form_container {
     background-color: @content_view_bg;
     border-radius: 3px;
