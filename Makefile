@@ -36,7 +36,7 @@ install : target/release/authenticator-rs gresource
 	mkdir -p $(bindir)
 	# Install binary
 	$(INSTALL_PROGRAM) target/release/authenticator-rs $(bindir)/authenticator-rs
-	#
+
 	# Create the sharedir and subfolders, if need be
 	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
 	mkdir -p $(sharedir)/icons/hicolor/64x64/apps/
@@ -53,10 +53,13 @@ install : target/release/authenticator-rs gresource
 	$(INSTALL_DATA) data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
 	$(INSTALL_DATA) data/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
 	$(INSTALL_DATA) data/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
+
 	# Force icon cache refresh
 	touch $(sharedir)/icons/hicolor
+
 	# Install application meta-data
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.appdata.xml $(sharedir)/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml
+
 	# Install desktop file
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.desktop $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
 
@@ -68,7 +71,6 @@ install : target/release/authenticator-rs gresource
 	meson builddir --prefix=/usr
 	DESTDIR=../build-aux/i18n meson install -C builddir
 	cp -fr build-aux/i18n/usr $(DESTDIR)
-
 
 # Remove an existing install from the system
 uninstall :
