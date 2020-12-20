@@ -115,3 +115,9 @@ msgstr "System menu"
 
 msgid "Turns on dark-theme friendly features"
 msgstr "Turns on dark-theme friendly features"
+
+msgid "filter accounts"
+msgstr "filter accounts"
+
+msgid "filter"
+msgstr "filter"

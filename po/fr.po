@@ -114,4 +114,10 @@ msgid "System menu"
 msgstr "Menu système"
 
 msgid "Turns on dark-theme friendly features"
-msgstr "Activer le mode sombre"
+msgstr "Activer le support mode sombre"
+
+msgid "filter accounts"
+msgstr "filtre de comptes"
+
+msgid "filter"
+msgstr "filtre"
