@@ -20,7 +20,7 @@ use crate::ui::{AddGroupWindow, EditAccountWindow};
 pub struct AccountsWindow {
     pub container: gtk::Box,
     pub accounts_container: gtk::Box,
-    pub filter: gtk::Entry,
+    pub filter: Arc<Mutex<RefCell<gtk::Entry>>>,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidgets>>>,
 }
@@ -37,7 +37,7 @@ impl AccountsWindow {
         AccountsWindow {
             container: main_box,
             accounts_container,
-            filter,
+            filter: Arc::new(Mutex::new(RefCell::new(filter))),
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             widgets: Arc::new(Mutex::new(vec![])),
         }
@@ -52,7 +52,9 @@ impl AccountsWindow {
 
         let groups = {
             let connection = connection.lock().unwrap();
-            let filter_text = gui.accounts_window.filter.get_text();
+            let mut filter_text = gui.accounts_window.filter.lock().unwrap();
+            let filter_text = filter_text.get_mut();
+            let filter_text = filter_text.get_text();
             ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap()
         };
 
@@ -202,8 +204,11 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
-                    let filter = gui.accounts_window.filter.get_text();
-                    let groups = ConfigManager::load_account_groups(&connection, Some(&filter)).unwrap();
+                    let mut filter_text = gui.accounts_window.filter.lock().unwrap();
+                    let filter_text = filter_text.get_mut();
+                    let filter_text = filter_text.get_text();
+
+                    let groups = ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
@@ -291,8 +296,10 @@ impl AccountsWindow {
                 debug!("Loading for group_id {:?}", group_id);
                 let groups = {
                     let connection = connection.lock().unwrap();
-                    let filter = main_window.accounts_window.filter.get_text();
-                    ConfigManager::load_account_groups(&connection, Some(&filter)).unwrap()
+                    let mut filter_text = main_window.accounts_window.filter.lock().unwrap();
+                    let filter_text = filter_text.get_mut();
+                    let filter_text = filter_text.get_text();
+                    ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap()
                 };
 
                 edit_account_window.reset();

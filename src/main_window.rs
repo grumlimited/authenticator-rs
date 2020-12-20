@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,10 +11,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -147,12 +147,7 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        {
-            let gui = self.clone();
-            self.accounts_window
-                .filter
-                .connect_changed(move |_| AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone()));
-        }
+        self.bind_account_filter_events(connection);
 
         self.start_progress_bar();
 
@@ -162,6 +157,48 @@ impl MainWindow {
         progress_bar.show();
         self.accounts_window.container.show();
         self.window.show();
+    }
+
+    pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
+        {
+            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+            let gui = self.clone();
+            let filter = gui.accounts_window.filter.clone();
+            let mut filter = filter.lock().unwrap();
+            let filter = filter.get_mut();
+
+            filter.connect_changed(move |_| {
+                let _ = tx.send(true);
+            });
+
+            rx.attach(None, move |_| {
+                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                glib::Continue(true)
+            });
+        }
+
+        {
+            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+            let gui = self.clone();
+            let filter_ref = gui.accounts_window.filter;
+            let filter_ref2 = filter_ref.clone();
+            let mut filter = filter_ref.lock().unwrap();
+            let filter = filter.get_mut();
+
+            let _ = filter.connect("icon-press", true, move |_| {
+                let _ = tx.send(true);
+                None
+            });
+
+            rx.attach(None, move |_| {
+                let mut filter = filter_ref2.lock().unwrap();
+                let filter = filter.get_mut();
+                filter.get_buffer().set_text("");
+                glib::Continue(true)
+            });
+        }
     }
 
     pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
