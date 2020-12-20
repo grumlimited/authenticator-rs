@@ -74,7 +74,7 @@ fn main() {
         // SQL migrations
         runner::run(&mut connection).unwrap();
 
-        let groups = ConfigManager::load_account_groups(&connection).unwrap();
+        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
 
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 

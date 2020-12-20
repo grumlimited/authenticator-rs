@@ -1,19 +1,26 @@
-use crate::helpers::{ConfigManager, IconParser};
-use crate::main_window::{Display, MainWindow};
-use crate::model::AccountGroupWidgets;
+use std::cell::RefCell;
+use std::ops::Deref;
+use std::sync::{Arc, Mutex};
+use std::{thread, time};
+
 use chrono::prelude::*;
 use chrono::Local;
+use glib::Sender;
 use gtk::prelude::*;
 use gtk::Builder;
 use log::{debug, error};
 use rusqlite::Connection;
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+
+use crate::helpers::{ConfigManager, IconParser};
+use crate::main_window::{Display, MainWindow};
+use crate::model::AccountGroupWidgets;
+use crate::ui::{AddGroupWindow, EditAccountWindow};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
     pub container: gtk::Box,
     pub accounts_container: gtk::Box,
+    pub filter: gtk::Entry,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidgets>>>,
 }
@@ -23,12 +30,14 @@ impl AccountsWindow {
         let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
         let main_box: gtk::Box = builder.get_object("main_box").unwrap();
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
+        let filter: gtk::Entry = builder.get_object("account_filter").unwrap();
 
         progress_bar.set_fraction(Self::progress_bar_fraction());
 
         AccountsWindow {
             container: main_box,
             accounts_container,
+            filter,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             widgets: Arc::new(Mutex::new(vec![])),
         }
@@ -43,7 +52,8 @@ impl AccountsWindow {
 
         let groups = {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection).unwrap()
+            let filter_text = gui.accounts_window.filter.get_text();
+            ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap()
         };
 
         {
@@ -192,7 +202,8 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection).unwrap();
+                    let filter = gui.accounts_window.filter.get_text();
+                    let groups = ConfigManager::load_account_groups(&connection, Some(&filter)).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
@@ -280,7 +291,8 @@ impl AccountsWindow {
                 debug!("Loading for group_id {:?}", group_id);
                 let groups = {
                     let connection = connection.lock().unwrap();
-                    ConfigManager::load_account_groups(&connection).unwrap()
+                    let filter = main_window.accounts_window.filter.get_text();
+                    ConfigManager::load_account_groups(&connection, Some(&filter)).unwrap()
                 };
 
                 edit_account_window.reset();
@@ -300,11 +312,6 @@ impl AccountsWindow {
         })
     }
 }
-
-use crate::ui::{AddGroupWindow, EditAccountWindow};
-use glib::Sender;
-use std::ops::Deref;
-use std::{thread, time};
 
 /**
 * Sleeps for some time then messages end of wait, so that copy button
