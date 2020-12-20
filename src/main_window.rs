@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,10 +11,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -161,6 +161,8 @@ impl MainWindow {
 
     pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
         {
+            //First bind user input event to refreshing account list
+
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             let gui = self.clone();
@@ -179,6 +181,8 @@ impl MainWindow {
         }
 
         {
+            //then bind "x" icon to emptying the filter input.
+
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             let gui = self.clone();
