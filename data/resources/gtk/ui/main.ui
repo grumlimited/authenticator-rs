@@ -951,7 +951,7 @@ See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pu
             <property name="sensitive">False</property>
             <property name="can-focus">False</property>
             <property name="double-buffered">False</property>
-            <property name="label" translatable="yes">#VERSION_NUMBER#</property>
+            <property name="label" translatable="yes">124</property>
             <style>
               <class name="version_number"/>
             </style>

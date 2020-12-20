@@ -30,6 +30,9 @@ clippy:
 	find src/ -name "*.rs" -exec touch {} \;
 	cargo clippy
 
+release-version:
+	sed -i 's/#VERSION_NUMBER#/$(RELEASE_VERSION)/' ./data/resources/gtk/ui/main.ui
+
 # Install onto the system
 install : target/release/authenticator-rs gresource
 	# Create the bindir, if need be

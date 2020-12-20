@@ -65,6 +65,7 @@ jobs:
           DESTDIR: '~/authenticator-rs-deb'
         run: |
           mkdir -p $DESTDIR
+          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
 
       - name: Upload Debian release
