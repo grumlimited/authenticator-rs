@@ -8,15 +8,15 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
+use log::info;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
-use log::info;
 use rusqlite::Connection;
 
 use main_window::MainWindow;
 
-use crate::helpers::ConfigManager;
 use crate::helpers::runner;
+use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 
