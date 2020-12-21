@@ -74,7 +74,7 @@
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
     <property name="default-width">250</property>
-    <property name="default-height">670</property>
+    <property name="default-height">710</property>
     <child>
       <object class="GtkStack" id="stack">
         <property name="name">stack</property>
@@ -101,11 +101,8 @@
             <child>
               <object class="GtkEntry" id="account_filter">
                 <property name="name">account_filter</property>
-                <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="has-focus">True</property>
                 <property name="tooltip-text" translatable="yes">filter accounts</property>
-                <property name="double-buffered">False</property>
                 <property name="margin-start">5</property>
                 <property name="margin-end">5</property>
                 <property name="margin-top">3</property>
@@ -573,7 +570,7 @@
                         <property name="margin-bottom">5</property>
                         <property name="hexpand">True</property>
                         <property name="caps-lock-warning">False</property>
-                        <property name="primary-icon-stock">gtk-connect</property>
+                        <property name="primary-icon-name">gtk-connect-symbolic</property>
                         <property name="placeholder-text" translatable="yes">hostname, eg. github.com</property>
                         <property name="input-purpose">url</property>
                       </object>
@@ -951,7 +948,6 @@ See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pu
             <property name="visible">True</property>
             <property name="sensitive">False</property>
             <property name="can-focus">False</property>
-            <property name="double-buffered">False</property>
             <property name="label">#VERSION_NUMBER#</property>
             <style>
               <class name="version_number"/>

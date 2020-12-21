@@ -30,6 +30,7 @@ pub struct MainWindow {
 #[derive(Clone, Debug)]
 pub struct State {
     pub dark_mode: bool,
+    pub searchbar_visible: bool,
     pub display: Display,
 }
 
@@ -47,6 +48,7 @@ impl Default for State {
 
         State {
             dark_mode: g_settings.get_boolean("dark-theme"),
+            searchbar_visible: g_settings.get_boolean("search-visible"),
             display: Display::DisplayAccounts,
         }
     }
@@ -242,14 +244,45 @@ impl MainWindow {
     }
 
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).title("Authenticator RS").build();
+        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
+
+        titlebar.pack_start(&self.build_search_button());
 
         titlebar.pack_end(&self.build_system_menu(connection));
         self.window.set_titlebar(Some(&titlebar));
 
         titlebar.show_all();
+    }
+
+    fn build_search_button(&mut self) -> gtk::Button {
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
+        let search_button: gtk::Button = builder.get_object("search_button").unwrap();
+
+        let filter = self.accounts_window.filter.clone();
+        search_button.connect_clicked(move |_| {
+            let mut filter_ref = filter.lock().unwrap();
+            let filter = filter_ref.get_mut();
+            if filter.is_visible() {
+                filter.hide()
+            } else {
+                filter.show()
+            }
+
+            gio::Settings::new("uk.co.grumlimited.authenticator-rs")
+                .set_boolean("search-visible", filter.is_visible())
+                .expect("Could not find setting search-visible");
+        });
+
+        if gio::Settings::new("uk.co.grumlimited.authenticator-rs").get_boolean("search-visible") {
+            let filter = self.accounts_window.filter.clone();
+            let mut filter_ref = filter.lock().unwrap();
+            let filter = filter_ref.get_mut();
+            filter.show()
+        }
+
+        search_button
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {

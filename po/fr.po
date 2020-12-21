@@ -120,4 +120,4 @@ msgid "filter accounts"
 msgstr "filtre de comptes"
 
 msgid "filter"
-msgstr "filtre"
+msgstr "filtre de comptes"

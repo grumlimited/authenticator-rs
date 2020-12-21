@@ -1,31 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.36.0 -->
+<!-- Generated with glade 3.38.2 -->
 <interface>
-  <requires lib="gtk+" version="3.22"/>
+  <requires lib="gtk+" version="3.24"/>
   <object class="GtkPopoverMenu" id="popover">
     <property name="name">popover</property>
-    <property name="can_focus">False</property>
+    <property name="can-focus">False</property>
     <property name="position">bottom</property>
     <child>
       <object class="GtkBox" id="buttons_container">
         <property name="name">buttons_container</property>
-        <property name="width_request">130</property>
+        <property name="width-request">130</property>
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="can-focus">False</property>
         <property name="hexpand">True</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkButton" id="add_account_button">
-            <property name="label" translatable="yes">Add account</property>
             <property name="name">add_account_button</property>
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="margin_start">3</property>
-            <property name="margin_end">3</property>
-            <property name="margin_top">3</property>
-            <property name="margin_bottom">3</property>
-            <property name="xalign">0</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+            <property name="margin-start">3</property>
+            <property name="margin-end">3</property>
+            <property name="margin-top">3</property>
+            <property name="margin-bottom">3</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Add account</property>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -35,16 +41,22 @@
         </child>
         <child>
           <object class="GtkButton" id="add_group_button">
-            <property name="label" translatable="yes">Add group</property>
             <property name="name">add_group_button</property>
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="margin_start">3</property>
-            <property name="margin_end">3</property>
-            <property name="margin_top">3</property>
-            <property name="margin_bottom">3</property>
-            <property name="xalign">0</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+            <property name="margin-start">3</property>
+            <property name="margin-end">3</property>
+            <property name="margin-top">3</property>
+            <property name="margin-bottom">3</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Add group</property>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -62,20 +74,20 @@
   <object class="GtkMenuButton" id="action_menu">
     <property name="name">action_menu</property>
     <property name="visible">True</property>
-    <property name="can_focus">True</property>
-    <property name="focus_on_click">False</property>
-    <property name="receives_default">True</property>
-    <property name="tooltip_text" translatable="yes">Action menu</property>
+    <property name="can-focus">True</property>
+    <property name="focus-on-click">False</property>
+    <property name="receives-default">True</property>
+    <property name="tooltip-text" translatable="yes">Action menu</property>
     <property name="halign">start</property>
-    <property name="margin_start">15</property>
+    <property name="margin-start">15</property>
     <property name="popover">popover</property>
     <child>
       <object class="GtkImage" id="add_image">
         <property name="name">add_image</property>
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="icon_name">list-add-symbolic</property>
-        <property name="use_fallback">True</property>
+        <property name="can-focus">False</property>
+        <property name="icon-name">list-add-symbolic</property>
+        <property name="use-fallback">True</property>
       </object>
     </child>
   </object>

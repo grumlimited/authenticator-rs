@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema path="/uk/co/grumlimited/authenticator-rs/" id="uk.co.grumlimited.authenticator-rs" gettext-domain="uk.co.grumlimited.authenticator-rs">
-    <key name="dark-theme" type="b">
-        <default>false</default>
-        <summary>Dark Theme</summary>
-        <description>Whether the application should be dark theme friendly.</description>
-    </key>
-  </schema>
+	<schema path="/uk/co/grumlimited/authenticator-rs/" id="uk.co.grumlimited.authenticator-rs"
+	  gettext-domain="uk.co.grumlimited.authenticator-rs">
+		<key name="dark-theme" type="b">
+			<default>false</default>
+			<summary>Dark Theme</summary>
+			<description>Whether the application should be dark theme friendly.</description>
+		</key>
+		<key name="search-visible" type="b">
+			<default>false</default>
+			<summary>Search bar visible</summary>
+			<description>Whether the search bar is visible by default.</description>
+		</key>
+	</schema>
 </schemalist>
