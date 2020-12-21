@@ -1,13 +1,13 @@
-use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
+use std::{thread, time};
 
-use chrono::Local;
 use chrono::prelude::*;
+use chrono::Local;
 use glib::Sender;
-use gtk::Builder;
 use gtk::prelude::*;
+use gtk::Builder;
 use log::{debug, error};
 use rusqlite::Connection;
 
