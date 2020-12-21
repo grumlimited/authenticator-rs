@@ -12,16 +12,6 @@
     <property name="can-focus">False</property>
     <property name="icon-name">edit-copy-symbolic</property>
   </object>
-  <object class="GtkImage" id="image1">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="icon-name">document-properties-symbolic</property>
-  </object>
-  <object class="GtkImage" id="image2">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="icon-name">edit-delete-symbolic</property>
-  </object>
   <!-- n-columns=4 n-rows=1 -->
   <object class="GtkGrid" id="grid">
     <property name="height-request">50</property>
@@ -123,7 +113,6 @@
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkButton" id="edit_button">
-            <property name="label" translatable="yes">Edit</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
@@ -131,9 +120,38 @@
             <property name="margin-end">3</property>
             <property name="margin-top">3</property>
             <property name="margin-bottom">3</property>
-            <property name="image">image1</property>
-            <property name="xalign">0</property>
+            <property name="hexpand">True</property>
             <property name="always-show-image">True</property>
+            <child>
+              <!-- n-columns=2 n-rows=1 -->
+              <object class="GtkGrid">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="xpad">3</property>
+                    <property name="label" translatable="yes">Edit</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="icon-name">document-properties-symbolic</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -143,17 +161,47 @@
         </child>
         <child>
           <object class="GtkButton" id="delete_button">
-            <property name="label" translatable="yes">Delete</property>
+            <property name="width-request">82</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <property name="halign">start</property>
             <property name="margin-start">3</property>
             <property name="margin-end">3</property>
             <property name="margin-top">3</property>
             <property name="margin-bottom">3</property>
-            <property name="image">image2</property>
-            <property name="xalign">0</property>
+            <property name="hexpand">True</property>
             <property name="always-show-image">True</property>
+            <child>
+              <!-- n-columns=2 n-rows=1 -->
+              <object class="GtkGrid">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="xpad">3</property>
+                    <property name="label" translatable="yes">Delete</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="icon-name">edit-delete-symbolic</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
