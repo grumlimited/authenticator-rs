@@ -101,9 +101,7 @@
             <child>
               <object class="GtkEntry" id="account_filter">
                 <property name="name">account_filter</property>
-                <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="has-focus">True</property>
                 <property name="tooltip-text" translatable="yes">filter accounts</property>
                 <property name="margin-start">5</property>
                 <property name="margin-end">5</property>

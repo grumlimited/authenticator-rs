@@ -183,4 +183,18 @@
       </object>
     </child>
   </object>
+  <object class="GtkButton" id="search_button">
+    <property name="name">search_button</property>
+    <property name="visible">True</property>
+    <property name="can-focus">True</property>
+    <property name="receives-default">False</property>
+    <child>
+      <object class="GtkImage" id="search_icon">
+        <property name="name">search_icon</property>
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="icon-name">edit-find</property>
+      </object>
+    </child>
+  </object>
 </interface>

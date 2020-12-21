@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,10 +11,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -242,14 +242,44 @@ impl MainWindow {
     }
 
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).title("Authenticator RS").build();
+        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
+
+
+        titlebar.pack_start(&self.build_search_button());
 
         titlebar.pack_end(&self.build_system_menu(connection));
         self.window.set_titlebar(Some(&titlebar));
 
         titlebar.show_all();
+    }
+
+    fn build_search_button(&mut self) -> gtk::Button {
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
+        let search_button: gtk::Button = builder.get_object("search_button").unwrap();
+
+        // self.window.connect_activate_default(move |_| {
+        //     if account_filter.is_visible() {
+        //         account_filter.hide()
+        //     } else {
+        //         account_filter.show()
+        //     }
+        // });
+
+        let filter = self.accounts_window.filter.clone();
+
+        search_button.connect_clicked(move |_| {
+            let mut filter_ref = filter.lock().unwrap();
+            let filter = filter_ref.get_mut();
+            if filter.is_visible() {
+                filter.hide()
+            } else {
+                filter.show()
+            }
+        });
+
+        search_button
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
