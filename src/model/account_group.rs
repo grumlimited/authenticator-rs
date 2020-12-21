@@ -1,13 +1,15 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use glib::prelude::*;
+use gtk::prelude::*;
+use log::error;
+use serde::{Deserialize, Serialize};
+
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
-use glib::prelude::*; // or `use gtk::prelude::*;`
-use gtk::prelude::*;
-use log::error;
-use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
@@ -59,8 +61,8 @@ impl AccountGroup {
     pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
-        let group: gtk::Box = builder.get_object("group").unwrap();
-        group.set_widget_name(format!("group_id_{}", self.id).as_str());
+        let container: gtk::Box = builder.get_object("group").unwrap();
+        container.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         //allows for group labels to respond to click events
         let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
@@ -133,7 +135,7 @@ impl AccountGroup {
 
         AccountGroupWidgets {
             id: self.id,
-            container: group,
+            container,
             edit_button,
             delete_button,
             add_account_button,

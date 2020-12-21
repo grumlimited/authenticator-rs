@@ -1,15 +1,15 @@
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
-
-use crate::helpers::LoadError::{FileError, SaveError};
-use crate::model::{Account, AccountGroup};
-use glib::Sender;
-use log::debug;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+
+use glib::Sender;
+use log::debug;
+use log::error;
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
 
-use log::error;
+use crate::helpers::LoadError::{FileError, SaveError};
+use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
@@ -52,7 +52,7 @@ impl ConfigManager {
         }
     }
 
-    pub fn load_account_groups(connection: &Connection) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, LoadError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
@@ -66,10 +66,17 @@ impl ConfigManager {
                 name.as_str(),
                 icon.as_deref(),
                 url.as_deref(),
-                Self::get_accounts(&connection, id)?,
+                Self::get_accounts(&connection, id, filter)?,
             ))
         })
-        .map(|rows| rows.map(|each| each.unwrap()).collect())
+        .map(|rows| {
+            rows.map(|each| each.unwrap())
+                .collect::<Vec<AccountGroup>>()
+                .into_iter()
+                //filter out empty groups
+                .filter(|account_group| !account_group.entries.is_empty())
+                .collect()
+        })
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
@@ -227,7 +234,6 @@ impl ConfigManager {
         stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
             .map(|id| {
                 account.id = id;
-                account.group_id = account.group_id;
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
@@ -270,10 +276,12 @@ impl ConfigManager {
         stmt.execute(params![account_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn get_accounts(connection: &Connection, group_id: u32) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt = connection.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1 ORDER BY LOWER(label)")?;
+    fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
+        let mut stmt = connection.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
-        stmt.query_map(params![group_id], |row| {
+        let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
+
+        stmt.query_map(params![group_id, label_filter], |row| {
             let id: u32 = row.get(0)?;
             let group_id: u32 = group_id;
             let label: String = row.get(1)?;
@@ -288,7 +296,7 @@ impl ConfigManager {
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
         let group_accounts = {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection).unwrap()
+            ConfigManager::load_account_groups(&connection, None).unwrap()
         };
 
         async {
@@ -353,15 +361,16 @@ impl ConfigManager {
 
 #[cfg(test)]
 mod tests {
-    use super::ConfigManager;
-    use crate::helpers::runner;
-    use rusqlite::Connection;
-
-    use crate::model::{Account, AccountGroup};
     use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
 
     use async_std::task;
+    use rusqlite::Connection;
+
+    use crate::helpers::runner;
+    use crate::model::{Account, AccountGroup};
+
+    use super::ConfigManager;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -452,9 +461,24 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
         ConfigManager::save_group(&connection, &mut group).unwrap();
 
-        let groups = ConfigManager::load_account_groups(&connection).unwrap();
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3");
+        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
 
-        assert_eq!(vec![group], groups);
+        let expected = AccountGroup::new(
+            1,
+            "bbb",
+            Some("icon"),
+            Some("url"),
+            vec![Account {
+                id: 1,
+                group_id: 1,
+                label: "hhh".to_owned(),
+                secret: "secret3".to_owned(),
+            }],
+        );
+        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
+
+        assert_eq!(vec![expected], groups);
     }
 
     #[test]
@@ -466,15 +490,17 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
         ConfigManager::save_group(&connection, &mut group).unwrap();
 
-        let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
-        let mut account2 = Account::new(0, group.id, "ccc", "secret3");
-        ConfigManager::save_account(&connection, &mut account2).expect("boom!");
+        let mut account = Account::new(0, group.id, "hhh", "secret3");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        let mut account = Account::new(0, group.id, "ccc", "secret3");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
         ConfigManager::save_group(&connection, &mut group).expect("boom!");
+        let mut account = Account::new(0, group.id, "ppp", "secret3");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
 
-        let results = ConfigManager::load_account_groups(&connection).unwrap();
+        let results = ConfigManager::load_account_groups(&connection, None).unwrap();
 
         //groups in order
         assert_eq!("AAA", results.get(0).unwrap().name);
@@ -483,6 +509,7 @@ mod tests {
         //accounts in order
         assert_eq!("ccc", results.get(1).unwrap().entries.get(0).unwrap().label);
         assert_eq!("hhh", results.get(1).unwrap().entries.get(1).unwrap().label);
+        assert_eq!("ppp", results.get(0).unwrap().entries.get(0).unwrap().label);
     }
 
     #[test]
@@ -559,7 +586,7 @@ mod tests {
 
         {
             let connection = connection.lock().unwrap();
-            let account_groups = ConfigManager::load_account_groups(&connection).unwrap();
+            let account_groups = ConfigManager::load_account_groups(&connection, None).unwrap();
 
             assert_eq!(1, account_groups.len());
             assert!(account_groups.first().unwrap().id > 0);

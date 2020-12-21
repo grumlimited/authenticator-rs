@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.46.0  # MSRV
+          - 1.48.0  # MSRV
 
     steps:
       - name: Checkout
@@ -65,6 +65,7 @@ jobs:
           DESTDIR: '~/authenticator-rs-deb'
         run: |
           mkdir -p $DESTDIR
+          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
 
       - name: Upload Debian release

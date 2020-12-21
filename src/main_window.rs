@@ -61,6 +61,8 @@ impl MainWindow {
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
 
+        let accounts_window = AccountsWindow::new(builder.clone());
+
         {
             let popup = about_popup.clone();
             let add_group_save: gtk::Button = builder.get_object("add_group_save").unwrap();
@@ -92,7 +94,7 @@ impl MainWindow {
             window,
             about_popup,
             edit_account_window: EditAccountWindow::new(builder.clone()),
-            accounts_window: AccountsWindow::new(builder.clone()),
+            accounts_window,
             add_group: AddGroupWindow::new(builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: Rc::new(RefCell::new(State::default())),
@@ -100,13 +102,13 @@ impl MainWindow {
     }
 
     pub fn switch_to(gui: &MainWindow, display: Display) {
-        let mut t = gui.state.borrow_mut();
-        (*t).display = display;
+        let mut state = gui.state.borrow_mut();
+        (*state).display = display;
 
         let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
-        (*t).dark_mode = g_settings.get_boolean("dark-theme");
+        (*state).dark_mode = g_settings.get_boolean("dark-theme");
 
-        match t.display {
+        match state.display {
             Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
@@ -137,13 +139,15 @@ impl MainWindow {
     pub fn set_application(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>) {
         self.window.set_application(Some(application));
 
-        self.build_menus(connection);
+        self.build_menus(connection.clone());
 
         let add_group = self.add_group.clone();
         self.window.connect_delete_event(move |_, _| {
             add_group.reset(); // to ensure temp files deletion
             Inhibit(false)
         });
+
+        self.bind_account_filter_events(connection);
 
         self.start_progress_bar();
 
@@ -153,6 +157,52 @@ impl MainWindow {
         progress_bar.show();
         self.accounts_window.container.show();
         self.window.show();
+    }
+
+    pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
+        {
+            //First bind user input event to refreshing account list
+
+            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+            let gui = self.clone();
+            let filter = gui.accounts_window.filter.clone();
+            let mut filter = filter.lock().unwrap();
+            let filter = filter.get_mut();
+
+            filter.connect_changed(move |_| {
+                let _ = tx.send(true);
+            });
+
+            rx.attach(None, move |_| {
+                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                glib::Continue(true)
+            });
+        }
+
+        {
+            //then bind "x" icon to emptying the filter input.
+
+            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+            let gui = self.clone();
+            let filter_ref = gui.accounts_window.filter;
+            let filter_ref2 = filter_ref.clone();
+            let mut filter = filter_ref.lock().unwrap();
+            let filter = filter.get_mut();
+
+            let _ = filter.connect("icon-press", true, move |_| {
+                let _ = tx.send(true);
+                None
+            });
+
+            rx.attach(None, move |_| {
+                let mut filter = filter_ref2.lock().unwrap();
+                let filter = filter.get_mut();
+                filter.get_buffer().set_text("");
+                glib::Continue(true)
+            });
+        }
     }
 
     pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
