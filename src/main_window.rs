@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,10 +11,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -30,6 +30,7 @@ pub struct MainWindow {
 #[derive(Clone, Debug)]
 pub struct State {
     pub dark_mode: bool,
+    pub searchbar_visible: bool,
     pub display: Display,
 }
 
@@ -47,6 +48,7 @@ impl Default for State {
 
         State {
             dark_mode: g_settings.get_boolean("dark-theme"),
+            searchbar_visible: g_settings.get_boolean("search-visible"),
             display: Display::DisplayAccounts,
         }
     }
@@ -267,7 +269,17 @@ impl MainWindow {
             } else {
                 filter.show()
             }
+
+            gio::Settings::new("uk.co.grumlimited.authenticator-rs")
+                .set_boolean("search-visible", filter.is_visible()).expect("Could not find setting search-visible");
         });
+
+        if gio::Settings::new("uk.co.grumlimited.authenticator-rs").get_boolean("search-visible") {
+            let filter = self.accounts_window.filter.clone();
+            let mut filter_ref = filter.lock().unwrap();
+            let filter = filter_ref.get_mut();
+            filter.show()
+        }
 
         search_button
     }
