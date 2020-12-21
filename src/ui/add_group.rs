@@ -67,34 +67,24 @@ impl AddGroupWindow {
     }
 
     pub fn reset(&self) {
-        let icon_filename = self.icon_filename.clone();
-        let input_group = self.input_group.clone();
-        let icon_error = self.icon_error.clone();
-        let icon_reload = self.icon_reload.clone();
-        let icon_delete = self.icon_delete.clone();
-        let image_input = self.image_input.clone();
-        let save_button = self.save_button.clone();
-        let url_input = self.url_input.clone();
-        let group_id = self.group_id.clone();
+        Self::remove_tmp_file(self.icon_filename.clone());
 
-        Self::remove_tmp_file(icon_filename.clone());
+        self.input_group.set_text("");
+        self.url_input.set_text("");
 
-        input_group.set_text("");
-        url_input.set_text("");
+        self.icon_filename.set_label("");
+        self.group_id.set_label("");
 
-        icon_filename.set_label("");
-        group_id.set_label("");
+        self.icon_error.set_label("");
+        self.icon_error.set_visible(false);
 
-        icon_error.set_label("");
-        icon_error.set_visible(false);
+        self.save_button.set_sensitive(true);
+        self.icon_reload.set_sensitive(true);
+        self.icon_delete.set_sensitive(true);
+        self.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-        save_button.set_sensitive(true);
-        icon_reload.set_sensitive(true);
-        icon_delete.set_sensitive(true);
-        image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
-
-        input_group.set_property_primary_icon_name(None);
-        let style_context = input_group.get_style_context();
+        self.input_group.set_property_primary_icon_name(None);
+        let style_context = self.input_group.get_style_context();
         style_context.remove_class("error");
     }
 
@@ -230,7 +220,6 @@ impl AddGroupWindow {
             let gui = gui.clone();
             Box::new(move |_| {
                 gui.add_group.reset();
-                gui.add_group.input_group.set_text("");
 
                 MainWindow::switch_to(&gui, Display::DisplayAccounts);
             })

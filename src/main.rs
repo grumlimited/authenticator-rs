@@ -1,29 +1,28 @@
-mod main_window;
-
-use main_window::MainWindow;
-
 extern crate gio;
 extern crate glib;
 extern crate gtk;
 
-use crate::helpers::runner;
-use crate::helpers::ConfigManager;
-use crate::model::AccountGroup;
-use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
+use std::sync::{Arc, Mutex};
+
 use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
+use log::info;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+
+use main_window::MainWindow;
+
+use crate::helpers::runner;
+use crate::helpers::ConfigManager;
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
+
+mod main_window;
 
 mod helpers;
 mod model;
 mod ui;
-
-use log::info;
 
 const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
@@ -74,25 +73,15 @@ fn main() {
         // SQL migrations
         runner::run(&mut connection).unwrap();
 
-        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
-
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
-
-        let groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>> = Arc::new(Mutex::new(RefCell::new(groups)));
-
-        gui.display(groups);
 
         gui.set_application(&app, connection.clone());
 
-        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
-
-        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
+        AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
 
         EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AddGroupWindow::edit_account_buttons_actions(&gui, connection.clone());
-
-        AccountsWindow::delete_buttons_actions(&gui, connection);
+        AddGroupWindow::edit_account_buttons_actions(&gui, connection);
 
         info!("Authenticator RS initialised");
     });

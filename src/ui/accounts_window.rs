@@ -52,10 +52,7 @@ impl AccountsWindow {
 
         let groups = {
             let connection = connection.lock().unwrap();
-            let mut filter_text = gui.accounts_window.filter.lock().unwrap();
-            let filter_text = filter_text.get_mut();
-            let filter_text = filter_text.get_text();
-            ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap()
+            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap()
         };
 
         {
@@ -204,11 +201,7 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
-                    let mut filter_text = gui.accounts_window.filter.lock().unwrap();
-                    let filter_text = filter_text.get_mut();
-                    let filter_text = filter_text.get_text();
-
-                    let groups = ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
@@ -296,27 +289,31 @@ impl AccountsWindow {
                 debug!("Loading for group_id {:?}", group_id);
                 let groups = {
                     let connection = connection.lock().unwrap();
-                    let mut filter_text = main_window.accounts_window.filter.lock().unwrap();
-                    let filter_text = filter_text.get_mut();
-                    let filter_text = filter_text.get_text();
-                    ConfigManager::load_account_groups(&connection, Some(&filter_text)).unwrap()
+                    ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value()).unwrap()
                 };
 
                 edit_account_window.reset();
                 edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-                edit_account_window.input_name.set_text("");
-
                 edit_account_window.add_accounts_container_edit.set_visible(false);
                 edit_account_window.add_accounts_container_add.set_visible(true);
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
 
                 popover.hide();
                 MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
             }
         })
+    }
+
+    pub fn get_filter_value(&self) -> Option<String> {
+        let mut filter_text = self.filter.lock().unwrap();
+        let filter_text = filter_text.get_mut();
+        let filter_text = filter_text.get_text();
+
+        if filter_text.is_empty() {
+            None
+        } else {
+            Some(filter_text.to_owned())
+        }
     }
 }
 
