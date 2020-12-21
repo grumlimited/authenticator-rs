@@ -1,13 +1,13 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -305,13 +305,8 @@ impl AccountsWindow {
                 edit_account_window.reset();
                 edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-                edit_account_window.input_name.set_text("");
-
                 edit_account_window.add_accounts_container_edit.set_visible(false);
                 edit_account_window.add_accounts_container_add.set_visible(true);
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
 
                 popover.hide();
                 MainWindow::switch_to(&main_window, Display::DisplayAddAccount);

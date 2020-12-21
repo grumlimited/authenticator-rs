@@ -2,22 +2,20 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
-use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
-use log::info;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
+use log::info;
 use rusqlite::Connection;
 
 use main_window::MainWindow;
 
-use crate::helpers::runner;
 use crate::helpers::ConfigManager;
-use crate::model::AccountGroup;
+use crate::helpers::runner;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 
 mod main_window;
@@ -83,7 +81,7 @@ fn main() {
 
         EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
 
-        AddGroupWindow::edit_account_buttons_actions(&gui, connection.clone());
+        AddGroupWindow::edit_account_buttons_actions(&gui, connection);
 
         info!("Authenticator RS initialised");
     });

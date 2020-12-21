@@ -1,11 +1,13 @@
+use std::sync::{Arc, Mutex};
+
+use gtk::Builder;
+use gtk::prelude::*;
+use rusqlite::Connection;
+
 use crate::helpers::ConfigManager;
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
-use gtk::prelude::*;
-use gtk::Builder;
-use rusqlite::Connection;
-use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -74,7 +76,7 @@ impl EditAccountWindow {
         result
     }
 
-    pub fn reset(&self) {
+    pub fn reset_errors(&self) {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
         let group = self.input_group.clone();
@@ -88,6 +90,16 @@ impl EditAccountWindow {
 
         let style_context = group.get_style_context();
         style_context.remove_class("error");
+    }
+
+    pub fn reset(&self) {
+        self.input_name.set_text("");
+        self.input_account_id.set_text("");
+
+        let buffer = self.input_secret.get_buffer().unwrap();
+        buffer.set_text("");
+
+        self.reset_errors();
     }
 
     pub fn set_group_dropdown(&self, group_id: Option<u32>, groups: &[AccountGroup]) {
@@ -113,8 +125,8 @@ impl EditAccountWindow {
 
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            where
+                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
@@ -125,7 +137,6 @@ impl EditAccountWindow {
             Box::new(move |_| {
                 let edit_account_window = gui.edit_account_window.clone();
                 edit_account_window.reset();
-                edit_account_window.input_name.set_text("");
 
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
                 buffer.set_text("");
@@ -138,7 +149,7 @@ impl EditAccountWindow {
         with_action(&gui, connection, gui.edit_account_window.save_button.clone(), |connection, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
-                gui.edit_account_window.reset();
+                gui.edit_account_window.reset_errors();
 
                 if let Ok(()) = gui.edit_account_window.validate() {
                     let edit_account_window = gui.edit_account_window.clone();
@@ -165,12 +176,10 @@ impl EditAccountWindow {
                         match account_id.get_buffer().get_text().parse() {
                             Ok(account_id) => {
                                 let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
-
                                 ConfigManager::update_account(&connection, &mut account).unwrap();
                             }
                             Err(_) => {
                                 let mut account = Account::new(0, group_id, name.as_str(), secret.as_str());
-
                                 ConfigManager::save_account(&connection, &mut account).unwrap();
                             }
                         };
