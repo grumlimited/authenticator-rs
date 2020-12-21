@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,10 +11,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::{AccountGroup, AccountGroupWidgets};
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -164,7 +164,6 @@ impl MainWindow {
     pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
         {
             //First bind user input event to refreshing account list
-
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             let gui = self.clone();
@@ -184,7 +183,6 @@ impl MainWindow {
 
         {
             //then bind "x" icon to emptying the filter input.
-
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             let gui = self.clone();
@@ -205,21 +203,6 @@ impl MainWindow {
                 glib::Continue(true)
             });
         }
-    }
-
-    pub fn display(&mut self, groups: Arc<Mutex<RefCell<Vec<AccountGroup>>>>) {
-        let mut guard = groups.lock().unwrap();
-        let groups = guard.get_mut();
-
-        let widgets: Vec<AccountGroupWidgets> = groups.iter_mut().map(|account_group| account_group.widget(self.state.clone())).collect();
-
-        widgets.iter().for_each(|widget| self.accounts_window.accounts_container.add(&widget.container));
-
-        let m_widgets = self.accounts_window.widgets.clone();
-        let mut m_widgets = m_widgets.lock().unwrap();
-        *m_widgets = widgets;
-
-        self.accounts_window.accounts_container.show_all();
     }
 
     pub fn start_progress_bar(&mut self) {
@@ -306,7 +289,6 @@ impl MainWindow {
             let connection = connection.clone();
             dark_mode_slider.connect_state_set(move |_, state| {
                 let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
-
                 g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
