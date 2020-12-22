@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use gtk::{Builder, IconSize};
 use gtk::prelude::*;
+use gtk::{Builder, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
@@ -203,8 +203,8 @@ impl AddGroupWindow {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-            where
-                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+        where
+            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
