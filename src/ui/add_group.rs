@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use gtk::{Builder, IconSize};
 use gtk::prelude::*;
+use gtk::{Builder, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
@@ -170,8 +170,7 @@ impl AddGroupWindow {
                 save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) =>
-                        Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
+                    Ok(account_group_icon) => Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
                         icon_error.set_label(format!("{}", e).as_str());
                         icon_error.set_visible(true);
@@ -206,8 +205,8 @@ impl AddGroupWindow {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: gtk::Button, button_closure: F)
-            where
-                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+        where
+            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
