@@ -1,13 +1,13 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -44,7 +44,7 @@ impl AccountsWindow {
     }
 
     pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let accounts_container = gui.accounts_window.accounts_container.clone();
+        let accounts_container = &gui.accounts_window.accounts_container;
 
         // empty list of accounts first
         let children = accounts_container.get_children();
@@ -284,8 +284,7 @@ impl AccountsWindow {
         edit_account_window: EditAccountWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
-        Box::new({
-            move |_b: &gtk::Button| {
+        Box::new(move |_: &gtk::Button| {
                 debug!("Loading for group_id {:?}", group_id);
                 let groups = {
                     let connection = connection.lock().unwrap();
@@ -300,8 +299,7 @@ impl AccountsWindow {
 
                 popover.hide();
                 MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
-            }
-        })
+            })
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
