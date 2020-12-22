@@ -52,7 +52,7 @@ impl ConfigManager {
         }
     }
 
-    pub fn load_account_groups(connection: &Connection, filter: Option<String>) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, LoadError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
@@ -66,7 +66,7 @@ impl ConfigManager {
                 name.as_str(),
                 icon.as_deref(),
                 url.as_deref(),
-                Self::get_accounts(&connection, id, filter.clone())?,
+                Self::get_accounts(&connection, id, filter)?,
             ))
         })
         .map(|rows| {
@@ -276,7 +276,7 @@ impl ConfigManager {
         stmt.execute(params![account_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn get_accounts(connection: &Connection, group_id: u32, filter: Option<String>) -> Result<Vec<Account>, rusqlite::Error> {
+    fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
         let mut stmt = connection.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());

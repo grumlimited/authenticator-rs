@@ -52,7 +52,7 @@ impl AccountsWindow {
 
         let groups = {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap()
+            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
         };
 
         {
@@ -201,7 +201,7 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
@@ -289,7 +289,7 @@ impl AccountsWindow {
                 debug!("Loading for group_id {:?}", group_id);
                 let groups = {
                     let connection = connection.lock().unwrap();
-                    ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value()).unwrap()
+                    ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value().as_deref()).unwrap()
                 };
 
                 edit_account_window.reset();
