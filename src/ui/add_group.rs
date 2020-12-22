@@ -257,7 +257,7 @@ impl AddGroupWindow {
 
                                 ConfigManager::update_group(&connection, &group).unwrap();
                             }
-                            Err(_) => { // new group
+                            Err(_) => {
                                 debug!("creating new group");
                                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input, vec![]);
 
