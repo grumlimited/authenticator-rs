@@ -1,7 +1,7 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -11,9 +11,9 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE, NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -43,7 +43,7 @@ pub enum Display {
 
 impl Default for State {
     fn default() -> Self {
-        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+        let g_settings = gio::Settings::new(NAMESPACE);
 
         State {
             dark_mode: g_settings.get_boolean("dark-theme"),
@@ -106,7 +106,7 @@ impl MainWindow {
         let mut state = gui.state.borrow_mut();
         (*state).display = display;
 
-        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+        let g_settings = gio::Settings::new(NAMESPACE);
         (*state).dark_mode = g_settings.get_boolean("dark-theme");
 
         match state.display {
@@ -254,12 +254,12 @@ impl MainWindow {
                 filter.show()
             }
 
-            gio::Settings::new("uk.co.grumlimited.authenticator-rs")
+            gio::Settings::new(NAMESPACE)
                 .set_boolean("search-visible", filter.is_visible())
                 .expect("Could not find setting search-visible");
         });
 
-        if gio::Settings::new("uk.co.grumlimited.authenticator-rs").get_boolean("search-visible") {
+        if gio::Settings::new(NAMESPACE).get_boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
             let mut filter_ref = filter.lock().unwrap();
             let filter = filter_ref.get_mut();
@@ -280,7 +280,7 @@ impl MainWindow {
 
         let dark_mode_slider: gtk::Switch = {
             let switch: gtk::Switch = builder.get_object("dark_mode_slider").unwrap();
-            let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+            let g_settings = gio::Settings::new(NAMESPACE);
             switch.set_state(g_settings.get_boolean("dark-theme"));
             switch
         };
@@ -289,7 +289,7 @@ impl MainWindow {
             let gui = self.clone();
             let connection = connection.clone();
             dark_mode_slider.connect_state_set(move |_, state| {
-                let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+                let g_settings = gio::Settings::new(NAMESPACE);
                 g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
