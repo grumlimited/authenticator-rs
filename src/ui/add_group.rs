@@ -239,13 +239,12 @@ impl AddGroupWindow {
                     let group_id = gui.add_group.group_id.get_label();
                     let group_id = group_id.as_str();
 
-                    debug!("saving group_id: {}", group_id);
-
                     {
                         let connection = connection.lock().unwrap();
 
                         match group_id.parse() {
                             Ok(group_id) => {
+                                debug!("updating existing group id {:?}", group_id);
                                 let mut group = ConfigManager::get_group(&connection, group_id).unwrap();
 
                                 group.name = group_name;
@@ -258,7 +257,8 @@ impl AddGroupWindow {
 
                                 ConfigManager::update_group(&connection, &group).unwrap();
                             }
-                            Err(_) => {
+                            Err(_) => { // new group
+                                debug!("creating new group");
                                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input, vec![]);
 
                                 ConfigManager::save_group(&connection, &mut group).unwrap();
@@ -270,6 +270,8 @@ impl AddGroupWindow {
                                     if let Some(icon_filename) = icon_filename {
                                         Self::delete_icon_file(&icon_filename);
                                     }
+                                } else {
+                                    Self::write_icon(&gui.add_group.icon_filename);
                                 }
                             }
                         }
@@ -285,15 +287,15 @@ impl AddGroupWindow {
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
         let existing = icon_filename.get_label().as_str().to_owned();
-        // let existing: String = icon_filename.get_label().map(|s| s.to_string()).unwrap_or_else(|| "".to_owned());
-
-        debug!("existing icon filename: {}", existing);
 
         if existing.is_empty() {
             let uuid = uuid::Uuid::new_v4().to_string();
+            debug!("generating new icon filename: {}", uuid);
+
             icon_filename.set_label(&uuid);
             uuid
         } else {
+            debug!("existing icon filename: {}", existing);
             existing
         }
     }
