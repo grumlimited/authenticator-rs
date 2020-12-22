@@ -211,7 +211,7 @@ impl MainWindow {
         let progress_bar = self.accounts_window.progress_bar.clone();
         let widgets = self.accounts_window.widgets.clone();
 
-        rx.attach(None, move |_| {
+        rx.attach(None, move |second| {
             let mut guard = progress_bar.lock().unwrap();
             let progress_bar = guard.get_mut();
 
@@ -219,7 +219,9 @@ impl MainWindow {
             progress_bar.set_fraction(fraction);
 
             let mut widgets = widgets.lock().unwrap();
-            widgets.iter_mut().for_each(|group| group.update());
+            if second == 0 || second == 30 {
+                widgets.iter_mut().for_each(|group| group.update());
+            }
 
             glib::Continue(true)
         });
