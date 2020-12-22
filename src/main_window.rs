@@ -184,23 +184,26 @@ impl MainWindow {
             //then bind "x" icon to emptying the filter input.
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-            let gui = self.clone();
-            let filter_ref = gui.accounts_window.filter;
-            let filter_ref2 = filter_ref.clone();
-            let mut filter = filter_ref.lock().unwrap();
-            let filter = filter.get_mut();
-
-            let _ = filter.connect("icon-press", true, move |_| {
-                let _ = tx.send(true);
-                None
-            });
-
-            rx.attach(None, move |_| {
-                let mut filter = filter_ref2.lock().unwrap();
+            {
+                let filter_ref = &self.accounts_window.filter;
+                let mut filter = filter_ref.lock().unwrap();
                 let filter = filter.get_mut();
-                filter.get_buffer().set_text("");
-                glib::Continue(true)
-            });
+                let _ = filter.connect("icon-press", true, move |_| {
+                    let _ = tx.send(true);
+                    None
+                });
+            }
+
+            {
+                let filter_ref = &self.accounts_window.filter;
+                let filter_ref = filter_ref.clone();
+                rx.attach(None, move |_| {
+                    let mut filter = filter_ref.lock().unwrap();
+                    let filter = filter.get_mut();
+                    filter.get_buffer().set_text("");
+                    glib::Continue(true)
+                });
+            }
         }
     }
 
@@ -251,7 +254,8 @@ impl MainWindow {
             if filter.is_visible() {
                 filter.hide()
             } else {
-                filter.show()
+                filter.show();
+                filter.grab_focus()
             }
 
             gio::Settings::new(NAMESPACE)
