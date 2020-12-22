@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use gtk::prelude::*;
 use gtk::{Builder, IconSize};
+use gtk::prelude::*;
 use log::{debug, warn};
 use rusqlite::Connection;
 
@@ -367,9 +367,13 @@ impl AddGroupWindow {
     pub fn delete_icon_file(icon_filename: &str) {
         let icon_filepath = ConfigManager::icons_path(icon_filename);
 
-        match std::fs::remove_file(&icon_filepath) {
-            Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
-            Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
+        if icon_filepath.is_file() {
+            match std::fs::remove_file(&icon_filepath) {
+                Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+                Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
+            }
+        } else {
+            debug!("icon_filepath {} does exist. Skipping.", &icon_filepath.display())
         }
     }
 }
