@@ -204,7 +204,7 @@ impl AddGroupWindow {
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         Self::url_input_action(gui.clone());
 
-        fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: gtk::Button, button_closure: F)
+        fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
         where
             F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
@@ -212,7 +212,7 @@ impl AddGroupWindow {
         }
 
         // CANCEL
-        with_action(&gui, connection.clone(), gui.add_group.cancel_button.clone(), |_, gui| {
+        with_action(&gui, connection.clone(), &gui.add_group.cancel_button, |_, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
                 gui.add_group.reset();
@@ -222,7 +222,7 @@ impl AddGroupWindow {
         });
 
         //SAVE
-        with_action(&gui, connection, gui.add_group.save_button.clone(), |connection, gui| {
+        with_action(&gui, connection, &gui.add_group.save_button, |connection, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
                 if let Ok(()) = gui.add_group.validate() {
