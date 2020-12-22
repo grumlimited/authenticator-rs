@@ -1,11 +1,3 @@
-use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
-use crate::main_window::{Display, MainWindow, State};
-use crate::model::AccountGroup;
-use crate::ui::{AccountsWindow, ValidationError};
-use gtk::prelude::*;
-use gtk::{Builder, IconSize};
-use log::{debug, warn};
-use rusqlite::Connection;
 use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
@@ -13,6 +5,16 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
+
+use gtk::{Builder, IconSize};
+use gtk::prelude::*;
+use log::{debug, warn};
+use rusqlite::Connection;
+
+use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
+use crate::main_window::{Display, MainWindow, State};
+use crate::model::AccountGroup;
+use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -50,20 +52,16 @@ impl AddGroupWindow {
         }
     }
 
-    #[allow(clippy::useless_let_if_seq)]
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_group.clone();
 
-        let mut result: Result<(), ValidationError> = Ok(());
-
         if name.get_buffer().get_text().is_empty() {
             name.set_property_primary_icon_name(Some("gtk-dialog-error"));
-            let style_context = name.get_style_context();
-            style_context.add_class("error");
-            result = Err(ValidationError::FieldError("name".to_owned()));
+            name.get_style_context().add_class("error");
+            Err(ValidationError::FieldError("name".to_owned()))
+        } else {
+            Ok(())
         }
-
-        result
     }
 
     pub fn reset(&self) {
@@ -172,9 +170,8 @@ impl AddGroupWindow {
                 save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) => {
-                        Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice());
-                    }
+                    Ok(account_group_icon) =>
+                        Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
                         icon_error.set_label(format!("{}", e).as_str());
                         icon_error.set_visible(true);
@@ -209,8 +206,8 @@ impl AddGroupWindow {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            where
+                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
