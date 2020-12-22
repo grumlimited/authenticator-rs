@@ -65,7 +65,7 @@ impl AddGroupWindow {
     }
 
     pub fn reset(&self) {
-        Self::remove_tmp_file(self.icon_filename.clone());
+        Self::remove_tmp_file(&self.icon_filename);
 
         self.input_group.set_text("");
         self.url_input.set_text("");
@@ -226,7 +226,7 @@ impl AddGroupWindow {
             let gui = gui.clone();
             Box::new(move |_| {
                 if let Ok(()) = gui.add_group.validate() {
-                    let icon_filename = Self::get_label_text(gui.add_group.icon_filename.clone());
+                    let icon_filename = Self::get_label_text(&gui.add_group.icon_filename);
 
                     let group_name: String = gui.add_group.input_group.get_buffer().get_text();
 
@@ -252,7 +252,7 @@ impl AddGroupWindow {
                                 group.icon = icon_filename;
                                 group.url = url_input.map(str::to_owned);
 
-                                Self::write_icon(gui.add_group.icon_filename.clone());
+                                Self::write_icon(&gui.add_group.icon_filename);
 
                                 debug!("saving group {:?}", group);
 
@@ -298,7 +298,7 @@ impl AddGroupWindow {
         }
     }
 
-    fn remove_tmp_file(icon_filename: gtk::Label) {
+    fn remove_tmp_file(icon_filename: &gtk::Label) {
         if let Some(icon_filename) = Self::get_label_text(icon_filename) {
             let mut temp_filepath = PathBuf::new();
             temp_filepath.push(std::env::temp_dir());
@@ -311,8 +311,8 @@ impl AddGroupWindow {
         }
     }
 
-    fn write_icon(icon_filename: gtk::Label) {
-        if let Some(icon_filename_text) = Self::get_label_text(icon_filename.clone()) {
+    fn write_icon(icon_filename: &gtk::Label) {
+        if let Some(icon_filename_text) = Self::get_label_text(&icon_filename) {
             debug!("icon_filename: {}", icon_filename_text);
 
             let mut temp_filepath = PathBuf::new();
@@ -352,7 +352,7 @@ impl AddGroupWindow {
         };
     }
 
-    fn get_label_text(label: gtk::Label) -> Option<String> {
+    fn get_label_text(label: &gtk::Label) -> Option<String> {
         let icon_filename = label.get_label();
         let icon_filename = icon_filename.as_str();
 
