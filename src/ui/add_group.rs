@@ -142,18 +142,16 @@ impl AddGroupWindow {
                 icon_error.set_label("");
                 icon_error.set_visible(false);
 
-                if url.is_empty() {
-                    return;
+                if !url.is_empty() {
+                    let tx = tx.clone();
+                    let fut = IconParser::html_notify(tx, url);
+
+                    save_button.set_sensitive(false);
+                    icon_reload.set_sensitive(false);
+                    image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+
+                    pool.spawn_ok(fut);
                 }
-
-                let tx = tx.clone();
-                let fut = IconParser::html_notify(tx, url);
-
-                save_button.set_sensitive(false);
-                icon_reload.set_sensitive(false);
-                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
-
-                pool.spawn_ok(fut);
             });
         }
 
@@ -205,8 +203,8 @@ impl AddGroupWindow {
         Self::url_input_action(gui.clone());
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            where
+                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
@@ -253,8 +251,6 @@ impl AddGroupWindow {
 
                                 Self::write_icon(&gui.add_group.icon_filename);
 
-                                debug!("saving group {:?}", group);
-
                                 ConfigManager::update_group(&connection, &group).unwrap();
                             }
                             Err(_) => {
@@ -262,8 +258,6 @@ impl AddGroupWindow {
                                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input, vec![]);
 
                                 ConfigManager::save_group(&connection, &mut group).unwrap();
-
-                                debug!("saving group {:?}", group);
 
                                 //has no icon -> delete icon file if any
                                 if group.icon.is_none() {
