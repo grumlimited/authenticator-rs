@@ -47,8 +47,9 @@ impl AccountsWindow {
         let accounts_container = &gui.accounts_window.accounts_container;
 
         // empty list of accounts first
-        let children = accounts_container.get_children();
-        children.iter().for_each(|e| accounts_container.remove(e));
+        accounts_container.foreach(|e| {
+            accounts_container.remove(e)
+        });
 
         let groups = {
             let connection = connection.lock().unwrap();
@@ -57,7 +58,7 @@ impl AccountsWindow {
 
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
-
+            m_widgets.clear();
             *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
 
             // add updated accounts back to list
