@@ -1,13 +1,13 @@
-use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
+use std::{thread, time};
 
-use chrono::Local;
 use chrono::prelude::*;
+use chrono::Local;
 use glib::Sender;
-use gtk::Builder;
 use gtk::prelude::*;
+use gtk::Builder;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -285,21 +285,21 @@ impl AccountsWindow {
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
         Box::new(move |_: &gtk::Button| {
-                debug!("Loading for group_id {:?}", group_id);
-                let groups = {
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value().as_deref()).unwrap()
-                };
+            debug!("Loading for group_id {:?}", group_id);
+            let groups = {
+                let connection = connection.lock().unwrap();
+                ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value().as_deref()).unwrap()
+            };
 
-                edit_account_window.reset();
-                edit_account_window.set_group_dropdown(group_id, groups.as_slice());
+            edit_account_window.reset();
+            edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-                edit_account_window.add_accounts_container_edit.set_visible(false);
-                edit_account_window.add_accounts_container_add.set_visible(true);
+            edit_account_window.add_accounts_container_edit.set_visible(false);
+            edit_account_window.add_accounts_container_add.set_visible(true);
 
-                popover.hide();
-                MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
-            })
+            popover.hide();
+            MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
+        })
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
