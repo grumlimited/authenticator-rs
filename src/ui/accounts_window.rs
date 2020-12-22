@@ -47,9 +47,7 @@ impl AccountsWindow {
         let accounts_container = &gui.accounts_window.accounts_container;
 
         // empty list of accounts first
-        accounts_container.foreach(|e| {
-            accounts_container.remove(e)
-        });
+        accounts_container.foreach(|e| accounts_container.remove(e));
 
         let groups = {
             let connection = connection.lock().unwrap();
