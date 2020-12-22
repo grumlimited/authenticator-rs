@@ -13,7 +13,7 @@ use rusqlite::Connection;
 
 use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE_PREFIX};
+use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -43,7 +43,7 @@ pub enum Display {
 
 impl Default for State {
     fn default() -> Self {
-        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+        let g_settings = gio::Settings::new(NAMESPACE);
 
         State {
             dark_mode: g_settings.get_boolean("dark-theme"),
@@ -106,7 +106,7 @@ impl MainWindow {
         let mut state = gui.state.borrow_mut();
         (*state).display = display;
 
-        let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+        let g_settings = gio::Settings::new(NAMESPACE);
         (*state).dark_mode = g_settings.get_boolean("dark-theme");
 
         match state.display {
@@ -184,23 +184,26 @@ impl MainWindow {
             //then bind "x" icon to emptying the filter input.
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-            let gui = self.clone();
-            let filter_ref = gui.accounts_window.filter;
-            let filter_ref2 = filter_ref.clone();
-            let mut filter = filter_ref.lock().unwrap();
-            let filter = filter.get_mut();
-
-            let _ = filter.connect("icon-press", true, move |_| {
-                let _ = tx.send(true);
-                None
-            });
-
-            rx.attach(None, move |_| {
-                let mut filter = filter_ref2.lock().unwrap();
+            {
+                let filter_ref = &self.accounts_window.filter;
+                let mut filter = filter_ref.lock().unwrap();
                 let filter = filter.get_mut();
-                filter.get_buffer().set_text("");
-                glib::Continue(true)
-            });
+                let _ = filter.connect("icon-press", true, move |_| {
+                    let _ = tx.send(true);
+                    None
+                });
+            }
+
+            {
+                let filter_ref = &self.accounts_window.filter;
+                let filter_ref = filter_ref.clone();
+                rx.attach(None, move |_| {
+                    let mut filter = filter_ref.lock().unwrap();
+                    let filter = filter.get_mut();
+                    filter.get_buffer().set_text("");
+                    glib::Continue(true)
+                });
+            }
         }
     }
 
@@ -211,7 +214,7 @@ impl MainWindow {
         let progress_bar = self.accounts_window.progress_bar.clone();
         let widgets = self.accounts_window.widgets.clone();
 
-        rx.attach(None, move |_| {
+        rx.attach(None, move |second| {
             let mut guard = progress_bar.lock().unwrap();
             let progress_bar = guard.get_mut();
 
@@ -219,7 +222,9 @@ impl MainWindow {
             progress_bar.set_fraction(fraction);
 
             let mut widgets = widgets.lock().unwrap();
-            widgets.iter_mut().for_each(|group| group.update());
+            if second == 0 || second == 30 {
+                widgets.iter_mut().for_each(|group| group.update());
+            }
 
             glib::Continue(true)
         });
@@ -249,15 +254,16 @@ impl MainWindow {
             if filter.is_visible() {
                 filter.hide()
             } else {
-                filter.show()
+                filter.show();
+                filter.grab_focus()
             }
 
-            gio::Settings::new("uk.co.grumlimited.authenticator-rs")
+            gio::Settings::new(NAMESPACE)
                 .set_boolean("search-visible", filter.is_visible())
                 .expect("Could not find setting search-visible");
         });
 
-        if gio::Settings::new("uk.co.grumlimited.authenticator-rs").get_boolean("search-visible") {
+        if gio::Settings::new(NAMESPACE).get_boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
             let mut filter_ref = filter.lock().unwrap();
             let filter = filter_ref.get_mut();
@@ -278,7 +284,7 @@ impl MainWindow {
 
         let dark_mode_slider: gtk::Switch = {
             let switch: gtk::Switch = builder.get_object("dark_mode_slider").unwrap();
-            let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+            let g_settings = gio::Settings::new(NAMESPACE);
             switch.set_state(g_settings.get_boolean("dark-theme"));
             switch
         };
@@ -287,7 +293,7 @@ impl MainWindow {
             let gui = self.clone();
             let connection = connection.clone();
             dark_mode_slider.connect_state_set(move |_, state| {
-                let g_settings = gio::Settings::new("uk.co.grumlimited.authenticator-rs");
+                let g_settings = gio::Settings::new(NAMESPACE);
                 g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change

@@ -44,7 +44,7 @@ impl AccountsWindow {
     }
 
     pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let accounts_container = gui.accounts_window.accounts_container.clone();
+        let accounts_container = &gui.accounts_window.accounts_container;
 
         // empty list of accounts first
         let children = accounts_container.get_children();
@@ -52,7 +52,7 @@ impl AccountsWindow {
 
         let groups = {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap()
+            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
         };
 
         {
@@ -201,7 +201,7 @@ impl AccountsWindow {
 
                 account_widgets.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value()).unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     input_group.remove_all(); //re-added and refreshed just below
@@ -284,23 +284,21 @@ impl AccountsWindow {
         edit_account_window: EditAccountWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
-        Box::new({
-            move |_b: &gtk::Button| {
-                debug!("Loading for group_id {:?}", group_id);
-                let groups = {
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value()).unwrap()
-                };
+        Box::new(move |_: &gtk::Button| {
+            debug!("Loading for group_id {:?}", group_id);
+            let groups = {
+                let connection = connection.lock().unwrap();
+                ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value().as_deref()).unwrap()
+            };
 
-                edit_account_window.reset();
-                edit_account_window.set_group_dropdown(group_id, groups.as_slice());
+            edit_account_window.reset();
+            edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-                edit_account_window.add_accounts_container_edit.set_visible(false);
-                edit_account_window.add_accounts_container_add.set_visible(true);
+            edit_account_window.add_accounts_container_edit.set_visible(false);
+            edit_account_window.add_accounts_container_add.set_visible(true);
 
-                popover.hide();
-                MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
-            }
+            popover.hide();
+            MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
         })
     }
 
