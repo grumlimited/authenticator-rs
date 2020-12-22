@@ -214,15 +214,14 @@ impl MainWindow {
         let progress_bar = self.accounts_window.progress_bar.clone();
         let widgets = self.accounts_window.widgets.clone();
 
-        rx.attach(None, move |second| {
+        rx.attach(None, move |seconds| {
             let mut guard = progress_bar.lock().unwrap();
             let progress_bar = guard.get_mut();
 
-            let fraction = AccountsWindow::progress_bar_fraction();
-            progress_bar.set_fraction(fraction);
+            AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
 
             let mut widgets = widgets.lock().unwrap();
-            if second == 0 || second == 30 {
+            if seconds == 0 || seconds == 30 {
                 widgets.iter_mut().for_each(|group| group.update());
             }
 

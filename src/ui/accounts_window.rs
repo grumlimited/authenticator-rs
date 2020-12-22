@@ -1,13 +1,13 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -32,7 +32,7 @@ impl AccountsWindow {
         let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
         let filter: gtk::Entry = builder.get_object("account_filter").unwrap();
 
-        progress_bar.set_fraction(Self::progress_bar_fraction());
+        Self::progress_bar_fraction_now(&progress_bar);
 
         AccountsWindow {
             container: main_box,
@@ -269,12 +269,16 @@ impl AccountsWindow {
         }
     }
 
-    pub fn progress_bar_fraction() -> f64 {
-        Self::progress_bar_fraction_for(Local::now().second())
+    fn progress_bar_fraction_now(progress_bar: &gtk::ProgressBar) {
+        Self::progress_bar_fraction_for(progress_bar, Local::now().second())
     }
 
-    fn progress_bar_fraction_for(second: u32) -> f64 {
-        (1_f64 - ((second % 30) as f64 / 30_f64)) as f64
+    pub fn progress_bar_fraction_for(progress_bar: &gtk::ProgressBar, seconds: u32) {
+        progress_bar.set_fraction(Self::fraction_for(seconds));
+    }
+
+    fn fraction_for(seconds: u32) -> f64 {
+        (1_f64 - ((seconds % 30) as f64 / 30_f64)) as f64
     }
 
     pub fn display_add_account_form(
@@ -330,6 +334,6 @@ mod tests {
 
     #[test]
     fn progress_bar_fraction() {
-        assert_eq!(0.5333333333333333_f64, AccountsWindow::progress_bar_fraction_for(14));
+        assert_eq!(0.5333333333333333_f64, AccountsWindow::fraction_for(14));
     }
 }
