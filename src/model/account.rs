@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::NAMESPACE_PREFIX;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(skip)]
     pub id: u32,
@@ -18,7 +18,7 @@ pub struct Account {
     pub secret: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AccountWidgets {
     pub account_id: u32,
     pub group_id: u32,
