@@ -56,10 +56,10 @@ impl ConfigManager {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
-            let id: u32 = row.get(0)?;
-            let name: String = row.get(1)?;
-            let icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-            let url = row.get::<usize, String>(3).optional().unwrap_or(None);
+            let id = row.get_unwrap(0);
+            let name: String = row.get_unwrap(1);
+            let icon: Option<String> = row.get(2).optional().unwrap_or(None);
+            let url: Option<String> = row.get(3).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 id,
@@ -137,10 +137,10 @@ impl ConfigManager {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
-            let group_id: u32 = row.get(0)?;
-            let group_name: String = row.get(1)?;
-            let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-            let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
+            let group_id = row.get_unwrap(0);
+            let group_name: String = row.get_unwrap(1);
+            let group_icon: Option<String> = row.get(2).optional()?;
+            let group_url: Option<String> = row.get(3).optional()?;
 
             Ok(AccountGroup::new(
                 group_id,
