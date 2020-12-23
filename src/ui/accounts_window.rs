@@ -56,7 +56,6 @@ impl AccountsWindow {
 
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
-            m_widgets.clear();
             *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
 
             // add updated accounts back to list
