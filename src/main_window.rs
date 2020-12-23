@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
@@ -208,25 +207,25 @@ impl MainWindow {
     }
 
     pub fn start_progress_bar(&mut self) {
-        let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
-        self.pool.spawn_ok(progress_bar_interval(tx));
-
         let progress_bar = self.accounts_window.progress_bar.clone();
         let widgets = self.accounts_window.widgets.clone();
 
-        rx.attach(None, move |seconds| {
+        let tick = move || {
             let mut guard = progress_bar.lock().unwrap();
             let progress_bar = guard.get_mut();
 
-            AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
+            let seconds = chrono::Local::now().second() as u8;
 
+            AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
             let mut widgets = widgets.lock().unwrap();
             if seconds == 0 || seconds == 30 {
                 widgets.iter_mut().for_each(|group| group.update());
             }
 
             glib::Continue(true)
-        });
+        };
+
+        glib::timeout_add_seconds_local(1, tick);
     }
 
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
@@ -403,13 +402,6 @@ impl MainWindow {
         ));
 
         action_menu
-    }
-}
-
-async fn progress_bar_interval(tx: Sender<u8>) {
-    loop {
-        thread::sleep(time::Duration::from_secs(1));
-        tx.send(chrono::Local::now().second() as u8).expect("Couldn't send data to channel");
     }
 }
 

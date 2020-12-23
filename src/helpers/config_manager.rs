@@ -126,7 +126,7 @@ impl ConfigManager {
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
-        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+        stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
                 group.id = id;
             })
@@ -187,8 +187,8 @@ impl ConfigManager {
             |row| {
                 let group_id: u32 = row.get_unwrap(0);
                 let group_name: String = row.get_unwrap(1);
-                let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-                let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
+                let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
+                let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
 
                 let mut stmt = connection
                     .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
@@ -207,10 +207,8 @@ impl ConfigManager {
                     .map(|e| e.unwrap())
                     .collect();
 
-                row.get::<usize, u32>(0).map(|id| {
-                    AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts)
-                    // AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), accounts)
-                })
+                row.get(0)
+                    .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
             },
         )
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
@@ -226,7 +224,7 @@ impl ConfigManager {
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
-        stmt.query_row(NO_PARAMS, |row| row.get::<usize, u32>(0))
+        stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
                 account.id = id;
             })
@@ -247,10 +245,10 @@ impl ConfigManager {
         let mut stmt = connection.prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1").unwrap();
 
         stmt.query_row(params![account_id], |row| {
-            let group_id: u32 = row.get(1)?;
-            let label: String = row.get(2)?;
-            let secret: String = row.get(3)?;
-            let id = row.get(0)?;
+            let group_id: u32 = row.get_unwrap(1);
+            let label: String = row.get_unwrap(2);
+            let secret: String = row.get_unwrap(3);
+            let id = row.get_unwrap(0);
 
             let account = Account::new(id, group_id, label.as_str(), secret.as_str());
 
@@ -277,10 +275,9 @@ impl ConfigManager {
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
         stmt.query_map(params![group_id, label_filter], |row| {
-            let id: u32 = row.get(0)?;
-            let group_id: u32 = group_id;
-            let label: String = row.get(1)?;
-            let secret: String = row.get(2)?;
+            let id: u32 = row.get_unwrap(0);
+            let label: String = row.get_unwrap(1);
+            let secret: String = row.get_unwrap(2);
 
             let account = Account::new(id, group_id, label.as_str(), secret.as_str());
             Ok(account)
