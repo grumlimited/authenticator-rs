@@ -16,7 +16,7 @@ sharedir=$(DESTDIR)$(PREFIX)/share
 .PHONY : clean clean-all install uninstall
 
 # Build the application
-target/release/authenticator-rs : src
+release : src
 	cargo build --release
 
 # Compiling gResource
@@ -34,7 +34,7 @@ release-version:
 	sed -i 's/#VERSION_NUMBER#/$(RELEASE_VERSION)/' ./data/resources/gtk/ui/main.ui
 
 # Install onto the system
-install : target/release/authenticator-rs gresource
+install : release gresource
 	# Create the bindir, if need be
 	mkdir -p $(bindir)
 	# Install binary
