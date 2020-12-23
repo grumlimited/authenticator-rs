@@ -56,10 +56,10 @@ impl ConfigManager {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
-            let id: u32 = row.get(0)?;
-            let name: String = row.get(1)?;
-            let icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-            let url = row.get::<usize, String>(3).optional().unwrap_or(None);
+            let id = row.get_unwrap(0);
+            let name: String = row.get_unwrap(1);
+            let icon: Option<String> = row.get(2).optional().unwrap_or(None);
+            let url: Option<String> = row.get(3).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 id,
@@ -133,40 +133,36 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn group_by_name(connection: &Connection, name: &str) -> Result<AccountGroup, LoadError> {
+    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, LoadError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
 
-        stmt.query_row_named(
-            named_params! {
-            ":name": name
-            },
-            |row| {
-                let group_id: u32 = row.get(0)?;
-                let group_name: String = row.get(1)?;
-                let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-                let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
+        stmt.query_row_named(named_params! {":name": name}, |row| {
+            let group_id = row.get_unwrap(0);
+            let group_name: String = row.get_unwrap(1);
+            let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
+            let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
 
-                Ok(AccountGroup::new(
-                    group_id,
-                    group_name.as_str(),
-                    group_icon.as_deref(),
-                    group_url.as_deref(),
-                    vec![],
-                ))
-            },
-        )
+            Ok(AccountGroup::new(
+                group_id,
+                group_name.as_str(),
+                group_icon.as_deref(),
+                group_url.as_deref(),
+                vec![],
+            ))
+        })
+        .optional()
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
-        let existing_group = Self::group_by_name(connection, group.name.as_str());
+        let existing_group = Self::group_by_name(connection, group.name.as_str())?;
 
         let group_saved_result = match existing_group {
-            Ok(group) => Ok(group.id),
-            Err(_) => Self::save_group(connection, group).map(|_| group.id),
+            Some(group) => Ok(group.id),
+            None => Self::save_group(connection, group).map(|_| group.id),
         };
 
-        let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
+        match group_saved_result {
             Ok(group_id) => group
                 .entries
                 .iter_mut()
@@ -174,12 +170,11 @@ impl ConfigManager {
                     account.group_id = group_id;
                     Self::save_account(&connection, account)
                 })
-                .collect::<Vec<Result<(), LoadError>>>(),
-
-            Err(group_saved_error) => vec![Err(group_saved_error)],
-        };
-
-        accounts_saved_results.iter().cloned().collect()
+                .into_iter()
+                .collect::<Result<Vec<()>, LoadError>>()
+                .map(|_| ()),
+            Err(group_saved_error) => Err(group_saved_error),
+        }
     }
 
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {

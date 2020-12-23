@@ -300,10 +300,12 @@ impl AddGroupWindow {
             temp_filepath.push(std::env::temp_dir());
             temp_filepath.push(&icon_filename);
 
-            match std::fs::remove_file(&temp_filepath) {
-                Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
-                Err(e) => warn!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
-            };
+            if temp_filepath.is_file() {
+                match std::fs::remove_file(&temp_filepath) {
+                    Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
+                    Err(e) => warn!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
+                };
+            }
         }
     }
 
