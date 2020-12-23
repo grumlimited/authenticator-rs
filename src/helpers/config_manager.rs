@@ -139,8 +139,8 @@ impl ConfigManager {
         stmt.query_row_named(named_params! {":name": name}, |row| {
             let group_id = row.get_unwrap(0);
             let group_name: String = row.get_unwrap(1);
-            let group_icon: Option<String> = row.get(2).optional()?;
-            let group_url: Option<String> = row.get(3).optional()?;
+            let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
+            let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
 
             Ok(AccountGroup::new(
                 group_id,
