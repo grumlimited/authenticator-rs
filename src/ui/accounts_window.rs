@@ -46,9 +46,6 @@ impl AccountsWindow {
     pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let accounts_container = &gui.accounts_window.accounts_container;
 
-        // empty list of accounts first
-        accounts_container.foreach(|e| accounts_container.remove(e));
-
         let groups = {
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
@@ -57,6 +54,9 @@ impl AccountsWindow {
         {
             let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
             *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
+
+            // empty list of accounts first
+            accounts_container.foreach(|e| accounts_container.remove(e));
 
             // add updated accounts back to list
             m_widgets
@@ -157,9 +157,8 @@ impl AccountsWindow {
             for account_widgets in account_widgets.iter() {
                 let id = account_widgets.account_id;
                 let popover = account_widgets.popover.clone();
-
                 let connection = connection.clone();
-                let input_group = gui.edit_account_window.input_group.clone();
+
                 let input_name = gui.edit_account_window.input_name.clone();
                 let input_secret = gui.edit_account_window.input_secret.clone();
                 let input_account_id = gui.edit_account_window.input_account_id.clone();
@@ -182,8 +181,7 @@ impl AccountsWindow {
                     }
 
                     {
-                        let copy_button = account_widgets.copy_button.clone();
-                        let copy_button = copy_button.lock().unwrap();
+                        let copy_button = account_widgets.copy_button.lock().unwrap();
                         let pool = gui.pool.clone();
                         let dialog_ok_img = account_widgets.dialog_ok_img.clone();
                         copy_button.connect_clicked(move |button| {
@@ -202,18 +200,18 @@ impl AccountsWindow {
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
+                    let input_group = gui.edit_account_window.input_group.clone();
                     input_group.remove_all(); //re-added and refreshed just below
 
                     groups.iter().for_each(|group| {
-                        let string = format!("{}", group.id);
-                        let entry_id = Some(string.as_str());
-                        input_group.append(entry_id, group.name.as_str());
+                        let entry_id = Some(group.id.to_string());
+                        input_group.append(entry_id.as_deref(), group.name.as_str());
                         if group.id == account.group_id {
-                            input_group.set_active_id(entry_id);
+                            input_group.set_active_id(entry_id.as_deref());
                         }
                     });
 
-                    let account_id = format!("{}", account.id);
+                    let account_id = account.id.to_string();
                     input_account_id.set_text(account_id.as_str());
                     input_name.set_text(account.label.as_str());
 
@@ -250,7 +248,7 @@ impl AccountsWindow {
 
                     let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
-                    let widgets_group = widgets_list.iter_mut().find(|x| x.id == group_id);
+                    let widgets_group = widgets_list.iter_mut().find(|widget| widget.id == group_id);
 
                     if let Some(widgets_group) = widgets_group {
                         let account_widgets = widgets_group.account_widgets.clone();

@@ -1,14 +1,14 @@
+use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use base32::decode;
 use base32::Alphabet::RFC4648;
-
-use crate::NAMESPACE_PREFIX;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+use crate::NAMESPACE_PREFIX;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     #[serde(skip)]
     pub id: u32,
@@ -18,7 +18,7 @@ pub struct Account {
     pub secret: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AccountWidgets {
     pub account_id: u32,
     pub group_id: u32,

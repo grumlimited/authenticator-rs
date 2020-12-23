@@ -11,7 +11,7 @@ use crate::main_window::State;
 use crate::model::{Account, AccountWidgets};
 use crate::NAMESPACE_PREFIX;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,
