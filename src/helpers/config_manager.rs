@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use glib::Sender;
 use log::debug;
 use log::error;
-use rusqlite::{Connection, named_params, NO_PARAMS, OpenFlags, OptionalExtension, params, Result};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
 
 use crate::helpers::LoadError::{FileError, SaveError};
@@ -69,15 +69,15 @@ impl ConfigManager {
                 Self::get_accounts(&connection, id, filter)?,
             ))
         })
-            .map(|rows| {
-                rows.map(|each| each.unwrap())
-                    .collect::<Vec<AccountGroup>>()
-                    .into_iter()
-                    //filter out empty groups - unless no filter is applied then display everything
-                    .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
-                    .collect()
-            })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map(|rows| {
+            rows.map(|each| each.unwrap())
+                .collect::<Vec<AccountGroup>>()
+                .into_iter()
+                //filter out empty groups - unless no filter is applied then display everything
+                .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
+                .collect()
+        })
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn check_configuration_dir() -> Result<(), LoadError> {
@@ -150,8 +150,8 @@ impl ConfigManager {
                 vec![],
             ))
         })
-            .optional()
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .optional()
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
@@ -207,12 +207,11 @@ impl ConfigManager {
                     .map(|e| e.unwrap())
                     .collect();
 
-                row.get(0).map(|id| {
-                    AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts)
-                })
+                row.get(0)
+                    .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
             },
         )
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
@@ -255,7 +254,7 @@ impl ConfigManager {
 
             Ok(account)
         })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, LoadError> {
@@ -283,7 +282,7 @@ impl ConfigManager {
             let account = Account::new(id, group_id, label.as_str(), secret.as_str());
             Ok(account)
         })
-            .map(|rows| rows.map(|row| row.unwrap()).collect())
+        .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
@@ -298,7 +297,8 @@ impl ConfigManager {
                 Ok(()) => tx.send(true).expect("Could not send message"),
                 Err(_) => tx.send(false).expect("Could not send message"),
             }
-        }.await;
+        }
+        .await;
     }
 
     pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), LoadError> {
