@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use glib::Sender;
 use log::debug;
 use log::error;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
+use rusqlite::{Connection, named_params, NO_PARAMS, OpenFlags, OptionalExtension, params, Result};
 use thiserror::Error;
 
 use crate::helpers::LoadError::{FileError, SaveError};
@@ -69,15 +69,15 @@ impl ConfigManager {
                 Self::get_accounts(&connection, id, filter)?,
             ))
         })
-        .map(|rows| {
-            rows.map(|each| each.unwrap())
-                .collect::<Vec<AccountGroup>>()
-                .into_iter()
-                //filter out empty groups - unless no filter is applied then display everything
-                .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
-                .collect()
-        })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map(|rows| {
+                rows.map(|each| each.unwrap())
+                    .collect::<Vec<AccountGroup>>()
+                    .into_iter()
+                    //filter out empty groups - unless no filter is applied then display everything
+                    .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
+                    .collect()
+            })
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn check_configuration_dir() -> Result<(), LoadError> {
@@ -133,40 +133,36 @@ impl ConfigManager {
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    fn group_by_name(connection: &Connection, name: &str) -> Result<AccountGroup, LoadError> {
+    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, LoadError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
 
-        stmt.query_row_named(
-            named_params! {
-            ":name": name
-            },
-            |row| {
-                let group_id: u32 = row.get(0)?;
-                let group_name: String = row.get(1)?;
-                let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
-                let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
+        stmt.query_row_named(named_params! {":name": name}, |row| {
+            let group_id: u32 = row.get(0)?;
+            let group_name: String = row.get(1)?;
+            let group_icon = row.get::<usize, String>(2).optional().unwrap_or(None);
+            let group_url = row.get::<usize, String>(3).optional().unwrap_or(None);
 
-                Ok(AccountGroup::new(
-                    group_id,
-                    group_name.as_str(),
-                    group_icon.as_deref(),
-                    group_url.as_deref(),
-                    vec![],
-                ))
-            },
-        )
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            Ok(AccountGroup::new(
+                group_id,
+                group_name.as_str(),
+                group_icon.as_deref(),
+                group_url.as_deref(),
+                vec![],
+            ))
+        })
+            .optional()
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
-        let existing_group = Self::group_by_name(connection, group.name.as_str());
+        let existing_group = Self::group_by_name(connection, group.name.as_str())?;
 
         let group_saved_result = match existing_group {
-            Ok(group) => Ok(group.id),
-            Err(_) => Self::save_group(connection, group).map(|_| group.id),
+            Some(group) => Ok(group.id),
+            None => Self::save_group(connection, group).map(|_| group.id),
         };
 
-        let accounts_saved_results: Vec<Result<(), LoadError>> = match group_saved_result {
+        match group_saved_result {
             Ok(group_id) => group
                 .entries
                 .iter_mut()
@@ -174,12 +170,11 @@ impl ConfigManager {
                     account.group_id = group_id;
                     Self::save_account(&connection, account)
                 })
-                .collect::<Vec<Result<(), LoadError>>>(),
-
-            Err(group_saved_error) => vec![Err(group_saved_error)],
-        };
-
-        accounts_saved_results.iter().cloned().collect()
+                .into_iter()
+                .collect::<Result<Vec<()>, LoadError>>()
+                .map(|_| ()),
+            Err(group_saved_error) => Err(group_saved_error),
+        }
     }
 
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {
@@ -218,7 +213,7 @@ impl ConfigManager {
                 })
             },
         )
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
@@ -261,7 +256,7 @@ impl ConfigManager {
 
             Ok(account)
         })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, LoadError> {
@@ -290,7 +285,7 @@ impl ConfigManager {
             let account = Account::new(id, group_id, label.as_str(), secret.as_str());
             Ok(account)
         })
-        .map(|rows| rows.map(|row| row.unwrap()).collect())
+            .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
@@ -306,7 +301,7 @@ impl ConfigManager {
                 Err(_) => tx.send(false).expect("Could not send message"),
             }
         }
-        .await;
+            .await;
     }
 
     pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), LoadError> {
