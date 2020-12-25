@@ -1,16 +1,16 @@
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, warn};
+use rqrr::PreparedImage;
 use rusqlite::Connection;
 
 use crate::helpers::ConfigManager;
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
-use rqrr::PreparedImage;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -130,13 +130,12 @@ impl EditAccountWindow {
     fn url_input_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
-        let input_secret = gui.edit_account_window.input_secret.clone();
 
-        qr_button.connect_clicked(move |_| match dialog.run() {
-            gtk::ResponseType::Accept => {
-                let path = dialog.get_filename().unwrap();
-                debug!("path: {}", path.display());
+        let (tx, rx) = glib::MainContext::channel::<String>(glib::PRIORITY_DEFAULT);
 
+        {
+            let input_secret = gui.edit_account_window.input_secret.clone();
+            rx.attach(None, move |path| {
                 let buffer = input_secret.get_buffer().unwrap();
 
                 match image::open(&path).map(|v| v.to_luma8()) {
@@ -162,7 +161,21 @@ impl EditAccountWindow {
                     }
                 }
 
+                glib::Continue(true)
+            });
+        }
+
+        let input_secret = gui.edit_account_window.input_secret.clone();
+        qr_button.connect_clicked(move |_| match dialog.run() {
+            gtk::ResponseType::Accept => {
+                let path = dialog.get_filename().unwrap();
+                debug!("path: {}", path.display());
+
+                let buffer = input_secret.get_buffer().unwrap();
+                buffer.set_text(&gettext("Processing QR code"));
+
                 dialog.hide();
+                tx.send(format!("{}", path.display())).unwrap();
             }
             _ => dialog.hide(),
         });
@@ -172,8 +185,8 @@ impl EditAccountWindow {
         Self::url_input_action(&gui);
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            where
+                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
