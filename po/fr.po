@@ -124,3 +124,6 @@ msgstr "filtre de comptes"
 
 msgid "Invalid QR code"
 msgstr "QR code invalide"
+
+msgid "Processing QR code"
+msgstr "QR code en cours de traitement..."

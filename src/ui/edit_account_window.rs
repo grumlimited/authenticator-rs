@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
+use glib::Sender;
 use gtk::prelude::*;
 use gtk::Builder;
 use log::{debug, warn};
@@ -127,39 +128,52 @@ impl EditAccountWindow {
         }
     }
 
+    async fn process_qr_code(path: String, tx: Sender<(bool, String)>) {
+        let _ = match image::open(&path).map(|v| v.to_luma8()) {
+            Ok(img) => {
+                let mut luma = PreparedImage::prepare(img);
+                let grids = luma.detect_grids();
+
+                if grids.len() != 1 {
+                    warn!("No grids found in {}", path);
+                    tx.send((false, "Invalid QR code".to_owned()))
+                } else {
+                    match grids[0].decode() {
+                        Ok((_, content)) => tx.send((true, content)),
+                        Err(e) => {
+                            warn!("{}", e);
+                            tx.send((false, "Invalid QR code".to_owned()))
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("{}", e);
+                tx.send((false, "Invalid QR code".to_owned()))
+            }
+        };
+    }
+
     fn qrcode_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<String>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
         {
             let input_secret = gui.edit_account_window.input_secret.clone();
-            rx.attach(None, move |path| {
+            let gui = gui.clone();
+            rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
-                match image::open(&path).map(|v| v.to_luma8()) {
-                    Ok(img) => {
-                        let mut luma = PreparedImage::prepare(img);
-                        let grids = luma.detect_grids();
+                gui.edit_account_window.reset_errors();
 
-                        if grids.len() != 1 {
-                            buffer.set_text(&gettext("Invalid QR code"));
-                            warn!("Could not detect grids in {}", path);
-                        } else {
-                            match grids[0].decode() {
-                                Ok((_, content)) => buffer.set_text(content.as_str()),
-                                Err(e) => {
-                                    buffer.set_text(&gettext("Invalid QR code"));
-                                    warn!("{:?}", e)
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        buffer.set_text(&gettext("Invalid QR code"));
-                        warn!("{:?}", e)
-                    }
+                if ok {
+                    buffer.set_text(qr_code.as_str());
+                    let _ = gui.edit_account_window.validate();
+                } else {
+                    buffer.set_text(&gettext(qr_code));
+                    let _ = gui.edit_account_window.validate();
                 }
 
                 glib::Continue(true)
@@ -167,18 +181,23 @@ impl EditAccountWindow {
         }
 
         let input_secret = gui.edit_account_window.input_secret.clone();
-        qr_button.connect_clicked(move |_| match dialog.run() {
-            gtk::ResponseType::Accept => {
-                let path = dialog.get_filename().unwrap();
-                debug!("path: {}", path.display());
+        let pool = gui.pool.clone();
 
-                let buffer = input_secret.get_buffer().unwrap();
-                buffer.set_text(&gettext("Processing QR code"));
+        qr_button.connect_clicked(move |_| {
+            let tx = tx.clone();
+            match dialog.run() {
+                gtk::ResponseType::Accept => {
+                    let path = dialog.get_filename().unwrap();
+                    debug!("path: {}", path.display());
 
-                dialog.hide();
-                tx.send(format!("{}", path.display())).unwrap();
+                    let buffer = input_secret.get_buffer().unwrap();
+                    buffer.set_text(&gettext("Processing QR code"));
+
+                    dialog.hide();
+                    pool.spawn_ok(Self::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+                }
+                _ => dialog.hide(),
             }
-            _ => dialog.hide(),
         });
     }
 
