@@ -145,6 +145,7 @@ impl EditAccountWindow {
 
                         if grids.len() != 1 {
                             buffer.set_text(&gettext("Invalid QR code"));
+                            warn!("Could not detect grids in {}", path);
                         } else {
                             match grids[0].decode() {
                                 Ok((_, content)) => buffer.set_text(content.as_str()),
