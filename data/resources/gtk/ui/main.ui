@@ -21,6 +21,7 @@
     <property name="icon-name">emblem-ok-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
+  <object class="GtkSizeGroup" id="add_account_labels"/>
   <object class="GtkImage" id="add_group_image_input">
     <property name="width-request">78</property>
     <property name="height-request">78</property>
@@ -287,21 +288,6 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="edit_account_label_secret">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="valign">start</property>
-                        <property name="margin-start">5</property>
-                        <property name="margin-end">50</property>
-                        <property name="label" translatable="yes">Secret</property>
-                        <property name="xalign">0</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkEntry" id="edit_account_input_name">
                         <property name="height-request">35</property>
                         <property name="visible">True</property>
@@ -345,43 +331,45 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkTextView" id="edit_account_input_secret">
-                        <property name="name">edit_account_input_secret</property>
-                        <property name="width-request">15</property>
-                        <property name="height-request">140</property>
+                      <object class="GtkLabel" id="edit_account_label_secret">
                         <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="tooltip-text" translatable="yes">Secret</property>
-                        <property name="margin-end">5</property>
-                        <property name="hexpand">True</property>
-                        <property name="border-width">1</property>
-                        <property name="vadjustment">edit_account_input_secret_scrollable</property>
-                        <property name="wrap-mode">char</property>
-                        <property name="left-margin">5</property>
-                        <property name="top-margin">3</property>
-                        <property name="monospace">True</property>
-                        <style>
-                          <class name="edit_account_input_secret"/>
-                        </style>
+                        <property name="can-focus">False</property>
+                        <property name="valign">start</property>
+                        <property name="margin-start">5</property>
+                        <property name="margin-end">50</property>
+                        <property name="label" translatable="yes">Secret</property>
+                        <property name="xalign">0</property>
                       </object>
                       <packing>
-                        <property name="left-attach">1</property>
-                        <property name="top-attach">2</property>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">3</property>
                       </packing>
                     </child>
                     <child>
-                      <!-- n-columns=2 n-rows=1 -->
+                      <!-- n-columns=1 n-rows=2 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="row-spacing">10</property>
                         <child>
-                          <object class="GtkButton" id="qrcode_button">
-                            <property name="name">qrcode_button</property>
+                          <object class="GtkTextView" id="edit_account_input_secret">
+                            <property name="name">edit_account_input_secret</property>
+                            <property name="width-request">15</property>
+                            <property name="height-request">140</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                            <property name="margin-bottom">20</property>
-                            <property name="image">qrcode_icon</property>
+                            <property name="tooltip-text" translatable="yes">Secret</property>
+                            <property name="margin-end">5</property>
+                            <property name="hexpand">True</property>
+                            <property name="border-width">1</property>
+                            <property name="vadjustment">edit_account_input_secret_scrollable</property>
+                            <property name="wrap-mode">char</property>
+                            <property name="left-margin">5</property>
+                            <property name="top-margin">3</property>
+                            <property name="monospace">True</property>
+                            <style>
+                              <class name="edit_account_input_secret"/>
+                            </style>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
@@ -389,17 +377,42 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-start">5</property>
-                            <property name="margin-bottom">20</property>
-                            <property name="label" translatable="yes">use QR code</property>
-                            <property name="use-underline">True</property>
+                            <child>
+                              <object class="GtkButton" id="qrcode_button">
+                                <property name="name">qrcode_button</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="margin-bottom">20</property>
+                                <property name="image">qrcode_icon</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="margin-start">5</property>
+                                <property name="margin-bottom">20</property>
+                                <property name="label" translatable="yes">use QR code</property>
+                                <property name="use-underline">True</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                       </object>
@@ -407,6 +420,9 @@
                         <property name="left-attach">1</property>
                         <property name="top-attach">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
@@ -944,13 +960,6 @@ See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pu
   <object class="GtkSizeGroup" id="add_account_inputs">
     <widgets>
       <widget name="add_group_url_input"/>
-    </widgets>
-  </object>
-  <object class="GtkSizeGroup" id="add_account_labels">
-    <widgets>
-      <widget name="edit_account_label_group"/>
-      <widget name="edit_account_label_name"/>
-      <widget name="edit_account_label_secret"/>
     </widgets>
   </object>
   <object class="GtkSizeGroup" id="group_form_entries">
