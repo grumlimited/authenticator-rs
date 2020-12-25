@@ -128,7 +128,7 @@ impl EditAccountWindow {
         }
     }
 
-    async fn process_qr_code(path: String, tx: Sender<String>) {
+    async fn process_qr_code(path: String, tx: Sender<(bool, String)>) {
         let _ = match image::open(&path).map(|v| v.to_luma8()) {
             Ok(img) => {
                 let mut luma = PreparedImage::prepare(img);
@@ -136,20 +136,20 @@ impl EditAccountWindow {
 
                 if grids.len() != 1 {
                     warn!("{} is not a valid QR code", path);
-                    tx.send("Invalid QR code".to_owned())
+                    tx.send((false, "Invalid QR code".to_owned()))
                 } else {
                     match grids[0].decode() {
-                        Ok((_, content)) => tx.send(content),
+                        Ok((_, content)) => tx.send((true, content)),
                         Err(e) => {
                             warn!("{}", e);
-                            tx.send("Invalid QR code".to_owned())
+                            tx.send((false, "Invalid QR code".to_owned()))
                         }
                     }
                 }
             }
             Err(e) => {
                 warn!("{}", e);
-                tx.send("Invalid QR code".to_owned())
+                tx.send((false, "Invalid QR code".to_owned()))
             }
         };
     }
@@ -158,13 +158,19 @@ impl EditAccountWindow {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<String>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
         {
             let input_secret = gui.edit_account_window.input_secret.clone();
-            rx.attach(None, move |qr_code| {
+            rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
-                buffer.set_text(&gettext(qr_code));
+
+                if ok {
+                    buffer.set_text(qr_code.as_str());
+                } else {
+                    buffer.set_text(&gettext(qr_code));
+                }
+
                 glib::Continue(true)
             });
         }
