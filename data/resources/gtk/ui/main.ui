@@ -81,6 +81,7 @@
       <pattern>*.ico</pattern>
       <pattern>*.png</pattern>
       <pattern>*.gif</pattern>
+      <pattern>*.jpg</pattern>
     </patterns>
   </object>
   <object class="GtkImage" id="qrcode_icon">

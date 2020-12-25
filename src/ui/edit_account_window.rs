@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use gettextrs::*;
 use gtk::prelude::*;
 use gtk::Builder;
 use log::{debug, warn};
@@ -9,6 +10,7 @@ use crate::helpers::ConfigManager;
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
+use rqrr::PreparedImage;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -128,13 +130,39 @@ impl EditAccountWindow {
     fn url_input_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
+        let input_secret = gui.edit_account_window.input_secret.clone();
 
         qr_button.connect_clicked(move |_| match dialog.run() {
             gtk::ResponseType::Accept => {
-                dialog.hide();
-
                 let path = dialog.get_filename().unwrap();
                 debug!("path: {}", path.display());
+
+                let buffer = input_secret.get_buffer().unwrap();
+
+                match image::open(&path).map(|v| v.to_luma8()) {
+                    Ok(img) => {
+                        let mut luma = PreparedImage::prepare(img);
+                        let grids = luma.detect_grids();
+
+                        if grids.len() != 1 {
+                            buffer.set_text(&gettext("Invalid QR code"));
+                        } else {
+                            match grids[0].decode() {
+                                Ok((_, content)) => buffer.set_text(content.as_str()),
+                                Err(e) => {
+                                    buffer.set_text(&gettext("Invalid QR code"));
+                                    warn!("{:?}", e)
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        buffer.set_text(&gettext("Invalid QR code"));
+                        warn!("{:?}", e)
+                    }
+                }
+
+                dialog.hide();
             }
             _ => dialog.hide(),
         });
