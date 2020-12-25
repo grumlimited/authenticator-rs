@@ -121,3 +121,6 @@ msgstr "filter accounts"
 
 msgid "filter"
 msgstr "filter accounts"
+
+msgid "Invalid QR code"
+msgstr "Invalid QR code"
