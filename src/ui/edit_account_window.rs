@@ -162,13 +162,18 @@ impl EditAccountWindow {
 
         {
             let input_secret = gui.edit_account_window.input_secret.clone();
+            let gui = gui.clone();
             rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
+                gui.edit_account_window.reset_errors();
+
                 if ok {
                     buffer.set_text(qr_code.as_str());
+                    let _ = gui.edit_account_window.validate();
                 } else {
                     buffer.set_text(&gettext(qr_code));
+                    let _ = gui.edit_account_window.validate();
                 }
 
                 glib::Continue(true)
