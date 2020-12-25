@@ -71,6 +71,23 @@
     <property name="icon-name">emblem-ok-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
+  <object class="GtkFileFilter" id="icon_filter">
+    <mime-types>
+      <mime-type>image/gif</mime-type>
+      <mime-type>image/x-icon</mime-type>
+      <mime-type>image/png</mime-type>
+    </mime-types>
+    <patterns>
+      <pattern>*.ico</pattern>
+      <pattern>*.png</pattern>
+      <pattern>*.gif</pattern>
+    </patterns>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic.svg</property>
+  </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
     <property name="default-width">250</property>
@@ -228,7 +245,7 @@
                   <placeholder/>
                 </child>
                 <child>
-                  <!-- n-columns=2 n-rows=4 -->
+                  <!-- n-columns=2 n-rows=5 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -308,7 +325,7 @@
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
-                        <property name="top-attach">3</property>
+                        <property name="top-attach">4</property>
                       </packing>
                     </child>
                     <child>
@@ -335,7 +352,6 @@
                         <property name="can-focus">True</property>
                         <property name="tooltip-text" translatable="yes">Secret</property>
                         <property name="margin-end">5</property>
-                        <property name="margin-bottom">20</property>
                         <property name="hexpand">True</property>
                         <property name="border-width">1</property>
                         <property name="vadjustment">edit_account_input_secret_scrollable</property>
@@ -351,6 +367,48 @@
                         <property name="left-attach">1</property>
                         <property name="top-attach">2</property>
                       </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=1 -->
+                      <object class="GtkGrid">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <child>
+                          <object class="GtkButton" id="qrcode_button">
+                            <property name="name">qrcode_button</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="margin-bottom">20</property>
+                            <property name="image">image1</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="margin-start">5</property>
+                            <property name="margin-bottom">20</property>
+                            <property name="label" translatable="yes">use QR code</property>
+                            <property name="use-underline">True</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
@@ -898,18 +956,6 @@ See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pu
     <widgets>
       <widget name="add_group_input_name"/>
     </widgets>
-  </object>
-  <object class="GtkFileFilter" id="icon_filter">
-    <mime-types>
-      <mime-type>image/gif</mime-type>
-      <mime-type>image/x-icon</mime-type>
-      <mime-type>image/png</mime-type>
-    </mime-types>
-    <patterns>
-      <pattern>*.ico</pattern>
-      <pattern>*.png</pattern>
-      <pattern>*.gif</pattern>
-    </patterns>
   </object>
   <object class="GtkImage" id="save_image">
     <property name="visible">True</property>

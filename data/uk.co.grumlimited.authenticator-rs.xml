@@ -4,6 +4,7 @@
     <file alias="authenticator-rs.svg">data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg</file>
     <file alias="style.css">data/resources/style.css</file>
     <file alias="log4rs.yaml">data/resources/log4rs.yaml</file>
+    <file alias="qrscanner-symbolic.svg">data/icons/hicolor/16x16/qrscanner-symbolic.svg</file>
 
     <!-- UI Files -->
     <file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/resources/gtk/ui/main.ui</file>
