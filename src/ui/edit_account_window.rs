@@ -135,7 +135,7 @@ impl EditAccountWindow {
                 let grids = luma.detect_grids();
 
                 if grids.len() != 1 {
-                    warn!("{} is not a valid QR code", path);
+                    warn!("No grids found in {}", path);
                     tx.send((false, "Invalid QR code".to_owned()))
                 } else {
                     match grids[0].decode() {
