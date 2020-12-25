@@ -11,4 +11,4 @@ root:
 
 loggers:
   authenticator_rs:
-    level: info
+    level: debug
