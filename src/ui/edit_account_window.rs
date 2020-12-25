@@ -127,7 +127,7 @@ impl EditAccountWindow {
         }
     }
 
-    fn url_input_action(gui: &MainWindow) {
+    fn qrcode_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
 
@@ -183,7 +183,7 @@ impl EditAccountWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        Self::url_input_action(&gui);
+        Self::qrcode_action(&gui);
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
         where
