@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
-use gtk::prelude::*;
+use glib::Sender;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
@@ -127,6 +128,32 @@ impl EditAccountWindow {
         }
     }
 
+    async fn process_qr_code(path: String, tx: Sender<String>) {
+        let _ = match image::open(&path).map(|v| v.to_luma8()) {
+            Ok(img) => {
+                let mut luma = PreparedImage::prepare(img);
+                let grids = luma.detect_grids();
+
+                if grids.len() != 1 {
+                    warn!("{} is not a valid QR code", path);
+                    tx.send("Invalid QR code".to_owned())
+                } else {
+                    match grids[0].decode() {
+                        Ok((_, content)) => tx.send(content),
+                        Err(e) => {
+                            warn!("{}", e);
+                            tx.send("Invalid QR code".to_owned())
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("{}", e);
+                tx.send("Invalid QR code".to_owned())
+            }
+        };
+    }
+
     fn qrcode_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
         let dialog = gui.add_group.image_dialog.clone();
@@ -135,50 +162,31 @@ impl EditAccountWindow {
 
         {
             let input_secret = gui.edit_account_window.input_secret.clone();
-            rx.attach(None, move |path| {
+            rx.attach(None, move |qr_code| {
                 let buffer = input_secret.get_buffer().unwrap();
-
-                match image::open(&path).map(|v| v.to_luma8()) {
-                    Ok(img) => {
-                        let mut luma = PreparedImage::prepare(img);
-                        let grids = luma.detect_grids();
-
-                        if grids.len() != 1 {
-                            buffer.set_text(&gettext("Invalid QR code"));
-                            warn!("Could not detect grids in {}", path);
-                        } else {
-                            match grids[0].decode() {
-                                Ok((_, content)) => buffer.set_text(content.as_str()),
-                                Err(e) => {
-                                    buffer.set_text(&gettext("Invalid QR code"));
-                                    warn!("{:?}", e)
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        buffer.set_text(&gettext("Invalid QR code"));
-                        warn!("{:?}", e)
-                    }
-                }
-
+                buffer.set_text(&gettext(qr_code));
                 glib::Continue(true)
             });
         }
 
         let input_secret = gui.edit_account_window.input_secret.clone();
-        qr_button.connect_clicked(move |_| match dialog.run() {
-            gtk::ResponseType::Accept => {
-                let path = dialog.get_filename().unwrap();
-                debug!("path: {}", path.display());
+        let pool = gui.pool.clone();
 
-                let buffer = input_secret.get_buffer().unwrap();
-                buffer.set_text(&gettext("Processing QR code"));
+        qr_button.connect_clicked(move |_| {
+            let tx = tx.clone();
+            match dialog.run() {
+                gtk::ResponseType::Accept => {
+                    let path = dialog.get_filename().unwrap();
+                    debug!("path: {}", path.display());
 
-                dialog.hide();
-                tx.send(format!("{}", path.display())).unwrap();
+                    let buffer = input_secret.get_buffer().unwrap();
+                    buffer.set_text(&gettext("Processing QR code"));
+
+                    dialog.hide();
+                    pool.spawn_ok(Self::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+                }
+                _ => dialog.hide(),
             }
-            _ => dialog.hide(),
         });
     }
 
@@ -186,8 +194,8 @@ impl EditAccountWindow {
         Self::qrcode_action(&gui);
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
+            where
+                F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
             button.connect_clicked(button_closure(connection, gui));
         }
