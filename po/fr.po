@@ -18,7 +18,7 @@ msgstr ""
 "Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
 
 msgid "A Two-Factor Authentication application"
-msgstr "A Two-Factor Authentication application"
+msgstr "Générateur de code d'authentification à deux facteurs"
 
 msgid "About"
 msgstr "À propos"
