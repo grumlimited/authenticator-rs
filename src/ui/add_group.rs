@@ -48,7 +48,7 @@ impl AddGroupWindow {
             icon_error: builder.get_object("add_group_icon_error").unwrap(),
             group_id: builder.get_object("add_group_input_group_id").unwrap(),
             image_button: builder.get_object("add_group_image_button").unwrap(),
-            image_dialog: builder.get_object("add_group_image_dialog").unwrap(),
+            image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
         }
     }
 
