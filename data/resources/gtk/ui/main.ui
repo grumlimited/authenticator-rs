@@ -88,7 +88,7 @@
   <object class="GtkImage" id="qrcode_icon">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic.svg</property>
+    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic</property>
   </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
@@ -841,7 +841,7 @@
             <property name="valign">center</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs.svg</property>
+            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs</property>
           </object>
           <packing>
             <property name="left-attach">0</property>
