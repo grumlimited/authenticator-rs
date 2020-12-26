@@ -971,8 +971,8 @@
     <property name="icon-name">object-select-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
-  <object class="GtkFileChooserDialog" id="add_group_image_dialog">
-    <property name="name">add_group_image_dialog</property>
+  <object class="GtkFileChooserDialog" id="file_chooser_dialog">
+    <property name="name">file_chooser_dialog</property>
     <property name="width-request">1200</property>
     <property name="height-request">600</property>
     <property name="can-focus">True</property>
@@ -1012,7 +1012,7 @@
             </child>
             <child>
               <object class="GtkButton" id="button2">
-                <property name="label" translatable="yes">Save</property>
+                <property name="label" translatable="yes">Ok</property>
                 <property name="name">_Save</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
