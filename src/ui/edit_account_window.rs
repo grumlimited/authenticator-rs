@@ -25,6 +25,7 @@ pub struct EditAccountWindow {
     pub save_button: gtk::Button,
     pub add_accounts_container_edit: gtk::Label,
     pub add_accounts_container_add: gtk::Label,
+    pub image_dialog: gtk::FileChooserDialog,
 }
 
 impl EditAccountWindow {
@@ -40,6 +41,7 @@ impl EditAccountWindow {
             add_accounts_container_add: builder.get_object("add_accounts_container_add").unwrap(),
             save_button: builder.get_object("edit_account_save").unwrap(),
             qr_button: builder.get_object("qrcode_button").unwrap(),
+            image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
         }
     }
 
@@ -156,7 +158,7 @@ impl EditAccountWindow {
 
     fn qrcode_action(gui: &MainWindow) {
         let qr_button = gui.edit_account_window.qr_button.clone();
-        let dialog = gui.add_group.image_dialog.clone();
+        let dialog = gui.edit_account_window.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
