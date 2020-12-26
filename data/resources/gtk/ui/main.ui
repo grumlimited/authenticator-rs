@@ -924,9 +924,7 @@
             <property name="margin-start">5</property>
             <property name="margin-end">5</property>
             <property name="margin-bottom">25</property>
-            <property name="label" translatable="yes">This program comes with absolutely no warranty.
-
-See the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3&lt;/a&gt; or later for details.</property>
+            <property name="label" translatable="yes">about</property>
             <property name="use-markup">True</property>
             <property name="justify">center</property>
             <property name="wrap">True</property>
