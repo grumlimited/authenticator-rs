@@ -9,7 +9,11 @@
 }
 
 .error, .error text {
-    background-color: #ffccd2;
+    border-color: @error_color;
+}
+
+.edit_account_input_secret_frame:inconsistent {
+    border-color: @error_color;
 }
 
 .version_number {
@@ -25,8 +29,11 @@
     font-family: monospace;
 }
 
-.edit_account_input_secret {
-    background-color: @borders;
+.edit_account_input_secret_frame {
+    border-style:solid;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: @borders;
 }
 
 #export_account_error_title, #about_textbuffer_title {
