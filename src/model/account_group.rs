@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::State;
-use crate::model::{Account, AccountWidgets};
+use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -26,7 +26,7 @@ pub struct AccountGroup {
 }
 
 #[derive(Debug, Clone)]
-pub struct AccountGroupWidgets {
+pub struct AccountGroupWidget {
     pub id: u32,
     pub container: gtk::Box,
     pub edit_button: gtk::Button,
@@ -36,14 +36,14 @@ pub struct AccountGroupWidgets {
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
     pub popover: gtk::PopoverMenu,
-    pub account_widgets: Rc<RefCell<Vec<AccountWidgets>>>,
+    pub account_widgets: Rc<RefCell<Vec<AccountWidget>>>,
 }
 
-impl AccountGroupWidgets {
+impl AccountGroupWidget {
     pub fn update(&self) {
         let account_widgets = self.account_widgets.clone();
         let mut account_widgets = account_widgets.borrow_mut();
-        (*account_widgets).iter_mut().for_each(|account| account.update());
+        account_widgets.iter_mut().for_each(|account| account.update());
     }
 }
 
@@ -58,7 +58,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidgets {
+    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         let container: gtk::Box = builder.get_object("group").unwrap();
@@ -101,7 +101,7 @@ impl AccountGroup {
 
         let accounts: gtk::Box = builder.get_object("accounts").unwrap();
 
-        let account_widgets: Vec<AccountWidgets> = self
+        let account_widgets: Vec<AccountWidget> = self
             .entries
             .iter()
             .map(|account| {
@@ -133,7 +133,7 @@ impl AccountGroup {
                 .expect("Could not associate handler");
         }
 
-        AccountGroupWidgets {
+        AccountGroupWidget {
             id: self.id,
             container,
             edit_button,

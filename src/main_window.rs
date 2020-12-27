@@ -103,10 +103,10 @@ impl MainWindow {
 
     pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut state = gui.state.borrow_mut();
-        (*state).display = display;
+        state.display = display;
 
         let g_settings = gio::Settings::new(NAMESPACE);
-        (*state).dark_mode = g_settings.get_boolean("dark-theme");
+        state.dark_mode = g_settings.get_boolean("dark-theme");
 
         match state.display {
             Display::DisplayAccounts => {
