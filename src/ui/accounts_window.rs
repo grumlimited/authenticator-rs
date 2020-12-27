@@ -14,7 +14,7 @@ use rusqlite::Connection;
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroupWidget;
-use crate::ui::{AddGroupWindow, EditAccountWindow};
+use crate::ui::EditAccountWindow;
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
@@ -71,9 +71,7 @@ impl AccountsWindow {
         gui.accounts_window.accounts_container.show_all();
     }
 
-    pub fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list_clone = gui.accounts_window.widgets.clone();
-
+    fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter() {
             let delete_button = group_widgets.delete_button.clone();
@@ -137,7 +135,7 @@ impl AccountsWindow {
         }
     }
 
-    pub fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widget in widgets_list.iter() {
@@ -216,7 +214,7 @@ impl AccountsWindow {
         }
     }
 
-    pub fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
         for group_widget in widgets_list.iter() {
