@@ -9,7 +9,11 @@
 }
 
 .error, .error text {
-    background-color: #ffccd2;
+    border-color: @error_color;
+}
+
+.edit_account_input_secret_frame:inconsistent {
+    border-color: @error_color;
 }
 
 .version_number {
@@ -25,28 +29,27 @@
     font-family: monospace;
 }
 
-.edit_account_input_secret {
-    background-color: @borders;
+.edit_account_input_secret_frame {
+    border-style:solid;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: @borders;
 }
 
 #export_account_error_title, #about_textbuffer_title {
-    font-family: Sans Bold;
-    font-size: 11pt;
+    font-size: 140%;
     font-weight: bold;
 }
 
 .about_textbuffer_body {
     background-color: transparent;
-    font-size: 9pt;
+    font-size: 90%;
 }
 
-#about_textbuffer_website {
-    font-size: 7pt;
-}
-.about_textbuffer_gnu {
-    font-size: 7pt;
+#about_textbuffer_website, .about_textbuffer_gnu {
+    font-size: 80%;
 }
 
 #add_group_icon_error {
-    color: crimson;
+    color: @error_color;
 }

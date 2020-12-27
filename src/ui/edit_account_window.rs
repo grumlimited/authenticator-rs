@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use glib::Sender;
 use gtk::prelude::*;
-use gtk::Builder;
+use gtk::{Builder, StateFlags};
 use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
@@ -26,6 +26,7 @@ pub struct EditAccountWindow {
     pub add_accounts_container_edit: gtk::Label,
     pub add_accounts_container_add: gtk::Label,
     pub image_dialog: gtk::FileChooserDialog,
+    pub input_secret_frame: gtk::Frame,
 }
 
 impl EditAccountWindow {
@@ -42,12 +43,14 @@ impl EditAccountWindow {
             save_button: builder.get_object("edit_account_save").unwrap(),
             qr_button: builder.get_object("qrcode_button").unwrap(),
             image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
+            input_secret_frame: builder.get_object("edit_account_input_secret_frame").unwrap(),
         }
     }
 
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
+        let input_secret_frame = self.input_secret_frame.clone();
 
         let mut result: Result<(), ValidationError> = Ok(());
 
@@ -66,15 +69,15 @@ impl EditAccountWindow {
         };
 
         if secret_value.is_empty() {
-            let style_context = secret.get_style_context();
-            style_context.add_class("error");
+            let style_context = input_secret_frame.get_style_context();
+            style_context.set_state(StateFlags::INCONSISTENT);
             result = Err(ValidationError::FieldError("secret".to_owned()));
         } else {
             match Account::generate_time_based_password(secret_value.as_str()) {
                 Ok(_) => {}
                 Err(_) => {
-                    let style_context = secret.get_style_context();
-                    style_context.add_class("error");
+                    let style_context = input_secret_frame.get_style_context();
+                    style_context.set_state(StateFlags::INCONSISTENT);
                     result = Err(ValidationError::FieldError("secret".to_owned()));
                 }
             }
@@ -87,6 +90,7 @@ impl EditAccountWindow {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
         let group = self.input_group.clone();
+        let input_secret_frame = self.input_secret_frame.clone();
 
         name.set_property_primary_icon_name(None);
         let style_context = name.get_style_context();
@@ -97,6 +101,9 @@ impl EditAccountWindow {
 
         let style_context = group.get_style_context();
         style_context.remove_class("error");
+
+        let style_context = input_secret_frame.get_style_context();
+        style_context.set_state(StateFlags::NORMAL);
     }
 
     pub fn reset(&self) {

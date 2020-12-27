@@ -88,7 +88,7 @@
   <object class="GtkImage" id="qrcode_icon">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic.svg</property>
+    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic</property>
   </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
@@ -352,31 +352,6 @@
                         <property name="can-focus">False</property>
                         <property name="row-spacing">10</property>
                         <child>
-                          <object class="GtkTextView" id="edit_account_input_secret">
-                            <property name="name">edit_account_input_secret</property>
-                            <property name="width-request">15</property>
-                            <property name="height-request">140</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="tooltip-text" translatable="yes">Secret</property>
-                            <property name="margin-end">5</property>
-                            <property name="hexpand">True</property>
-                            <property name="border-width">1</property>
-                            <property name="vadjustment">edit_account_input_secret_scrollable</property>
-                            <property name="wrap-mode">char</property>
-                            <property name="left-margin">5</property>
-                            <property name="top-margin">3</property>
-                            <property name="monospace">True</property>
-                            <style>
-                              <class name="edit_account_input_secret"/>
-                            </style>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <!-- n-columns=2 n-rows=1 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
@@ -413,6 +388,47 @@
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkFrame" id="edit_account_input_secret_frame">
+                            <property name="name">edit_account_input_secret_frame</property>
+                            <property name="width-request">15</property>
+                            <property name="height-request">140</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="margin-end">5</property>
+                            <property name="label-xalign">0</property>
+                            <property name="shadow-type">none</property>
+                            <child>
+                              <object class="GtkTextView" id="edit_account_input_secret">
+                                <property name="name">edit_account_input_secret</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="tooltip-text" translatable="yes">Secret</property>
+                                <property name="margin-start">10</property>
+                                <property name="margin-end">5</property>
+                                <property name="margin-top">5</property>
+                                <property name="margin-bottom">5</property>
+                                <property name="hexpand">True</property>
+                                <property name="vadjustment">edit_account_input_secret_scrollable</property>
+                                <property name="wrap-mode">char</property>
+                                <property name="monospace">True</property>
+                                <style>
+                                  <class name="edit_account_input_secret"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child type="label_item">
+                              <placeholder/>
+                            </child>
+                            <style>
+                              <class name="edit_account_input_secret_frame"/>
+                            </style>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                       </object>
@@ -841,7 +857,7 @@
             <property name="valign">center</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs.svg</property>
+            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs</property>
           </object>
           <packing>
             <property name="left-attach">0</property>
