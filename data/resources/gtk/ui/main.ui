@@ -72,24 +72,6 @@
     <property name="icon-name">emblem-ok-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
-  <object class="GtkFileFilter" id="icon_filter">
-    <mime-types>
-      <mime-type>image/gif</mime-type>
-      <mime-type>image/x-icon</mime-type>
-      <mime-type>image/png</mime-type>
-    </mime-types>
-    <patterns>
-      <pattern>*.ico</pattern>
-      <pattern>*.png</pattern>
-      <pattern>*.gif</pattern>
-      <pattern>*.jpg</pattern>
-    </patterns>
-  </object>
-  <object class="GtkImage" id="qrcode_icon">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="resource">/uk/co/grumlimited/authenticator-rs/qrscanner-symbolic</property>
-  </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
     <property name="default-width">250</property>
@@ -363,7 +345,16 @@
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="margin-bottom">20</property>
-                                <property name="image">qrcode_icon</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="margin-top">4</property>
+                                    <property name="margin-bottom">4</property>
+                                    <property name="pixel-size">32</property>
+                                    <property name="icon-name">qrscanner-symbolic</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -980,6 +971,19 @@
     <widgets>
       <widget name="add_group_input_name"/>
     </widgets>
+  </object>
+  <object class="GtkFileFilter" id="icon_filter">
+    <mime-types>
+      <mime-type>image/gif</mime-type>
+      <mime-type>image/x-icon</mime-type>
+      <mime-type>image/png</mime-type>
+    </mime-types>
+    <patterns>
+      <pattern>*.ico</pattern>
+      <pattern>*.png</pattern>
+      <pattern>*.gif</pattern>
+      <pattern>*.jpg</pattern>
+    </patterns>
   </object>
   <object class="GtkImage" id="save_image">
     <property name="visible">True</property>
