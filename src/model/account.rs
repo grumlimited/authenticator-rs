@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
-use base32::Alphabet::RFC4648;
 use base32::decode;
+use base32::Alphabet::RFC4648;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,7 @@ pub struct AccountWidget {
     pub edit_copy_img: Arc<Mutex<gtk::Image>>,
     pub dialog_ok_img: Arc<Mutex<gtk::Image>>,
     totp_label: gtk::Label,
-    totp_secret: String
+    totp_secret: String,
 }
 
 impl AccountWidget {
