@@ -31,8 +31,6 @@ const GETTEXT_PACKAGE: &str = "authenticator-rs";
 const LOCALEDIR: &str = "/usr/share/locale";
 
 fn main() {
-    let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
-
     let resource = {
         match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
             Ok(resource) => resource,
@@ -41,6 +39,8 @@ fn main() {
     };
 
     gio::functions::resources_register(&resource);
+
+    let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
 
     application.connect_startup(move |_| {
         let provider = gtk::CssProvider::new();
