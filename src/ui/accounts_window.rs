@@ -277,7 +277,7 @@ impl AccountsWindow {
         })
     }
 
-    pub fn get_filter_value(&self) -> Option<String> {
+    fn get_filter_value(&self) -> Option<String> {
         let mut filter_text = self.filter.lock().unwrap();
         let filter_text = filter_text.get_mut();
         let filter_text = filter_text.get_text();
