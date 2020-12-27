@@ -11,6 +11,7 @@ name: Continuous integration
 jobs:
   ci:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     strategy:
       matrix:
         rust:
