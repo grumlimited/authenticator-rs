@@ -1,4 +1,3 @@
-use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use base32::decode;
@@ -25,10 +24,10 @@ pub struct AccountWidget {
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
-    pub copy_button: Arc<Mutex<gtk::Button>>,
+    pub copy_button: gtk::Button,
     pub popover: gtk::PopoverMenu,
-    pub edit_copy_img: Arc<Mutex<gtk::Image>>,
-    pub dialog_ok_img: Arc<Mutex<gtk::Image>>,
+    pub edit_copy_img: gtk::Image,
+    pub dialog_ok_img: gtk::Image,
     totp_label: gtk::Label,
     totp_secret: String,
 }
@@ -103,9 +102,9 @@ impl Account {
             grid,
             edit_button,
             delete_button,
-            copy_button: Arc::new(Mutex::new(copy_button)),
-            edit_copy_img: Arc::new(Mutex::new(edit_copy_img)),
-            dialog_ok_img: Arc::new(Mutex::new(dialog_ok_img)),
+            copy_button,
+            edit_copy_img,
+            dialog_ok_img,
             popover,
             totp_label,
             totp_secret: self.secret.clone(),

@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
@@ -160,22 +159,17 @@ impl AccountsWindow {
                         let copy_button = account_widget.copy_button.clone();
                         let edit_copy_img = account_widget.edit_copy_img.clone();
                         rx.attach(None, move |_| {
-                            let edit_copy_img = edit_copy_img.lock().unwrap();
-                            let edit_copy_img = edit_copy_img.deref();
-                            let copy_button = copy_button.lock().unwrap();
-                            copy_button.set_image(Some(edit_copy_img));
+                            copy_button.set_image(Some(&edit_copy_img));
                             glib::Continue(true)
                         });
                     }
 
                     {
-                        let copy_button = account_widget.copy_button.lock().unwrap();
+                        let copy_button = account_widget.copy_button.clone();
                         let pool = gui.pool.clone();
                         let dialog_ok_img = account_widget.dialog_ok_img.clone();
                         copy_button.connect_clicked(move |button| {
-                            let dialog_ok_img = dialog_ok_img.lock().unwrap();
-                            let dialog_ok_img = dialog_ok_img.deref();
-                            button.set_image(Some(dialog_ok_img));
+                            button.set_image(Some(&dialog_ok_img));
 
                             let tx = tx.clone();
                             pool.spawn_ok(times_up(tx, 2000));
