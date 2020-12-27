@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
@@ -20,7 +19,7 @@ pub struct AccountsWindow {
     pub container: gtk::Box,
     pub accounts_container: gtk::Box,
     pub filter: gtk::Entry,
-    pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
+    pub progress_bar: gtk::ProgressBar,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidget>>>,
 }
 
@@ -37,7 +36,7 @@ impl AccountsWindow {
             container: main_box,
             accounts_container,
             filter,
-            progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
+            progress_bar,
             widgets: Arc::new(Mutex::new(vec![])),
         }
     }

@@ -151,10 +151,7 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
-        let progress_bar = progress_bar.get_mut();
-
-        progress_bar.show();
+        self.accounts_window.progress_bar.show();
         self.accounts_window.container.show();
         self.window.show();
     }
@@ -202,9 +199,6 @@ impl MainWindow {
         let widgets = self.accounts_window.widgets.clone();
 
         let tick = move || {
-            let mut guard = progress_bar.lock().unwrap();
-            let progress_bar = guard.get_mut();
-
             let seconds = chrono::Local::now().second() as u8;
 
             AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
