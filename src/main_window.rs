@@ -364,7 +364,7 @@ impl MainWindow {
                  */
 
                 let state = state.borrow();
-                let display = (&state.display).clone();
+                let display = state.display.clone();
                 // can't add account if no groups
                 add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 
