@@ -19,7 +19,7 @@ use crate::ui::EditAccountWindow;
 pub struct AccountsWindow {
     pub container: gtk::Box,
     pub accounts_container: gtk::Box,
-    pub filter: Arc<Mutex<RefCell<gtk::Entry>>>,
+    pub filter: gtk::Entry,
     pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidget>>>,
 }
@@ -36,7 +36,7 @@ impl AccountsWindow {
         AccountsWindow {
             container: main_box,
             accounts_container,
-            filter: Arc::new(Mutex::new(RefCell::new(filter))),
+            filter,
             progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
             widgets: Arc::new(Mutex::new(vec![])),
         }
@@ -272,14 +272,12 @@ impl AccountsWindow {
     }
 
     fn get_filter_value(&self) -> Option<String> {
-        let mut filter_text = self.filter.lock().unwrap();
-        let filter_text = filter_text.get_mut();
-        let filter_text = filter_text.get_text();
+        let filter_text = self.filter.get_text();
 
         if filter_text.is_empty() {
             None
         } else {
-            Some(filter_text.to_owned())
+            Some(filter_text.to_string())
         }
     }
 }
