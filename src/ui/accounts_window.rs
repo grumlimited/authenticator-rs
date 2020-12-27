@@ -1,13 +1,13 @@
+use std::{thread, time};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -92,22 +92,14 @@ impl AccountsWindow {
 
             {
                 let connection = connection.clone();
-                let widgets_list_clone = widgets_list_clone.clone();
-                let group_widgets = group_widgets.clone();
+                let gui = gui.clone();
                 delete_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
-
-                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
-
-                    if let Some(path) = group.icon {
-                        AddGroupWindow::delete_icon_file(&path);
+                    {
+                        let connection = connection.lock().unwrap();
+                        ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
                     }
 
-                    group_widgets.container.set_visible(false);
-
-                    let mut group_widgets = widgets_list_clone.lock().unwrap();
-                    group_widgets.retain(|x| x.id != group_id);
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                 });
             }
 
@@ -233,32 +225,17 @@ impl AccountsWindow {
 
             for account_widget in account_widgets.iter() {
                 let account_id = account_widget.account_id;
-                let group_id = account_widget.group_id;
-                let grid = account_widget.grid.clone();
                 let popover = account_widget.popover.clone();
-
                 let connection = connection.clone();
-
                 let gui = gui.clone();
 
                 account_widget.delete_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::delete_account(&connection, account_id).unwrap();
-
-                    let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
-
-                    let widgets_group = widgets_list.iter_mut().find(|widget| widget.id == group_id);
-
-                    if let Some(widgets_group) = widgets_group {
-                        let account_widgets = widgets_group.account_widgets.clone();
-                        let mut account_widgets = account_widgets.borrow_mut();
-
-                        if let Some(pos) = account_widgets.iter().position(|x| x.account_id == account_id) {
-                            account_widgets.remove(pos);
-                        }
+                    {
+                        let connection = connection.lock().unwrap();
+                        ConfigManager::delete_account(&connection, account_id).unwrap();
                     }
 
-                    grid.hide();
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                     popover.hide();
                 });
             }
