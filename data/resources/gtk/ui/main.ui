@@ -349,6 +349,9 @@
                                   <object class="GtkImage">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
+                                    <property name="margin-top">4</property>
+                                    <property name="margin-bottom">4</property>
+                                    <property name="pixel-size">32</property>
                                     <property name="icon-name">qrscanner-symbolic</property>
                                   </object>
                                 </child>
