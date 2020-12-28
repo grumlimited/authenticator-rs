@@ -1,12 +1,12 @@
-use std::{thread, time};
 use std::sync::{Arc, Mutex};
+use std::{thread, time};
 
-use chrono::Local;
 use chrono::prelude::*;
+use chrono::Local;
 use gettextrs::*;
 use glib::Sender;
-use gtk::Builder;
 use gtk::prelude::*;
+use gtk::Builder;
 use log::{debug, error, warn};
 use rusqlite::Connection;
 
@@ -63,20 +63,18 @@ impl AccountsWindow {
                 // empty list of accounts first
                 accounts_container.foreach(|e| accounts_container.remove(e));
 
-                let accout_group_widgets = groups
-                    .iter()
-                    .map(|group| group.widget(gui.state.clone()))
-                    .collect::<Vec<AccountGroupWidget>>();
+                let accout_group_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect::<Vec<AccountGroupWidget>>();
 
                 *m_widgets = accout_group_widgets;
 
-                m_widgets.iter()
+                m_widgets
+                    .iter()
                     .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
             }
 
-                AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
-                AccountsWindow::delete_buttons_actions(&gui, connection.clone());
-                gui.accounts_window.accounts_container.show_all();
+            AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
+            AccountsWindow::delete_buttons_actions(&gui, connection.clone());
+            gui.accounts_window.accounts_container.show_all();
 
             glib::Continue(true)
         })
@@ -95,7 +93,8 @@ impl AccountsWindow {
         tx.send({
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
-        }).expect("boom!");
+        })
+        .expect("boom!");
     }
 
     pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
