@@ -12,7 +12,7 @@ use rusqlite::Connection;
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroupWidget;
-use crate::ui::EditAccountWindow;
+use crate::ui::{EditAccountWindow, AddGroupWindow};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
@@ -92,7 +92,12 @@ impl AccountsWindow {
                 delete_button.connect_clicked(move |_| {
                     {
                         let connection = connection.lock().unwrap();
+                        let group = ConfigManager::get_group(&connection, group_id).unwrap();
                         ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+
+                        if let Some(path) = group.icon {
+                            AddGroupWindow::delete_icon_file(&path);
+                        }
                     }
 
                     AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
@@ -276,7 +281,7 @@ impl AccountsWindow {
         if filter_text.is_empty() {
             None
         } else {
-            Some(filter_text.to_string())
+            Some(filter_text.to_owned())
         }
     }
 }
