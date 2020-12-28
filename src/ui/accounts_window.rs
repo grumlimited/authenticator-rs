@@ -1,11 +1,11 @@
-use std::sync::{Arc, Mutex};
 use std::{thread, time};
+use std::sync::{Arc, Mutex};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error};
 use rusqlite::Connection;
 
@@ -225,6 +225,8 @@ impl AccountsWindow {
                 let connection = connection.clone();
                 let gui = gui.clone();
 
+                let pool = gui.pool.clone();
+
                 account_widget.delete_button.connect_clicked(move |_| {
                     {
                         let connection = connection.lock().unwrap();
@@ -233,6 +235,15 @@ impl AccountsWindow {
 
                     AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                     popover.hide();
+
+                    let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
+
+                    rx.attach(None, move |_| {
+                        //update button
+                        glib::Continue(true)
+                    });
+
+                    pool.spawn_ok(update_button(tx, 5));
                 });
             }
         }
@@ -283,6 +294,13 @@ impl AccountsWindow {
         } else {
             Some(filter_text.to_owned())
         }
+    }
+}
+
+async fn update_button(tx: Sender<u8>, seconds: u8) {
+    for n in seconds..0 {
+        tx.send(n).expect("Couldn't send data to channel"); //check better on termination
+        thread::sleep(time::Duration::from_secs(1));
     }
 }
 
