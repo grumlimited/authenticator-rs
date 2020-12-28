@@ -1,4 +1,3 @@
-use crate::main_window::State;
 use anyhow::Result;
 use curl::easy::Easy;
 use gdk_pixbuf::Pixbuf;
@@ -6,9 +5,7 @@ use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
-use std::cell::RefCell;
 use std::path::Path;
-use std::rc::Rc;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -115,10 +112,8 @@ impl IconParser {
             .and_then(|captures| captures.name("extension").map(|extension| extension.as_str()))
     }
 
-    pub fn load_icon(filepath: &Path, state: Rc<RefCell<State>>) -> Result<Pixbuf> {
-        let state = state.borrow();
-
-        let alpha = if state.dark_mode { (32, 32, 32) } else { (255, 255, 255) };
+    pub fn load_icon(filepath: &Path, dark_mode: bool) -> Result<Pixbuf> {
+        let alpha = if dark_mode { (32, 32, 32) } else { (255, 255, 255) };
 
         debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
 

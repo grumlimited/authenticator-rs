@@ -344,7 +344,8 @@ impl AddGroupWindow {
         tempfile.write_all(buf).unwrap();
         tempfile.commit().unwrap();
 
-        match IconParser::load_icon(&temp_filepath, state) {
+        let state = state.borrow();
+        match IconParser::load_icon(&temp_filepath, state.dark_mode) {
             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
             Err(e) => warn!("Could not load image {}", e),
         };

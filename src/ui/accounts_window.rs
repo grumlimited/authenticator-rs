@@ -1,18 +1,18 @@
-use std::sync::{Arc, Mutex};
 use std::{thread, time};
+use std::sync::{Arc, Mutex};
 
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use gettextrs::*;
 use glib::Sender;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
-use crate::model::AccountGroupWidget;
+use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 
 #[derive(Clone, Debug)]
@@ -40,6 +40,62 @@ impl AccountsWindow {
             progress_bar,
             widgets: Arc::new(Mutex::new(vec![])),
         }
+    }
+
+    pub fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
+        let pool = gui.pool.clone();
+
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        let filter = gui.accounts_window.get_filter_value();
+        pool.spawn_ok(AccountsWindow::delete_account(account_id, tx, filter, connection.clone()));
+
+        let gui2 = gui.clone();
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui2, connection.clone()));
+    }
+
+    fn replace_accounts_and_widgets2(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
+        Box::new(move |groups: Vec<AccountGroup>| {
+            {
+                let accounts_container = gui.accounts_window.accounts_container.clone();
+                let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+
+                // empty list of accounts first
+                accounts_container.foreach(|e| accounts_container.remove(e));
+
+                let accout_group_widgets = groups
+                    .iter()
+                    .map(|group| group.widget(gui.state.clone()))
+                    .collect::<Vec<AccountGroupWidget>>();
+
+                *m_widgets = accout_group_widgets;
+
+                m_widgets.iter()
+                    .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
+            }
+
+                AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
+                AccountsWindow::delete_buttons_actions(&gui, connection.clone());
+                gui.accounts_window.accounts_container.show_all();
+
+            glib::Continue(true)
+        })
+    }
+
+    async fn delete_account(account_id: u32, tx: Sender<Vec<AccountGroup>>, filter: Option<String>, connection: Arc<Mutex<Connection>>) {
+        {
+            let connection2 = connection.lock().unwrap();
+            ConfigManager::delete_account(&connection2, account_id).unwrap();
+        }
+
+        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+    }
+
+    async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+        tx.send({
+            let connection = connection.lock().unwrap();
+            ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
+        }).expect("boom!");
     }
 
     pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -127,7 +183,8 @@ impl AccountsWindow {
                         icon_filename.set_label(image.as_str());
 
                         let dir = ConfigManager::icons_path(&image);
-                        match IconParser::load_icon(&dir, gui.state.clone()) {
+                        let state = gui.state.borrow();
+                        match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
@@ -228,12 +285,7 @@ impl AccountsWindow {
                 let pool = gui.pool.clone();
 
                 account_widget.confirm_button.connect_clicked(move |_| {
-                    {
-                        let connection = connection.lock().unwrap();
-                        ConfigManager::delete_account(&connection, account_id).unwrap();
-                    }
-
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::delete_account_reload(&gui, account_id, connection.clone());
                     popover.hide();
                 });
 
