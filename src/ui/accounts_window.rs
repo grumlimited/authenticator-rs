@@ -47,7 +47,7 @@ impl AccountsWindow {
 
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
-        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui.clone(), connection.clone()));
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
@@ -66,7 +66,7 @@ impl AccountsWindow {
 
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
-        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui.clone(), connection.clone()));
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
@@ -85,7 +85,7 @@ impl AccountsWindow {
         });
     }
 
-    fn replace_accounts_and_widgets2(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
+    fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
         Box::new(move |groups: Vec<AccountGroup>| {
             {
                 let accounts_container = gui.accounts_window.accounts_container.clone();
