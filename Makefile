@@ -33,6 +33,10 @@ clippy:
 release-version:
 	sed -i 's/#VERSION_NUMBER#/$(RELEASE_VERSION)/' ./data/resources/gtk/ui/main.ui
 
+install-po: # dev only - run with sudo
+	msgfmt  po/fr.po -o /usr/share/locale/fr/LC_MESSAGES/authenticator-rs.mo
+	msgfmt  po/en_GB.po -o /usr/share/locale/en_GB/LC_MESSAGES/authenticator-rs.mo
+
 # Install onto the system
 install : release gresource
 	# Create the bindir, if need be

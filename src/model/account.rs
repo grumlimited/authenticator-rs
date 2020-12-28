@@ -24,6 +24,8 @@ pub struct AccountWidget {
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
+    pub confirm_button: gtk::Button,
+    pub confirm_button_label: gtk::Label,
     pub copy_button: gtk::Button,
     pub popover: gtk::PopoverMenu,
     pub edit_copy_img: gtk::Image,
@@ -68,6 +70,9 @@ impl Account {
 
         let copy_button: gtk::Button = builder.get_object("copy_button").unwrap();
 
+        let confirm_button: gtk::Button = builder.get_object("confirm_button").unwrap();
+        let confirm_button_label: gtk::Label = builder.get_object("confirm_button_label").unwrap();
+
         let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
 
         let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
@@ -77,8 +82,16 @@ impl Account {
         let menu: gtk::MenuButton = builder.get_object("menu").unwrap();
 
         {
-            let popover = popover.clone();
-            menu.connect_clicked(move |_| popover.show_all());
+            let edit_button = edit_button.clone();
+            let delete_button = delete_button.clone();
+            let confirm_button = confirm_button.clone();
+            menu.connect_clicked(move |_| {
+                edit_button.show();
+
+                if !confirm_button.is_visible() {
+                    delete_button.show();
+                }
+            });
         }
 
         let totp = match Self::generate_time_based_password(self.secret.as_str()) {
@@ -103,6 +116,8 @@ impl Account {
             edit_button,
             delete_button,
             copy_button,
+            confirm_button,
+            confirm_button_label,
             edit_copy_img,
             dialog_ok_img,
             popover,

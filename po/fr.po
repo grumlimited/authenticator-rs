@@ -130,3 +130,6 @@ msgstr "QR code en cours de traitement..."
 
 msgid "about"
 msgstr "Ce programme est fourni sans aucune garantie.\n\nPour plus de détails, visitez\n<a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">Licence publique générale limitée GNU, version 3</a>\nou ultérieure."
+
+msgid "Confirm"
+msgstr "Confirmer"

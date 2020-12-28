@@ -3,10 +3,11 @@ use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
+use gettextrs::*;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::Builder;
-use log::{debug, error};
+use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{ConfigManager, IconParser};
@@ -224,8 +225,9 @@ impl AccountsWindow {
                 let popover = account_widget.popover.clone();
                 let connection = connection.clone();
                 let gui = gui.clone();
+                let pool = gui.pool.clone();
 
-                account_widget.delete_button.connect_clicked(move |_| {
+                account_widget.confirm_button.connect_clicked(move |_| {
                     {
                         let connection = connection.lock().unwrap();
                         ConfigManager::delete_account(&connection, account_id).unwrap();
@@ -233,6 +235,33 @@ impl AccountsWindow {
 
                     AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                     popover.hide();
+                });
+
+                let confirm_button = account_widget.confirm_button.clone();
+                let confirm_button_label = account_widget.confirm_button_label.clone();
+                let delete_button = account_widget.delete_button.clone();
+
+                account_widget.delete_button.connect_clicked(move |_| {
+                    confirm_button.show();
+                    delete_button.hide();
+
+                    let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
+
+                    let confirm_button = confirm_button.clone();
+                    let delete_button = delete_button.clone();
+                    let confirm_button_label = confirm_button_label.clone();
+                    rx.attach(None, move |second| {
+                        if second == 0u8 {
+                            confirm_button.hide();
+                            delete_button.show();
+                        } else {
+                            confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
+                        }
+
+                        glib::Continue(true)
+                    });
+
+                    pool.spawn_ok(update_button(tx, 5));
                 });
             }
         }
@@ -282,6 +311,17 @@ impl AccountsWindow {
             None
         } else {
             Some(filter_text.to_owned())
+        }
+    }
+}
+
+async fn update_button(tx: Sender<u8>, seconds: u8) {
+    let max_wait = 5_u8;
+    for n in 0..=seconds {
+        let remaining_seconds = max_wait - n;
+        match tx.send(remaining_seconds) {
+            Ok(_) => thread::sleep(time::Duration::from_secs(1)),
+            Err(e) => warn!("{:?}", e),
         }
     }
 }
