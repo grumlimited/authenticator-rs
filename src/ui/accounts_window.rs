@@ -53,6 +53,30 @@ impl AccountsWindow {
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui.clone(), connection));
     }
 
+    fn delete_group_reload(gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
+        let pool = gui.pool.clone();
+
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        pool.spawn_ok(async move {
+            {
+                let connection = connection.lock().unwrap();
+                let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+
+                if let Some(path) = group.icon {
+                    AddGroupWindow::delete_icon_file(&path);
+                }
+            }
+
+            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+        });
+    }
+
     fn replace_accounts_and_widgets2(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
         Box::new(move |groups: Vec<AccountGroup>| {
             {
@@ -145,17 +169,7 @@ impl AccountsWindow {
                 let connection = connection.clone();
                 let gui = gui.clone();
                 delete_button.connect_clicked(move |_| {
-                    {
-                        let connection = connection.lock().unwrap();
-                        let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                        ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
-
-                        if let Some(path) = group.icon {
-                            AddGroupWindow::delete_icon_file(&path);
-                        }
-                    }
-
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::delete_group_reload(&gui, group_id, connection.clone());
                 });
             }
 
