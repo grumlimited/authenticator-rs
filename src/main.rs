@@ -77,7 +77,7 @@ fn main() {
 
         gui.set_application(&app, connection.clone());
 
-        AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+        AccountsWindow::refresh_accounts(&gui, connection.clone());
 
         EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
 

@@ -168,7 +168,7 @@ impl MainWindow {
             });
 
             rx.attach(None, move |_| {
-                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
                 glib::Continue(true)
             });
         }
@@ -278,7 +278,7 @@ impl MainWindow {
                 // switch first then redraw - to take into account state change
                 MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
-                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                 Inhibit(false)
             });
@@ -476,7 +476,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
                         export_account_error.show_all();
                     }
 
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
 

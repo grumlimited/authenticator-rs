@@ -278,7 +278,7 @@ impl EditAccountWindow {
                         };
                     }
 
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                     edit_account_window.reset();
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);

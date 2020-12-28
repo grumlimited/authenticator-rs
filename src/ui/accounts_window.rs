@@ -119,7 +119,7 @@ impl AccountsWindow {
         .expect("boom!");
     }
 
-    pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let accounts_container = &gui.accounts_window.accounts_container;
 
         let groups = {
