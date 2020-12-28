@@ -103,10 +103,10 @@ impl MainWindow {
 
     pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut state = gui.state.borrow_mut();
-        (*state).display = display;
+        state.display = display;
 
         let g_settings = gio::Settings::new(NAMESPACE);
-        (*state).dark_mode = g_settings.get_boolean("dark-theme");
+        state.dark_mode = g_settings.get_boolean("dark-theme");
 
         match state.display {
             Display::DisplayAccounts => {
@@ -151,10 +151,7 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        let mut progress_bar = self.accounts_window.progress_bar.lock().unwrap();
-        let progress_bar = progress_bar.get_mut();
-
-        progress_bar.show();
+        self.accounts_window.progress_bar.show();
         self.accounts_window.container.show();
         self.window.show();
     }
@@ -165,11 +162,8 @@ impl MainWindow {
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             let gui = self.clone();
-            let filter = gui.accounts_window.filter.clone();
-            let mut filter = filter.lock().unwrap();
-            let filter = filter.get_mut();
 
-            filter.connect_changed(move |_| {
+            self.accounts_window.filter.connect_changed(move |_| {
                 let _ = tx.send(true);
             });
 
@@ -184,21 +178,15 @@ impl MainWindow {
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             {
-                let filter_ref = &self.accounts_window.filter;
-                let mut filter = filter_ref.lock().unwrap();
-                let filter = filter.get_mut();
-                let _ = filter.connect("icon-press", true, move |_| {
+                let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
                     let _ = tx.send(true);
                     None
                 });
             }
 
             {
-                let filter_ref = &self.accounts_window.filter;
-                let filter_ref = filter_ref.clone();
+                let filter = self.accounts_window.filter.clone();
                 rx.attach(None, move |_| {
-                    let mut filter = filter_ref.lock().unwrap();
-                    let filter = filter.get_mut();
                     filter.get_buffer().set_text("");
                     glib::Continue(true)
                 });
@@ -211,9 +199,6 @@ impl MainWindow {
         let widgets = self.accounts_window.widgets.clone();
 
         let tick = move || {
-            let mut guard = progress_bar.lock().unwrap();
-            let progress_bar = guard.get_mut();
-
             let seconds = chrono::Local::now().second() as u8;
 
             AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
@@ -247,8 +232,6 @@ impl MainWindow {
 
         let filter = self.accounts_window.filter.clone();
         search_button.connect_clicked(move |_| {
-            let mut filter_ref = filter.lock().unwrap();
-            let filter = filter_ref.get_mut();
             if filter.is_visible() {
                 filter.hide()
             } else {
@@ -263,8 +246,6 @@ impl MainWindow {
 
         if gio::Settings::new(NAMESPACE).get_boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
-            let mut filter_ref = filter.lock().unwrap();
-            let filter = filter_ref.get_mut();
             filter.show()
         }
 
@@ -383,7 +364,7 @@ impl MainWindow {
                  */
 
                 let state = state.borrow();
-                let display = (&state.display).clone();
+                let display = state.display.clone();
                 // can't add account if no groups
                 add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 

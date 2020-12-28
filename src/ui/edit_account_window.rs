@@ -171,11 +171,13 @@ impl EditAccountWindow {
 
         {
             let input_secret = gui.edit_account_window.input_secret.clone();
+            let save_button = gui.edit_account_window.save_button.clone();
             let gui = gui.clone();
             rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
                 gui.edit_account_window.reset_errors();
+                save_button.set_sensitive(true);
 
                 if ok {
                     buffer.set_text(qr_code.as_str());
@@ -191,6 +193,7 @@ impl EditAccountWindow {
 
         let input_secret = gui.edit_account_window.input_secret.clone();
         let pool = gui.pool.clone();
+        let save_button = gui.edit_account_window.save_button.clone();
 
         qr_button.connect_clicked(move |_| {
             let tx = tx.clone();
@@ -202,6 +205,7 @@ impl EditAccountWindow {
                     let buffer = input_secret.get_buffer().unwrap();
                     buffer.set_text(&gettext("Processing QR code"));
 
+                    save_button.set_sensitive(false);
                     dialog.hide();
                     pool.spawn_ok(Self::process_qr_code(path.to_str().unwrap().to_owned(), tx));
                 }

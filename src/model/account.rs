@@ -1,4 +1,3 @@
-use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use base32::decode;
@@ -19,21 +18,21 @@ pub struct Account {
 }
 
 #[derive(Debug, Clone)]
-pub struct AccountWidgets {
+pub struct AccountWidget {
     pub account_id: u32,
     pub group_id: u32,
     pub grid: gtk::Grid,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
-    pub copy_button: Arc<Mutex<gtk::Button>>,
+    pub copy_button: gtk::Button,
     pub popover: gtk::PopoverMenu,
-    pub edit_copy_img: Arc<Mutex<gtk::Image>>,
-    pub dialog_ok_img: Arc<Mutex<gtk::Image>>,
+    pub edit_copy_img: gtk::Image,
+    pub dialog_ok_img: gtk::Image,
     totp_label: gtk::Label,
     totp_secret: String,
 }
 
-impl AccountWidgets {
+impl AccountWidget {
     pub fn update(&mut self) {
         let totp = match Account::generate_time_based_password(self.totp_secret.as_str()) {
             Ok(totp) => totp,
@@ -54,7 +53,7 @@ impl Account {
         }
     }
 
-    pub fn widget(&self) -> AccountWidgets {
+    pub fn widget(&self) -> AccountWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
         let grid: gtk::Grid = builder.get_object("grid").unwrap();
@@ -79,9 +78,7 @@ impl Account {
 
         {
             let popover = popover.clone();
-            menu.connect_clicked(move |_| {
-                popover.show_all();
-            });
+            menu.connect_clicked(move |_| popover.show_all());
         }
 
         let totp = match Self::generate_time_based_password(self.secret.as_str()) {
@@ -99,22 +96,15 @@ impl Account {
             clipboard.set_text(totp_label_clone.get_label().as_str());
         });
 
-        {
-            let grid = grid.clone();
-            delete_button.connect_clicked(move |_| {
-                grid.set_visible(false);
-            });
-        }
-
-        AccountWidgets {
+        AccountWidget {
             account_id: self.id,
             group_id: self.group_id,
             grid,
             edit_button,
             delete_button,
-            copy_button: Arc::new(Mutex::new(copy_button)),
-            edit_copy_img: Arc::new(Mutex::new(edit_copy_img)),
-            dialog_ok_img: Arc::new(Mutex::new(dialog_ok_img)),
+            copy_button,
+            edit_copy_img,
+            dialog_ok_img,
             popover,
             totp_label,
             totp_secret: self.secret.clone(),

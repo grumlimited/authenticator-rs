@@ -1,11 +1,6 @@
 .account_group_label, .add_group_label {
-    font-family: Sans Bold;
-    font-size: 13pt;
+    font-size: 160%;
     font-weight: bold;
-}
-
-.group_label_entry {
-    border-width: 0px;
 }
 
 .error, .error text {

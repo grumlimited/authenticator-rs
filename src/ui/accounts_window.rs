@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
@@ -13,16 +11,16 @@ use rusqlite::Connection;
 
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
-use crate::model::AccountGroupWidgets;
+use crate::model::AccountGroupWidget;
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
     pub container: gtk::Box,
     pub accounts_container: gtk::Box,
-    pub filter: Arc<Mutex<RefCell<gtk::Entry>>>,
-    pub progress_bar: Arc<Mutex<RefCell<gtk::ProgressBar>>>,
-    pub widgets: Arc<Mutex<Vec<AccountGroupWidgets>>>,
+    pub filter: gtk::Entry,
+    pub progress_bar: gtk::ProgressBar,
+    pub widgets: Arc<Mutex<Vec<AccountGroupWidget>>>,
 }
 
 impl AccountsWindow {
@@ -37,8 +35,8 @@ impl AccountsWindow {
         AccountsWindow {
             container: main_box,
             accounts_container,
-            filter: Arc::new(Mutex::new(RefCell::new(filter))),
-            progress_bar: Arc::new(Mutex::new(RefCell::new(progress_bar))),
+            filter,
+            progress_bar,
             widgets: Arc::new(Mutex::new(vec![])),
         }
     }
@@ -65,17 +63,13 @@ impl AccountsWindow {
         }
 
         AccountsWindow::edit_buttons_actions(&gui, connection.clone());
-
         AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
-
         AccountsWindow::delete_buttons_actions(&gui, connection);
 
         gui.accounts_window.accounts_container.show_all();
     }
 
-    pub fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list_clone = gui.accounts_window.widgets.clone();
-
+    fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
         for group_widgets in widgets_list.iter() {
             let delete_button = group_widgets.delete_button.clone();
@@ -94,22 +88,19 @@ impl AccountsWindow {
 
             {
                 let connection = connection.clone();
-                let widgets_list_clone = widgets_list_clone.clone();
-                let group_widgets = group_widgets.clone();
+                let gui = gui.clone();
                 delete_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                    {
+                        let connection = connection.lock().unwrap();
+                        let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                        ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
 
-                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
-
-                    if let Some(path) = group.icon {
-                        AddGroupWindow::delete_icon_file(&path);
+                        if let Some(path) = group.icon {
+                            AddGroupWindow::delete_icon_file(&path);
+                        }
                     }
 
-                    group_widgets.container.set_visible(false);
-
-                    let mut group_widgets = widgets_list_clone.lock().unwrap();
-                    group_widgets.retain(|x| x.id != group_id);
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                 });
             }
 
@@ -147,16 +138,16 @@ impl AccountsWindow {
         }
     }
 
-    pub fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
-        for group_widgets in widgets_list.iter() {
-            let account_widgets = group_widgets.account_widgets.clone();
+        for group_widget in widgets_list.iter() {
+            let account_widgets = group_widget.account_widgets.clone();
             let account_widgets = account_widgets.borrow();
 
-            for account_widgets in account_widgets.iter() {
-                let id = account_widgets.account_id;
-                let popover = account_widgets.popover.clone();
+            for account_widget in account_widgets.iter() {
+                let id = account_widget.account_id;
+                let popover = account_widget.popover.clone();
                 let connection = connection.clone();
 
                 let input_name = gui.edit_account_window.input_name.clone();
@@ -169,25 +160,20 @@ impl AccountsWindow {
                     let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                     {
-                        let copy_button = account_widgets.copy_button.clone();
-                        let edit_copy_img = account_widgets.edit_copy_img.clone();
+                        let copy_button = account_widget.copy_button.clone();
+                        let edit_copy_img = account_widget.edit_copy_img.clone();
                         rx.attach(None, move |_| {
-                            let edit_copy_img = edit_copy_img.lock().unwrap();
-                            let edit_copy_img = edit_copy_img.deref();
-                            let copy_button = copy_button.lock().unwrap();
-                            copy_button.set_image(Some(edit_copy_img));
+                            copy_button.set_image(Some(&edit_copy_img));
                             glib::Continue(true)
                         });
                     }
 
                     {
-                        let copy_button = account_widgets.copy_button.lock().unwrap();
+                        let copy_button = account_widget.copy_button.clone();
                         let pool = gui.pool.clone();
-                        let dialog_ok_img = account_widgets.dialog_ok_img.clone();
+                        let dialog_ok_img = account_widget.dialog_ok_img.clone();
                         copy_button.connect_clicked(move |button| {
-                            let dialog_ok_img = dialog_ok_img.lock().unwrap();
-                            let dialog_ok_img = dialog_ok_img.deref();
-                            button.set_image(Some(dialog_ok_img));
+                            button.set_image(Some(&dialog_ok_img));
 
                             let tx = tx.clone();
                             pool.spawn_ok(times_up(tx, 2000));
@@ -195,7 +181,7 @@ impl AccountsWindow {
                     }
                 }
 
-                account_widgets.edit_button.connect_clicked(move |_| {
+                account_widget.edit_button.connect_clicked(move |_| {
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
@@ -226,39 +212,26 @@ impl AccountsWindow {
         }
     }
 
-    pub fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
 
-        for group_widgets in widgets_list.iter() {
-            let account_widgets = group_widgets.account_widgets.clone();
+        for group_widget in widgets_list.iter() {
+            let account_widgets = group_widget.account_widgets.clone();
             let account_widgets = account_widgets.borrow();
 
-            for account_widgets in account_widgets.iter() {
-                let account_id = account_widgets.account_id;
-                let group_id = account_widgets.group_id;
-                let popover = account_widgets.popover.clone();
-
+            for account_widget in account_widgets.iter() {
+                let account_id = account_widget.account_id;
+                let popover = account_widget.popover.clone();
                 let connection = connection.clone();
-
                 let gui = gui.clone();
 
-                account_widgets.delete_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::delete_account(&connection, account_id).unwrap();
-
-                    let mut widgets_list = gui.accounts_window.widgets.lock().unwrap();
-
-                    let widgets_group = widgets_list.iter_mut().find(|widget| widget.id == group_id);
-
-                    if let Some(widgets_group) = widgets_group {
-                        let account_widgets = widgets_group.account_widgets.clone();
-                        let mut account_widgets = account_widgets.borrow_mut();
-
-                        if let Some(pos) = account_widgets.iter().position(|x| x.account_id == account_id) {
-                            account_widgets.remove(pos);
-                        }
+                account_widget.delete_button.connect_clicked(move |_| {
+                    {
+                        let connection = connection.lock().unwrap();
+                        ConfigManager::delete_account(&connection, account_id).unwrap();
                     }
 
+                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
                     popover.hide();
                 });
             }
@@ -302,10 +275,8 @@ impl AccountsWindow {
         })
     }
 
-    pub fn get_filter_value(&self) -> Option<String> {
-        let mut filter_text = self.filter.lock().unwrap();
-        let filter_text = filter_text.get_mut();
-        let filter_text = filter_text.get_text();
+    fn get_filter_value(&self) -> Option<String> {
+        let filter_text = self.filter.get_text();
 
         if filter_text.is_empty() {
             None
