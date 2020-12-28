@@ -7,7 +7,7 @@ use gettextrs::*;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::Builder;
-use log::{debug, error};
+use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{ConfigManager, IconParser};
@@ -321,9 +321,7 @@ async fn update_button(tx: Sender<u8>, seconds: u8) {
         let remaining_seconds = max_wait - n;
         match tx.send(remaining_seconds) {
             Ok(_) => thread::sleep(time::Duration::from_secs(1)),
-            Err(e) => {
-                println!("{:?}", e);
-            }
+            Err(e) => warn!("{:?}", e)
         }
     }
 }
