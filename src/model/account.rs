@@ -83,7 +83,11 @@ impl Account {
 
         {
             let popover = popover.clone();
-            menu.connect_clicked(move |_| popover.show_all());
+            let confirm_button = confirm_button.clone();
+            menu.connect_clicked(move |_| {
+                popover.show_all();
+                confirm_button.hide(); // in case user closes and reopens popover as counting is on-going
+            });
         }
 
         let totp = match Self::generate_time_based_password(self.secret.as_str()) {
