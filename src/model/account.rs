@@ -82,11 +82,15 @@ impl Account {
         let menu: gtk::MenuButton = builder.get_object("menu").unwrap();
 
         {
-            let popover = popover.clone();
+            let edit_button = edit_button.clone();
+            let delete_button = delete_button.clone();
             let confirm_button = confirm_button.clone();
             menu.connect_clicked(move |_| {
-                popover.show_all();
-                confirm_button.hide(); // in case user closes and reopens popover as counting is on-going
+                edit_button.show();
+
+                if !confirm_button.is_visible() {
+                    delete_button.show();
+                }
             });
         }
 
