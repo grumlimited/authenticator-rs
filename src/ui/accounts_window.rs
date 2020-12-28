@@ -103,6 +103,7 @@ impl AccountsWindow {
                     .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
             }
 
+            AccountsWindow::edit_buttons_actions(&gui, connection.clone());
             AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
             AccountsWindow::delete_buttons_actions(&gui, connection.clone());
             gui.accounts_window.accounts_container.show_all();
@@ -120,31 +121,13 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let accounts_container = &gui.accounts_window.accounts_container;
-
         let groups = {
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
         };
 
-        {
-            let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
-            *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
-
-            // empty list of accounts first
-            accounts_container.foreach(|e| accounts_container.remove(e));
-
-            // add updated accounts back to list
-            m_widgets
-                .iter()
-                .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
-        }
-
-        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
-        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
-        AccountsWindow::delete_buttons_actions(&gui, connection);
-
-        gui.accounts_window.accounts_container.show_all();
+        let mut f = AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection);
+        f(groups);
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
