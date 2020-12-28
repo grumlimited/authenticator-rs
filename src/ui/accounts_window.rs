@@ -43,15 +43,13 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let pool = gui.pool.clone();
-
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        pool.spawn_ok(async move {
+        gui.pool.spawn_ok(async move {
             {
                 let connection = connection.lock().unwrap();
                 ConfigManager::delete_account(&connection, account_id).unwrap();
@@ -62,15 +60,13 @@ impl AccountsWindow {
     }
 
     fn delete_group_reload(gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let pool = gui.pool.clone();
-
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        pool.spawn_ok(async move {
+        gui.pool.spawn_ok(async move {
             {
                 let connection = connection.lock().unwrap();
                 let group = ConfigManager::get_group(&connection, group_id).unwrap();
@@ -85,7 +81,7 @@ impl AccountsWindow {
         });
     }
 
-    fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
+    pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
         Box::new(move |groups: Vec<AccountGroup>| {
             {
                 let accounts_container = gui.accounts_window.accounts_container.clone();
@@ -112,7 +108,7 @@ impl AccountsWindow {
         })
     }
 
-    async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+    pub async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         tx.send({
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
@@ -121,15 +117,13 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let pool = gui.pool.clone();
-
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        pool.spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
+        gui.pool.spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -352,7 +346,7 @@ impl AccountsWindow {
         })
     }
 
-    fn get_filter_value(&self) -> Option<String> {
+    pub fn get_filter_value(&self) -> Option<String> {
         let filter_text = self.filter.get_text();
 
         if filter_text.is_empty() {

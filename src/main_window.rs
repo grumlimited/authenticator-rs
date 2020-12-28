@@ -13,6 +13,7 @@ use rusqlite::Connection;
 use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
+use crate::model::AccountGroup;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -159,18 +160,19 @@ impl MainWindow {
     pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
         {
             //First bind user input event to refreshing account list
-            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+            let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
-            let gui = self.clone();
+            {
+                let gui = self.clone();
+                let connection = connection.clone();
 
-            self.accounts_window.filter.connect_changed(move |_| {
-                let _ = tx.send(true);
-            });
+                self.accounts_window.filter.connect_changed(move |filter| {
+                    let filter = filter.get_text().to_string();
+                    gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx.clone(), connection.clone(), Some(filter)));
+                });
+            }
 
-            rx.attach(None, move |_| {
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
-                glib::Continue(true)
-            });
+            rx.attach(None, AccountsWindow::replace_accounts_and_widgets(self.clone(), connection));
         }
 
         {
