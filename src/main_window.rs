@@ -479,7 +479,17 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
                         export_account_error.show_all();
                     }
 
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
+                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+                    {
+                        let gui = gui.clone();
+                        let connection = connection.clone();
+                        let filter = gui.accounts_window.filter.get_text().to_string();
+
+                        gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection, Some(filter)));
+                    }
+
+                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
