@@ -130,3 +130,6 @@ msgstr "Processing QR code..."
 
 msgid "about"
 msgstr "This program comes with absolutely no warranty.\n\nSee the <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GNU General Public Licence, version 3</a> or later for details."
+
+msgid "Confirm"
+msgstr "Confirm"
