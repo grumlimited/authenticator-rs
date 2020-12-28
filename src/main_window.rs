@@ -10,10 +10,10 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE, NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
-use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -479,17 +479,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
                         export_account_error.show_all();
                     }
 
-                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
-
-                    {
-                        let gui = gui.clone();
-                        let connection = connection.clone();
-                        let filter = gui.accounts_window.filter.get_text().to_string();
-
-                        gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection, Some(filter)));
-                    }
-
-                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
