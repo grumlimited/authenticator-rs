@@ -11,9 +11,9 @@ use gtk::prelude::*;
 use rusqlite::Connection;
 
 use crate::helpers::ConfigManager;
+use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
-use crate::model::AccountGroup;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -168,7 +168,8 @@ impl MainWindow {
 
                 self.accounts_window.filter.connect_changed(move |filter| {
                     let filter = filter.get_text().to_string();
-                    gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx.clone(), connection.clone(), Some(filter)));
+                    gui.pool
+                        .spawn_ok(AccountsWindow::load_account_groups(tx.clone(), connection.clone(), Some(filter)));
                 });
             }
 

@@ -123,7 +123,8 @@ impl AccountsWindow {
 
         let filter = gui.accounts_window.get_filter_value();
 
-        gui.pool.spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
+        gui.pool
+            .spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
