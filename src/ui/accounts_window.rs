@@ -121,13 +121,17 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let groups = {
-            let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
-        };
+        let pool = gui.pool.clone();
 
-        let mut f = AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection);
-        f(groups);
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        pool.spawn_ok(async move {
+            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+        });
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
