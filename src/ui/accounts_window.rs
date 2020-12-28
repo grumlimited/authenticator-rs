@@ -12,7 +12,7 @@ use rusqlite::Connection;
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
 use crate::model::AccountGroupWidget;
-use crate::ui::{EditAccountWindow, AddGroupWindow};
+use crate::ui::{AddGroupWindow, EditAccountWindow};
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
