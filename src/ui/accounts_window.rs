@@ -42,7 +42,7 @@ impl AccountsWindow {
         }
     }
 
-    pub fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
+    fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
         let pool = gui.pool.clone();
 
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
@@ -50,8 +50,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
         pool.spawn_ok(AccountsWindow::delete_account(account_id, tx, filter, connection.clone()));
 
-        let gui2 = gui.clone();
-        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui2, connection.clone()));
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets2(gui.clone(), connection));
     }
 
     fn replace_accounts_and_widgets2(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
