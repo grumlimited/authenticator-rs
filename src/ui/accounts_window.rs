@@ -1,10 +1,11 @@
+use std::future::Future;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
 use gettextrs::*;
-use glib::Sender;
+use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::Builder;
 use log::{debug, error, warn};
@@ -44,52 +45,89 @@ impl AccountsWindow {
 
     fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        gui.pool.spawn_ok(async move {
-            {
-                let connection = connection.lock().unwrap();
-                ConfigManager::delete_account(&connection, account_id).unwrap();
-            }
+        gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
+            gui,
+            rx_done,
+            |filter, connection, tx_done| async move {
+                {
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::delete_account(&connection, account_id).unwrap();
+                }
 
-            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+                AccountsWindow::load_account_groups(tx, connection, filter).await;
+                tx_done.send(true).expect("boom!");
+            },
+        )(filter, connection, tx_done));
+    }
+
+    pub fn flip_accounts_container<F, Fut>(gui: &MainWindow, rx: Receiver<bool>, f: F) -> F
+    where
+        F: FnOnce(Option<String>, Arc<Mutex<Connection>>, Sender<bool>) -> Fut,
+        Fut: Future<Output = ()>,
+    {
+        gui.accounts_window.accounts_container.set_sensitive(false);
+
+        let accounts_container = gui.accounts_window.accounts_container.clone();
+
+        // upon completion of `f`, restores sensitivity to accounts_container
+        rx.attach(None, move |_| {
+            accounts_container.set_sensitive(true);
+            glib::Continue(true)
         });
+
+        f
     }
 
     fn delete_group_reload(gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        gui.pool.spawn_ok(async move {
-            {
-                let connection = connection.lock().unwrap();
-                let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+        gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
+            gui,
+            rx_done,
+            |filter, connection, tx_done| async move {
+                {
+                    let connection = connection.lock().unwrap();
+                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
 
-                if let Some(path) = group.icon {
-                    AddGroupWindow::delete_icon_file(&path);
+                    if let Some(path) = group.icon {
+                        AddGroupWindow::delete_icon_file(&path);
+                    }
                 }
-            }
 
-            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
-        });
+                AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                tx_done.send(true).expect("boom!");
+            },
+        )(filter, connection, tx_done));
     }
 
     pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
         let filter = gui.accounts_window.get_filter_value();
 
-        gui.pool
-            .spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
+        gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
+            gui,
+            rx_done,
+            |filter, connection, tx_done| async move {
+                AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                tx_done.send(true).expect("boom!");
+            },
+        )(filter, connection, tx_done));
     }
 
     /**

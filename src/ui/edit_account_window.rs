@@ -246,25 +246,26 @@ impl EditAccountWindow {
 
                 if let Ok(()) = gui.edit_account_window.validate() {
                     let edit_account_window = gui.edit_account_window.clone();
-
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
                     let account_id = edit_account_window.input_account_id.clone();
                     let group = edit_account_window.input_group;
-
                     let name: String = name.get_buffer().get_text();
-
-                    let buffer = secret.get_buffer().unwrap();
-                    let (start, end) = buffer.get_bounds();
-                    let secret: String = match buffer.get_slice(&start, &end, true) {
-                        Some(secret_value) => secret_value.to_string(),
-                        None => "".to_owned(),
+                    let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
+                    let secret: String = {
+                        let buffer = secret.get_buffer().unwrap();
+                        let (start, end) = buffer.get_bounds();
+                        match buffer.get_slice(&start, &end, true) {
+                            Some(secret_value) => secret_value.to_string(),
+                            None => "".to_owned(),
+                        }
                     };
 
-                    let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
+                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding account is completed
 
-                    // used to signal adding account is completed
-                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                     let edit_account_window = gui.edit_account_window.clone();
                     rx_reset.attach(None, move |_| {
@@ -273,18 +274,20 @@ impl EditAccountWindow {
                         glib::Continue(true)
                     });
 
-                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
-                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
-
                     let filter = gui.accounts_window.get_filter_value();
                     let connection = connection.clone();
 
                     let account_id = account_id.get_buffer().get_text();
 
-                    gui.pool.spawn_ok(async move {
-                        EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
-                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                    });
+                    gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
+                        &gui,
+                        rx_done,
+                        |filter, connection, tx_done| async move {
+                            EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
+                            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                            tx_done.send(true).expect("boom!");
+                        },
+                    )(filter, connection, tx_done));
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 }
