@@ -293,7 +293,6 @@ impl EditAccountWindow {
                         },
                     )(filter, connection, tx_done));
 
-
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 }
             })
