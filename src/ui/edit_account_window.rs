@@ -263,10 +263,12 @@ impl EditAccountWindow {
 
                     let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
 
+                    // used to signal adding account is completed
                     let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                     let edit_account_window = gui.edit_account_window.clone();
                     rx_reset.attach(None, move |_| {
+                        // upon completion, reset form
                         edit_account_window.reset();
                         glib::Continue(true)
                     });

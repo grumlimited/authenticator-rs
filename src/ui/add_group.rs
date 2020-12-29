@@ -233,10 +233,12 @@ impl AddGroupWindow {
                     let group_id = gui.add_group.group_id.get_label();
                     let group_id = group_id.as_str().to_owned();
 
+                    // used to signal adding group is completed
                     let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                     let add_group = gui.add_group.clone();
                     rx_reset.attach(None, move |_| {
+                        // upon completion, reset form
                         add_group.reset();
                         glib::Continue(true)
                     });

@@ -81,6 +81,24 @@ impl AccountsWindow {
         });
     }
 
+    pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        gui.pool
+            .spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
+    }
+
+    /**
+     * Returns a function which takes a Vec<AccountGroup> to then return glib::Continue.
+     * It is meant to be used with rx.attach(...).
+     *
+     * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
+     * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
+     */
     pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
         Box::new(move |groups: Vec<AccountGroup>| {
             {
@@ -108,23 +126,17 @@ impl AccountsWindow {
         })
     }
 
+    /**
+     * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
+     *
+     * TODO: consider moving to ConfigManager.
+     */
     pub async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         tx.send({
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
         })
         .expect("boom!");
-    }
-
-    pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
-
-        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
-
-        let filter = gui.accounts_window.get_filter_value();
-
-        gui.pool
-            .spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
