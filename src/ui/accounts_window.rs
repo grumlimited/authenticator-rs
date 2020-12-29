@@ -1,13 +1,13 @@
-use std::{thread, time};
 use std::future::Future;
 use std::sync::{Arc, Mutex};
+use std::{thread, time};
 
-use chrono::Local;
 use chrono::prelude::*;
+use chrono::Local;
 use gettextrs::*;
 use glib::{Receiver, Sender};
-use gtk::Builder;
 use gtk::prelude::*;
+use gtk::Builder;
 use log::{debug, error, warn};
 use rusqlite::Connection;
 
@@ -66,10 +66,10 @@ impl AccountsWindow {
         )(filter, connection, tx_done));
     }
 
-    fn flip_accounts_container<F, Fut>(gui: &MainWindow, rx: Receiver<bool>, f: F) -> F
-        where
-            F: FnOnce(Option<String>, Arc<Mutex<Connection>>, Sender<bool>) -> Fut,
-            Fut: Future<Output=()>,
+    pub fn flip_accounts_container<F, Fut>(gui: &MainWindow, rx: Receiver<bool>, f: F) -> F
+    where
+        F: FnOnce(Option<String>, Arc<Mutex<Connection>>, Sender<bool>) -> Fut,
+        Fut: Future<Output = ()>,
     {
         gui.accounts_window.accounts_container.set_sensitive(false);
 
@@ -174,7 +174,7 @@ impl AccountsWindow {
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
         })
-            .expect("boom!");
+        .expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
