@@ -226,16 +226,16 @@ impl AddGroupWindow {
             Box::new(move |_| {
                 if let Ok(()) = gui.add_group.validate() {
                     let icon_filename = Self::get_label_text(&gui.add_group.icon_filename);
-
                     let group_name: String = gui.add_group.input_group.get_buffer().get_text();
-
                     let url_input: Option<String> = Some(gui.add_group.url_input.get_buffer().get_text());
-
                     let group_id = gui.add_group.group_id.get_label();
                     let group_id = group_id.as_str().to_owned();
 
-                    // used to signal adding group is completed
-                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
+
+                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                     let add_group = gui.add_group.clone();
                     rx_reset.attach(None, move |_| {
@@ -243,11 +243,6 @@ impl AddGroupWindow {
                         add_group.reset();
                         glib::Continue(true)
                     });
-
-                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-
-                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                     let filter = gui.accounts_window.get_filter_value();
                     let connection = connection.clone();
