@@ -4,6 +4,7 @@ use base32::decode;
 use base32::Alphabet::RFC4648;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
+use gettextrs::*;
 
 use crate::NAMESPACE_PREFIX;
 
@@ -36,12 +37,14 @@ pub struct AccountWidget {
 
 impl AccountWidget {
     pub fn update(&mut self) {
-        let totp = match Account::generate_time_based_password(self.totp_secret.as_str()) {
-            Ok(totp) => totp,
-            Err(_) => "error".to_owned(),
-        };
-
-        self.totp_label.set_label(totp.as_str())
+        match Account::generate_time_based_password(self.totp_secret.as_str()) {
+            Ok(totp) => self.totp_label.set_label(totp.as_str()),
+            Err(_) => {
+                self.totp_label.set_label(&format!("{} !", &gettext("Error")));
+                let context = self.totp_label.get_style_context();
+                context.add_class("error");
+            },
+        }
     }
 }
 
@@ -94,13 +97,15 @@ impl Account {
             });
         }
 
-        let totp = match Self::generate_time_based_password(self.secret.as_str()) {
-            Ok(totp) => totp,
-            Err(_) => "error".to_owned(),
-        };
-
         let totp_label: gtk::Label = builder.get_object("totp_label").unwrap();
-        totp_label.set_label(totp.as_str());
+        match Self::generate_time_based_password(self.secret.as_str()) {
+            Ok(totp) => totp_label.set_label(totp.as_str()),
+            Err(_) => {
+                totp_label.set_label(&format!("{} !", &gettext("Error")));
+                let context = totp_label.get_style_context();
+                context.add_class("error");
+            },
+        };
 
         let totp_label_clone = totp_label.clone();
 
