@@ -282,8 +282,7 @@ impl EditAccountWindow {
                     let account_id = account_id.get_buffer().get_text();
 
                     gui.pool.spawn_ok(async move {
-                        EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                        tx_reset.send(true).expect("Could not send true");
+                        EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
                         AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                     });
 
@@ -293,7 +292,7 @@ impl EditAccountWindow {
         });
     }
 
-    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
+    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
         let connection = connection.lock().unwrap();
 
         match account_id.parse() {
@@ -306,5 +305,7 @@ impl EditAccountWindow {
                 ConfigManager::save_account(&connection, &mut account).unwrap();
             }
         };
+
+        tx.send(true).expect("Could not send true");
     }
 }

@@ -15,6 +15,7 @@ use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
+use glib::Sender;
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -250,8 +251,7 @@ impl AddGroupWindow {
                     let connection = connection.clone();
 
                     gui.pool.spawn_ok(async move {
-                        AddGroupWindow::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
-                        tx_reset.send(true).expect("Could not send true");
+                        AddGroupWindow::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone(), tx_reset).await;
                         AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                     });
 
@@ -261,7 +261,7 @@ impl AddGroupWindow {
         });
     }
 
-    async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
+    async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
         let connection = connection.lock().unwrap();
 
         match group_id.parse() {
@@ -293,6 +293,8 @@ impl AddGroupWindow {
                 }
             }
         }
+
+        tx.send(true).expect("Could not send true");
     }
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
