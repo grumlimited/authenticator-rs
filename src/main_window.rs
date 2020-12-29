@@ -279,7 +279,7 @@ impl MainWindow {
             });
         }
 
-        export_button.connect_clicked(export_accounts(popover.clone(), connection.clone(), self.pool.clone()));
+        export_button.connect_clicked(export_accounts(self.clone(), popover.clone(), connection.clone(), self.pool.clone()));
 
         let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
@@ -388,7 +388,7 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
     })
 }
 
-fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
+fn export_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
     Box::new(move |_b: &gtk::Button| {
         popover.set_visible(false);
 
@@ -414,13 +414,18 @@ fn export_accounts(popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
+                gui.accounts_window.accounts_container.set_sensitive(false);
                 threadpool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
 
+                let gui = gui.clone();
+                let connection = connection.clone();
                 rx.attach(None, move |success| {
                     if !success {
                         export_account_error.set_title(&gettext("Error"));
                         export_account_error.show_all();
                     }
+
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                     glib::Continue(true)
                 });
@@ -462,6 +467,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
+                gui.accounts_window.accounts_container.set_sensitive(false);
                 threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
 
                 let gui = gui.clone();
@@ -472,8 +478,6 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
                     }
 
                     AccountsWindow::refresh_accounts(&gui, connection.clone());
-
-                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
                     glib::Continue(true)
                 });
