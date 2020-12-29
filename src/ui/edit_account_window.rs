@@ -250,7 +250,7 @@ impl EditAccountWindow {
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
                     let account_id = edit_account_window.input_account_id.clone();
-                    let group = edit_account_window.input_group.clone();
+                    let group = edit_account_window.input_group;
 
                     let name: String = name.get_buffer().get_text();
 
@@ -261,29 +261,48 @@ impl EditAccountWindow {
                         None => "".to_owned(),
                     };
 
-                    let group_id = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
+                    let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
 
-                    {
-                        let connection = connection.lock().unwrap();
+                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                        match account_id.get_buffer().get_text().parse() {
-                            Ok(account_id) => {
-                                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
-                                ConfigManager::update_account(&connection, &mut account).unwrap();
-                            }
-                            Err(_) => {
-                                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str());
-                                ConfigManager::save_account(&connection, &mut account).unwrap();
-                            }
-                        };
-                    }
+                    let edit_account_window = gui.edit_account_window.clone();
+                    rx_reset.attach(None, move |_| {
+                        edit_account_window.reset();
+                        glib::Continue(true)
+                    });
 
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
+                    let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    edit_account_window.reset();
+                    let filter = gui.accounts_window.get_filter_value();
+                    let connection = connection.clone();
+
+                    let account_id = account_id.get_buffer().get_text();
+
+                    gui.pool.spawn_ok(async move {
+                        EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                        tx_reset.send(true).expect("Could not send true");
+                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                    });
+
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
                 }
             })
         });
+    }
+
+    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
+        let connection = connection.lock().unwrap();
+
+        match account_id.parse() {
+            Ok(account_id) => {
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
+                ConfigManager::update_account(&connection, &mut account).unwrap();
+            }
+            Err(_) => {
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str());
+                ConfigManager::save_account(&connection, &mut account).unwrap();
+            }
+        };
     }
 }
