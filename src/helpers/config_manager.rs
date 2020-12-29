@@ -30,14 +30,14 @@ pub enum LoadError {
 
 impl ConfigManager {
     fn db_path() -> std::path::PathBuf {
-        let mut path = ConfigManager::path();
+        let mut path = Self::path();
         path.push("authenticator.db");
 
         path
     }
 
     pub fn icons_path(filename: &str) -> std::path::PathBuf {
-        let mut path = ConfigManager::path();
+        let mut path = Self::path();
         path.push("icons");
         path.push(filename);
 
@@ -288,17 +288,14 @@ impl ConfigManager {
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
         let group_accounts = {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, None).unwrap()
+            Self::load_account_groups(&connection, None).unwrap()
         };
 
-        async {
-            let path = path.as_path();
-            match ConfigManager::serialise_accounts(group_accounts, path) {
-                Ok(()) => tx.send(true).expect("Could not send message"),
-                Err(_) => tx.send(false).expect("Could not send message"),
-            }
+        let path = path.as_path();
+        match Self::serialise_accounts(group_accounts, path) {
+            Ok(()) => tx.send(true).expect("Could not send message"),
+            Err(_) => tx.send(false).expect("Could not send message"),
         }
-        .await;
     }
 
     pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), LoadError> {
@@ -330,7 +327,7 @@ impl ConfigManager {
     }
 
     async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), LoadError> {
-        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> = ConfigManager::deserialise_accounts(path.as_path());
+        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> = Self::deserialise_accounts(path.as_path());
 
         let connection = connection.lock().unwrap();
 

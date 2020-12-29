@@ -271,7 +271,7 @@ impl MainWindow {
                 g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
-                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                Self::switch_to(&gui, Display::DisplayAccounts);
 
                 AccountsWindow::refresh_accounts(&gui, connection.clone());
 
@@ -335,7 +335,7 @@ impl MainWindow {
                 accounts_window.container.set_visible(false);
                 add_group.container.set_visible(true);
 
-                MainWindow::switch_to(&gui, Display::DisplayAddGroup);
+                Self::switch_to(&gui, Display::DisplayAddGroup);
             });
         }
 
