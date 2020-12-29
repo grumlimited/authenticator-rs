@@ -81,7 +81,7 @@ impl AccountsWindow {
         });
     }
 
-    fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
+    pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
         Box::new(move |groups: Vec<AccountGroup>| {
             {
                 let accounts_container = gui.accounts_window.accounts_container.clone();
@@ -108,7 +108,7 @@ impl AccountsWindow {
         })
     }
 
-    async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+    pub async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         tx.send({
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
@@ -347,7 +347,7 @@ impl AccountsWindow {
         })
     }
 
-    fn get_filter_value(&self) -> Option<String> {
+    pub fn get_filter_value(&self) -> Option<String> {
         let filter_text = self.filter.get_text();
 
         if filter_text.is_empty() {
