@@ -425,6 +425,6 @@ mod tests {
 
     #[test]
     fn progress_bar_fraction() {
-        assert_eq!(0.5333333333333333_f64, Self::fraction_for(14));
+        assert_eq!(0.5333333333333333_f64, AccountsWindow::fraction_for(14));
     }
 }

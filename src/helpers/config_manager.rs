@@ -370,24 +370,24 @@ mod tests {
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        Self::save_group(&connection, &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         account.group_id = group.id;
 
-        Self::save_account(&connection, &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = Self::get_account(&connection, account.id).unwrap();
+        let account_reloaded = ConfigManager::get_account(&connection, account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        Self::update_account(&connection, &mut account_reloaded).unwrap();
+        ConfigManager::update_account(&connection, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -401,7 +401,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
 
-        Self::save_group(&connection, &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         assert_eq!("new group", group.name);
 
@@ -409,9 +409,9 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        Self::update_group(&connection, &mut group).unwrap();
+        ConfigManager::update_group(&connection, &mut group).unwrap();
 
-        let group = Self::get_group(&connection, group.id).unwrap();
+        let group = ConfigManager::get_group(&connection, group.id).unwrap();
 
         assert_eq!("other name", group.name);
         assert_eq!("url", group.url.unwrap());
@@ -426,16 +426,16 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
 
-        Self::save_group(&connection, &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "label", "secret");
 
-        Self::save_account(&connection, &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert_eq!(group.id, account.group_id);
 
-        let reloaded_group = Self::get_group(&connection, group.id).unwrap();
+        let reloaded_group = ConfigManager::get_group(&connection, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
@@ -448,10 +448,10 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
-        Self::save_group(&connection, &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-        Self::save_account(&connection, &mut account1).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
             1,
@@ -465,7 +465,7 @@ mod tests {
                 secret: "secret3".to_owned(),
             }],
         );
-        let groups = Self::load_account_groups(&connection, None).unwrap();
+        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
 
         assert_eq!(vec![expected], groups);
     }
@@ -477,19 +477,19 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        Self::save_group(&connection, &mut group).unwrap();
+        ConfigManager::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3");
-        Self::save_account(&connection, &mut account).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
         let mut account = Account::new(0, group.id, "ccc", "secret3");
-        Self::save_account(&connection, &mut account).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
-        Self::save_group(&connection, &mut group).expect("boom!");
+        ConfigManager::save_group(&connection, &mut group).expect("boom!");
         let mut account = Account::new(0, group.id, "ppp", "secret3");
-        Self::save_account(&connection, &mut account).expect("boom!");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
 
-        let results = Self::load_account_groups(&connection, None).unwrap();
+        let results = ConfigManager::load_account_groups(&connection, None).unwrap();
 
         //groups in order
         assert_eq!("AAA", results.get(0).unwrap().name);
@@ -509,11 +509,11 @@ mod tests {
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        Self::save_account(&connection, &mut account).unwrap();
+        ConfigManager::save_account(&connection, &mut account).unwrap();
 
         assert_eq!(1, account.id);
 
-        let result = Self::delete_account(&connection, account.id).unwrap();
+        let result = ConfigManager::delete_account(&connection, account.id).unwrap();
         assert!(result > 0);
     }
 
@@ -524,14 +524,14 @@ mod tests {
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
-        let result = Self::serialise_accounts(vec![account_group], path).unwrap();
+        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
 
         assert_eq!((), result);
 
         let account_from_yaml = Account::new(0, 0, "label", "secret");
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
-        let result = Self::deserialise_accounts(path).unwrap();
+        let result = ConfigManager::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
     }
 
@@ -544,7 +544,7 @@ mod tests {
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
 
-        Self::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
+        ConfigManager::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
         assert_eq!(1, account_group.entries.len());
@@ -564,18 +564,18 @@ mod tests {
 
             let path = PathBuf::from("test.yaml");
             let path = path.as_path();
-            let result = Self::serialise_accounts(vec![account_group], path).unwrap();
+            let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
 
             assert_eq!((), result);
         }
 
-        let result = { task::block_on(Self::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
+        let result = { task::block_on(ConfigManager::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
 
         assert_eq!(Ok(()), result);
 
         {
             let connection = connection.lock().unwrap();
-            let account_groups = Self::load_account_groups(&connection, None).unwrap();
+            let account_groups = ConfigManager::load_account_groups(&connection, None).unwrap();
 
             assert_eq!(1, account_groups.len());
             assert!(account_groups.first().unwrap().id > 0);
