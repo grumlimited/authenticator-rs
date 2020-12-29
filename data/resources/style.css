@@ -7,7 +7,13 @@
     border-color: @error_color;
 }
 
-.edit_account_input_secret_frame:inconsistent {
+/*
+* Note: apparently pseudo class :indeterminate
+* works (also) with widget state StateFlags::INCONSISTENT.
+*
+* StateFlags::INDETERMINATE is deprecated.
+*/
+.edit_account_input_secret_frame:indeterminate {
     border-color: @error_color;
 }
 
