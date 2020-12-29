@@ -13,8 +13,33 @@ in the latest versions of python shipped with [Arch Linux](https://www.archlinux
 It is by no means as feature-rich as its python relative, more like a diamond in the rough. Well, maybe not a diamond, 
 but definitely in the rough...
 
+## Features
+
+### Dark themes friendly
+
 ![authenticator-rs](./data/screenshots/screenshot1.png "Main view")
 ![authenticator-rs](./data/screenshots/screenshot2.png "Main view")
+
+### Group editing
+
+![authenticator-rs](./data/screenshots/screenshot3.png "Group editing")
+
+### Account editing
+
+![authenticator-rs](./data/screenshots/screenshot4.png "Account editing")
+
+### Importing and exporting
+
+Using `yaml` format
+
+    ---
+    - name: group name
+      url: bbc.co.uk
+      entries:
+        - label: Account 1
+          secret: secret code
+
+![authenticator-rs](./data/screenshots/screenshot5.png "Importing")
 
 ## License
 
