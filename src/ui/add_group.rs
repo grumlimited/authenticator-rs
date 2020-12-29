@@ -261,7 +261,14 @@ impl AddGroupWindow {
         });
     }
 
-    async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
+    async fn create_group(
+        group_id: String,
+        group_name: String,
+        icon_filename: Option<String>,
+        url_input: Option<String>,
+        connection: Arc<Mutex<Connection>>,
+        tx: Sender<bool>,
+    ) {
         let connection = connection.lock().unwrap();
 
         match group_id.parse() {
