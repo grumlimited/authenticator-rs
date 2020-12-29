@@ -2,9 +2,9 @@ use std::time::SystemTime;
 
 use base32::decode;
 use base32::Alphabet::RFC4648;
+use gettextrs::*;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
-use gettextrs::*;
 
 use crate::NAMESPACE_PREFIX;
 
@@ -43,7 +43,7 @@ impl AccountWidget {
                 self.totp_label.set_label(&format!("{} !", &gettext("Error")));
                 let context = self.totp_label.get_style_context();
                 context.add_class("error");
-            },
+            }
         }
     }
 }
@@ -104,7 +104,7 @@ impl Account {
                 totp_label.set_label(&format!("{} !", &gettext("Error")));
                 let context = totp_label.get_style_context();
                 context.add_class("error");
-            },
+            }
         };
 
         let totp_label_clone = totp_label.clone();
