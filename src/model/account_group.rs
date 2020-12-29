@@ -59,6 +59,7 @@ impl AccountGroup {
     }
 
     pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidget {
+        let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         let container: gtk::Box = builder.get_object("group").unwrap();
@@ -71,7 +72,7 @@ impl AccountGroup {
 
         if let Some(image) = &self.icon {
             let dir = ConfigManager::icons_path(&image);
-            match IconParser::load_icon(&dir, state) {
+            match IconParser::load_icon(&dir, state.dark_mode) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
             };

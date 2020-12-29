@@ -159,18 +159,13 @@ impl MainWindow {
     pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
         {
             //First bind user input event to refreshing account list
-            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-
-            let gui = self.clone();
-
-            self.accounts_window.filter.connect_changed(move |_| {
-                let _ = tx.send(true);
-            });
-
-            rx.attach(None, move |_| {
-                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
-                glib::Continue(true)
-            });
+            {
+                let gui = self.clone();
+                self.accounts_window.filter.connect_changed(move |_| {
+                    let gui = gui.clone();
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
+                });
+            }
         }
 
         {
@@ -278,7 +273,7 @@ impl MainWindow {
                 // switch first then redraw - to take into account state change
                 MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
-                AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                 Inhibit(false)
             });
@@ -476,7 +471,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
                         export_account_error.show_all();
                     }
 
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::refresh_accounts(&gui, connection.clone());
 
                     MainWindow::switch_to(&gui, Display::DisplayAccounts);
 

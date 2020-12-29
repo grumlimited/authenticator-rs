@@ -12,7 +12,7 @@ use rusqlite::Connection;
 
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
-use crate::model::AccountGroupWidget;
+use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 
 #[derive(Clone, Debug)]
@@ -42,32 +42,101 @@ impl AccountsWindow {
         }
     }
 
-    pub fn replace_accounts_and_widgets(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let accounts_container = &gui.accounts_window.accounts_container;
+    fn delete_account_reload(gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
 
-        let groups = {
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        gui.pool.spawn_ok(async move {
+            {
+                let connection = connection.lock().unwrap();
+                ConfigManager::delete_account(&connection, account_id).unwrap();
+            }
+
+            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+        });
+    }
+
+    fn delete_group_reload(gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        gui.pool.spawn_ok(async move {
+            {
+                let connection = connection.lock().unwrap();
+                let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+
+                if let Some(path) = group.icon {
+                    AddGroupWindow::delete_icon_file(&path);
+                }
+            }
+
+            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await
+        });
+    }
+
+    pub fn refresh_accounts(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        gui.pool
+            .spawn_ok(async move { AccountsWindow::load_account_groups(tx, connection.clone(), filter).await });
+    }
+
+    /**
+     * Returns a function which takes a Vec<AccountGroup> to then return glib::Continue.
+     * It is meant to be used with rx.attach(...).
+     *
+     * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
+     * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
+     */
+    pub fn replace_accounts_and_widgets(gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
+        Box::new(move |groups: Vec<AccountGroup>| {
+            {
+                let accounts_container = gui.accounts_window.accounts_container.clone();
+                let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+
+                // empty list of accounts first
+                accounts_container.foreach(|e| accounts_container.remove(e));
+
+                let accout_group_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect::<Vec<AccountGroupWidget>>();
+
+                *m_widgets = accout_group_widgets;
+
+                m_widgets
+                    .iter()
+                    .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
+            }
+
+            AccountsWindow::edit_buttons_actions(&gui, connection.clone());
+            AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
+            AccountsWindow::delete_buttons_actions(&gui, connection.clone());
+            gui.accounts_window.accounts_container.show_all();
+
+            glib::Continue(true)
+        })
+    }
+
+    /**
+     * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
+     *
+     * TODO: consider moving to ConfigManager.
+     */
+    pub async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+        tx.send({
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap()
-        };
-
-        {
-            let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
-            *m_widgets = groups.iter().map(|account_group| account_group.widget(gui.state.clone())).collect();
-
-            // empty list of accounts first
-            accounts_container.foreach(|e| accounts_container.remove(e));
-
-            // add updated accounts back to list
-            m_widgets
-                .iter()
-                .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
-        }
-
-        AccountsWindow::edit_buttons_actions(&gui, connection.clone());
-        AccountsWindow::group_edit_buttons_actions(&gui, connection.clone());
-        AccountsWindow::delete_buttons_actions(&gui, connection);
-
-        gui.accounts_window.accounts_container.show_all();
+            ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
+        })
+        .expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -91,17 +160,7 @@ impl AccountsWindow {
                 let connection = connection.clone();
                 let gui = gui.clone();
                 delete_button.connect_clicked(move |_| {
-                    {
-                        let connection = connection.lock().unwrap();
-                        let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                        ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
-
-                        if let Some(path) = group.icon {
-                            AddGroupWindow::delete_icon_file(&path);
-                        }
-                    }
-
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::delete_group_reload(&gui, group_id, connection.clone());
                 });
             }
 
@@ -127,7 +186,8 @@ impl AccountsWindow {
                         icon_filename.set_label(image.as_str());
 
                         let dir = ConfigManager::icons_path(&image);
-                        match IconParser::load_icon(&dir, gui.state.clone()) {
+                        let state = gui.state.borrow();
+                        match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
@@ -228,12 +288,7 @@ impl AccountsWindow {
                 let pool = gui.pool.clone();
 
                 account_widget.confirm_button.connect_clicked(move |_| {
-                    {
-                        let connection = connection.lock().unwrap();
-                        ConfigManager::delete_account(&connection, account_id).unwrap();
-                    }
-
-                    AccountsWindow::replace_accounts_and_widgets(&gui, connection.clone());
+                    AccountsWindow::delete_account_reload(&gui, account_id, connection.clone());
                     popover.hide();
                 });
 
@@ -304,7 +359,7 @@ impl AccountsWindow {
         })
     }
 
-    fn get_filter_value(&self) -> Option<String> {
+    pub fn get_filter_value(&self) -> Option<String> {
         let filter_text = self.filter.get_text();
 
         if filter_text.is_empty() {
