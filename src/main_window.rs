@@ -414,6 +414,7 @@ fn export_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
+                // sensitivity is restored in refresh_accounts()
                 gui.accounts_window.accounts_container.set_sensitive(false);
                 threadpool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
 
@@ -467,6 +468,7 @@ fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<M
 
                 let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
+                // sensitivity is restored in refresh_accounts()
                 gui.accounts_window.accounts_container.set_sensitive(false);
                 threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
 
