@@ -66,7 +66,7 @@ impl AddGroupWindow {
     }
 
     pub fn reset(&self) {
-        Self::remove_tmp_file(AddGroupWindow::get_label_text(&self.icon_filename));
+        Self::remove_tmp_file(Self::get_label_text(&self.icon_filename));
 
         self.input_group.set_text("");
         self.url_input.set_text("");
@@ -251,7 +251,7 @@ impl AddGroupWindow {
                         &gui,
                         rx_done,
                         |filter, connection, tx_done| async move {
-                            AddGroupWindow::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone(), tx_reset).await;
+                            Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone(), tx_reset).await;
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
                         },

@@ -283,7 +283,7 @@ impl EditAccountWindow {
                         &gui,
                         rx_done,
                         |filter, connection, tx_done| async move {
-                            EditAccountWindow::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
+                            Self::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
                         },
