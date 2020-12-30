@@ -181,12 +181,7 @@ impl AccountsWindow {
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            add_account_button.connect_clicked(Self::display_add_account_form(
-                connection.clone(),
-                popover.clone(),
-                gui.clone(),
-                Some(group_id),
-            ));
+            add_account_button.connect_clicked(Self::display_add_account_form(connection.clone(), popover.clone(), gui.clone(), Some(group_id)));
 
             {
                 let connection = connection.clone();
@@ -391,7 +386,8 @@ impl AccountsWindow {
 
             edit_account.set_group_dropdown(None, &groups);
 
-            main_window.edit_account
+            main_window
+                .edit_account
                 .container
                 .get_children()
                 .iter()

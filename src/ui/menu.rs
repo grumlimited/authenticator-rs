@@ -179,12 +179,7 @@ impl Menus for MainWindow {
             });
         }
 
-        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(
-            connection,
-            popover,
-            self.clone(),
-            None,
-        ));
+        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(connection, popover, self.clone(), None));
 
         action_menu
     }
