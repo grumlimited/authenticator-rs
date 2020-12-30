@@ -4,13 +4,10 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
-use gettextrs::*;
 use gio::prelude::SettingsExt;
-use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
-use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
@@ -76,7 +73,13 @@ impl MainWindow {
             builder.connect_signals(move |_, handler_name| {
                 match handler_name {
                     // handler_name as defined in the glade file
-                    "about_popup_close" => about_popup_close(popup.clone()),
+                    "about_popup_close" => {
+                        let popup = popup.clone();
+                        Box::new(move |_| {
+                            popup.hide();
+                            None
+                        })
+                    },
                     "save_group" => {
                         let add_group_save = add_group_save.clone();
                         Box::new(move |_| {
@@ -311,12 +314,11 @@ impl MainWindow {
             });
         }
 
-        let gui = self.clone();
-        export_button.connect_clicked(gui.export_accounts(popover.clone(), connection.clone()));
+        export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
 
         let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
-        import_button.connect_clicked(import_accounts(self.clone(), popover.clone(), connection, self.pool.clone()));
+        import_button.connect_clicked(self.import_accounts(popover.clone(), connection));
 
         let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
 
@@ -411,62 +413,4 @@ impl MainWindow {
 
         action_menu
     }
-}
-
-fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
-    Box::new(move |_param: &[glib::Value]| {
-        popup.hide();
-        None
-    })
-}
-
-fn import_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
-    Box::new(move |_b: &gtk::Button| {
-        popover.set_visible(false);
-
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
-
-        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
-
-        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
-        export_account_error.set_title(&gettext("Error"));
-
-        let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
-
-        export_account_error_body.set_label(&gettext("Could not import accounts!"));
-
-        builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => about_popup_close(export_account_error.clone()),
-            _ => Box::new(|_| None),
-        });
-
-        dialog.show();
-
-        match dialog.run() {
-            gtk::ResponseType::Accept => {
-                dialog.close();
-
-                let path = dialog.get_filename().unwrap();
-
-                let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-
-                // sensitivity is restored in refresh_accounts()
-                gui.accounts_window.accounts_container.set_sensitive(false);
-                threadpool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
-
-                let gui = gui.clone();
-                let connection = connection.clone();
-                rx.attach(None, move |success| {
-                    if !success {
-                        export_account_error.show_all();
-                    }
-
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
-
-                    glib::Continue(true)
-                });
-            }
-            _ => dialog.close(),
-        }
-    })
 }
