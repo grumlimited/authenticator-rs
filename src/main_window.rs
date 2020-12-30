@@ -18,6 +18,7 @@ use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     about_popup: gtk::Window,
+    stack: gtk::Stack,
     pub edit_account: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
@@ -96,6 +97,7 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
+            stack: builder.get_object("stack").unwrap(),
             edit_account: EditAccountWindow::new(builder.clone()),
             accounts_window,
             no_accounts,
@@ -108,6 +110,8 @@ impl MainWindow {
     pub fn switch_to(gui: &MainWindow, display: Display) {
         let mut state = gui.state.borrow_mut();
         state.display = display;
+
+        // gui.stack.set_visible_child_name("dqs");
 
         let g_settings = gio::Settings::new(NAMESPACE);
         state.dark_mode = g_settings.get_boolean("dark-theme");
@@ -165,8 +169,8 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        self.accounts_window.progress_bar.show();
-        self.accounts_window.container.show();
+        // self.accounts_window.progress_bar.show();
+        // self.accounts_window.container.show();
         self.window.show();
     }
 

@@ -147,7 +147,8 @@ impl AccountsWindow {
             Self::edit_buttons_actions(&gui, connection.clone());
             Self::group_edit_buttons_actions(&gui, connection.clone());
             Self::delete_buttons_actions(&gui, connection.clone());
-            gui.accounts_window.accounts_container.show_all();
+
+            MainWindow::switch_to(&gui, Display::DisplayAccounts);
 
             glib::Continue(true)
         })
