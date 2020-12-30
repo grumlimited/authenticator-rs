@@ -79,7 +79,7 @@ impl MainWindow {
                             popup.hide();
                             None
                         })
-                    },
+                    }
                     "save_group" => {
                         let add_group_save = add_group_save.clone();
                         Box::new(move |_| {
