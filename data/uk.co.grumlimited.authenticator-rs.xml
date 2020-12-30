@@ -15,5 +15,6 @@
   </gresource>
 	<gresource prefix="/uk/co/grumlimited/authenticator-rs/icons">
 		<file compressed="true" alias="qrscanner-symbolic.svg">data/icons/hicolor/scalable/qrscanner-symbolic.svg</file>
+		<file compressed="true" alias="authenticator-rs.svg">data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg</file>
 	</gresource>
 </gresources>
