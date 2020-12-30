@@ -39,6 +39,7 @@ pub enum Display {
     DisplayEditAccount,
     DisplayAddAccount,
     DisplayAddGroup,
+    DisplayEditGroup,
     DisplayNoAccounts,
 }
 
@@ -139,6 +140,18 @@ impl MainWindow {
                 gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
+                gui.add_group.add_group_container_add.set_visible(true);
+                gui.add_group.add_group_container_edit.set_visible(false);
+                gui.edit_account.add_accounts_container_add.set_visible(true);
+                gui.add_group.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.edit_account.container.set_visible(false);
+                gui.no_accounts.container.set_visible(false);
+            }
+            Display::DisplayEditGroup => {
+                gui.add_group.add_group_container_add.set_visible(false);
+                gui.add_group.add_group_container_edit.set_visible(true);
                 gui.add_group.container.set_visible(true);
 
                 gui.accounts_window.container.set_visible(false);

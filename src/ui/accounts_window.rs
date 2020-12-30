@@ -221,7 +221,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(&gui, Display::DisplayAddGroup);
+                    MainWindow::switch_to(&gui, Display::DisplayEditGroup);
                 });
             }
         }
