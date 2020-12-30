@@ -815,6 +815,22 @@
             <property name="position">2</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkBox" id="no_accounts">
+            <property name="name">no_accounts</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="name">no_accounts</property>
+            <property name="title" translatable="yes">No account</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
       </object>
     </child>
   </object>
