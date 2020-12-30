@@ -225,16 +225,12 @@ impl EditAccountWindow {
         }
 
         // CANCEL
-        with_action(&gui, connection.clone(), &gui.edit_account.cancel_button, |_, gui| {
+        with_action(&gui, connection.clone(), &gui.edit_account.cancel_button, |connection, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
                 let edit_account_window = gui.edit_account.clone();
                 edit_account_window.reset();
-
-                let buffer = edit_account_window.input_secret.get_buffer().unwrap();
-                buffer.set_text("");
-
-                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
             })
         });
 
