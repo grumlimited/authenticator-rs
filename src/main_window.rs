@@ -393,7 +393,7 @@ impl MainWindow {
                 // can't add account if no groups
                 add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 
-                add_group_button.set_sensitive(display == Display::DisplayAccounts);
+                add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
 
                 popover.show_all();
             });
