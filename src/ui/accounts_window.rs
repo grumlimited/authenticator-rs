@@ -149,9 +149,9 @@ impl AccountsWindow {
                 Self::group_edit_buttons_actions(&gui, connection.clone());
                 Self::delete_buttons_actions(&gui, connection.clone());
 
-                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                gui.switch_to(Display::DisplayAccounts);
             } else {
-                MainWindow::switch_to(&gui, Display::DisplayNoAccounts);
+                gui.switch_to(Display::DisplayNoAccounts);
             }
 
             glib::Continue(true)
@@ -225,7 +225,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(&gui, Display::DisplayEditGroup);
+                    gui.switch_to(Display::DisplayEditGroup);
                 });
             }
         }
@@ -298,7 +298,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(&gui, Display::DisplayEditAccount);
+                    gui.switch_to(Display::DisplayEditAccount);
                 });
             }
         }
@@ -383,7 +383,7 @@ impl AccountsWindow {
             edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
             popover.hide();
-            MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
+            main_window.switch_to(Display::DisplayAddAccount);
         })
     }
 

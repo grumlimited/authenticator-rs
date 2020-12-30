@@ -106,8 +106,8 @@ impl MainWindow {
         }
     }
 
-    pub fn switch_to(gui: &MainWindow, display: Display) {
-        let mut state = gui.state.borrow_mut();
+    pub fn switch_to(&self, display: Display) {
+        let mut state = self.state.borrow_mut();
         state.display = display;
 
         let g_settings = gio::Settings::new(NAMESPACE);
@@ -115,55 +115,55 @@ impl MainWindow {
 
         match state.display {
             Display::DisplayAccounts => {
-                gui.accounts_window.container.set_visible(true);
-                gui.add_group.container.set_visible(false);
-                gui.edit_account.container.set_visible(false);
-                gui.no_accounts.container.set_visible(false);
+                self.accounts_window.container.set_visible(true);
+                self.add_group.container.set_visible(false);
+                self.edit_account.container.set_visible(false);
+                self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditAccount => {
-                gui.edit_account.add_accounts_container_edit.set_visible(true);
-                gui.edit_account.add_accounts_container_add.set_visible(false);
-                gui.edit_account.container.set_visible(true);
+                self.edit_account.add_accounts_container_edit.set_visible(true);
+                self.edit_account.add_accounts_container_add.set_visible(false);
+                self.edit_account.container.set_visible(true);
 
-                gui.accounts_window.container.set_visible(false);
-                gui.add_group.container.set_visible(false);
-                gui.no_accounts.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.add_group.container.set_visible(false);
+                self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddAccount => {
-                gui.edit_account.add_accounts_container_edit.set_visible(false);
-                gui.edit_account.add_accounts_container_add.set_visible(true);
-                gui.edit_account.container.set_visible(true);
+                self.edit_account.add_accounts_container_edit.set_visible(false);
+                self.edit_account.add_accounts_container_add.set_visible(true);
+                self.edit_account.container.set_visible(true);
 
-                gui.accounts_window.container.set_visible(false);
-                gui.add_group.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.add_group.container.set_visible(false);
 
-                gui.no_accounts.container.set_visible(false);
+                self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
-                gui.add_group.add_group_container_add.set_visible(true);
-                gui.add_group.add_group_container_edit.set_visible(false);
-                gui.edit_account.add_accounts_container_add.set_visible(true);
-                gui.add_group.container.set_visible(true);
+                self.add_group.add_group_container_add.set_visible(true);
+                self.add_group.add_group_container_edit.set_visible(false);
+                self.edit_account.add_accounts_container_add.set_visible(true);
+                self.add_group.container.set_visible(true);
 
-                gui.accounts_window.container.set_visible(false);
-                gui.edit_account.container.set_visible(false);
-                gui.no_accounts.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.edit_account.container.set_visible(false);
+                self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditGroup => {
-                gui.add_group.add_group_container_add.set_visible(false);
-                gui.add_group.add_group_container_edit.set_visible(true);
-                gui.add_group.container.set_visible(true);
+                self.add_group.add_group_container_add.set_visible(false);
+                self.add_group.add_group_container_edit.set_visible(true);
+                self.add_group.container.set_visible(true);
 
-                gui.accounts_window.container.set_visible(false);
-                gui.edit_account.container.set_visible(false);
-                gui.no_accounts.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.edit_account.container.set_visible(false);
+                self.no_accounts.container.set_visible(false);
             }
             Display::DisplayNoAccounts => {
-                gui.no_accounts.container.set_visible(true);
+                self.no_accounts.container.set_visible(true);
 
-                gui.accounts_window.container.set_visible(false);
-                gui.add_group.container.set_visible(false);
-                gui.edit_account.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.add_group.container.set_visible(false);
+                self.edit_account.container.set_visible(false);
             }
         }
     }
@@ -301,7 +301,7 @@ impl MainWindow {
                 g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
                 // switch first then redraw - to take into account state change
-                Self::switch_to(&gui, Display::DisplayAccounts);
+                gui.switch_to(Display::DisplayAccounts);
 
                 AccountsWindow::refresh_accounts(&gui, connection.clone());
 
@@ -354,7 +354,7 @@ impl MainWindow {
                 popover.hide();
                 add_group.reset();
 
-                Self::switch_to(&gui, Display::DisplayAddGroup);
+                gui.switch_to(Display::DisplayAddGroup);
             });
         }
 

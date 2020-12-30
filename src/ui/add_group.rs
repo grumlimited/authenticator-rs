@@ -260,7 +260,7 @@ impl AddGroupWindow {
                         },
                     )(filter, connection, tx_done));
 
-                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                    gui.switch_to(Display::DisplayAccounts);
                 }
             })
         });
