@@ -240,8 +240,6 @@ impl AccountsWindow {
             let account_widgets = group_widget.account_widgets.clone();
             let account_widgets = account_widgets.borrow();
 
-            let builder = builder.clone();
-
             for account_widget in account_widgets.iter() {
                 let id = account_widget.account_id;
                 let popover = account_widget.popover.clone();
