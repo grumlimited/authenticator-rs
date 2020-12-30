@@ -526,17 +526,47 @@
                 <property name="orientation">vertical</property>
                 <property name="spacing">20</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="halign">start</property>
                     <property name="margin-start">10</property>
                     <property name="margin-top">25</property>
-                    <property name="label" translatable="yes">Add group</property>
-                    <style>
-                      <class name="section_title"/>
-                      <class name="add_group_label"/>
-                    </style>
+                    <child>
+                      <object class="GtkLabel" id="add_group_container_add">
+                        <property name="name">add_group_container_add</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="label" translatable="yes">Add group</property>
+                        <style>
+                          <class name="section_title"/>
+                          <class name="add_group_label"/>
+                        </style>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="add_group_container_edit">
+                        <property name="name">add_group_container_edit</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="label" translatable="yes">Edit group</property>
+                        <style>
+                          <class name="section_title"/>
+                          <class name="add_group_label"/>
+                        </style>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -815,6 +845,95 @@
             <property name="position">2</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkBox" id="no_accounts">
+            <property name="name">no_accounts</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="valign">start</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">20</property>
+            <property name="baseline-position">top</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-top">30</property>
+                <property name="pixel-size">256</property>
+                <property name="icon-name">authenticator-rs</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="name">about_textbuffer_title</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="label">Authenticator RS</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">center</property>
+                <property name="margin-top">60</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="margin-end">15</property>
+                    <property name="pixel-size">32</property>
+                    <property name="icon-name">list-add-symbolic</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Click + to add accounts</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <style>
+                  <class name="no_accounts"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="name">no_accounts</property>
+            <property name="title" translatable="yes">No account</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
       </object>
     </child>
   </object>
@@ -848,7 +967,8 @@
             <property name="valign">center</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="resource">/uk/co/grumlimited/authenticator-rs/authenticator-rs</property>
+            <property name="pixel-size">72</property>
+            <property name="icon-name">authenticator-rs</property>
           </object>
           <packing>
             <property name="left-attach">0</property>

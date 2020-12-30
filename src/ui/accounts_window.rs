@@ -137,19 +137,22 @@ impl AccountsWindow {
                 // empty list of accounts first
                 accounts_container.foreach(|e| accounts_container.remove(e));
 
-                let accout_group_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect::<Vec<AccountGroupWidget>>();
-
-                *m_widgets = accout_group_widgets;
+                *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
 
                 m_widgets
                     .iter()
                     .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
             }
 
-            Self::edit_buttons_actions(&gui, connection.clone());
-            Self::group_edit_buttons_actions(&gui, connection.clone());
-            Self::delete_buttons_actions(&gui, connection.clone());
-            gui.accounts_window.accounts_container.show_all();
+            if gui.accounts_window.has_accounts() {
+                Self::edit_buttons_actions(&gui, connection.clone());
+                Self::group_edit_buttons_actions(&gui, connection.clone());
+                Self::delete_buttons_actions(&gui, connection.clone());
+
+                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+            } else {
+                MainWindow::switch_to(&gui, Display::DisplayNoAccounts);
+            }
 
             glib::Continue(true)
         })
@@ -181,7 +184,7 @@ impl AccountsWindow {
                 connection.clone(),
                 popover.clone(),
                 gui.clone(),
-                gui.edit_account_window.clone(),
+                gui.edit_account.clone(),
                 Some(group_id),
             ));
 
@@ -222,7 +225,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(&gui, Display::DisplayAddGroup);
+                    MainWindow::switch_to(&gui, Display::DisplayEditGroup);
                 });
             }
         }
@@ -240,9 +243,9 @@ impl AccountsWindow {
                 let popover = account_widget.popover.clone();
                 let connection = connection.clone();
 
-                let input_name = gui.edit_account_window.input_name.clone();
-                let input_secret = gui.edit_account_window.input_secret.clone();
-                let input_account_id = gui.edit_account_window.input_account_id.clone();
+                let input_name = gui.edit_account.input_name.clone();
+                let input_secret = gui.edit_account.input_secret.clone();
+                let input_account_id = gui.edit_account.input_account_id.clone();
 
                 let gui = gui.clone();
 
@@ -265,8 +268,7 @@ impl AccountsWindow {
                         copy_button.connect_clicked(move |button| {
                             button.set_image(Some(&dialog_ok_img));
 
-                            let tx = tx.clone();
-                            pool.spawn_ok(times_up(tx, 2000));
+                            pool.spawn_ok(times_up(tx.clone(), 2000));
                         });
                     }
                 }
@@ -276,7 +278,7 @@ impl AccountsWindow {
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
-                    let input_group = gui.edit_account_window.input_group.clone();
+                    let input_group = gui.edit_account.input_group.clone();
                     input_group.remove_all(); //re-added and refreshed just below
 
                     groups.iter().for_each(|group| {
@@ -380,12 +382,14 @@ impl AccountsWindow {
             edit_account_window.reset();
             edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-            edit_account_window.add_accounts_container_edit.set_visible(false);
-            edit_account_window.add_accounts_container_add.set_visible(true);
-
             popover.hide();
             MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
         })
+    }
+
+    pub fn has_accounts(&self) -> bool {
+        let r = self.widgets.lock().unwrap();
+        !r.is_empty()
     }
 
     pub fn get_filter_value(&self) -> Option<String> {

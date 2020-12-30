@@ -32,6 +32,8 @@ pub struct AddGroupWindow {
     pub group_id: gtk::Label,
     pub image_button: gtk::Button,
     pub image_dialog: gtk::FileChooserDialog,
+    pub add_group_container_add: gtk::Label,
+    pub add_group_container_edit: gtk::Label,
 }
 
 impl AddGroupWindow {
@@ -50,6 +52,8 @@ impl AddGroupWindow {
             group_id: builder.get_object("add_group_input_group_id").unwrap(),
             image_button: builder.get_object("add_group_image_button").unwrap(),
             image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
+            add_group_container_add: builder.get_object("add_group_container_add").unwrap(),
+            add_group_container_edit: builder.get_object("add_group_container_edit").unwrap(),
         }
     }
 

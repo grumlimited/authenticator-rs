@@ -123,9 +123,7 @@ impl AccountGroup {
                 .connect_local("button-press-event", false, move |_| {
                     let account_widgets = account_widgets.borrow();
 
-                    if account_widgets.is_empty() {
-                        delete_button.set_sensitive(true);
-                    }
+                    delete_button.set_sensitive(account_widgets.is_empty());
 
                     popover.show_all();
 

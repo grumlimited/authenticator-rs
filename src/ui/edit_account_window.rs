@@ -164,36 +164,36 @@ impl EditAccountWindow {
     }
 
     fn qrcode_action(gui: &MainWindow) {
-        let qr_button = gui.edit_account_window.qr_button.clone();
-        let dialog = gui.edit_account_window.image_dialog.clone();
+        let qr_button = gui.edit_account.qr_button.clone();
+        let dialog = gui.edit_account.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
         {
-            let input_secret = gui.edit_account_window.input_secret.clone();
-            let save_button = gui.edit_account_window.save_button.clone();
+            let input_secret = gui.edit_account.input_secret.clone();
+            let save_button = gui.edit_account.save_button.clone();
             let gui = gui.clone();
             rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
-                gui.edit_account_window.reset_errors();
+                gui.edit_account.reset_errors();
                 save_button.set_sensitive(true);
 
                 if ok {
                     buffer.set_text(qr_code.as_str());
-                    let _ = gui.edit_account_window.validate();
+                    let _ = gui.edit_account.validate();
                 } else {
                     buffer.set_text(&gettext(qr_code));
-                    let _ = gui.edit_account_window.validate();
+                    let _ = gui.edit_account.validate();
                 }
 
                 glib::Continue(true)
             });
         }
 
-        let input_secret = gui.edit_account_window.input_secret.clone();
+        let input_secret = gui.edit_account.input_secret.clone();
         let pool = gui.pool.clone();
-        let save_button = gui.edit_account_window.save_button.clone();
+        let save_button = gui.edit_account.save_button.clone();
 
         qr_button.connect_clicked(move |_| {
             let tx = tx.clone();
@@ -225,10 +225,10 @@ impl EditAccountWindow {
         }
 
         // CANCEL
-        with_action(&gui, connection.clone(), &gui.edit_account_window.cancel_button, |_, gui| {
+        with_action(&gui, connection.clone(), &gui.edit_account.cancel_button, |_, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
-                let edit_account_window = gui.edit_account_window.clone();
+                let edit_account_window = gui.edit_account.clone();
                 edit_account_window.reset();
 
                 let buffer = edit_account_window.input_secret.get_buffer().unwrap();
@@ -239,13 +239,13 @@ impl EditAccountWindow {
         });
 
         // SAVE
-        with_action(&gui, connection, &gui.edit_account_window.save_button, |connection, gui| {
+        with_action(&gui, connection, &gui.edit_account.save_button, |connection, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
-                gui.edit_account_window.reset_errors();
+                gui.edit_account.reset_errors();
 
-                if let Ok(()) = gui.edit_account_window.validate() {
-                    let edit_account_window = gui.edit_account_window.clone();
+                if let Ok(()) = gui.edit_account.validate() {
+                    let edit_account_window = gui.edit_account.clone();
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
                     let account_id = edit_account_window.input_account_id.clone();
@@ -267,7 +267,7 @@ impl EditAccountWindow {
 
                     rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    let edit_account_window = gui.edit_account_window.clone();
+                    let edit_account_window = gui.edit_account.clone();
                     rx_reset.attach(None, move |_| {
                         // upon completion, reset form
                         edit_account_window.reset();

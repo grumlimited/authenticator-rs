@@ -133,3 +133,6 @@ msgstr "This program comes with absolutely no warranty.\n\nSee the <a href=\"htt
 
 msgid "Confirm"
 msgstr "Confirm"
+
+msgid "Click + to add accounts"
+msgstr "Click + to add accounts"

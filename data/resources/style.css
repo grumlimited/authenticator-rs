@@ -54,3 +54,7 @@
 #add_group_icon_error {
     color: @error_color;
 }
+
+.no_accounts {
+    font-style: italic;
+}

@@ -11,16 +11,17 @@ use gtk::prelude::*;
 use rusqlite::Connection;
 
 use crate::helpers::ConfigManager;
-use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     about_popup: gtk::Window,
-    pub edit_account_window: ui::EditAccountWindow,
+    pub edit_account: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
+    pub no_accounts: ui::NoAccountsWindow,
     pub pool: ThreadPool,
     pub state: Rc<RefCell<State>>,
 }
@@ -38,6 +39,8 @@ pub enum Display {
     DisplayEditAccount,
     DisplayAddAccount,
     DisplayAddGroup,
+    DisplayEditGroup,
+    DisplayNoAccounts,
 }
 
 impl Default for State {
@@ -61,6 +64,7 @@ impl MainWindow {
         let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
         let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
 
+        let no_accounts = NoAccountsWindow::new(builder.clone());
         let accounts_window = AccountsWindow::new(builder.clone());
 
         {
@@ -93,8 +97,9 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
-            edit_account_window: EditAccountWindow::new(builder.clone()),
+            edit_account: EditAccountWindow::new(builder.clone()),
             accounts_window,
+            no_accounts,
             add_group: AddGroupWindow::new(builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: Rc::new(RefCell::new(State::default())),
@@ -112,26 +117,53 @@ impl MainWindow {
             Display::DisplayAccounts => {
                 gui.accounts_window.container.set_visible(true);
                 gui.add_group.container.set_visible(false);
-                gui.edit_account_window.container.set_visible(false);
+                gui.edit_account.container.set_visible(false);
+                gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditAccount => {
+                gui.edit_account.add_accounts_container_edit.set_visible(true);
+                gui.edit_account.add_accounts_container_add.set_visible(false);
+                gui.edit_account.container.set_visible(true);
+
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
-                gui.edit_account_window.container.set_visible(true);
-                gui.edit_account_window.add_accounts_container_edit.set_visible(true);
-                gui.edit_account_window.add_accounts_container_add.set_visible(false);
+                gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddAccount => {
+                gui.edit_account.add_accounts_container_edit.set_visible(false);
+                gui.edit_account.add_accounts_container_add.set_visible(true);
+                gui.edit_account.container.set_visible(true);
+
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
-                gui.edit_account_window.container.set_visible(true);
-                gui.edit_account_window.add_accounts_container_edit.set_visible(false);
-                gui.edit_account_window.add_accounts_container_add.set_visible(true);
+
+                gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
-                gui.accounts_window.container.set_visible(false);
+                gui.add_group.add_group_container_add.set_visible(true);
+                gui.add_group.add_group_container_edit.set_visible(false);
+                gui.edit_account.add_accounts_container_add.set_visible(true);
                 gui.add_group.container.set_visible(true);
-                gui.edit_account_window.container.set_visible(false);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.edit_account.container.set_visible(false);
+                gui.no_accounts.container.set_visible(false);
+            }
+            Display::DisplayEditGroup => {
+                gui.add_group.add_group_container_add.set_visible(false);
+                gui.add_group.add_group_container_edit.set_visible(true);
+                gui.add_group.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.edit_account.container.set_visible(false);
+                gui.no_accounts.container.set_visible(false);
+            }
+            Display::DisplayNoAccounts => {
+                gui.no_accounts.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.add_group.container.set_visible(false);
+                gui.edit_account.container.set_visible(false);
             }
         }
     }
@@ -151,8 +183,6 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        self.accounts_window.progress_bar.show();
-        self.accounts_window.container.show();
         self.window.show();
     }
 
@@ -320,20 +350,12 @@ impl MainWindow {
 
         {
             let popover = popover.clone();
-            let edit_account_window = self.edit_account_window.clone();
-            let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
-
             let gui = self.clone();
 
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
-
                 add_group.reset();
-
-                edit_account_window.container.set_visible(false);
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(true);
 
                 Self::switch_to(&gui, Display::DisplayAddGroup);
             });
@@ -363,7 +385,7 @@ impl MainWindow {
                 // can't add account if no groups
                 add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 
-                add_group_button.set_sensitive(display == Display::DisplayAccounts);
+                add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
 
                 popover.show_all();
             });
@@ -373,7 +395,7 @@ impl MainWindow {
             connection,
             popover,
             self.clone(),
-            self.edit_account_window.clone(),
+            self.edit_account.clone(),
             None,
         ));
 
