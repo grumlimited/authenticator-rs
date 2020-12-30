@@ -268,8 +268,7 @@ impl AccountsWindow {
                         copy_button.connect_clicked(move |button| {
                             button.set_image(Some(&dialog_ok_img));
 
-                            let tx = tx.clone();
-                            pool.spawn_ok(times_up(tx, 2000));
+                            pool.spawn_ok(times_up(tx.clone(), 2000));
                         });
                     }
                 }

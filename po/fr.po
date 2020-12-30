@@ -133,3 +133,6 @@ msgstr "Ce programme est fourni sans aucune garantie.\n\nPour plus de détails, 
 
 msgid "Confirm"
 msgstr "Confirmer"
+
+msgid "Click + to add accounts"
+msgstr "Cliquez sur + pour ajouter un compte"

@@ -909,7 +909,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">Click + in top left menu to add accounts</property>
+                    <property name="label" translatable="yes">Click + to add accounts</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
