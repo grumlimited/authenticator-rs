@@ -275,15 +275,12 @@ impl EditAccountWindow {
 
                     let account_id = account_id.get_buffer().get_text();
 
-                    gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
-                        &gui,
-                        rx_done,
-                        |filter, connection, tx_done| async move {
+                    gui.pool
+                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                             Self::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
-                        },
-                    )(filter, connection, tx_done));
+                        })(filter, connection, tx_done));
 
                     gui.switch_to(Display::DisplayAccounts);
                 }

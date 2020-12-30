@@ -52,7 +52,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
                     ConfigManager::delete_account(&connection, account_id).unwrap();
@@ -63,14 +63,14 @@ impl AccountsWindow {
             })(filter, connection, tx_done));
     }
 
-    pub fn flip_accounts_container<F, Fut>(gui: &MainWindow, rx: Receiver<bool>, f: F) -> F
+    pub fn flip_accounts_container<F, Fut>(&self, rx: Receiver<bool>, f: F) -> F
     where
         F: FnOnce(Option<String>, Arc<Mutex<Connection>>, Sender<bool>) -> Fut,
         Fut: Future<Output = ()>,
     {
-        gui.accounts_window.accounts_container.set_sensitive(false);
+        self.accounts_container.set_sensitive(false);
 
-        let accounts_container = gui.accounts_window.accounts_container.clone();
+        let accounts_container = self.accounts_container.clone();
 
         // upon completion of `f`, restores sensitivity to accounts_container
         rx.attach(None, move |_| {
@@ -90,7 +90,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
                     let group = ConfigManager::get_group(&connection, group_id).unwrap();
@@ -115,7 +115,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 Self::load_account_groups(tx, connection.clone(), filter).await;
                 tx_done.send(true).expect("boom!");
             })(filter, connection, tx_done));
