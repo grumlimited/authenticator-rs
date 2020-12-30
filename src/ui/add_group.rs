@@ -215,12 +215,11 @@ impl AddGroupWindow {
         }
 
         // CANCEL
-        with_action(&gui, connection.clone(), &gui.add_group.cancel_button, |_, gui| {
+        with_action(&gui, connection.clone(), &gui.add_group.cancel_button, |connection, gui| {
             let gui = gui.clone();
             Box::new(move |_| {
                 gui.add_group.reset();
-
-                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
             })
         });
 
