@@ -3,7 +3,6 @@
     <gresource prefix="/uk/co/grumlimited/authenticator-rs">
 	<file compressed="true" alias="style.css">data/resources/style.css</file>
 	<file compressed="true" alias="log4rs.yaml">data/resources/log4rs.yaml</file>
-	<file compressed="true" alias="authenticator-rs">data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg</file>
 
 	<!-- UI Files -->
 	<file compressed="true" preprocess="xml-stripblanks" alias="main.ui">data/resources/gtk/ui/main.ui</file>
