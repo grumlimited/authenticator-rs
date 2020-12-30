@@ -390,7 +390,7 @@ impl MainWindow {
 
         {
             let popover = popover.clone();
-            self.no_accounts.no_accounts_plus_sign.connect_button_press_event( move |t, e| {
+            self.no_accounts.no_accounts_plus_sign.connect_button_press_event(move |t, e| {
                 popover.show_all();
                 Inhibit(true)
             });
