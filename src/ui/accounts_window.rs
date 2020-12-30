@@ -185,7 +185,6 @@ impl AccountsWindow {
                 connection.clone(),
                 popover.clone(),
                 gui.clone(),
-                gui.edit_account.clone(),
                 Some(group_id),
             ));
 
@@ -292,16 +291,9 @@ impl AccountsWindow {
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
-                    let input_group = edit_account.input_group.clone();
-                    input_group.remove_all(); //re-added and refreshed just below
+                    edit_account.input_group.remove_all(); //re-added and refreshed just below
 
-                    groups.iter().for_each(|group| {
-                        let entry_id = Some(group.id.to_string());
-                        input_group.append(entry_id.as_deref(), group.name.as_str());
-                        if group.id == account.group_id {
-                            input_group.set_active_id(entry_id.as_deref());
-                        }
-                    });
+                    edit_account.set_group_dropdown(Some(account.group_id), &groups);
 
                     let account_id = account.id.to_string();
                     edit_account.input_account_id.set_text(account_id.as_str());
@@ -383,18 +375,34 @@ impl AccountsWindow {
         connection: Arc<Mutex<Connection>>,
         popover: gtk::PopoverMenu,
         main_window: MainWindow,
-        edit_account_window: EditAccountWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
         Box::new(move |_: &gtk::Button| {
             debug!("Loading for group_id {:?}", group_id);
+
+            let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+
             let groups = {
                 let connection = connection.lock().unwrap();
                 ConfigManager::load_account_groups(&connection, main_window.accounts_window.get_filter_value().as_deref()).unwrap()
             };
 
-            edit_account_window.reset();
-            edit_account_window.set_group_dropdown(group_id, groups.as_slice());
+            let edit_account = EditAccountWindow::new(builder);
+
+            edit_account.set_group_dropdown(None, &groups);
+
+            main_window.edit_account
+                .container
+                .get_children()
+                .iter()
+                .for_each(|w| main_window.edit_account.container.remove(w));
+
+            edit_account.container.get_children().iter().for_each(|w| {
+                edit_account.container.remove(w);
+                main_window.edit_account.container.add(w)
+            });
+
+            edit_account.edit_account_buttons_actions(&main_window, connection.clone());
 
             popover.hide();
             main_window.switch_to(Display::DisplayAddAccount);

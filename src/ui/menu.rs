@@ -183,7 +183,6 @@ impl Menus for MainWindow {
             connection,
             popover,
             self.clone(),
-            self.edit_account.clone(),
             None,
         ));
 
