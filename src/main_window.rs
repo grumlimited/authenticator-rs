@@ -14,6 +14,8 @@ use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
+use crate::exporting::*;
+
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
@@ -309,7 +311,8 @@ impl MainWindow {
             });
         }
 
-        export_button.connect_clicked(export_accounts(self.clone(), popover.clone(), connection.clone(), self.pool.clone()));
+        let gui = self.clone();
+        export_button.connect_clicked(gui.export_accounts(popover.clone(), connection.clone()));
 
         let import_button: gtk::Button = builder.get_object("import_button").unwrap();
 
@@ -414,56 +417,6 @@ fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option
     Box::new(move |_param: &[glib::Value]| {
         popup.hide();
         None
-    })
-}
-
-fn export_accounts(gui: MainWindow, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>, threadpool: ThreadPool) -> Box<dyn Fn(&gtk::Button)> {
-    Box::new(move |_b: &gtk::Button| {
-        popover.set_visible(false);
-
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
-
-        let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
-
-        let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
-        let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
-
-        export_account_error_body.set_label(&gettext("Could not export accounts!"));
-
-        builder.connect_signals(|_, handler_name| match handler_name {
-            "export_account_error_close" => about_popup_close(export_account_error.clone()),
-            _ => Box::new(|_| None),
-        });
-
-        dialog.show();
-
-        match dialog.run() {
-            gtk::ResponseType::Accept => {
-                let path = dialog.get_filename().unwrap();
-
-                let (tx, rx): (Sender<bool>, Receiver<bool>) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-
-                // sensitivity is restored in refresh_accounts()
-                gui.accounts_window.accounts_container.set_sensitive(false);
-                threadpool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
-
-                let gui = gui.clone();
-                let connection = connection.clone();
-                rx.attach(None, move |success| {
-                    if !success {
-                        export_account_error.set_title(&gettext("Error"));
-                        export_account_error.show_all();
-                    }
-
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
-
-                    glib::Continue(true)
-                });
-
-                dialog.close();
-            }
-            _ => dialog.close(),
-        }
     })
 }
 

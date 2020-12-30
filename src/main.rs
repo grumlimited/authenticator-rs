@@ -20,6 +20,7 @@ use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow};
 
 mod main_window;
 
+mod exporting;
 mod helpers;
 mod model;
 mod ui;
