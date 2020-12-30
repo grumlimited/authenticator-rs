@@ -144,11 +144,15 @@ impl AccountsWindow {
                     .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
             }
 
-            Self::edit_buttons_actions(&gui, connection.clone());
-            Self::group_edit_buttons_actions(&gui, connection.clone());
-            Self::delete_buttons_actions(&gui, connection.clone());
+            if gui.accounts_window.has_accounts() {
+                Self::edit_buttons_actions(&gui, connection.clone());
+                Self::group_edit_buttons_actions(&gui, connection.clone());
+                Self::delete_buttons_actions(&gui, connection.clone());
 
-            MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+            } else {
+                MainWindow::switch_to(&gui, Display::DisplayNoAccounts);
+            }
 
             glib::Continue(true)
         })
@@ -385,6 +389,11 @@ impl AccountsWindow {
             popover.hide();
             MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
         })
+    }
+
+    pub fn has_accounts(&self) -> bool {
+        let r = self.widgets.lock().unwrap();
+        !r.is_empty()
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
