@@ -14,7 +14,7 @@ pub trait Exporting {
 
     fn import_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)>;
 
-    fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
+    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
 }
 
 impl Exporting for MainWindow {
@@ -33,7 +33,7 @@ impl Exporting for MainWindow {
             export_account_error_body.set_label(&gettext("Could not export accounts!"));
 
             builder.connect_signals(|_, handler_name| match handler_name {
-                "export_account_error_close" => Self::about_popup_close(export_account_error.clone()),
+                "export_account_error_close" => Self::popup_close(export_account_error.clone()),
                 _ => Box::new(|_| None),
             });
 
@@ -86,7 +86,7 @@ impl Exporting for MainWindow {
             export_account_error_body.set_label(&gettext("Could not import accounts!"));
 
             builder.connect_signals(|_, handler_name| match handler_name {
-                "export_account_error_close" => Self::about_popup_close(export_account_error.clone()),
+                "export_account_error_close" => Self::popup_close(export_account_error.clone()),
                 _ => Box::new(|_| None),
             });
 
@@ -121,7 +121,7 @@ impl Exporting for MainWindow {
         })
     }
 
-    fn about_popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
+    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
         Box::new(move |_param: &[glib::Value]| {
             popup.hide();
             None
