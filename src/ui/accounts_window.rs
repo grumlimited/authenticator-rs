@@ -234,10 +234,13 @@ impl AccountsWindow {
 
     fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widget in widgets_list.iter() {
             let account_widgets = group_widget.account_widgets.clone();
             let account_widgets = account_widgets.borrow();
+
+            let builder = builder.clone();
 
             for account_widget in account_widgets.iter() {
                 let id = account_widget.account_id;
@@ -269,9 +272,9 @@ impl AccountsWindow {
                         });
                     }
                 }
-
+                let builder = builder.clone();
                 account_widget.edit_button.connect_clicked(move |_| {
-                    let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                    let builder = builder.clone();
                     let edit_account = EditAccountWindow::new(builder);
 
                     gui.edit_account
