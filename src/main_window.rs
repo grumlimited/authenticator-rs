@@ -350,20 +350,13 @@ impl MainWindow {
 
         {
             let popover = popover.clone();
-            let edit_account_window = self.edit_account.clone();
-            let accounts_window = self.accounts_window.clone();
             let add_group = self.add_group.clone();
-
             let gui = self.clone();
 
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
 
                 add_group.reset();
-
-                edit_account_window.container.set_visible(false);
-                accounts_window.container.set_visible(false);
-                add_group.container.set_visible(true);
 
                 Self::switch_to(&gui, Display::DisplayAddGroup);
             });
