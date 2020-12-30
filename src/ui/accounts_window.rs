@@ -179,7 +179,7 @@ impl AccountsWindow {
                 connection.clone(),
                 popover.clone(),
                 gui.clone(),
-                gui.edit_account_window.clone(),
+                gui.edit_account.clone(),
                 Some(group_id),
             ));
 
@@ -238,9 +238,9 @@ impl AccountsWindow {
                 let popover = account_widget.popover.clone();
                 let connection = connection.clone();
 
-                let input_name = gui.edit_account_window.input_name.clone();
-                let input_secret = gui.edit_account_window.input_secret.clone();
-                let input_account_id = gui.edit_account_window.input_account_id.clone();
+                let input_name = gui.edit_account.input_name.clone();
+                let input_secret = gui.edit_account.input_secret.clone();
+                let input_account_id = gui.edit_account.input_account_id.clone();
 
                 let gui = gui.clone();
 
@@ -274,7 +274,7 @@ impl AccountsWindow {
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
-                    let input_group = gui.edit_account_window.input_group.clone();
+                    let input_group = gui.edit_account.input_group.clone();
                     input_group.remove_all(); //re-added and refreshed just below
 
                     groups.iter().for_each(|group| {
