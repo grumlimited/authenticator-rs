@@ -361,6 +361,7 @@ impl MainWindow {
         let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
 
         {
+            let action_menu = action_menu.clone();
             let widgets = self.accounts_window.widgets.clone();
             let add_account_button = add_account_button.clone();
             let popover = popover.clone();
@@ -389,9 +390,10 @@ impl MainWindow {
         }
 
         {
-            let popover = popover.clone();
-            self.no_accounts.no_accounts_plus_sign.connect_button_press_event(move |t, e| {
-                popover.show_all();
+            // creates a shortcut on the "+" image to action menu when no account page is displayed
+            let action_menu = action_menu.clone();
+            self.no_accounts.no_accounts_plus_sign.connect_button_press_event(move |_, _| {
+                action_menu.clicked();
                 Inhibit(true)
             });
         }
