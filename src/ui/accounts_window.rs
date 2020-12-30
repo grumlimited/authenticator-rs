@@ -285,7 +285,7 @@ impl AccountsWindow {
                         gui.edit_account.container.add(w)
                     });
 
-                    edit_account.edit_account_buttons_actions2(&gui, connection.clone());
+                    edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();

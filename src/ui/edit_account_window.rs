@@ -214,7 +214,7 @@ impl EditAccountWindow {
         });
     }
 
-    pub fn edit_account_buttons_actions2(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.qrcode_action(gui.pool.clone());
 
         {
