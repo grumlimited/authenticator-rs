@@ -10,15 +10,14 @@ use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE, NAMESPACE_PREFIX, ui};
 use crate::helpers::ConfigManager;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
-use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     window: gtk::ApplicationWindow,
     about_popup: gtk::Window,
-    stack: gtk::Stack,
     pub edit_account: ui::EditAccountWindow,
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
@@ -97,7 +96,6 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
-            stack: builder.get_object("stack").unwrap(),
             edit_account: EditAccountWindow::new(builder.clone()),
             accounts_window,
             no_accounts,
@@ -111,8 +109,6 @@ impl MainWindow {
         let mut state = gui.state.borrow_mut();
         state.display = display;
 
-        // gui.stack.set_visible_child_name("dqs");
-
         let g_settings = gio::Settings::new(NAMESPACE);
         state.dark_mode = g_settings.get_boolean("dark-theme");
 
@@ -124,32 +120,37 @@ impl MainWindow {
                 gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditAccount => {
-                gui.accounts_window.container.set_visible(false);
-                gui.add_group.container.set_visible(false);
-                gui.edit_account.container.set_visible(true);
                 gui.edit_account.add_accounts_container_edit.set_visible(true);
                 gui.edit_account.add_accounts_container_add.set_visible(false);
+                gui.edit_account.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.add_group.container.set_visible(false);
                 gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddAccount => {
-                gui.accounts_window.container.set_visible(false);
-                gui.add_group.container.set_visible(false);
-                gui.edit_account.container.set_visible(true);
                 gui.edit_account.add_accounts_container_edit.set_visible(false);
                 gui.edit_account.add_accounts_container_add.set_visible(true);
+                gui.edit_account.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
+                gui.add_group.container.set_visible(false);
+
                 gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
-                gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(true);
+
+                gui.accounts_window.container.set_visible(false);
                 gui.edit_account.container.set_visible(false);
                 gui.no_accounts.container.set_visible(false);
             }
             Display::DisplayNoAccounts => {
+                gui.no_accounts.container.set_visible(true);
+
                 gui.accounts_window.container.set_visible(false);
                 gui.add_group.container.set_visible(false);
                 gui.edit_account.container.set_visible(false);
-                gui.no_accounts.container.set_visible(true);
             }
         }
     }
@@ -169,8 +170,6 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        // self.accounts_window.progress_bar.show();
-        // self.accounts_window.container.show();
         self.window.show();
     }
 
