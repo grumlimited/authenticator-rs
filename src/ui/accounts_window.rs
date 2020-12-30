@@ -137,9 +137,7 @@ impl AccountsWindow {
                 // empty list of accounts first
                 accounts_container.foreach(|e| accounts_container.remove(e));
 
-                let accout_group_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect::<Vec<AccountGroupWidget>>();
-
-                *m_widgets = accout_group_widgets;
+                *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
 
                 m_widgets
                     .iter()
