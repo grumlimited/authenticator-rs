@@ -383,9 +383,6 @@ impl AccountsWindow {
             edit_account_window.reset();
             edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
-            edit_account_window.add_accounts_container_edit.set_visible(false);
-            edit_account_window.add_accounts_container_add.set_visible(true);
-
             popover.hide();
             MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
         })

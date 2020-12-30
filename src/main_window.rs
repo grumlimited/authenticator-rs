@@ -355,7 +355,6 @@ impl MainWindow {
 
             add_group_button.connect_clicked(move |_| {
                 popover.hide();
-
                 add_group.reset();
 
                 Self::switch_to(&gui, Display::DisplayAddGroup);
