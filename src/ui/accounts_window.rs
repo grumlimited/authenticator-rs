@@ -15,6 +15,7 @@ use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
+use crate::NAMESPACE_PREFIX;
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
@@ -243,10 +244,6 @@ impl AccountsWindow {
                 let popover = account_widget.popover.clone();
                 let connection = connection.clone();
 
-                let input_name = gui.edit_account.input_name.clone();
-                let input_secret = gui.edit_account.input_secret.clone();
-                let input_account_id = gui.edit_account.input_account_id.clone();
-
                 let gui = gui.clone();
 
                 {
@@ -274,11 +271,27 @@ impl AccountsWindow {
                 }
 
                 account_widget.edit_button.connect_clicked(move |_| {
+                    let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                    let edit_account = EditAccountWindow::new(builder);
+
+                    gui.edit_account
+                        .container
+                        .get_children()
+                        .iter()
+                        .for_each(|w| gui.edit_account.container.remove(w));
+
+                    edit_account.container.get_children().iter().for_each(|w| {
+                        edit_account.container.remove(w);
+                        gui.edit_account.container.add(w)
+                    });
+
+                    edit_account.edit_account_buttons_actions2(&gui, connection.clone());
+
                     let connection = connection.lock().unwrap();
                     let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
-                    let input_group = gui.edit_account.input_group.clone();
+                    let input_group = edit_account.input_group.clone();
                     input_group.remove_all(); //re-added and refreshed just below
 
                     groups.iter().for_each(|group| {
@@ -290,10 +303,10 @@ impl AccountsWindow {
                     });
 
                     let account_id = account.id.to_string();
-                    input_account_id.set_text(account_id.as_str());
-                    input_name.set_text(account.label.as_str());
+                    edit_account.input_account_id.set_text(account_id.as_str());
+                    edit_account.input_name.set_text(account.label.as_str());
 
-                    let buffer = input_secret.get_buffer().unwrap();
+                    let buffer = edit_account.input_secret.get_buffer().unwrap();
                     buffer.set_text(account.secret.as_str());
 
                     popover.hide();

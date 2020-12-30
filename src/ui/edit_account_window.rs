@@ -214,34 +214,27 @@ impl EditAccountWindow {
         });
     }
 
-    pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        gui.edit_account.qrcode_action(gui.pool.clone());
+    pub fn edit_account_buttons_actions2(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        self.qrcode_action(gui.pool.clone());
 
-        fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
-            button.connect_clicked(button_closure(connection, gui));
+            let edit_account = self.clone();
+            let connection = connection.clone();
+            let gui = gui.clone();
+            self.cancel_button.connect_clicked(move |_| {
+                edit_account.reset();
+                AccountsWindow::refresh_accounts(&gui, connection.clone());
+            });
         }
 
-        // CANCEL
-        with_action(&gui, connection.clone(), &gui.edit_account.cancel_button, |connection, gui| {
+        {
+            let edit_account = self.clone();
             let gui = gui.clone();
-            Box::new(move |_| {
-                let edit_account_window = gui.edit_account.clone();
-                edit_account_window.reset();
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
-            })
-        });
+            self.save_button.connect_clicked(move |_| {
+                edit_account.reset_errors();
 
-        // SAVE
-        with_action(&gui, connection, &gui.edit_account.save_button, |connection, gui| {
-            let gui = gui.clone();
-            Box::new(move |_| {
-                gui.edit_account.reset_errors();
-
-                if let Ok(()) = gui.edit_account.validate() {
-                    let edit_account_window = gui.edit_account.clone();
+                if let Ok(()) = edit_account.validate() {
+                    let edit_account_window = edit_account.clone();
                     let name = edit_account_window.input_name.clone();
                     let secret = edit_account_window.input_secret.clone();
                     let account_id = edit_account_window.input_account_id.clone();
@@ -263,7 +256,7 @@ impl EditAccountWindow {
 
                     rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    let edit_account_window = gui.edit_account.clone();
+                    let edit_account_window = edit_account.clone();
                     rx_reset.attach(None, move |_| {
                         // upon completion, reset form
                         edit_account_window.reset();
@@ -284,8 +277,8 @@ impl EditAccountWindow {
 
                     gui.switch_to(Display::DisplayAccounts);
                 }
-            })
-        });
+            });
+        }
     }
 
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
