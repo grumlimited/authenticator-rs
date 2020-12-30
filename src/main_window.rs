@@ -61,7 +61,7 @@ impl MainWindow {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
-        let window: gtk::ApplicationWindow = builder.get_object("main_window").unwrap();
+        let window = builder.get_object("main_window").unwrap();
         let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
 
         let no_accounts = NoAccountsWindow::new(builder.clone());
@@ -341,11 +341,8 @@ impl MainWindow {
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
-
         let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-
         let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
-
         let add_group_button: gtk::Button = builder.get_object("add_group_button").unwrap();
 
         {
@@ -388,6 +385,14 @@ impl MainWindow {
                 add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
 
                 popover.show_all();
+            });
+        }
+
+        {
+            let popover = popover.clone();
+            self.no_accounts.no_accounts_plus_sign.connect_button_press_event( move |t, e| {
+                popover.show_all();
+                Inhibit(true)
             });
         }
 
