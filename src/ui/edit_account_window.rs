@@ -12,6 +12,7 @@ use crate::helpers::ConfigManager;
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
+use futures::executor::ThreadPool;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -163,37 +164,36 @@ impl EditAccountWindow {
         };
     }
 
-    fn qrcode_action(gui: &MainWindow) {
-        let qr_button = gui.edit_account.qr_button.clone();
-        let dialog = gui.edit_account.image_dialog.clone();
+    fn qrcode_action(&self, pool: ThreadPool) {
+        let qr_button = self.qr_button.clone();
+        let dialog = self.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
         {
-            let input_secret = gui.edit_account.input_secret.clone();
-            let save_button = gui.edit_account.save_button.clone();
-            let gui = gui.clone();
+            let input_secret = self.input_secret.clone();
+            let save_button = self.save_button.clone();
+            let w = self.clone();
             rx.attach(None, move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
-                gui.edit_account.reset_errors();
+                w.reset_errors();
                 save_button.set_sensitive(true);
 
                 if ok {
                     buffer.set_text(qr_code.as_str());
-                    let _ = gui.edit_account.validate();
+                    let _ = w.validate();
                 } else {
                     buffer.set_text(&gettext(qr_code));
-                    let _ = gui.edit_account.validate();
+                    let _ = w.validate();
                 }
 
                 glib::Continue(true)
             });
         }
 
-        let input_secret = gui.edit_account.input_secret.clone();
-        let pool = gui.pool.clone();
-        let save_button = gui.edit_account.save_button.clone();
+        let input_secret = self.input_secret.clone();
+        let save_button = self.save_button.clone();
 
         qr_button.connect_clicked(move |_| {
             let tx = tx.clone();
@@ -215,7 +215,7 @@ impl EditAccountWindow {
     }
 
     pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        Self::qrcode_action(&gui);
+        gui.edit_account.qrcode_action(gui.pool.clone());
 
         fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
         where
@@ -275,17 +275,14 @@ impl EditAccountWindow {
 
                     let account_id = account_id.get_buffer().get_text();
 
-                    gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
-                        &gui,
-                        rx_done,
-                        |filter, connection, tx_done| async move {
+                    gui.pool
+                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                             Self::create_account(account_id, name, secret, group_id, connection.clone(), tx_reset).await;
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
-                        },
-                    )(filter, connection, tx_done));
+                        })(filter, connection, tx_done));
 
-                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                    gui.switch_to(Display::DisplayAccounts);
                 }
             })
         });

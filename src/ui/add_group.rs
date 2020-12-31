@@ -250,17 +250,14 @@ impl AddGroupWindow {
                     let filter = gui.accounts_window.get_filter_value();
                     let connection = connection.clone();
 
-                    gui.pool.spawn_ok(AccountsWindow::flip_accounts_container(
-                        &gui,
-                        rx_done,
-                        |filter, connection, tx_done| async move {
+                    gui.pool
+                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                             Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone(), tx_reset).await;
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
-                        },
-                    )(filter, connection, tx_done));
+                        })(filter, connection, tx_done));
 
-                    MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                    gui.switch_to(Display::DisplayAccounts);
                 }
             })
         });

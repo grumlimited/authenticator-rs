@@ -52,7 +52,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
                     ConfigManager::delete_account(&connection, account_id).unwrap();
@@ -63,14 +63,14 @@ impl AccountsWindow {
             })(filter, connection, tx_done));
     }
 
-    pub fn flip_accounts_container<F, Fut>(gui: &MainWindow, rx: Receiver<bool>, f: F) -> F
+    pub fn flip_accounts_container<F, Fut>(&self, rx: Receiver<bool>, f: F) -> F
     where
         F: FnOnce(Option<String>, Arc<Mutex<Connection>>, Sender<bool>) -> Fut,
         Fut: Future<Output = ()>,
     {
-        gui.accounts_window.accounts_container.set_sensitive(false);
+        self.accounts_container.set_sensitive(false);
 
-        let accounts_container = gui.accounts_window.accounts_container.clone();
+        let accounts_container = self.accounts_container.clone();
 
         // upon completion of `f`, restores sensitivity to accounts_container
         rx.attach(None, move |_| {
@@ -90,7 +90,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
                     let group = ConfigManager::get_group(&connection, group_id).unwrap();
@@ -115,7 +115,7 @@ impl AccountsWindow {
         let filter = gui.accounts_window.get_filter_value();
 
         gui.pool
-            .spawn_ok(Self::flip_accounts_container(gui, rx_done, |filter, connection, tx_done| async move {
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 Self::load_account_groups(tx, connection.clone(), filter).await;
                 tx_done.send(true).expect("boom!");
             })(filter, connection, tx_done));
@@ -149,9 +149,9 @@ impl AccountsWindow {
                 Self::group_edit_buttons_actions(&gui, connection.clone());
                 Self::delete_buttons_actions(&gui, connection.clone());
 
-                MainWindow::switch_to(&gui, Display::DisplayAccounts);
+                gui.switch_to(Display::DisplayAccounts);
             } else {
-                MainWindow::switch_to(&gui, Display::DisplayNoAccounts);
+                gui.switch_to(Display::DisplayNoAccounts);
             }
 
             glib::Continue(true)
@@ -225,7 +225,7 @@ impl AccountsWindow {
                         };
                     }
 
-                    MainWindow::switch_to(&gui, Display::DisplayEditGroup);
+                    gui.switch_to(Display::DisplayEditGroup);
                 });
             }
         }
@@ -298,7 +298,7 @@ impl AccountsWindow {
 
                     popover.hide();
 
-                    MainWindow::switch_to(&gui, Display::DisplayEditAccount);
+                    gui.switch_to(Display::DisplayEditAccount);
                 });
             }
         }
@@ -383,7 +383,7 @@ impl AccountsWindow {
             edit_account_window.set_group_dropdown(group_id, groups.as_slice());
 
             popover.hide();
-            MainWindow::switch_to(&main_window, Display::DisplayAddAccount);
+            main_window.switch_to(Display::DisplayAddAccount);
         })
     }
 
