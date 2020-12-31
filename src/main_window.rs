@@ -121,13 +121,12 @@ impl MainWindow {
         match state.display {
             Display::DisplayAccounts => {
                 self.accounts_window.container.set_visible(true);
+
                 self.add_group.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditAccount => {
-                self.edit_account.add_accounts_container_edit.set_visible(true);
-                self.edit_account.add_accounts_container_add.set_visible(false);
                 self.edit_account.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
@@ -135,19 +134,13 @@ impl MainWindow {
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddAccount => {
-                self.edit_account.add_accounts_container_edit.set_visible(false);
-                self.edit_account.add_accounts_container_add.set_visible(true);
                 self.edit_account.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
                 self.add_group.container.set_visible(false);
-
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
-                self.add_group.add_group_container_add.set_visible(true);
-                self.add_group.add_group_container_edit.set_visible(false);
-                self.edit_account.add_accounts_container_add.set_visible(true);
                 self.add_group.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);

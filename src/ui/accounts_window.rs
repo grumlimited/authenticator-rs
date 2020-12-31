@@ -220,15 +220,13 @@ impl AccountsWindow {
                     add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
                     add_group.group_id.set_label(format!("{}", group.id).as_str());
 
-                    let image_input = add_group.image_input.clone();
-                    let icon_filename = add_group.icon_filename.clone();
                     if let Some(image) = &group.icon {
-                        icon_filename.set_label(image.as_str());
+                        add_group.icon_filename.set_label(image.as_str());
 
                         let dir = ConfigManager::icons_path(&image);
                         let state = gui.state.borrow();
                         match IconParser::load_icon(&dir, state.dark_mode) {
-                            Ok(pixbuf) => image_input.set_from_pixbuf(Some(&pixbuf)),
+                            Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),
                             Err(_) => error!("Could not load image {}", dir.display()),
                         };
                     }
@@ -390,12 +388,12 @@ impl AccountsWindow {
             };
 
             let edit_account = EditAccountWindow::new(builder);
-
+            edit_account.add_accounts_container_edit.set_visible(false);
+            edit_account.add_accounts_container_add.set_visible(true);
+            edit_account.edit_account_buttons_actions(&main_window, connection.clone());
             edit_account.set_group_dropdown(None, &groups);
 
             main_window.edit_account.replace_with(&edit_account.container);
-
-            edit_account.edit_account_buttons_actions(&main_window, connection.clone());
 
             popover.hide();
             main_window.switch_to(Display::DisplayAddAccount);
