@@ -181,7 +181,10 @@ impl AccountsWindow {
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            add_account_button.connect_clicked(gui.accounts_window.display_add_account_form(connection.clone(), popover.clone(), gui.clone(), Some(group_id)));
+            add_account_button.connect_clicked(
+                gui.accounts_window
+                    .display_add_account_form(connection.clone(), popover.clone(), gui.clone(), Some(group_id)),
+            );
 
             {
                 let connection = connection.clone();
@@ -357,7 +360,8 @@ impl AccountsWindow {
         (1_f64 - ((seconds % 30) as f64 / 30_f64)) as f64
     }
 
-    pub fn display_add_account_form(&self,
+    pub fn display_add_account_form(
+        &self,
         connection: Arc<Mutex<Connection>>,
         popover: gtk::PopoverMenu,
         main_window: MainWindow,
