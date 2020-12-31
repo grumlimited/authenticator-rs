@@ -6,6 +6,7 @@ use gtk::prelude::*;
 use gtk::{Button, MenuButton};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
+use crate::ui::AddGroupWindow;
 
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
@@ -127,10 +128,19 @@ impl Menus for MainWindow {
 
         {
             let popover = popover.clone();
-            let add_group = self.add_group.clone();
             let gui = self.clone();
+            let connection = connection.clone();
 
             add_group_button.connect_clicked(move |_| {
+                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+
+                let add_group = AddGroupWindow::new(builder.clone());
+                add_group.add_group_container_add.set_visible(true);
+                add_group.add_group_container_edit.set_visible(false);
+                add_group.edit_account_buttons_actions(&gui, connection.clone());
+
+                gui.add_group.replace_with(&add_group.container);
+
                 popover.hide();
                 add_group.reset();
 

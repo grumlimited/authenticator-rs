@@ -155,8 +155,6 @@ impl MainWindow {
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditGroup => {
-                self.add_group.add_group_container_add.set_visible(false);
-                self.add_group.add_group_container_edit.set_visible(true);
                 self.add_group.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);

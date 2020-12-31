@@ -38,7 +38,7 @@ pub struct AddGroupWindow {
 
 impl AddGroupWindow {
     pub fn new(builder: Builder) -> AddGroupWindow {
-        AddGroupWindow {
+        let o = AddGroupWindow {
             container: builder.get_object("add_group").unwrap(),
             input_group: builder.get_object("add_group_input_name").unwrap(),
             url_input: builder.get_object("add_group_url_input").unwrap(),
@@ -54,7 +54,8 @@ impl AddGroupWindow {
             image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
             add_group_container_add: builder.get_object("add_group_container_add").unwrap(),
             add_group_container_edit: builder.get_object("add_group_container_edit").unwrap(),
-        }
+        };
+        o
     }
 
     pub fn replace_with(&self, container: &gtk::Box) {
