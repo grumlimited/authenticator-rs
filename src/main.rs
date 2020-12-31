@@ -16,7 +16,7 @@ use main_window::MainWindow;
 
 use crate::helpers::runner;
 use crate::helpers::ConfigManager;
-use crate::ui::{AccountsWindow, AddGroupWindow};
+use crate::ui::AddGroupWindow;
 
 mod main_window;
 
@@ -78,7 +78,7 @@ fn main() {
 
         gui.set_application(&app, connection.clone());
 
-        AccountsWindow::refresh_accounts(&gui, connection.clone());
+        gui.accounts_window.refresh_accounts(&gui, connection.clone());
         // EditAccountWindow::edit_account_buttons_actions(&gui, connection.clone());
         AddGroupWindow::edit_account_buttons_actions(&gui, connection);
 

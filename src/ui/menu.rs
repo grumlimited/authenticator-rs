@@ -84,7 +84,7 @@ impl Menus for MainWindow {
                 // switch first then redraw - to take into account state change
                 gui.switch_to(Display::DisplayAccounts);
 
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
                 Inhibit(false)
             });

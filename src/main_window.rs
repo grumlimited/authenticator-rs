@@ -198,7 +198,7 @@ impl MainWindow {
                 let gui = self.clone();
                 self.accounts_window.filter.connect_changed(move |_| {
                     let gui = gui.clone();
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
+                    gui.accounts_window.refresh_accounts(&gui, connection.clone());
                 });
             }
         }

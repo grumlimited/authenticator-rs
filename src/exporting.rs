@@ -1,6 +1,5 @@
 use crate::helpers::ConfigManager;
 use crate::main_window::MainWindow;
-use crate::ui::AccountsWindow;
 use crate::NAMESPACE_PREFIX;
 use gettextrs::*;
 use glib::{Receiver, Sender};
@@ -57,7 +56,7 @@ impl Exporting for MainWindow {
                             export_account_error.show_all();
                         }
 
-                        AccountsWindow::refresh_accounts(&gui, connection.clone());
+                        gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
                         glib::Continue(true)
                     });
@@ -111,7 +110,7 @@ impl Exporting for MainWindow {
                             export_account_error.show_all();
                         }
 
-                        AccountsWindow::refresh_accounts(&gui, connection.clone());
+                        gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
                         glib::Continue(true)
                     });

@@ -219,7 +219,7 @@ impl AddGroupWindow {
             let gui = gui.clone();
             Box::new(move |_| {
                 gui.add_group.reset();
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui, connection.clone());
             })
         });
 
@@ -238,7 +238,7 @@ impl AddGroupWindow {
                     let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
                     let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
 
-                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                    rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                     let add_group = gui.add_group.clone();
                     rx_reset.attach(None, move |_| {
