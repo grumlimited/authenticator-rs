@@ -1,6 +1,5 @@
 use crate::exporting::Exporting;
 use crate::main_window::{Display, MainWindow};
-use crate::ui::AccountsWindow;
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -179,7 +178,7 @@ impl Menus for MainWindow {
             });
         }
 
-        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(connection, popover, self.clone(), None));
+        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, popover, self.clone(), None));
 
         action_menu
     }
