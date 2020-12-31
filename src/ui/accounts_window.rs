@@ -174,6 +174,8 @@ impl AccountsWindow {
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+
         for group_widgets in widgets_list.iter() {
             let delete_button = group_widgets.delete_button.clone();
             let edit_button = group_widgets.edit_button.clone();
@@ -198,20 +200,25 @@ impl AccountsWindow {
                 let gui = gui.clone();
                 let connection = connection.clone();
                 let popover = popover.clone();
+                let builder = builder.clone();
                 edit_button.connect_clicked(move |_| {
-                    let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
-
+                    let group = {
+                        let connection = connection.lock().unwrap();
+                        ConfigManager::get_group(&connection, group_id).unwrap()
+                    };
                     debug!("Loading group {:?}", group);
 
-                    popover.hide();
+                    let add_group = AddGroupWindow::new(builder.clone());
+                    add_group.edit_account_buttons_actions(&gui, connection.clone());
 
-                    gui.add_group.input_group.set_text(group.name.as_str());
-                    gui.add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
-                    gui.add_group.group_id.set_label(format!("{}", group.id).as_str());
+                    gui.add_group.replace_with(&add_group.container);
 
-                    let image_input = gui.add_group.image_input.clone();
-                    let icon_filename = gui.add_group.icon_filename.clone();
+                    add_group.input_group.set_text(group.name.as_str());
+                    add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
+                    add_group.group_id.set_label(format!("{}", group.id).as_str());
+
+                    let image_input = add_group.image_input.clone();
+                    let icon_filename = add_group.icon_filename.clone();
                     if let Some(image) = &group.icon {
                         icon_filename.set_label(image.as_str());
 
@@ -223,6 +230,7 @@ impl AccountsWindow {
                         };
                     }
 
+                    popover.hide();
                     gui.switch_to(Display::DisplayEditGroup);
                 });
             }
