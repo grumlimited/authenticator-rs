@@ -31,7 +31,7 @@ pub struct EditAccountWindow {
 }
 
 impl EditAccountWindow {
-    pub fn new(builder: Builder) -> EditAccountWindow {
+    pub fn new(builder: &Builder) -> EditAccountWindow {
         EditAccountWindow {
             container: builder.get_object("edit_account").unwrap(),
             input_group: builder.get_object("edit_account_input_group").unwrap(),
@@ -48,11 +48,11 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn replace_with(&self, container: &gtk::Box) {
+    pub fn replace_with(&self, other: &EditAccountWindow) {
         self.container.get_children().iter().for_each(|w| self.container.remove(w));
 
-        container.get_children().iter().for_each(|w| {
-            container.remove(w);
+        other.container.get_children().iter().for_each(|w| {
+            other.container.remove(w);
             self.container.add(w)
         });
     }

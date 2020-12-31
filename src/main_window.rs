@@ -102,10 +102,10 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
-            edit_account: EditAccountWindow::new(builder.clone()),
+            edit_account: EditAccountWindow::new(&builder),
             accounts_window,
             no_accounts,
-            add_group: AddGroupWindow::new(builder),
+            add_group: AddGroupWindow::new(&builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: Rc::new(RefCell::new(State::default())),
         }

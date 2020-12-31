@@ -38,7 +38,7 @@ pub struct AddGroupWindow {
 }
 
 impl AddGroupWindow {
-    pub fn new(builder: Builder) -> AddGroupWindow {
+    pub fn new(builder: &Builder) -> AddGroupWindow {
         AddGroupWindow {
             container: builder.get_object("add_group").unwrap(),
             input_group: builder.get_object("add_group_input_name").unwrap(),
@@ -58,11 +58,11 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn replace_with(&self, container: &gtk::Box) {
+    pub fn replace_with(&self, other: &AddGroupWindow) {
         self.container.get_children().iter().for_each(|w| self.container.remove(w));
 
-        container.get_children().iter().for_each(|w| {
-            container.remove(w);
+        other.container.get_children().iter().for_each(|w| {
+            other.container.remove(w);
             self.container.add(w)
         });
     }

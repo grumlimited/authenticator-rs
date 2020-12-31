@@ -185,7 +185,7 @@ impl AccountsWindow {
 
             add_account_button.connect_clicked(
                 gui.accounts_window
-                    .display_add_account_form(connection.clone(), popover.clone(), gui.clone(), Some(group_id)),
+                    .display_add_account_form(connection.clone(), &popover, &gui, Some(group_id)),
             );
 
             {
@@ -208,13 +208,13 @@ impl AccountsWindow {
                     };
                     debug!("Loading group {:?}", group);
 
-                    let add_group = AddGroupWindow::new(builder.clone());
+                    let add_group = AddGroupWindow::new(&builder);
                     add_group.edit_account_buttons_actions(&gui, connection.clone());
 
                     add_group.add_group_container_add.set_visible(false);
                     add_group.add_group_container_edit.set_visible(true);
 
-                    gui.add_group.replace_with(&add_group.container);
+                    gui.add_group.replace_with(&add_group);
 
                     add_group.input_group.set_text(group.name.as_str());
                     add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
@@ -279,9 +279,9 @@ impl AccountsWindow {
                 let builder = builder.clone();
                 account_widget.edit_button.connect_clicked(move |_| {
                     let builder = builder.clone();
-                    let edit_account = EditAccountWindow::new(builder);
+                    let edit_account = EditAccountWindow::new(&builder);
 
-                    gui.edit_account.replace_with(&edit_account.container);
+                    gui.edit_account.replace_with(&edit_account);
 
                     edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
@@ -372,10 +372,12 @@ impl AccountsWindow {
     pub fn display_add_account_form(
         &self,
         connection: Arc<Mutex<Connection>>,
-        popover: gtk::PopoverMenu,
-        main_window: MainWindow,
+        popover: &gtk::PopoverMenu,
+        main_window: &MainWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
+        let main_window = main_window.clone();
+        let popover = popover.clone();
         let filter = self.get_filter_value();
         Box::new(move |_: &gtk::Button| {
             debug!("Loading for group_id {:?}", group_id);
@@ -387,13 +389,13 @@ impl AccountsWindow {
                 ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
             };
 
-            let edit_account = EditAccountWindow::new(builder);
+            let edit_account = EditAccountWindow::new(&builder);
             edit_account.add_accounts_container_edit.set_visible(false);
             edit_account.add_accounts_container_add.set_visible(true);
             edit_account.edit_account_buttons_actions(&main_window, connection.clone());
             edit_account.set_group_dropdown(None, &groups);
 
-            main_window.edit_account.replace_with(&edit_account.container);
+            main_window.edit_account.replace_with(&edit_account);
 
             popover.hide();
             main_window.switch_to(Display::DisplayAddAccount);

@@ -134,12 +134,12 @@ impl Menus for MainWindow {
             add_group_button.connect_clicked(move |_| {
                 let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
-                let add_group = AddGroupWindow::new(builder);
+                let add_group = AddGroupWindow::new(&builder);
                 add_group.add_group_container_add.set_visible(true);
                 add_group.add_group_container_edit.set_visible(false);
                 add_group.edit_account_buttons_actions(&gui, connection.clone());
 
-                gui.add_group.replace_with(&add_group.container);
+                gui.add_group.replace_with(&add_group);
 
                 popover.hide();
                 add_group.reset();
@@ -188,7 +188,7 @@ impl Menus for MainWindow {
             });
         }
 
-        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, popover, self.clone(), None));
+        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, &self, None));
 
         action_menu
     }
