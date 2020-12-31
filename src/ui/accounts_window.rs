@@ -183,10 +183,7 @@ impl AccountsWindow {
             let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            add_account_button.connect_clicked(
-                gui.accounts_window
-                    .display_add_account_form(connection.clone(), &popover, &gui, Some(group_id)),
-            );
+            add_account_button.connect_clicked(gui.accounts_window.display_add_account_form(connection.clone(), &popover, &gui, Some(group_id)));
 
             {
                 let connection = connection.clone();
