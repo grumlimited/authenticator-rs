@@ -367,7 +367,7 @@ impl AccountsWindow {
         main_window: MainWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
-        let account_window = self.clone();
+        let filter = self.get_filter_value();
         Box::new(move |_: &gtk::Button| {
             debug!("Loading for group_id {:?}", group_id);
 
@@ -375,7 +375,7 @@ impl AccountsWindow {
 
             let groups = {
                 let connection = connection.lock().unwrap();
-                ConfigManager::load_account_groups(&connection, account_window.get_filter_value().as_deref()).unwrap()
+                ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
             };
 
             let edit_account = EditAccountWindow::new(builder);
