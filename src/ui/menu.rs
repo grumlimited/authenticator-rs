@@ -1,12 +1,12 @@
 use crate::exporting::Exporting;
 use crate::main_window::{Display, MainWindow};
+use crate::ui::AddGroupWindow;
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 use gio::prelude::*;
 use gtk::prelude::*;
 use gtk::{Button, MenuButton};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
-use crate::ui::AddGroupWindow;
 
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
