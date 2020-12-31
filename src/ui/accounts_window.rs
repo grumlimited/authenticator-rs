@@ -269,16 +269,7 @@ impl AccountsWindow {
                     let builder = builder.clone();
                     let edit_account = EditAccountWindow::new(builder);
 
-                    gui.edit_account
-                        .container
-                        .get_children()
-                        .iter()
-                        .for_each(|w| gui.edit_account.container.remove(w));
-
-                    edit_account.container.get_children().iter().for_each(|w| {
-                        edit_account.container.remove(w);
-                        gui.edit_account.container.add(w)
-                    });
+                    gui.edit_account.replace_with(&edit_account.container);
 
                     edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
@@ -386,17 +377,7 @@ impl AccountsWindow {
 
             edit_account.set_group_dropdown(None, &groups);
 
-            main_window
-                .edit_account
-                .container
-                .get_children()
-                .iter()
-                .for_each(|w| main_window.edit_account.container.remove(w));
-
-            edit_account.container.get_children().iter().for_each(|w| {
-                edit_account.container.remove(w);
-                main_window.edit_account.container.add(w)
-            });
+            main_window.edit_account.replace_with(&edit_account.container);
 
             edit_account.edit_account_buttons_actions(&main_window, connection.clone());
 

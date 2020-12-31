@@ -48,6 +48,19 @@ impl EditAccountWindow {
         }
     }
 
+    pub fn replace_with(&self, container: &gtk::Box) {
+        self
+            .container
+            .get_children()
+            .iter()
+            .for_each(|w| self.container.remove(w));
+
+        container.get_children().iter().for_each(|w| {
+            container.remove(w);
+            self.container.add(w)
+        });
+    }
+
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
