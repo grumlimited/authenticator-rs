@@ -15,6 +15,7 @@ use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
+use futures::executor::ThreadPool;
 use glib::Sender;
 
 #[derive(Clone, Debug)]
@@ -100,7 +101,7 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(&self, gui: MainWindow) {
+    fn url_input_action(&self, state: Rc<RefCell<State>>, pool: ThreadPool) {
         let url_input = self.url_input.clone();
         let icon_reload = self.icon_reload.clone();
         let icon_delete = self.icon_delete.clone();
@@ -119,7 +120,7 @@ impl AddGroupWindow {
         {
             let icon_filename = self.icon_filename.clone();
             let image_input = self.image_input.clone();
-            let state = gui.state.clone();
+            let state = state.clone();
             image_button.connect_clicked(move |_| match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.hide();
@@ -142,7 +143,6 @@ impl AddGroupWindow {
         }
 
         {
-            let gui = gui.clone();
             let add_group = self.clone();
 
             icon_reload.connect_clicked(move |_| {
@@ -163,7 +163,7 @@ impl AddGroupWindow {
                     icon_reload.set_sensitive(false);
                     image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-                    gui.pool.spawn_ok(fut);
+                    pool.spawn_ok(fut);
                 }
             });
         }
@@ -181,7 +181,7 @@ impl AddGroupWindow {
                 save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) => Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
+                    Ok(account_group_icon) => Self::write_tmp_icon(state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
                         icon_error.set_label(format!("{}", e).as_str());
                         icon_error.set_visible(true);
@@ -211,7 +211,7 @@ impl AddGroupWindow {
     }
 
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        self.url_input_action(gui.clone());
+        self.url_input_action(gui.state.clone(), gui.pool.clone());
 
         {
             let add_group = self.clone();
