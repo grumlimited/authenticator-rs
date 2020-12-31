@@ -49,11 +49,7 @@ impl EditAccountWindow {
     }
 
     pub fn replace_with(&self, container: &gtk::Box) {
-        self
-            .container
-            .get_children()
-            .iter()
-            .for_each(|w| self.container.remove(w));
+        self.container.get_children().iter().for_each(|w| self.container.remove(w));
 
         container.get_children().iter().for_each(|w| {
             container.remove(w);
