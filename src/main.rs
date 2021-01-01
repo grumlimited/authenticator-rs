@@ -75,7 +75,7 @@ fn main() {
 
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        gui.set_application(&app, connection.clone());
+        gui.set_application(&app, connection);
 
         info!("Authenticator RS initialised");
     });
