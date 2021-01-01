@@ -109,7 +109,7 @@
                 <property name="margin-top">3</property>
                 <property name="margin-bottom">5</property>
                 <property name="caps-lock-warning">False</property>
-                <property name="secondary-icon-name">dialog-cancel-symbolic</property>
+                <property name="secondary-icon-name">dialog-close-symbolic</property>
                 <property name="primary-icon-tooltip-text" translatable="yes">filter accounts</property>
                 <property name="placeholder-text" translatable="yes">filter</property>
                 <signal name="changed" handler="filter_accounts" swapped="no"/>

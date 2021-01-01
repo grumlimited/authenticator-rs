@@ -16,7 +16,6 @@ use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
 use futures::executor::ThreadPool;
-use glib::Sender;
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {
@@ -252,7 +251,8 @@ impl AddGroupWindow {
 
                     gui.pool
                         .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                            Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone(), tx_reset).await;
+                            Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
+                            tx_reset.send(true).expect("Could not send true");
                             AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
                             tx_done.send(true).expect("boom!");
                         })(filter, connection, tx_done));
@@ -268,8 +268,7 @@ impl AddGroupWindow {
         group_name: String,
         icon_filename: Option<String>,
         url_input: Option<String>,
-        connection: Arc<Mutex<Connection>>,
-        tx: Sender<bool>,
+        connection: Arc<Mutex<Connection>>
     ) {
         let connection = connection.lock().unwrap();
 
@@ -302,8 +301,6 @@ impl AddGroupWindow {
                 }
             }
         }
-
-        tx.send(true).expect("Could not send true");
     }
 
     fn reuse_filename(icon_filename: gtk::Label) -> String {
