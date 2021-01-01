@@ -4,6 +4,7 @@ use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
+use futures::join;
 use gettextrs::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
@@ -165,16 +166,19 @@ impl AccountsWindow {
 
     /**
      * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
-     *
-     * TODO: consider moving to ConfigManager.
      */
     pub async fn load_account_groups(tx: Sender<(Vec<AccountGroup>, bool)>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
-        tx.send({
+        let has_groups = async {
             let connection = connection.lock().unwrap();
-            let has_groups = ConfigManager::has_groups(&connection).unwrap();
-            (ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap(), has_groups)
-        })
-        .expect("boom!");
+            ConfigManager::has_groups(&connection).unwrap()
+        };
+
+        let accounts = async {
+            let connection = connection.lock().unwrap();
+            ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
+        };
+
+        tx.send(join!(accounts, has_groups)).expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
