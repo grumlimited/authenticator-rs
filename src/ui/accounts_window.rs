@@ -4,6 +4,7 @@ use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
+use futures::join;
 use gettextrs::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
@@ -45,7 +46,7 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -83,7 +84,7 @@ impl AccountsWindow {
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -108,7 +109,7 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -129,8 +130,12 @@ impl AccountsWindow {
      * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
      * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
      */
-    pub fn replace_accounts_and_widgets(&self, gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(Vec<AccountGroup>) -> glib::Continue> {
-        Box::new(move |groups: Vec<AccountGroup>| {
+    pub fn replace_accounts_and_widgets(
+        &self,
+        gui: MainWindow,
+        connection: Arc<Mutex<Connection>>,
+    ) -> Box<dyn FnMut((Vec<AccountGroup>, bool)) -> glib::Continue> {
+        Box::new(move |(groups, has_groups)| {
             {
                 let accounts_container = gui.accounts_window.accounts_container.clone();
                 let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
@@ -145,7 +150,7 @@ impl AccountsWindow {
                     .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
             }
 
-            if gui.accounts_window.has_accounts() {
+            if has_groups {
                 Self::edit_buttons_actions(&gui, connection.clone());
                 Self::group_edit_buttons_actions(&gui, connection.clone());
                 Self::delete_buttons_actions(&gui, connection.clone());
@@ -161,15 +166,19 @@ impl AccountsWindow {
 
     /**
      * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
-     *
-     * TODO: consider moving to ConfigManager.
      */
-    pub async fn load_account_groups(tx: Sender<Vec<AccountGroup>>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
-        tx.send({
+    pub async fn load_account_groups(tx: Sender<(Vec<AccountGroup>, bool)>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+        let has_groups = async {
+            let connection = connection.lock().unwrap();
+            ConfigManager::has_groups(&connection).unwrap()
+        };
+
+        let accounts = async {
             let connection = connection.lock().unwrap();
             ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
-        })
-        .expect("boom!");
+        };
+
+        tx.send(join!(accounts, has_groups)).expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -397,11 +406,6 @@ impl AccountsWindow {
             popover.hide();
             main_window.switch_to(Display::DisplayAddAccount);
         })
-    }
-
-    pub fn has_accounts(&self) -> bool {
-        let r = self.widgets.lock().unwrap();
-        !r.is_empty()
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
