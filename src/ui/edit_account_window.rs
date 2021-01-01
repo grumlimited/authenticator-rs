@@ -304,7 +304,5 @@ impl EditAccountWindow {
                 ConfigManager::save_account(&connection, &mut account).unwrap();
             }
         };
-
-
     }
 }
