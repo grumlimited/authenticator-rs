@@ -1,6 +1,6 @@
 use crate::exporting::Exporting;
 use crate::main_window::{Display, MainWindow};
-use crate::ui::AccountsWindow;
+use crate::ui::AddGroupWindow;
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -84,7 +84,7 @@ impl Menus for MainWindow {
                 // switch first then redraw - to take into account state change
                 gui.switch_to(Display::DisplayAccounts);
 
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
                 Inhibit(false)
             });
@@ -128,10 +128,19 @@ impl Menus for MainWindow {
 
         {
             let popover = popover.clone();
-            let add_group = self.add_group.clone();
             let gui = self.clone();
+            let connection = connection.clone();
 
             add_group_button.connect_clicked(move |_| {
+                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+
+                let add_group = AddGroupWindow::new(&builder);
+                add_group.add_group_container_add.set_visible(true);
+                add_group.add_group_container_edit.set_visible(false);
+                add_group.edit_account_buttons_actions(&gui, connection.clone());
+
+                gui.add_group.replace_with(&add_group);
+
                 popover.hide();
                 add_group.reset();
 
@@ -179,13 +188,7 @@ impl Menus for MainWindow {
             });
         }
 
-        add_account_button.connect_clicked(AccountsWindow::display_add_account_form(
-            connection,
-            popover,
-            self.clone(),
-            self.edit_account.clone(),
-            None,
-        ));
+        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, &self, None));
 
         action_menu
     }

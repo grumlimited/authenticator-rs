@@ -102,10 +102,10 @@ impl MainWindow {
         MainWindow {
             window,
             about_popup,
-            edit_account: EditAccountWindow::new(builder.clone()),
+            edit_account: EditAccountWindow::new(&builder),
             accounts_window,
             no_accounts,
-            add_group: AddGroupWindow::new(builder),
+            add_group: AddGroupWindow::new(&builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: Rc::new(RefCell::new(State::default())),
         }
@@ -121,13 +121,12 @@ impl MainWindow {
         match state.display {
             Display::DisplayAccounts => {
                 self.accounts_window.container.set_visible(true);
+
                 self.add_group.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditAccount => {
-                self.edit_account.add_accounts_container_edit.set_visible(true);
-                self.edit_account.add_accounts_container_add.set_visible(false);
                 self.edit_account.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
@@ -135,19 +134,13 @@ impl MainWindow {
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddAccount => {
-                self.edit_account.add_accounts_container_edit.set_visible(false);
-                self.edit_account.add_accounts_container_add.set_visible(true);
                 self.edit_account.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
                 self.add_group.container.set_visible(false);
-
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayAddGroup => {
-                self.add_group.add_group_container_add.set_visible(true);
-                self.add_group.add_group_container_edit.set_visible(false);
-                self.edit_account.add_accounts_container_add.set_visible(true);
                 self.add_group.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
@@ -155,8 +148,6 @@ impl MainWindow {
                 self.no_accounts.container.set_visible(false);
             }
             Display::DisplayEditGroup => {
-                self.add_group.add_group_container_add.set_visible(false);
-                self.add_group.add_group_container_edit.set_visible(true);
                 self.add_group.container.set_visible(true);
 
                 self.accounts_window.container.set_visible(false);
@@ -198,7 +189,7 @@ impl MainWindow {
                 let gui = self.clone();
                 self.accounts_window.filter.connect_changed(move |_| {
                     let gui = gui.clone();
-                    AccountsWindow::refresh_accounts(&gui, connection.clone());
+                    gui.accounts_window.refresh_accounts(&gui, connection.clone());
                 });
             }
         }

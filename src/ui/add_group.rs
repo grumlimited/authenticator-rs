@@ -15,6 +15,7 @@ use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
+use futures::executor::ThreadPool;
 use glib::Sender;
 
 #[derive(Clone, Debug)]
@@ -37,7 +38,7 @@ pub struct AddGroupWindow {
 }
 
 impl AddGroupWindow {
-    pub fn new(builder: Builder) -> AddGroupWindow {
+    pub fn new(builder: &Builder) -> AddGroupWindow {
         AddGroupWindow {
             container: builder.get_object("add_group").unwrap(),
             input_group: builder.get_object("add_group_input_name").unwrap(),
@@ -55,6 +56,15 @@ impl AddGroupWindow {
             add_group_container_add: builder.get_object("add_group_container_add").unwrap(),
             add_group_container_edit: builder.get_object("add_group_container_edit").unwrap(),
         }
+    }
+
+    pub fn replace_with(&self, other: &AddGroupWindow) {
+        self.container.get_children().iter().for_each(|w| self.container.remove(w));
+
+        other.container.get_children().iter().for_each(|w| {
+            other.container.remove(w);
+            self.container.add(w)
+        });
     }
 
     fn validate(&self) -> Result<(), ValidationError> {
@@ -91,12 +101,12 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(gui: MainWindow) {
-        let url_input = gui.add_group.url_input.clone();
-        let icon_reload = gui.add_group.icon_reload.clone();
-        let icon_delete = gui.add_group.icon_delete.clone();
-        let image_button = gui.add_group.image_button.clone();
-        let dialog = gui.add_group.image_dialog.clone();
+    fn url_input_action(&self, state: Rc<RefCell<State>>, pool: ThreadPool) {
+        let url_input = self.url_input.clone();
+        let icon_reload = self.icon_reload.clone();
+        let icon_delete = self.icon_delete.clone();
+        let image_button = self.image_button.clone();
+        let dialog = self.image_dialog.clone();
 
         let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
 
@@ -108,9 +118,9 @@ impl AddGroupWindow {
         }
 
         {
-            let icon_filename = gui.add_group.icon_filename.clone();
-            let image_input = gui.add_group.image_input.clone();
-            let state = gui.state.clone();
+            let icon_filename = self.icon_filename.clone();
+            let image_input = self.image_input.clone();
+            let state = state.clone();
             image_button.connect_clicked(move |_| match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.hide();
@@ -133,15 +143,13 @@ impl AddGroupWindow {
         }
 
         {
-            let gui = gui.clone();
-            let pool = gui.pool.clone();
+            let add_group = self.clone();
 
             icon_reload.connect_clicked(move |_| {
-                let icon_reload = gui.add_group.icon_reload.clone();
-                let save_button = gui.add_group.save_button.clone();
-                let image_input = gui.add_group.image_input.clone();
-                let icon_error = gui.add_group.icon_error.clone();
-                let add_group = gui.add_group.clone();
+                let icon_reload = add_group.icon_reload.clone();
+                let save_button = add_group.save_button.clone();
+                let image_input = add_group.image_input.clone();
+                let icon_error = add_group.icon_error.clone();
                 let url: String = add_group.url_input.get_buffer().get_text();
 
                 icon_error.set_label("");
@@ -161,19 +169,19 @@ impl AddGroupWindow {
         }
 
         {
-            let gui = gui.clone();
+            let add_group = self.clone();
             rx.attach(None, move |account_group_icon| {
-                let icon_filename = gui.add_group.icon_filename.clone();
-                let image_input = gui.add_group.image_input.clone();
-                let icon_reload = gui.add_group.icon_reload.clone();
-                let icon_error = gui.add_group.icon_error.clone();
-                let save_button = gui.add_group.save_button.clone();
+                let icon_filename = add_group.icon_filename.clone();
+                let image_input = add_group.image_input.clone();
+                let icon_reload = add_group.icon_reload.clone();
+                let icon_error = add_group.icon_error.clone();
+                let save_button = add_group.save_button.clone();
 
                 icon_reload.set_sensitive(true);
                 save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) => Self::write_tmp_icon(gui.state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
+                    Ok(account_group_icon) => Self::write_tmp_icon(state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
                         icon_error.set_label(format!("{}", e).as_str());
                         icon_error.set_visible(true);
@@ -185,16 +193,14 @@ impl AddGroupWindow {
         }
 
         {
-            let url_input = gui.add_group.url_input.clone();
-            let icon_filename = gui.add_group.icon_filename.clone();
-
+            let add_group = self.clone();
             icon_delete.connect_clicked(move |_| {
-                let image_input = gui.add_group.image_input.clone();
-                let icon_error = gui.add_group.icon_error.clone();
+                let image_input = add_group.image_input.clone();
+                let icon_error = add_group.icon_error.clone();
 
-                url_input.set_text("");
+                add_group.url_input.set_text("");
 
-                icon_filename.set_label("");
+                add_group.icon_filename.set_label("");
 
                 icon_error.set_label("");
                 icon_error.set_visible(false);
@@ -204,43 +210,37 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        Self::url_input_action(gui.clone());
+    pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        self.url_input_action(gui.state.clone(), gui.pool.clone());
 
-        fn with_action<F>(gui: &MainWindow, connection: Arc<Mutex<Connection>>, button: &gtk::Button, button_closure: F)
-        where
-            F: 'static + Fn(Arc<Mutex<Connection>>, &MainWindow) -> Box<dyn Fn(&gtk::Button)>,
         {
-            button.connect_clicked(button_closure(connection, gui));
+            let add_group = self.clone();
+            let gui = gui.clone();
+            let connection = connection.clone();
+            self.cancel_button.connect_clicked(move |_| {
+                add_group.reset();
+                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+            });
         }
 
-        // CANCEL
-        with_action(&gui, connection.clone(), &gui.add_group.cancel_button, |connection, gui| {
+        {
+            let add_group = self.clone();
             let gui = gui.clone();
-            Box::new(move |_| {
-                gui.add_group.reset();
-                AccountsWindow::refresh_accounts(&gui, connection.clone());
-            })
-        });
-
-        //SAVE
-        with_action(&gui, connection, &gui.add_group.save_button, |connection, gui| {
-            let gui = gui.clone();
-            Box::new(move |_| {
-                if let Ok(()) = gui.add_group.validate() {
-                    let icon_filename = Self::get_label_text(&gui.add_group.icon_filename);
-                    let group_name: String = gui.add_group.input_group.get_buffer().get_text();
-                    let url_input: Option<String> = Some(gui.add_group.url_input.get_buffer().get_text());
-                    let group_id = gui.add_group.group_id.get_label();
+            self.save_button.connect_clicked(move |_| {
+                if let Ok(()) = add_group.validate() {
+                    let icon_filename = Self::get_label_text(&add_group.icon_filename);
+                    let group_name: String = add_group.input_group.get_buffer().get_text();
+                    let url_input: Option<String> = Some(add_group.url_input.get_buffer().get_text());
+                    let group_id = add_group.group_id.get_label();
                     let group_id = group_id.as_str().to_owned();
 
                     let (tx, rx) = glib::MainContext::channel::<Vec<AccountGroup>>(glib::PRIORITY_DEFAULT);
                     let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
                     let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
 
-                    rx.attach(None, AccountsWindow::replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                    rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    let add_group = gui.add_group.clone();
+                    let add_group = add_group.clone();
                     rx_reset.attach(None, move |_| {
                         // upon completion, reset form
                         add_group.reset();
@@ -259,8 +259,8 @@ impl AddGroupWindow {
 
                     gui.switch_to(Display::DisplayAccounts);
                 }
-            })
-        });
+            });
+        }
     }
 
     async fn create_group(
