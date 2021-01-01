@@ -175,9 +175,11 @@ impl MainWindow {
             Inhibit(false)
         });
 
-        self.bind_account_filter_events(connection);
+        self.bind_account_filter_events(connection.clone());
 
         self.start_progress_bar();
+
+        self.accounts_window.refresh_accounts(&self, connection);
 
         self.window.show();
     }

@@ -77,7 +77,7 @@ fn main() {
 
         gui.set_application(&app, connection.clone());
 
-        gui.accounts_window.refresh_accounts(&gui, connection);
+
 
         info!("Authenticator RS initialised");
     });
