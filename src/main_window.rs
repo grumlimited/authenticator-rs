@@ -190,14 +190,13 @@ impl MainWindow {
             {
                 let gui = self.clone();
                 self.accounts_window.filter.connect_changed(move |_| {
-                    let gui = gui.clone();
                     gui.accounts_window.refresh_accounts(&gui, connection.clone());
                 });
             }
         }
 
         {
-            //then bind "x" icon to emptying the filter input.
+            //then bind "x" icon to empty the filter input.
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
             {
