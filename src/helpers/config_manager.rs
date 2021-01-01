@@ -52,6 +52,17 @@ impl ConfigManager {
         }
     }
 
+    pub fn has_groups(connection: &Connection) -> Result<bool, LoadError> {
+        let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
+
+        stmt.query_row(params![], |row| {
+            let count: u32 = row.get_unwrap(0);
+            Ok(count)
+        })
+        .map(|count| count > 0)
+        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    }
+
     pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, LoadError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
@@ -515,6 +526,22 @@ mod tests {
 
         let result = ConfigManager::delete_account(&connection, account.id).unwrap();
         assert!(result > 0);
+    }
+
+    #[test]
+    fn has_groups() {
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        runner::run(&mut connection).unwrap();
+
+        let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
+        ConfigManager::save_group(&connection, &mut group).unwrap();
+
+        let mut account = Account::new(0, group.id, "hhh", "secret3");
+        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+
+        let result = ConfigManager::has_groups(&connection).unwrap();
+        assert!(result);
     }
 
     #[test]
