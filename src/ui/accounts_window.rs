@@ -56,15 +56,16 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-            {
-                let connection = connection.lock().unwrap();
-                ConfigManager::delete_account(&connection, account_id).unwrap();
-            }
+        gui.pool
+            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                {
+                    let connection = connection.lock().unwrap();
+                    ConfigManager::delete_account(&connection, account_id).unwrap();
+                }
 
-            Self::load_account_groups(tx, connection, filter).await;
-            tx_done.send(true).expect("boom!");
-        })(filter, connection, tx_done));
+                Self::load_account_groups(tx, connection, filter).await;
+                tx_done.send(true).expect("boom!");
+            })(filter, connection, tx_done));
     }
 
     pub fn flip_accounts_container<F, Fut>(&self, rx: Receiver<bool>, f: F) -> F
@@ -94,20 +95,21 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-            {
-                let connection = connection.lock().unwrap();
-                let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+        gui.pool
+            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                {
+                    let connection = connection.lock().unwrap();
+                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
 
-                if let Some(path) = group.icon {
-                    AddGroupWindow::delete_icon_file(&path);
+                    if let Some(path) = group.icon {
+                        AddGroupWindow::delete_icon_file(&path);
+                    }
                 }
-            }
 
-            Self::load_account_groups(tx, connection.clone(), filter).await;
-            tx_done.send(true).expect("boom!");
-        })(filter, connection, tx_done));
+                Self::load_account_groups(tx, connection.clone(), filter).await;
+                tx_done.send(true).expect("boom!");
+            })(filter, connection, tx_done));
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -118,10 +120,11 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-            Self::load_account_groups(tx, connection.clone(), filter).await;
-            tx_done.send(true).expect("boom!");
-        })(filter, connection, tx_done));
+        gui.pool
+            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                Self::load_account_groups(tx, connection.clone(), filter).await;
+                tx_done.send(true).expect("boom!");
+            })(filter, connection, tx_done));
     }
 
     /**
@@ -256,26 +259,24 @@ impl AccountsWindow {
                 {
                     let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                    {
-                        let copy_button = account_widget.copy_button.clone();
-                        let edit_copy_img = account_widget.edit_copy_img.clone();
-                        rx.attach(None, move |_| {
+                    rx.attach(
+                        None,
+                        clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => move |_| {
                             copy_button.set_image(Some(&edit_copy_img));
                             glib::Continue(true)
-                        });
-                    }
+                        }),
+                    );
 
-                    {
-                        let copy_button = account_widget.copy_button.clone();
-                        let pool = gui.pool.clone();
-                        let dialog_ok_img = account_widget.dialog_ok_img.clone();
-                        copy_button.connect_clicked(move |button| {
+                    account_widget.copy_button.connect_clicked(
+                        clone!(@strong tx, @strong gui.pool as pool, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
                             button.set_image(Some(&dialog_ok_img));
 
                             pool.spawn_ok(times_up(tx.clone(), 2000));
-                        });
-                    }
+                            println!("dsqdsq");
+                        }),
+                    );
                 }
+
                 let builder = builder.clone();
                 account_widget.edit_button.connect_clicked(move |_| {
                     let builder = builder.clone();

@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
+use std::{thread, time};
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
@@ -297,6 +298,7 @@ impl ConfigManager {
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
+        thread::sleep(time::Duration::from_millis(10 * 1000));
         let group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
@@ -326,6 +328,7 @@ impl ConfigManager {
     }
 
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
+        thread::sleep(time::Duration::from_millis(10 * 1000));
         let results = Self::restore_accounts(path, connection).await;
 
         match results {
