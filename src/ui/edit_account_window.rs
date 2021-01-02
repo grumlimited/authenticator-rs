@@ -14,6 +14,8 @@ use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
 use futures::executor::ThreadPool;
 
+use glib::clone;
+
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
     pub container: gtk::Box,
@@ -176,14 +178,14 @@ impl EditAccountWindow {
     fn qrcode_action(&self, pool: ThreadPool) {
         let qr_button = self.qr_button.clone();
         let dialog = self.image_dialog.clone();
+        let input_secret = self.input_secret.clone();
+        let save_button = self.save_button.clone();
 
         let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
 
-        {
-            let input_secret = self.input_secret.clone();
-            let save_button = self.save_button.clone();
-            let w = self.clone();
-            rx.attach(None, move |(ok, qr_code)| {
+        rx.attach(
+            None,
+            clone!(@strong save_button, @strong input_secret, @strong self as w => move |(ok, qr_code)| {
                 let buffer = input_secret.get_buffer().unwrap();
 
                 w.reset_errors();
@@ -198,13 +200,10 @@ impl EditAccountWindow {
                 }
 
                 glib::Continue(true)
-            });
-        }
+            }),
+        );
 
-        let input_secret = self.input_secret.clone();
-        let save_button = self.save_button.clone();
-
-        qr_button.connect_clicked(move |_| {
+        qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret => move |_| {
             let tx = tx.clone();
             match dialog.run() {
                 gtk::ResponseType::Accept => {
@@ -220,75 +219,68 @@ impl EditAccountWindow {
                 }
                 _ => dialog.hide(),
             }
-        });
+        }));
     }
 
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.qrcode_action(gui.pool.clone());
 
-        {
-            let edit_account = self.clone();
-            let connection = connection.clone();
-            let gui = gui.clone();
-            self.cancel_button.connect_clicked(move |_| {
+        let edit_account = self.clone();
+
+        self.cancel_button
+            .connect_clicked(clone!(@strong edit_account, @strong connection, @strong gui => move |_| {
                 edit_account.reset();
                 gui.accounts_window.refresh_accounts(&gui, connection.clone());
-            });
-        }
+            }));
 
-        {
-            let edit_account = self.clone();
-            let gui = gui.clone();
-            self.save_button.connect_clicked(move |_| {
-                edit_account.reset_errors();
+        self.save_button.connect_clicked(clone!(@strong edit_account, @strong gui => move |_| {
+            edit_account.reset_errors();
 
-                if let Ok(()) = edit_account.validate() {
-                    let edit_account_window = edit_account.clone();
-                    let name = edit_account_window.input_name.clone();
-                    let secret = edit_account_window.input_secret.clone();
-                    let account_id = edit_account_window.input_account_id.clone();
-                    let group = edit_account_window.input_group;
-                    let name: String = name.get_buffer().get_text();
-                    let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
-                    let secret: String = {
-                        let buffer = secret.get_buffer().unwrap();
-                        let (start, end) = buffer.get_bounds();
-                        match buffer.get_slice(&start, &end, true) {
-                            Some(secret_value) => secret_value.to_string(),
-                            None => "".to_owned(),
-                        }
-                    };
+            if let Ok(()) = edit_account.validate() {
+                let edit_account_window = edit_account.clone();
+                let name = edit_account_window.input_name.clone();
+                let secret = edit_account_window.input_secret.clone();
+                let account_id = edit_account_window.input_account_id.clone();
+                let group = edit_account_window.input_group;
+                let name: String = name.get_buffer().get_text();
+                let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
+                let secret: String = {
+                    let buffer = secret.get_buffer().unwrap();
+                    let (start, end) = buffer.get_bounds();
+                    match buffer.get_slice(&start, &end, true) {
+                        Some(secret_value) => secret_value.to_string(),
+                        None => "".to_owned(),
+                    }
+                };
 
-                    let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding account is completed
+                let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding account is completed
 
-                    rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    let edit_account_window = edit_account.clone();
-                    rx_reset.attach(None, move |_| {
-                        // upon completion, reset form
-                        edit_account_window.reset();
-                        glib::Continue(true)
-                    });
+                rx_reset.attach(None, clone!(@strong edit_account => move |_| {
+                    // upon completion, reset form
+                    edit_account.reset();
+                    glib::Continue(true)
+                }));
 
-                    let filter = gui.accounts_window.get_filter_value();
-                    let connection = connection.clone();
+                let filter = gui.accounts_window.get_filter_value();
+                let connection = connection.clone();
 
-                    let account_id = account_id.get_buffer().get_text();
+                let account_id = account_id.get_buffer().get_text();
 
-                    gui.pool
-                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                            Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                            tx_reset.send(true).expect("Could not send true");
-                            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                            tx_done.send(true).expect("boom!");
-                        })(filter, connection, tx_done));
+                gui.pool
+                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                        Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                        tx_reset.send(true).expect("Could not send true");
+                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                        tx_done.send(true).expect("boom!");
+                    })(filter, connection, tx_done));
 
-                    gui.switch_to(Display::DisplayAccounts);
-                }
-            });
-        }
+                gui.switch_to(Display::DisplayAccounts);
+            }
+        }));
     }
 
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
