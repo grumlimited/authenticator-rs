@@ -256,29 +256,24 @@ impl AccountsWindow {
 
                 let gui = gui.clone();
 
-                {
-                    let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-                    rx.attach(
-                        None,
-                        clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => move |_| {
-                            copy_button.set_image(Some(&edit_copy_img));
-                            glib::Continue(true)
-                        }),
-                    );
+                rx.attach(
+                    None,
+                    clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => move |_| {
+                        copy_button.set_image(Some(&edit_copy_img));
+                        glib::Continue(true)
+                    }),
+                );
 
-                    account_widget.copy_button.connect_clicked(
-                        clone!(@strong tx, @strong gui.pool as pool, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
-                            button.set_image(Some(&dialog_ok_img));
+                account_widget.copy_button.connect_clicked(
+                    clone!(@strong tx, @strong gui.pool as pool, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
+                        button.set_image(Some(&dialog_ok_img));
+                        pool.spawn_ok(times_up(tx.clone(), 2000));
+                    }),
+                );
 
-                            pool.spawn_ok(times_up(tx.clone(), 2000));
-                            println!("dsqdsq");
-                        }),
-                    );
-                }
-
-                let builder = builder.clone();
-                account_widget.edit_button.connect_clicked(move |_| {
+                account_widget.edit_button.connect_clicked(clone!(@strong builder => move |_| {
                     let builder = builder.clone();
                     let edit_account = EditAccountWindow::new(&builder);
 
@@ -304,7 +299,7 @@ impl AccountsWindow {
                     popover.hide();
 
                     gui.switch_to(Display::DisplayEditAccount);
-                });
+                }));
             }
         }
     }
@@ -318,42 +313,41 @@ impl AccountsWindow {
 
             for account_widget in account_widgets.iter() {
                 let account_id = account_widget.account_id;
-                let popover = account_widget.popover.clone();
                 let connection = connection.clone();
-                let gui = gui.clone();
-                let pool = gui.pool.clone();
 
-                account_widget.confirm_button.connect_clicked(move |_| {
-                    gui.accounts_window.delete_account_reload(&gui, account_id, connection.clone());
-                    popover.hide();
-                });
+                account_widget.confirm_button.connect_clicked(
+                    clone!(@strong gui.accounts_window as accounts_window, @strong account_widget.popover as popover, @strong gui => move |_| {
+                        accounts_window.delete_account_reload(&gui, account_id, connection.clone());
+                        popover.hide();
+                    }),
+                );
 
-                let confirm_button = account_widget.confirm_button.clone();
-                let confirm_button_label = account_widget.confirm_button_label.clone();
-                let delete_button = account_widget.delete_button.clone();
-
-                account_widget.delete_button.connect_clicked(move |_| {
+                account_widget.delete_button.connect_clicked(clone!(
+                @strong gui.pool as pool,
+                @strong account_widget.confirm_button as confirm_button,
+                @strong account_widget.confirm_button_label as confirm_button_label,
+                @strong account_widget.delete_button as delete_button => move |_| {
                     confirm_button.show();
                     delete_button.hide();
 
                     let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
 
-                    let confirm_button = confirm_button.clone();
-                    let delete_button = delete_button.clone();
-                    let confirm_button_label = confirm_button_label.clone();
-                    rx.attach(None, move |second| {
-                        if second == 0u8 {
-                            confirm_button.hide();
-                            delete_button.show();
-                        } else {
-                            confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
-                        }
+                    rx.attach(
+                        None,
+                        clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label => move |second| {
+                            if second == 0u8 {
+                                confirm_button.hide();
+                                delete_button.show();
+                            } else {
+                                confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
+                            }
 
-                        glib::Continue(true)
-                    });
+                            glib::Continue(true)
+                        }),
+                    );
 
                     pool.spawn_ok(update_button(tx, 5));
-                });
+                }));
             }
         }
     }
@@ -377,10 +371,8 @@ impl AccountsWindow {
         main_window: &MainWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
-        let main_window = main_window.clone();
-        let popover = popover.clone();
         let filter = self.get_filter_value();
-        Box::new(move |_: &gtk::Button| {
+        Box::new(clone!(@strong main_window, @strong popover => move |_: &gtk::Button| {
             debug!("Loading for group_id {:?}", group_id);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
@@ -400,7 +392,7 @@ impl AccountsWindow {
 
             popover.hide();
             main_window.switch_to(Display::DisplayAddAccount);
-        })
+        }))
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
