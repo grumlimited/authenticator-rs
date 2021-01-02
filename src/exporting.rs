@@ -21,8 +21,7 @@ pub trait Exporting {
 
 impl Exporting for MainWindow {
     fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)> {
-        let gui = self.clone();
-        Box::new(move |_b: &gtk::Button| {
+        Box::new(clone!(@strong self as gui  => move |_b: &gtk::Button| {
             popover.set_visible(false);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
@@ -69,29 +68,26 @@ impl Exporting for MainWindow {
                 }
                 _ => dialog.close(),
             }
-        })
+        }))
     }
 
     fn import_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)> {
-        let gui = self.clone();
-        Box::new(move |_b: &gtk::Button| {
+        Box::new(clone!(@strong self as gui  => move |_b: &gtk::Button| {
             popover.set_visible(false);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
-            let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
+            get_widget!(builder, gtk::FileChooserDialog, dialog);
+            get_widget!(builder, gtk::Window, error_popup);
+            get_widget!(builder, gtk::Label, error_popup_body);
 
-            let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
-            export_account_error.set_title(&gettext("Error"));
+            error_popup.set_title(&gettext("Error"));
+            error_popup_body.set_label(&gettext("Could not import accounts!"));
 
-            let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
-
-            export_account_error_body.set_label(&gettext("Could not import accounts!"));
-
-            builder.connect_signals(|_, handler_name| match handler_name {
-                "export_account_error_close" => Self::popup_close(export_account_error.clone()),
+            builder.connect_signals(clone!(@strong error_popup => move |_, handler_name| match handler_name {
+                "export_account_error_close" => Self::popup_close(error_popup.clone()),
                 _ => Box::new(|_| None),
-            });
+            }));
 
             dialog.show();
 
@@ -107,21 +103,19 @@ impl Exporting for MainWindow {
                     gui.accounts_window.accounts_container.set_sensitive(false);
                     gui.pool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
 
-                    let gui = gui.clone();
-                    let connection = connection.clone();
-                    rx.attach(None, move |success| {
+                    rx.attach(None, clone!(@strong gui, @strong connection => move |success| {
                         if !success {
-                            export_account_error.show_all();
+                            error_popup.show_all();
                         }
 
                         gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
                         glib::Continue(true)
-                    });
+                    }));
                 }
                 _ => dialog.close(),
             }
-        })
+        }))
     }
 
     fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
