@@ -3,8 +3,10 @@ use crate::main_window::{Display, MainWindow};
 use crate::ui::AddGroupWindow;
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 use gio::prelude::*;
+use glib::clone;
 use gtk::prelude::*;
 use gtk::{Button, MenuButton};
+use gtk_macros::*;
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
@@ -34,10 +36,9 @@ impl Menus for MainWindow {
 
     fn build_search_button(&mut self) -> Button {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
-        let search_button: gtk::Button = builder.get_object("search_button").unwrap();
+        get_widget!(builder, gtk::Button, search_button);
 
-        let filter = self.accounts_window.filter.clone();
-        search_button.connect_clicked(move |_| {
+        search_button.connect_clicked(clone!(@strong self.accounts_window.filter as filter => move |_| {
             if filter.is_visible() {
                 filter.hide()
             } else {
@@ -48,7 +49,7 @@ impl Menus for MainWindow {
             gio::Settings::new(NAMESPACE)
                 .set_boolean("search-visible", filter.is_visible())
                 .expect("Could not find setting search-visible");
-        });
+        }));
 
         if gio::Settings::new(NAMESPACE).get_boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
@@ -61,11 +62,9 @@ impl Menus for MainWindow {
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
-        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-
-        let about_button: gtk::Button = builder.get_object("about_button").unwrap();
-
-        let export_button: gtk::Button = builder.get_object("export_button").unwrap();
+        get_widget!(builder, gtk::PopoverMenu, popover);
+        get_widget!(builder, gtk::Button, about_button);
+        get_widget!(builder, gtk::Button, export_button);
 
         let dark_mode_slider: gtk::Switch = {
             let switch: gtk::Switch = builder.get_object("dark_mode_slider").unwrap();
@@ -74,21 +73,17 @@ impl Menus for MainWindow {
             switch
         };
 
-        {
-            let gui = self.clone();
-            let connection = connection.clone();
-            dark_mode_slider.connect_state_set(move |_, state| {
-                let g_settings = gio::Settings::new(NAMESPACE);
-                g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
+        dark_mode_slider.connect_state_set(clone!(@strong connection, @strong self as gui => move |_, state| {
+            let g_settings = gio::Settings::new(NAMESPACE);
+            g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
-                // switch first then redraw - to take into account state change
-                gui.switch_to(Display::DisplayAccounts);
+            // switch first then redraw - to take into account state change
+            gui.switch_to(Display::DisplayAccounts);
 
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+            gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
-                Inhibit(false)
-            });
-        }
+            Inhibit(false)
+        }));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
 
@@ -98,66 +93,52 @@ impl Menus for MainWindow {
 
         let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
 
-        {
-            let popover = popover.clone();
-            system_menu.connect_clicked(move |_| {
-                popover.show_all();
-            });
-        }
+        system_menu.connect_clicked(clone!(@strong popover => move |_| {
+            popover.show_all();
+        }));
 
         let titlebar = gtk::HeaderBarBuilder::new().decoration_layout(":").title("About").build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
-        {
-            let popup = self.about_popup.clone();
-            about_button.connect_clicked(move |_| {
-                popover.set_visible(false);
-                popup.set_visible(true);
-                popup.show_all();
-            });
-        };
+
+        about_button.connect_clicked(clone!(@strong self.about_popup as popup => move |_| {
+            popover.set_visible(false);
+            popup.set_visible(true);
+            popup.show_all();
+        }));
 
         system_menu
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
-        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
-        let add_group_button: gtk::Button = builder.get_object("add_group_button").unwrap();
+        get_widget!(builder, gtk::PopoverMenu, popover);
+        get_widget!(builder, gtk::Button, add_account_button);
+        get_widget!(builder, gtk::Button, add_group_button);
+        get_widget!(builder, gtk::MenuButton, action_menu);
 
-        {
-            let popover = popover.clone();
-            let gui = self.clone();
-            let connection = connection.clone();
+        let gui = self.clone();
+        let widgets = self.accounts_window.widgets.clone();
+        let state = self.state.clone();
 
-            add_group_button.connect_clicked(move |_| {
-                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        add_group_button.connect_clicked(clone!(@strong popover, @strong gui, @strong connection => move |_| {
+            let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
-                let add_group = AddGroupWindow::new(&builder);
-                add_group.add_group_container_add.set_visible(true);
-                add_group.add_group_container_edit.set_visible(false);
-                add_group.edit_account_buttons_actions(&gui, connection.clone());
+            let add_group = AddGroupWindow::new(&builder);
+            add_group.add_group_container_add.set_visible(true);
+            add_group.add_group_container_edit.set_visible(false);
+            add_group.edit_account_buttons_actions(&gui, connection.clone());
 
-                gui.add_group.replace_with(&add_group);
+            gui.add_group.replace_with(&add_group);
 
-                popover.hide();
-                add_group.reset();
+            popover.hide();
+            add_group.reset();
 
-                gui.switch_to(Display::DisplayAddGroup);
-            });
-        }
+            gui.switch_to(Display::DisplayAddGroup);
+        }));
 
-        let action_menu: gtk::MenuButton = builder.get_object("action_menu").unwrap();
-
-        {
-            let action_menu = action_menu.clone();
-            let widgets = self.accounts_window.widgets.clone();
-            let add_account_button = add_account_button.clone();
-            let popover = popover.clone();
-            let state = self.state.clone();
-
-            action_menu.connect_clicked(move |_| {
+        action_menu.connect_clicked(
+            clone!(@strong popover, @strong state, @strong add_account_button, @strong widgets, @strong action_menu => move |_| {
                 let widgets = widgets.lock().unwrap();
 
                 /*
@@ -176,17 +157,16 @@ impl Menus for MainWindow {
                 add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
 
                 popover.show_all();
-            });
-        }
+            }),
+        );
 
-        {
-            // creates a shortcut on the "+" image to action menu when no account page is displayed
-            let action_menu = action_menu.clone();
-            self.no_accounts.no_accounts_plus_sign.connect_button_press_event(move |_, _| {
+        // creates a shortcut on the "+" image to action menu when no account page is displayed
+        self.no_accounts
+            .no_accounts_plus_sign
+            .connect_button_press_event(clone!(@strong action_menu => move |_, _| {
                 action_menu.clicked();
                 Inhibit(true)
-            });
-        }
+            }));
 
         add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, &self, None));
 

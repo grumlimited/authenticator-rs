@@ -6,6 +6,9 @@ use gettextrs::*;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use glib::clone;
+use gtk_macros::*;
+
 use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -61,43 +64,31 @@ impl Account {
     pub fn widget(&self) -> AccountWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
-        let grid: gtk::Grid = builder.get_object("grid").unwrap();
+        get_widget!(builder, gtk::Grid, grid);
+        get_widget!(builder, gtk::Image, edit_copy_img);
+        get_widget!(builder, gtk::Image, dialog_ok_img);
+        get_widget!(builder, gtk::Button, copy_button);
+        get_widget!(builder, gtk::Button, confirm_button);
+        get_widget!(builder, gtk::Label, confirm_button_label);
+        get_widget!(builder, gtk::Label, account_name);
+        get_widget!(builder, gtk::Label, totp_label);
+        get_widget!(builder, gtk::Button, edit_button);
+        get_widget!(builder, gtk::Button, delete_button);
+        get_widget!(builder, gtk::PopoverMenu, popover);
+        get_widget!(builder, gtk::MenuButton, menu);
 
         grid.set_widget_name(format!("account_id_{}", self.id).as_str());
 
-        let label: gtk::Label = builder.get_object("account_name").unwrap();
-        label.set_label(self.label.as_str());
+        account_name.set_label(self.label.as_str());
 
-        let edit_copy_img: gtk::Image = builder.get_object("edit_copy_img").unwrap();
-        let dialog_ok_img: gtk::Image = builder.get_object("dialog_ok_img").unwrap();
+        menu.connect_clicked(clone!(@strong edit_button, @strong delete_button, @strong confirm_button => move |_| {
+            edit_button.show();
 
-        let copy_button: gtk::Button = builder.get_object("copy_button").unwrap();
+            if !confirm_button.is_visible() {
+                delete_button.show();
+            }
+        }));
 
-        let confirm_button: gtk::Button = builder.get_object("confirm_button").unwrap();
-        let confirm_button_label: gtk::Label = builder.get_object("confirm_button_label").unwrap();
-
-        let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
-
-        let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
-
-        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-
-        let menu: gtk::MenuButton = builder.get_object("menu").unwrap();
-
-        {
-            let edit_button = edit_button.clone();
-            let delete_button = delete_button.clone();
-            let confirm_button = confirm_button.clone();
-            menu.connect_clicked(move |_| {
-                edit_button.show();
-
-                if !confirm_button.is_visible() {
-                    delete_button.show();
-                }
-            });
-        }
-
-        let totp_label: gtk::Label = builder.get_object("totp_label").unwrap();
         match Self::generate_time_based_password(self.secret.as_str()) {
             Ok(totp) => totp_label.set_label(totp.as_str()),
             Err(_) => {
@@ -107,12 +98,10 @@ impl Account {
             }
         };
 
-        let totp_label_clone = totp_label.clone();
-
-        copy_button.connect_clicked(move |_| {
+        copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-            clipboard.set_text(totp_label_clone.get_label().as_str());
-        });
+            clipboard.set_text(totp_label.get_label().as_str());
+        }));
 
         AccountWidget {
             account_id: self.id,

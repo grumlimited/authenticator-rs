@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
 use gio::prelude::SettingsExt;
+use glib::clone;
 use gtk::prelude::*;
+use gtk_macros::*;
 use rusqlite::Connection;
 
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
@@ -60,47 +62,44 @@ impl MainWindow {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
-        let window = builder.get_object("main_window").unwrap();
-        let about_popup: gtk::Window = builder.get_object("about_popup").unwrap();
+        get_widget!(builder, gtk::ApplicationWindow, main_window);
+        get_widget!(builder, gtk::Window, about_popup);
 
         let no_accounts = NoAccountsWindow::new(builder.clone());
         let accounts_window = AccountsWindow::new(builder.clone());
 
         {
-            let popup = about_popup.clone();
-            let add_group_save: gtk::Button = builder.get_object("add_group_save").unwrap();
-            let edit_account_save: gtk::Button = builder.get_object("edit_account_save").unwrap();
-            builder.connect_signals(move |_, handler_name| {
+            get_widget!(builder, gtk::Button, add_group_save);
+            get_widget!(builder, gtk::Button, edit_account_save);
+
+            builder.connect_signals(clone!(@strong about_popup  => move |_, handler_name| {
                 match handler_name {
                     // handler_name as defined in the glade file
                     "about_popup_close" => {
-                        let popup = popup.clone();
-                        Box::new(move |_| {
-                            popup.hide();
+                        Box::new(clone!( @strong about_popup => move |_| {
+                            about_popup.hide();
                             None
-                        })
+                        }))
                     }
                     "save_group" => {
-                        let add_group_save = add_group_save.clone();
-                        Box::new(move |_| {
+                        Box::new(clone!( @strong add_group_save => move |_| {
                             add_group_save.clicked();
                             None
-                        })
+                        }))
                     }
                     "save_account" => {
-                        let edit_account_save = edit_account_save.clone();
-                        Box::new(move |_| {
+                        Box::new(clone!( @strong edit_account_save => move |_| {
                             edit_account_save.clicked();
                             None
-                        })
+                        }))
                     }
                     _ => Box::new(|_| None),
                 }
-            });
+            }));
         }
 
         MainWindow {
-            window,
+            window: main_window,
             about_popup,
             edit_account: EditAccountWindow::new(&builder),
             accounts_window,
