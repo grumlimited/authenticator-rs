@@ -11,6 +11,9 @@ use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
 
+use glib::clone;
+use gtk_macros::*;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
     #[serde(skip)]
@@ -62,13 +65,19 @@ impl AccountGroup {
         let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
-        let container: gtk::Box = builder.get_object("group").unwrap();
-        container.set_widget_name(format!("group_id_{}", self.id).as_str());
+        get_widget!(builder, gtk::Box, group);
+        get_widget!(builder, gtk::EventBox, event_box); //allows for group labels to respond to click events
+        get_widget!(builder, gtk::Image, group_image);
+        get_widget!(builder, gtk::Grid, group_label_box);
+        get_widget!(builder, gtk::Label, group_label);
+        get_widget!(builder, gtk::PopoverMenu, popover);
+        get_widget!(builder, gtk::Button, edit_button);
+        get_widget!(builder, gtk::Button, add_account_button);
+        get_widget!(builder, gtk::Button, delete_button);
+        get_widget!(builder, gtk::Box, buttons_container);
+        get_widget!(builder, gtk::Box, accounts);
 
-        //allows for group labels to respond to click events
-        let event_box: gtk::EventBox = builder.get_object("event_box").unwrap();
-
-        let group_image: gtk::Image = builder.get_object("group_image").unwrap();
+        group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         if let Some(image) = &self.icon {
             let dir = ConfigManager::icons_path(&image);
@@ -77,30 +86,19 @@ impl AccountGroup {
                 Err(_) => error!("Could not load image {}", dir.display()),
             };
         } else {
-            let grid: gtk::Grid = builder.get_object("group_label_box").unwrap();
             group_image.clear();
             group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
-            grid.remove(&group_image);
+            group_label_box.remove(&group_image);
         }
 
-        let group_label: gtk::Label = builder.get_object("group_label").unwrap();
         group_label.set_label(self.name.as_str());
 
-        let popover: gtk::PopoverMenu = builder.get_object("popover").unwrap();
-
-        let edit_button: gtk::Button = builder.get_object("edit_button").unwrap();
-        let add_account_button: gtk::Button = builder.get_object("add_account_button").unwrap();
-
-        let delete_button: gtk::Button = builder.get_object("delete_button").unwrap();
         delete_button.set_sensitive(self.entries.is_empty());
 
-        let buttons_container: gtk::Box = builder.get_object("buttons_container").unwrap();
         // This would normally be defined within account_group.ui.
         // However doing so produces annoying (yet seemingly harmless) warnings:
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
-
-        let accounts: gtk::Box = builder.get_object("accounts").unwrap();
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
@@ -114,13 +112,11 @@ impl AccountGroup {
 
         let account_widgets = Rc::new(RefCell::new(account_widgets));
 
-        {
-            let account_widgets = account_widgets.clone();
-            let delete_button = delete_button.clone();
-            let popover = popover.clone();
-
-            event_box
-                .connect_local("button-press-event", false, move |_| {
+        event_box
+            .connect_local(
+                "button-press-event",
+                false,
+                clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
                     let account_widgets = account_widgets.borrow();
 
                     delete_button.set_sensitive(account_widgets.is_empty());
@@ -128,13 +124,13 @@ impl AccountGroup {
                     popover.show_all();
 
                     Some(true.to_value())
-                })
-                .expect("Could not associate handler");
-        }
+                }),
+            )
+            .expect("Could not associate handler");
 
         AccountGroupWidget {
             id: self.id,
-            container,
+            container: group,
             edit_button,
             delete_button,
             add_account_button,
