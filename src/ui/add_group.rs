@@ -11,6 +11,8 @@ use gtk::{Builder, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
+use glib::clone;
+
 use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
@@ -106,21 +108,17 @@ impl AddGroupWindow {
         let icon_delete = self.icon_delete.clone();
         let image_button = self.image_button.clone();
         let dialog = self.image_dialog.clone();
+        let icon_filename = self.icon_filename.clone();
+        let image_input = self.image_input.clone();
 
         let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
 
-        {
-            let icon_reload = icon_reload.clone();
-            url_input.connect_activate(move |_| {
-                icon_reload.clicked();
-            });
-        }
+        url_input.connect_activate(clone!(@strong icon_reload => move |_| {
+            icon_reload.clicked();
+        }));
 
-        {
-            let icon_filename = self.icon_filename.clone();
-            let image_input = self.image_input.clone();
-            let state = state.clone();
-            image_button.connect_clicked(move |_| match dialog.run() {
+        image_button.connect_clicked(
+            clone!(@strong icon_filename, @strong image_input, @strong state => move |_| match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.hide();
 
@@ -131,65 +129,50 @@ impl AddGroupWindow {
                         Ok(bytes) => {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
-
-                            Self::write_tmp_icon(state.clone(), icon_filename.clone(), image_input.clone(), bytes.as_slice());
+                            Self::write_tmp_icon(state.clone(), &icon_filename, &image_input, bytes.as_slice());
                         }
                         Err(_) => warn!("Could not read file {}", &path.display()),
                     }
                 }
                 _ => dialog.hide(),
-            });
-        }
+            }),
+        );
 
-        {
-            let add_group = self.clone();
+        icon_reload.connect_clicked(clone!(@strong self as add_group => move |_| {
+            let url: String = add_group.url_input.get_buffer().get_text();
 
-            icon_reload.connect_clicked(move |_| {
-                let icon_reload = add_group.icon_reload.clone();
-                let save_button = add_group.save_button.clone();
-                let image_input = add_group.image_input.clone();
-                let icon_error = add_group.icon_error.clone();
-                let url: String = add_group.url_input.get_buffer().get_text();
+            add_group.icon_error.set_label("");
+            add_group.icon_error.set_visible(false);
 
-                icon_error.set_label("");
-                icon_error.set_visible(false);
+            if !url.is_empty() {
+                let tx = tx.clone();
+                let fut = IconParser::html_notify(tx, url);
 
-                if !url.is_empty() {
-                    let tx = tx.clone();
-                    let fut = IconParser::html_notify(tx, url);
+                add_group.save_button.set_sensitive(false);
+                add_group.icon_reload.set_sensitive(false);
+                add_group.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-                    save_button.set_sensitive(false);
-                    icon_reload.set_sensitive(false);
-                    image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+                pool.spawn_ok(fut);
+            }
+        }));
 
-                    pool.spawn_ok(fut);
-                }
-            });
-        }
-
-        {
-            let add_group = self.clone();
-            rx.attach(None, move |account_group_icon| {
-                let icon_filename = add_group.icon_filename.clone();
-                let image_input = add_group.image_input.clone();
-                let icon_reload = add_group.icon_reload.clone();
-                let icon_error = add_group.icon_error.clone();
-                let save_button = add_group.save_button.clone();
-
-                icon_reload.set_sensitive(true);
-                save_button.set_sensitive(true);
+        rx.attach(
+            None,
+            clone!(@strong self as add_group => move |account_group_icon| {
+                add_group.icon_reload.set_sensitive(true);
+                add_group.save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) => Self::write_tmp_icon(state.clone(), icon_filename, image_input, account_group_icon.content.as_slice()),
+                    Ok(account_group_icon) => Self::write_tmp_icon(state.clone(), &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
-                        icon_error.set_label(format!("{}", e).as_str());
-                        icon_error.set_visible(true);
+                        add_group.icon_error.set_label(format!("{}", e).as_str());
+                        add_group.icon_error.set_visible(true);
                     }
                 }
 
                 glib::Continue(true)
-            });
-        }
+            }),
+        );
 
         {
             let add_group = self.clone();
@@ -212,55 +195,47 @@ impl AddGroupWindow {
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.url_input_action(gui.state.clone(), gui.pool.clone());
 
-        {
-            let add_group = self.clone();
-            let gui = gui.clone();
-            let connection = connection.clone();
-            self.cancel_button.connect_clicked(move |_| {
+        self.cancel_button
+            .connect_clicked(clone!(@strong gui, @strong connection, @strong self as add_group => move |_| {
                 add_group.reset();
                 gui.accounts_window.refresh_accounts(&gui, connection.clone());
-            });
-        }
+            }));
 
-        {
-            let add_group = self.clone();
-            let gui = gui.clone();
-            self.save_button.connect_clicked(move |_| {
-                if let Ok(()) = add_group.validate() {
-                    let icon_filename = Self::get_label_text(&add_group.icon_filename);
-                    let group_name: String = add_group.input_group.get_buffer().get_text();
-                    let url_input: Option<String> = Some(add_group.url_input.get_buffer().get_text());
-                    let group_id = add_group.group_id.get_label();
-                    let group_id = group_id.as_str().to_owned();
+        self.save_button.connect_clicked(clone!(@strong gui, @strong self as add_group => move |_| {
+            if let Ok(()) = add_group.validate() {
+                let icon_filename = Self::get_label_text(&add_group.icon_filename);
+                let group_name: String = add_group.input_group.get_buffer().get_text();
+                let url_input: Option<String> = Some(add_group.url_input.get_buffer().get_text());
+                let group_id = add_group.group_id.get_label();
+                let group_id = group_id.as_str().to_owned();
 
-                    let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-                    let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
+                let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
 
-                    rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
-                    let add_group = add_group.clone();
-                    rx_reset.attach(None, move |_| {
-                        // upon completion, reset form
-                        add_group.reset();
-                        glib::Continue(true)
-                    });
+                let add_group = add_group.clone();
+                rx_reset.attach(None, move |_| {
+                    // upon completion, reset form
+                    add_group.reset();
+                    glib::Continue(true)
+                });
 
-                    let filter = gui.accounts_window.get_filter_value();
-                    let connection = connection.clone();
+                let filter = gui.accounts_window.get_filter_value();
+                let connection = connection.clone();
 
-                    gui.pool
-                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                            Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
-                            tx_reset.send(true).expect("Could not send true");
-                            AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                            tx_done.send(true).expect("boom!");
-                        })(filter, connection, tx_done));
+                gui.pool
+                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                        Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
+                        tx_reset.send(true).expect("Could not send true");
+                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                        tx_done.send(true).expect("boom!");
+                    })(filter, connection, tx_done));
 
-                    gui.switch_to(Display::DisplayAccounts);
-                }
-            });
-        }
+                gui.switch_to(Display::DisplayAccounts);
+            }
+        }));
     }
 
     async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
@@ -297,7 +272,7 @@ impl AddGroupWindow {
         }
     }
 
-    fn reuse_filename(icon_filename: gtk::Label) -> String {
+    fn reuse_filename(icon_filename: &gtk::Label) -> String {
         let existing = icon_filename.get_label().as_str().to_owned();
 
         if existing.is_empty() {
@@ -352,7 +327,7 @@ impl AddGroupWindow {
         }
     }
 
-    fn write_tmp_icon(state: Rc<RefCell<State>>, icon_filename: gtk::Label, image_input: gtk::Image, buf: &[u8]) {
+    fn write_tmp_icon(state: Rc<RefCell<State>>, icon_filename: &gtk::Label, image_input: &gtk::Image, buf: &[u8]) {
         let mut temp_filepath = PathBuf::new();
 
         temp_filepath.push(std::env::temp_dir());
