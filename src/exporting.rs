@@ -101,7 +101,7 @@ impl Exporting for MainWindow {
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
+                    spawn!(ConfigManager::restore_account_and_signal_back(path, connection.clone(), tx));
 
                     rx.attach(None, clone!(@strong gui, @strong connection => move |success| {
                         if !success {
