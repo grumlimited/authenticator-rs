@@ -8,6 +8,9 @@ use gtk::{Button, PopoverMenu};
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
+use glib::clone;
+use gtk_macros::*;
+
 pub trait Exporting {
     fn export_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)>;
 
@@ -23,18 +26,16 @@ impl Exporting for MainWindow {
             popover.set_visible(false);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
+            get_widget!(builder, gtk::FileChooserDialog, dialog);
+            get_widget!(builder, gtk::Window, error_popup);
+            get_widget!(builder, gtk::Label, error_popup_body);
 
-            let dialog: gtk::FileChooserDialog = builder.get_object("dialog").unwrap();
+            error_popup_body.set_label(&gettext("Could not export accounts!"));
 
-            let export_account_error: gtk::Window = builder.get_object("error_popup").unwrap();
-            let export_account_error_body: gtk::Label = builder.get_object("error_popup_body").unwrap();
-
-            export_account_error_body.set_label(&gettext("Could not export accounts!"));
-
-            builder.connect_signals(|_, handler_name| match handler_name {
-                "export_account_error_close" => Self::popup_close(export_account_error.clone()),
+            builder.connect_signals(clone!(@strong error_popup  => move |_, handler_name| match handler_name {
+                "export_account_error_close" => Self::popup_close(error_popup.clone()),
                 _ => Box::new(|_| None),
-            });
+            }));
 
             dialog.show();
 
@@ -46,20 +47,23 @@ impl Exporting for MainWindow {
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(ConfigManager::save_accounts(path, connection.clone(), tx));
+                    spawn!(ConfigManager::save_accounts(path, connection.clone(), tx));
 
                     let gui = gui.clone();
                     let connection = connection.clone();
-                    rx.attach(None, move |success| {
-                        if !success {
-                            export_account_error.set_title(&gettext("Error"));
-                            export_account_error.show_all();
-                        }
+                    rx.attach(
+                        None,
+                        clone!(@strong error_popup  => move |success| {
+                            if !success {
+                                error_popup.set_title(&gettext("Error"));
+                                error_popup.show_all();
+                            }
 
-                        gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                            gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
-                        glib::Continue(true)
-                    });
+                            glib::Continue(true)
+                        }),
+                    );
 
                     dialog.close();
                 }
