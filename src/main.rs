@@ -78,6 +78,7 @@ fn main() {
         gui.set_application(&app, connection);
 
         info!("Authenticator RS initialised");
+        gdk::notify_startup_complete();
     });
 
     application.run(&[]);
