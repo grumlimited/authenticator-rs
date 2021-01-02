@@ -48,11 +48,9 @@ impl Exporting for MainWindow {
                     gui.accounts_window.accounts_container.set_sensitive(false);
                     spawn!(ConfigManager::save_accounts(path, connection.clone(), tx));
 
-                    let gui = gui.clone();
-                    let connection = connection.clone();
                     rx.attach(
                         None,
-                        clone!(@strong error_popup  => move |success| {
+                        clone!(@strong connection, @strong error_popup, @strong gui  => move |success| {
                             if !success {
                                 error_popup.set_title(&gettext("Error"));
                                 error_popup.show_all();

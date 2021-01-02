@@ -12,6 +12,9 @@ use gtk::Builder;
 use log::{debug, error, warn};
 use rusqlite::Connection;
 
+use glib::clone;
+use gtk_macros::*;
+
 use crate::helpers::{ConfigManager, IconParser};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
@@ -29,17 +32,17 @@ pub struct AccountsWindow {
 
 impl AccountsWindow {
     pub fn new(builder: Builder) -> AccountsWindow {
-        let progress_bar: gtk::ProgressBar = builder.get_object("progress_bar").unwrap();
-        let main_box: gtk::Box = builder.get_object("main_box").unwrap();
-        let accounts_container: gtk::Box = builder.get_object("accounts_container").unwrap();
-        let filter: gtk::Entry = builder.get_object("account_filter").unwrap();
+        get_widget!(builder, gtk::ProgressBar, progress_bar);
+        get_widget!(builder, gtk::Box, main_box);
+        get_widget!(builder, gtk::Box, accounts_container);
+        get_widget!(builder, gtk::Entry, account_filter);
 
         Self::progress_bar_fraction_now(&progress_bar);
 
         AccountsWindow {
             container: main_box,
             accounts_container,
-            filter,
+            filter: account_filter,
             progress_bar,
             widgets: Arc::new(Mutex::new(vec![])),
         }
@@ -53,16 +56,15 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        gui.pool
-            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                {
-                    let connection = connection.lock().unwrap();
-                    ConfigManager::delete_account(&connection, account_id).unwrap();
-                }
+        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+            {
+                let connection = connection.lock().unwrap();
+                ConfigManager::delete_account(&connection, account_id).unwrap();
+            }
 
-                Self::load_account_groups(tx, connection, filter).await;
-                tx_done.send(true).expect("boom!");
-            })(filter, connection, tx_done));
+            Self::load_account_groups(tx, connection, filter).await;
+            tx_done.send(true).expect("boom!");
+        })(filter, connection, tx_done));
     }
 
     pub fn flip_accounts_container<F, Fut>(&self, rx: Receiver<bool>, f: F) -> F
@@ -72,13 +74,14 @@ impl AccountsWindow {
     {
         self.accounts_container.set_sensitive(false);
 
-        let accounts_container = self.accounts_container.clone();
-
         // upon completion of `f`, restores sensitivity to accounts_container
-        rx.attach(None, move |_| {
-            accounts_container.set_sensitive(true);
-            glib::Continue(true)
-        });
+        rx.attach(
+            None,
+            clone!(@strong self.accounts_container as accounts_container => move |_| {
+                accounts_container.set_sensitive(true);
+                glib::Continue(true)
+            }),
+        );
 
         f
     }
@@ -91,21 +94,20 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        gui.pool
-            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                {
-                    let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+            {
+                let connection = connection.lock().unwrap();
+                let group = ConfigManager::get_group(&connection, group_id).unwrap();
+                ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
 
-                    if let Some(path) = group.icon {
-                        AddGroupWindow::delete_icon_file(&path);
-                    }
+                if let Some(path) = group.icon {
+                    AddGroupWindow::delete_icon_file(&path);
                 }
+            }
 
-                Self::load_account_groups(tx, connection.clone(), filter).await;
-                tx_done.send(true).expect("boom!");
-            })(filter, connection, tx_done));
+            Self::load_account_groups(tx, connection.clone(), filter).await;
+            tx_done.send(true).expect("boom!");
+        })(filter, connection, tx_done));
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -116,11 +118,10 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        gui.pool
-            .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                Self::load_account_groups(tx, connection.clone(), filter).await;
-                tx_done.send(true).expect("boom!");
-            })(filter, connection, tx_done));
+        spawn!(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+            Self::load_account_groups(tx, connection.clone(), filter).await;
+            tx_done.send(true).expect("boom!");
+        })(filter, connection, tx_done));
     }
 
     /**
@@ -186,28 +187,21 @@ impl AccountsWindow {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widgets in widgets_list.iter() {
-            let delete_button = group_widgets.delete_button.clone();
-            let edit_button = group_widgets.edit_button.clone();
-            let add_account_button = group_widgets.add_account_button.clone();
-            let popover = group_widgets.popover.clone();
             let group_id = group_widgets.id;
 
-            add_account_button.connect_clicked(gui.accounts_window.display_add_account_form(connection.clone(), &popover, &gui, Some(group_id)));
+            group_widgets.add_account_button.connect_clicked(gui.accounts_window.display_add_account_form(
+                connection.clone(),
+                &group_widgets.popover,
+                &gui,
+                Some(group_id),
+            ));
 
-            {
-                let connection = connection.clone();
-                let gui = gui.clone();
-                delete_button.connect_clicked(move |_| {
-                    gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
-                });
-            }
+            group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
+                gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
+            }));
 
-            {
-                let gui = gui.clone();
-                let connection = connection.clone();
-                let popover = popover.clone();
-                let builder = builder.clone();
-                edit_button.connect_clicked(move |_| {
+            group_widgets.edit_button.connect_clicked(
+                clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
                     let group = {
                         let connection = connection.lock().unwrap();
                         ConfigManager::get_group(&connection, group_id).unwrap()
@@ -239,8 +233,8 @@ impl AccountsWindow {
 
                     popover.hide();
                     gui.switch_to(Display::DisplayEditGroup);
-                });
-            }
+                }),
+            );
         }
     }
 
