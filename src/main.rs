@@ -14,6 +14,10 @@ use rusqlite::Connection;
 
 use main_window::MainWindow;
 
+extern crate secret_service;
+use secret_service::EncryptionType;
+use secret_service::SecretService;
+
 use crate::helpers::runner;
 use crate::helpers::ConfigManager;
 
@@ -80,6 +84,27 @@ fn main() {
         info!("Authenticator RS initialised");
         gdk::notify_startup_complete();
     });
+
+    let ss = SecretService::new(EncryptionType::Dh).unwrap();
+    let collection = ss.get_default_collection().unwrap();
+
+    //create new item
+    collection
+        .create_item(
+            "test_label",                 // label
+            vec![("test", "test_value")], // properties
+            b"test_secret",               //secret
+            false,                        // replace item with same attributes
+            "text/plain",                 // secret content type
+        )
+        .unwrap();
+
+    // search items by properties
+    let search_items = ss.search_items(vec![("name", "CTM")]).unwrap();
+
+    let item = search_items.get(0).unwrap();
+
+    println!("{:?}", String::from_utf8(item.get_secret().unwrap()));
 
     application.run(&[]);
 }

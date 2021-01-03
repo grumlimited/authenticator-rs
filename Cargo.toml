@@ -10,7 +10,7 @@ authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.36"
+anyhow = "1.0.37"
 base32 = "0.4.0"
 bytes = "0.5.6"
 chrono = "0.4.19"
@@ -23,6 +23,7 @@ gdk-pixbuf = "0.9.0"
 gettext-rs = {version = "0.5.0", features = ["gettext-system"]}
 gio = "0.9.1"
 gtk-macros = "0.2.0"
+gmp = "0.3.1"
 image = "0.23.12"
 log = "0.4.11"
 log4rs = "0.12.0"
@@ -31,6 +32,7 @@ regex = "1.4.2"
 rqrr = "0.3.0"
 rusqlite = "0.24.2"
 scraper = "0.12.0"
+secret-service = "1.1.3"
 serde = { version = "1.0.118", features = ["derive"] }
 serde_json = "1.0.60"
 serde_yaml = "0.8.14"
