@@ -1,5 +1,7 @@
 extern crate secret_service;
 
+use log::debug;
+
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
 
@@ -7,10 +9,11 @@ use crate::helpers::ConfigManager;
 
 pub type Result<T> = ::std::result::Result<T, SsError>;
 
+const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_ATTRS: (&str, &str) = ("application", "authenticator-rs");
 const ACCOUNT_ID_KEY: &str = "account_id";
 
-trait TotpSecretService {
+pub trait TotpSecretService {
     fn store(label: &str, account_id: u32, secret: &str) -> Result<()>;
 
     fn secret(account_id: u32) -> Result<Option<String>>;
@@ -22,12 +25,14 @@ impl TotpSecretService for ConfigManager {
         let collection = ss.get_default_collection()?;
 
         collection.create_item(
-            label,
+            format!("{} TOTP ({})", APPLICATION, label).as_str(),
             vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS],
             secret.as_bytes(),
             false,
             "text/plain",
         )?;
+
+        debug!("Saved {} ({})", label, account_id);
 
         Ok(())
     }

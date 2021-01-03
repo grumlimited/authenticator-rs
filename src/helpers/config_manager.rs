@@ -12,10 +12,10 @@ use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use std::{thread, time};
 
+use crate::helpers::secret_service::TotpSecretService;
+
 #[derive(Debug, Clone)]
-pub struct ConfigManager {
-    pub groups: Vec<AccountGroup>,
-}
+pub struct ConfigManager {}
 
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum LoadError {
@@ -239,8 +239,11 @@ impl ConfigManager {
         stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
                 account.id = id;
+                id
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .and_then(|id| Self::store(account.label.as_str(), id, account.secret.as_str()).map_err(|e| LoadError::DbError(format!("{:?}", e))))
+            .map(|_| ())
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
@@ -249,8 +252,10 @@ impl ConfigManager {
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
                 params![account.id, account.label, account.secret, account.group_id],
             )
-            .map(|_| ())
+            .map(|_| account.id)
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .and_then(|id| Self::store(account.label.as_str(), id, account.secret.as_str()).map_err(|e| LoadError::DbError(format!("{:?}", e))))
+            .map(|_| ())
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, LoadError> {
