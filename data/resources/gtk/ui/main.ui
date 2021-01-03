@@ -206,7 +206,7 @@
                         <property name="name">add_accounts_container_add</property>
                         <property name="can-focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">Add account</property>
+                        <property name="label" translatable="yes">New account</property>
                         <style>
                           <class name="section_title"/>
                           <class name="account_group_label"/>
@@ -532,7 +532,7 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">Add group</property>
+                        <property name="label" translatable="yes">New group</property>
                         <style>
                           <class name="section_title"/>
                           <class name="add_group_label"/>

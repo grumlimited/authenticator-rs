@@ -217,6 +217,8 @@ impl AccountsWindow {
                     add_group.add_group_container_add.set_visible(false);
                     add_group.add_group_container_edit.set_visible(true);
 
+                    add_group.add_group_container_edit.set_text(group.name.as_str());
+
                     gui.add_group.replace_with(&add_group);
 
                     add_group.input_group.set_text(group.name.as_str());
@@ -282,7 +284,7 @@ impl AccountsWindow {
                     edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection, gui.accounts_window.get_filter_value().as_deref()).unwrap();
+                    let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
                     let account = ConfigManager::get_account(&connection, id).unwrap();
 
                     edit_account.input_group.remove_all(); //re-added and refreshed just below
@@ -292,6 +294,11 @@ impl AccountsWindow {
                     let account_id = account.id.to_string();
                     edit_account.input_account_id.set_text(account_id.as_str());
                     edit_account.input_name.set_text(account.label.as_str());
+
+                    edit_account.add_accounts_container_add.set_visible(false);
+                    edit_account.add_accounts_container_edit.set_visible(true);
+
+                    edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
                     let buffer = edit_account.input_secret.get_buffer().unwrap();
                     buffer.set_text(account.secret.as_str());
