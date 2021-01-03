@@ -23,7 +23,13 @@
 
 .account_row, .form_container {
     background-color: @content_view_bg;
+    border-color: red;
     border-radius: 3px;
+}
+
+.account_row_hover {
+    background-color: @insensitive_borders_color;
+    /*background-color: @theme_selected_bg_color;*/
 }
 
 .totp_label {

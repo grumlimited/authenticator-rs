@@ -105,7 +105,7 @@ impl AccountGroup {
             .iter()
             .map(|account| {
                 let widget = account.widget();
-                accounts.add(&widget.grid);
+                accounts.add(&widget.eventgrid);
                 widget
             })
             .collect();

@@ -26,6 +26,7 @@ pub struct AccountWidget {
     pub account_id: u32,
     pub group_id: u32,
     pub grid: gtk::Grid,
+    pub eventgrid: gtk::EventBox,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub confirm_button: gtk::Button,
@@ -64,6 +65,7 @@ impl Account {
     pub fn widget(&self) -> AccountWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
+        get_widget!(builder, gtk::EventBox, eventgrid);
         get_widget!(builder, gtk::Grid, grid);
         get_widget!(builder, gtk::Image, edit_copy_img);
         get_widget!(builder, gtk::Image, dialog_ok_img);
@@ -89,6 +91,38 @@ impl Account {
             }
         }));
 
+        let context = grid.get_style_context();
+
+        eventgrid.connect_enter_notify_event(clone!(@strong context => move |_, _| {
+            context.add_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
+        eventgrid.connect_leave_notify_event(clone!(@strong context => move |_, _| {
+            context.remove_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
+        copy_button.connect_enter_notify_event(clone!(@strong context => move |_, _| {
+            context.add_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
+        copy_button.connect_leave_notify_event(clone!(@strong context => move |_, _| {
+            context.remove_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
+        edit_button.connect_enter_notify_event(clone!(@strong context => move |_, _| {
+            context.add_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
+        edit_button.connect_leave_notify_event(clone!(@strong context => move |_, _| {
+            context.remove_class("account_row_hover");
+            glib::signal::Inhibit(true)
+        }));
+
         match Self::generate_time_based_password(self.secret.as_str()) {
             Ok(totp) => totp_label.set_label(totp.as_str()),
             Err(_) => {
@@ -104,6 +138,7 @@ impl Account {
         }));
 
         AccountWidget {
+            eventgrid,
             account_id: self.id,
             group_id: self.group_id,
             grid,
