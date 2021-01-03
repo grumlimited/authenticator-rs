@@ -122,8 +122,14 @@
         <child type="label_item">
           <placeholder/>
         </child>
+        <style>
+          <class name="account_frame"/>
+        </style>
       </object>
     </child>
+    <style>
+      <class name="account_eventgrid"/>
+    </style>
   </object>
   <object class="GtkPopoverMenu" id="popover">
     <property name="name">popover</property>

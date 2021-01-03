@@ -23,8 +23,6 @@
 
 .account_row, .form_container {
     background-color: @content_view_bg;
-    border-color: red;
-    border-radius: 3px;
 }
 
 .account_row_hover {
