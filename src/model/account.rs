@@ -62,7 +62,7 @@ impl Account {
         }
     }
 
-    pub fn widget(&self) -> AccountWidget {
+    pub fn widget(&self, is_first: bool, is_last: bool) -> AccountWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
         get_widget!(builder, gtk::EventBox, eventgrid);
@@ -78,6 +78,7 @@ impl Account {
         get_widget!(builder, gtk::Button, delete_button);
         get_widget!(builder, gtk::PopoverMenu, popover);
         get_widget!(builder, gtk::MenuButton, menu);
+        get_widget!(builder, gtk::Frame, account_frame);
 
         grid.set_widget_name(format!("account_id_{}", self.id).as_str());
 
@@ -91,7 +92,15 @@ impl Account {
             }
         }));
 
-        let context = grid.get_style_context();
+        if is_first {
+            let context = account_frame.get_style_context();
+            context.add_class("account_frame_first");
+        }
+
+        if is_last {
+            let context = account_frame.get_style_context();
+            context.add_class("account_frame_last");
+        }
 
         fn add_hovering_class<T: gtk::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
             let context = style_context.clone();
@@ -107,6 +116,7 @@ impl Account {
             });
         }
 
+        let context = grid.get_style_context();
         add_hovering_class(&context, &eventgrid);
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);

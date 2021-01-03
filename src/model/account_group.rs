@@ -103,12 +103,13 @@ impl AccountGroup {
         let account_widgets: Vec<AccountWidget> = self
             .entries
             .iter()
-            .map(|account| {
-                let widget = account.widget();
+            .enumerate()
+            .map(|(i, account)| {
+                let widget = account.widget(i == 0, i == self.entries.len() - 1);
                 accounts.add(&widget.eventgrid);
                 widget
             })
-            .collect();
+            .collect::<Vec<AccountWidget>>();
 
         let account_widgets = Rc::new(RefCell::new(account_widgets));
 
