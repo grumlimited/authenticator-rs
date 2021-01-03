@@ -30,6 +30,7 @@
     <property name="tooltip-text" translatable="yes">Icon</property>
     <property name="halign">center</property>
     <property name="valign">center</property>
+    <property name="pixel-size">32</property>
     <property name="icon-name">content-loading-symbolic</property>
   </object>
   <object class="GtkImage" id="cancel_image">
