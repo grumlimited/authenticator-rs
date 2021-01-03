@@ -93,35 +93,23 @@ impl Account {
 
         let context = grid.get_style_context();
 
-        eventgrid.connect_enter_notify_event(clone!(@strong context => move |_, _| {
-            context.add_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
+        fn add_hovering_class<T: gtk::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
+            let context = style_context.clone();
+            w.connect_enter_notify_event(move |_, _| {
+                context.add_class("account_row_hover");
+                glib::signal::Inhibit(true)
+            });
 
-        eventgrid.connect_leave_notify_event(clone!(@strong context => move |_, _| {
-            context.remove_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
+            let context = style_context.clone();
+            w.connect_leave_notify_event(move |_, _| {
+                context.remove_class("account_row_hover");
+                glib::signal::Inhibit(true)
+            });
+        }
 
-        copy_button.connect_enter_notify_event(clone!(@strong context => move |_, _| {
-            context.add_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
-
-        copy_button.connect_leave_notify_event(clone!(@strong context => move |_, _| {
-            context.remove_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
-
-        menu.connect_enter_notify_event(clone!(@strong context => move |_, _| {
-            context.add_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
-
-        menu.connect_leave_notify_event(clone!(@strong context => move |_, _| {
-            context.remove_class("account_row_hover");
-            glib::signal::Inhibit(true)
-        }));
+        add_hovering_class(&context, &eventgrid);
+        add_hovering_class(&context, &copy_button);
+        add_hovering_class(&context, &menu);
 
         match Self::generate_time_based_password(self.secret.as_str()) {
             Ok(totp) => totp_label.set_label(totp.as_str()),
