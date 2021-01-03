@@ -459,7 +459,10 @@
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="column-homogeneous">True</property>
+                <property name="halign">end</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">20</property>
+                <property name="column-spacing">5</property>
                 <child>
                   <object class="GtkButton" id="edit_account_cancel">
                     <property name="label" translatable="yes">Cancel</property>
@@ -468,10 +471,6 @@
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Cancel</property>
-                    <property name="margin-start">10</property>
-                    <property name="margin-end">50</property>
-                    <property name="margin-top">20</property>
-                    <property name="margin-bottom">20</property>
                     <property name="image">account_cancel</property>
                   </object>
                   <packing>
@@ -487,10 +486,6 @@
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Save</property>
-                    <property name="margin-start">50</property>
-                    <property name="margin-end">10</property>
-                    <property name="margin-top">20</property>
-                    <property name="margin-bottom">20</property>
                     <property name="image">account_save</property>
                   </object>
                   <packing>
@@ -792,7 +787,10 @@
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="column-homogeneous">True</property>
+                <property name="halign">end</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">20</property>
+                <property name="column-spacing">5</property>
                 <child>
                   <object class="GtkButton" id="add_group_cancel">
                     <property name="label" translatable="yes">Cancel</property>
@@ -801,10 +799,6 @@
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Cancel</property>
-                    <property name="margin-start">10</property>
-                    <property name="margin-end">50</property>
-                    <property name="margin-top">20</property>
-                    <property name="margin-bottom">20</property>
                     <property name="image">group_cancel</property>
                   </object>
                   <packing>
@@ -820,10 +814,6 @@
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Save</property>
-                    <property name="margin-start">50</property>
-                    <property name="margin-end">10</property>
-                    <property name="margin-top">20</property>
-                    <property name="margin-bottom">20</property>
                     <property name="image">group_save</property>
                   </object>
                   <packing>
@@ -943,6 +933,14 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkSizeGroup">
+    <widgets>
+      <widget name="edit_account_save"/>
+      <widget name="edit_account_cancel"/>
+      <widget name="add_group_save"/>
+      <widget name="add_group_cancel"/>
+    </widgets>
   </object>
   <object class="GtkWindow" id="about_popup">
     <property name="name">about_popup</property>
