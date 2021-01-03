@@ -591,7 +591,7 @@
                     <property name="label-xalign">0</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <!-- n-columns=3 n-rows=6 -->
+                      <!-- n-columns=2 n-rows=6 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -629,7 +629,6 @@
                           <packing>
                             <property name="left-attach">1</property>
                             <property name="top-attach">0</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
@@ -665,7 +664,6 @@
                           <packing>
                             <property name="left-attach">1</property>
                             <property name="top-attach">1</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
@@ -677,7 +675,6 @@
                           <packing>
                             <property name="left-attach">1</property>
                             <property name="top-attach">4</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
@@ -758,7 +755,6 @@
                           <packing>
                             <property name="left-attach">1</property>
                             <property name="top-attach">3</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
@@ -771,12 +767,6 @@
                             <property name="left-attach">1</property>
                             <property name="top-attach">5</property>
                           </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
