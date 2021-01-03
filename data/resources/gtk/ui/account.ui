@@ -22,95 +22,106 @@
   <object class="GtkEventBox" id="eventgrid">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
+    <property name="margin-end">2</property>
+    <property name="margin-top">2</property>
     <child>
-      <!-- n-columns=4 n-rows=1 -->
-      <object class="GtkGrid" id="grid">
-        <property name="height-request">50</property>
+      <object class="GtkFrame">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="margin-end">2</property>
-        <property name="margin-top">2</property>
-        <property name="row-homogeneous">True</property>
+        <property name="label-xalign">0</property>
+        <property name="shadow-type">in</property>
         <child>
-          <object class="GtkLabel" id="account_name">
+          <!-- n-columns=4 n-rows=1 -->
+          <object class="GtkGrid" id="grid">
+            <property name="height-request">50</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="halign">start</property>
-            <property name="valign">center</property>
-            <property name="margin-start">8</property>
-            <property name="hexpand">True</property>
-            <property name="width-chars">19</property>
-            <property name="single-line-mode">True</property>
-            <property name="max-width-chars">50</property>
-            <property name="track-visited-links">False</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left-attach">0</property>
-            <property name="top-attach">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="totp_label">
-            <property name="name">totp_label</property>
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="halign">end</property>
-            <property name="valign">center</property>
-            <property name="justify">right</property>
-            <property name="width-chars">8</property>
-            <property name="xalign">0.89999997615814209</property>
-          </object>
-          <packing>
-            <property name="left-attach">1</property>
-            <property name="top-attach">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkMenuButton" id="menu">
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="focus-on-click">False</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Settings</property>
-            <property name="valign">center</property>
-            <property name="margin-start">5</property>
-            <property name="margin-end">5</property>
-            <property name="popover">popover</property>
+            <property name="row-homogeneous">True</property>
             <child>
-              <object class="GtkImage">
+              <object class="GtkLabel" id="account_name">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="icon-name">view-more-symbolic</property>
-                <property name="use-fallback">True</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="margin-start">8</property>
+                <property name="hexpand">True</property>
+                <property name="width-chars">19</property>
+                <property name="single-line-mode">True</property>
+                <property name="max-width-chars">50</property>
+                <property name="track-visited-links">False</property>
+                <property name="xalign">0</property>
               </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
             </child>
+            <child>
+              <object class="GtkLabel" id="totp_label">
+                <property name="name">totp_label</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <property name="justify">right</property>
+                <property name="width-chars">8</property>
+                <property name="xalign">0.89999997615814209</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkMenuButton" id="menu">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="focus-on-click">False</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Settings</property>
+                <property name="valign">center</property>
+                <property name="margin-start">5</property>
+                <property name="margin-end">5</property>
+                <property name="popover">popover</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="icon-name">view-more-symbolic</property>
+                    <property name="use-fallback">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="left-attach">3</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="copy_button">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Copy</property>
+                <property name="valign">center</property>
+                <property name="margin-start">5</property>
+                <property name="margin-end">5</property>
+                <property name="image">edit_copy_img</property>
+                <property name="always-show-image">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">2</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <style>
+              <class name="account_row"/>
+            </style>
           </object>
-          <packing>
-            <property name="left-attach">3</property>
-            <property name="top-attach">0</property>
-          </packing>
         </child>
-        <child>
-          <object class="GtkButton" id="copy_button">
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Copy</property>
-            <property name="valign">center</property>
-            <property name="margin-start">5</property>
-            <property name="margin-end">5</property>
-            <property name="image">edit_copy_img</property>
-            <property name="always-show-image">True</property>
-          </object>
-          <packing>
-            <property name="left-attach">2</property>
-            <property name="top-attach">0</property>
-          </packing>
+        <child type="label_item">
+          <placeholder/>
         </child>
-        <style>
-          <class name="account_row"/>
-        </style>
       </object>
     </child>
   </object>

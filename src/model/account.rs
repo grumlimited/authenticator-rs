@@ -113,12 +113,12 @@ impl Account {
             glib::signal::Inhibit(true)
         }));
 
-        edit_button.connect_enter_notify_event(clone!(@strong context => move |_, _| {
+        menu.connect_enter_notify_event(clone!(@strong context => move |_, _| {
             context.add_class("account_row_hover");
             glib::signal::Inhibit(true)
         }));
 
-        edit_button.connect_leave_notify_event(clone!(@strong context => move |_, _| {
+        menu.connect_leave_notify_event(clone!(@strong context => move |_, _| {
             context.remove_class("account_row_hover");
             glib::signal::Inhibit(true)
         }));
