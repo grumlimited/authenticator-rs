@@ -4,7 +4,6 @@ use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
 
 use crate::helpers::ConfigManager;
-use std::string::FromUtf8Error;
 
 pub type Result<T> = ::std::result::Result<T, SsError>;
 
@@ -41,8 +40,22 @@ impl TotpSecretService for ConfigManager {
         search_items
             .get(0)
             .map(|i| i.get_secret())
-            .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|e| SsError::NoResult)))
-            .map(|r| r.map(|v| Some(v)))
+            .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|_| SsError::NoResult)))
+            .map(|r| r.map(Some))
             .unwrap_or(Ok(None))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn should_create_collection_struct() {
+        ConfigManager::store("x", 1, "secret");
+
+        let result = ConfigManager::secret(1).unwrap().unwrap();
+
+        assert_eq!("secret", result);
     }
 }
