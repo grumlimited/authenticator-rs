@@ -44,6 +44,7 @@
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
+  <object class="GtkTextBuffer" id="error_display_message"/>
   <object class="GtkImage" id="group_cancel">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -952,16 +953,79 @@
             <property name="position">3</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkBox" id="errors">
+            <property name="name">error_display</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="vexpand">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">20</property>
+            <property name="baseline-position">top</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="name">error_display_title</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-top">50</property>
+                <property name="label" translatable="yes">Ouh la la!</property>
+                <style>
+                  <class name="error_display_title"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">10</property>
+                <property name="margin-bottom">10</property>
+                <property name="vexpand">True</property>
+                <property name="label-xalign">0</property>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkTextView">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="pixels-above-lines">10</property>
+                    <property name="pixels-below-lines">20</property>
+                    <property name="pixels-inside-wrap">10</property>
+                    <property name="editable">False</property>
+                    <property name="wrap-mode">word</property>
+                    <property name="left-margin">10</property>
+                    <property name="right-margin">10</property>
+                    <property name="top-margin">10</property>
+                    <property name="buffer">error_display_message</property>
+                    <property name="accepts-tab">False</property>
+                    <property name="input-purpose">alpha</property>
+                    <property name="monospace">True</property>
+                  </object>
+                </child>
+                <child type="label_item">
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">4</property>
+          </packing>
+        </child>
       </object>
     </child>
-  </object>
-  <object class="GtkSizeGroup">
-    <widgets>
-      <widget name="edit_account_save"/>
-      <widget name="edit_account_cancel"/>
-      <widget name="add_group_save"/>
-      <widget name="add_group_cancel"/>
-    </widgets>
   </object>
   <object class="GtkWindow" id="about_popup">
     <property name="name">about_popup</property>
@@ -1111,6 +1175,14 @@
   <object class="GtkSizeGroup" id="add_account_inputs">
     <widgets>
       <widget name="add_group_url_input"/>
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="form_buttons">
+    <widgets>
+      <widget name="edit_account_save"/>
+      <widget name="edit_account_cancel"/>
+      <widget name="add_group_save"/>
+      <widget name="add_group_cancel"/>
     </widgets>
   </object>
   <object class="GtkSizeGroup" id="group_form_entries">

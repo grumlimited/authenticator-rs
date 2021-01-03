@@ -10,7 +10,7 @@ use gtk::prelude::*;
 use gtk_macros::*;
 use rusqlite::Connection;
 
-use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, NoAccountsWindow};
+use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
 
 use crate::ui::menu::*;
@@ -23,6 +23,7 @@ pub struct MainWindow {
     pub accounts_window: ui::AccountsWindow,
     pub add_group: ui::AddGroupWindow,
     pub no_accounts: ui::NoAccountsWindow,
+    pub errors: ui::ErrorsWindow,
     pub pool: ThreadPool,
     pub state: Rc<RefCell<State>>,
 }
@@ -42,6 +43,7 @@ pub enum Display {
     DisplayAddGroup,
     DisplayEditGroup,
     DisplayNoAccounts,
+    DisplayErrors,
 }
 
 impl Default for State {
@@ -67,6 +69,7 @@ impl MainWindow {
 
         let no_accounts = NoAccountsWindow::new(builder.clone());
         let accounts_window = AccountsWindow::new(builder.clone());
+        let errors = ErrorsWindow::new(builder.clone());
 
         {
             get_widget!(builder, gtk::Button, add_group_save);
@@ -104,6 +107,7 @@ impl MainWindow {
             edit_account: EditAccountWindow::new(&builder),
             accounts_window,
             no_accounts,
+            errors,
             add_group: AddGroupWindow::new(&builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: Rc::new(RefCell::new(State::default())),
@@ -121,6 +125,7 @@ impl MainWindow {
             Display::DisplayAccounts => {
                 self.accounts_window.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
                 self.add_group.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
@@ -128,6 +133,7 @@ impl MainWindow {
             Display::DisplayEditAccount => {
                 self.edit_account.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
                 self.accounts_window.container.set_visible(false);
                 self.add_group.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
@@ -135,6 +141,7 @@ impl MainWindow {
             Display::DisplayAddAccount => {
                 self.edit_account.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
                 self.accounts_window.container.set_visible(false);
                 self.add_group.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
@@ -142,6 +149,7 @@ impl MainWindow {
             Display::DisplayAddGroup => {
                 self.add_group.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
                 self.accounts_window.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
@@ -149,6 +157,7 @@ impl MainWindow {
             Display::DisplayEditGroup => {
                 self.add_group.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
                 self.accounts_window.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
@@ -156,6 +165,15 @@ impl MainWindow {
             Display::DisplayNoAccounts => {
                 self.no_accounts.container.set_visible(true);
 
+                self.errors.container.set_visible(false);
+                self.accounts_window.container.set_visible(false);
+                self.add_group.container.set_visible(false);
+                self.edit_account.container.set_visible(false);
+            }
+            Display::DisplayErrors => {
+                self.errors.container.set_visible(true);
+
+                self.no_accounts.container.set_visible(false);
                 self.accounts_window.container.set_visible(false);
                 self.add_group.container.set_visible(false);
                 self.edit_account.container.set_visible(false);

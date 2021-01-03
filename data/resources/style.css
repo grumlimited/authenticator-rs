@@ -78,3 +78,9 @@
 .no_accounts {
     font-style: italic;
 }
+
+.error_display_title {
+    font-size: 250%;
+    font-weight: bold;
+
+}

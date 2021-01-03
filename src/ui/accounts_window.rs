@@ -14,11 +14,13 @@ use rusqlite::Connection;
 use glib::clone;
 use gtk_macros::*;
 
-use crate::helpers::{Database, IconParser, Keyring, Paths};
+use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 use crate::NAMESPACE_PREFIX;
+
+pub type AccountsRefreshResult = ::std::result::Result<(Vec<AccountGroup>, bool), RepositoryError>;
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {
@@ -48,7 +50,7 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -89,7 +91,7 @@ impl AccountsWindow {
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -114,7 +116,7 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
         let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
@@ -135,34 +137,38 @@ impl AccountsWindow {
      * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
      * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
      */
-    pub fn replace_accounts_and_widgets(
-        &self,
-        gui: MainWindow,
-        connection: Arc<Mutex<Connection>>,
-    ) -> Box<dyn FnMut((Vec<AccountGroup>, bool)) -> glib::Continue> {
-        Box::new(move |(groups, has_groups)| {
-            {
-                let accounts_container = gui.accounts_window.accounts_container.clone();
-                let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+    pub fn replace_accounts_and_widgets(&self, gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(AccountsRefreshResult) -> glib::Continue> {
+        Box::new(move |accounts_refresh_result| {
+            match accounts_refresh_result {
+                Ok((groups, has_groups)) => {
+                    {
+                        let accounts_container = gui.accounts_window.accounts_container.clone();
+                        let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
 
-                // empty list of accounts first
-                accounts_container.foreach(|e| accounts_container.remove(e));
+                        // empty list of accounts first
+                        accounts_container.foreach(|e| accounts_container.remove(e));
 
-                *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
+                        *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
 
-                m_widgets
-                    .iter()
-                    .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
-            }
+                        m_widgets
+                            .iter()
+                            .for_each(|account_group_widget| accounts_container.add(&account_group_widget.container));
+                    }
 
-            if has_groups {
-                Self::edit_buttons_actions(&gui, connection.clone());
-                Self::group_edit_buttons_actions(&gui, connection.clone());
-                Self::delete_buttons_actions(&gui, connection.clone());
+                    if has_groups {
+                        Self::edit_buttons_actions(&gui, connection.clone());
+                        Self::group_edit_buttons_actions(&gui, connection.clone());
+                        Self::delete_buttons_actions(&gui, connection.clone());
 
-                gui.switch_to(Display::DisplayAccounts);
-            } else {
-                gui.switch_to(Display::DisplayNoAccounts);
+                        gui.switch_to(Display::DisplayAccounts);
+                    } else {
+                        gui.switch_to(Display::DisplayNoAccounts);
+                    }
+                }
+                Err(e) => {
+                    gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                    gui.switch_to(Display::DisplayErrors);
+                }
             }
 
             glib::Continue(true)
@@ -172,23 +178,28 @@ impl AccountsWindow {
     /**
      * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
      */
-    pub async fn load_account_groups(tx: Sender<(Vec<AccountGroup>, bool)>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
+    pub async fn load_account_groups(tx: Sender<AccountsRefreshResult>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         let has_groups = async {
             let connection = connection.lock().unwrap();
-            Database::has_groups(&connection).unwrap()
+            Database::has_groups(&connection)
         }
         .await;
 
-        let mut accounts = async {
+        let accounts = async {
             let connection = connection.lock().unwrap();
-            Database::load_account_groups(&connection, filter.as_deref()).unwrap()
+            Database::load_account_groups(&connection, filter.as_deref())
         }
         .await;
 
-        let connection = connection.lock().unwrap();
-        let _ = Keyring::set_secrets(&mut accounts, &connection).unwrap();
+        let accounts: Result<Vec<AccountGroup>, RepositoryError> = accounts.and_then(|account_groups| {
+            let connection = connection.lock().unwrap();
+            let mut account_groups = account_groups;
+            Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
+        });
 
-        tx.send((accounts, has_groups)).expect("boom!");
+        let r: AccountsRefreshResult = has_groups.and_then(|v| accounts.map(|v2| (v2, v)));
+
+        tx.send(r).expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -306,18 +317,22 @@ impl AccountsWindow {
 
                     edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
-                    let secret = match Keyring::secret(account.id) {
-                        Ok(Some(v)) => v,
-                        Ok(None) => "".to_owned(),
-                        Err(e) => panic!("Could not get secret: {}", e)
+                    match Keyring::secret(account.id) {
+                        Ok(secret) => {
+                            let buffer = edit_account.input_secret.get_buffer().unwrap();
+                            buffer.set_text(secret.unwrap_or_default().as_str());
+
+                            popover.hide();
+
+                            gui.switch_to(Display::DisplayEditAccount);
+                        },
+                        Err(e) => {
+                            gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                            gui.switch_to(Display::DisplayErrors);
+                        }
                     };
 
-                    let buffer = edit_account.input_secret.get_buffer().unwrap();
-                    buffer.set_text(secret.as_str());
 
-                    popover.hide();
-
-                    gui.switch_to(Display::DisplayEditAccount);
                 }));
             }
         }
