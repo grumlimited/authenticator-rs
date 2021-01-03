@@ -136,3 +136,9 @@ msgstr "Confirmer"
 
 msgid "Click + to add accounts"
 msgstr "Cliquez sur + pour ajouter un compte"
+
+msgid "New account"
+msgstr "Création de compte"
+
+msgid "use QR code"
+msgstr "uploader un QR code"

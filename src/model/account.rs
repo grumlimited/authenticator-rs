@@ -26,6 +26,7 @@ pub struct AccountWidget {
     pub account_id: u32,
     pub group_id: u32,
     pub grid: gtk::Grid,
+    pub eventgrid: gtk::EventBox,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub confirm_button: gtk::Button,
@@ -64,6 +65,7 @@ impl Account {
     pub fn widget(&self) -> AccountWidget {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account.ui").as_str());
 
+        get_widget!(builder, gtk::EventBox, eventgrid);
         get_widget!(builder, gtk::Grid, grid);
         get_widget!(builder, gtk::Image, edit_copy_img);
         get_widget!(builder, gtk::Image, dialog_ok_img);
@@ -89,6 +91,26 @@ impl Account {
             }
         }));
 
+        let context = grid.get_style_context();
+
+        fn add_hovering_class<T: gtk::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
+            let context = style_context.clone();
+            w.connect_enter_notify_event(move |_, _| {
+                context.add_class("account_row_hover");
+                glib::signal::Inhibit(true)
+            });
+
+            let context = style_context.clone();
+            w.connect_leave_notify_event(move |_, _| {
+                context.remove_class("account_row_hover");
+                glib::signal::Inhibit(true)
+            });
+        }
+
+        add_hovering_class(&context, &eventgrid);
+        add_hovering_class(&context, &copy_button);
+        add_hovering_class(&context, &menu);
+
         match Self::generate_time_based_password(self.secret.as_str()) {
             Ok(totp) => totp_label.set_label(totp.as_str()),
             Err(_) => {
@@ -104,6 +126,7 @@ impl Account {
         }));
 
         AccountWidget {
+            eventgrid,
             account_id: self.id,
             group_id: self.group_id,
             grid,
