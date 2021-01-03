@@ -25,9 +25,25 @@
     background-color: @content_view_bg;
 }
 
+.account_frame {
+    background-color: @content_view_bg;
+    border-style: solid;
+    border-color: @borders;
+    border-width: 1px;
+    border-bottom-style: none;
+    border-top-style: none;
+}
+
+.account_frame_first {
+    border-top-style: solid;
+}
+
+.account_frame_last {
+    border-bottom-style: solid;
+}
+
 .account_row_hover {
-    background-color: @insensitive_borders_color;
-    /*background-color: @theme_selected_bg_color;*/
+    background-color: @borders;
 }
 
 .totp_label {

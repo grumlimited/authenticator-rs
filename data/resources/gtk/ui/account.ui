@@ -22,18 +22,17 @@
   <object class="GtkEventBox" id="eventgrid">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="margin-end">2</property>
-    <property name="margin-top">2</property>
     <child>
-      <object class="GtkFrame">
+      <object class="GtkFrame" id="account_frame">
+        <property name="name">account_frame</property>
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label-xalign">0</property>
-        <property name="shadow-type">in</property>
+        <property name="shadow-type">none</property>
         <child>
           <!-- n-columns=4 n-rows=1 -->
           <object class="GtkGrid" id="grid">
-            <property name="height-request">50</property>
+            <property name="height-request">52</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="row-homogeneous">True</property>
