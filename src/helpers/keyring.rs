@@ -5,22 +5,17 @@ use thiserror::Error;
 
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
+use crate::helpers::RepositoryError;
 
-#[derive(Debug, Error)]
-#[error("{0}")]
-pub enum KeyringError {
-    Error(#[from] SsError),
-}
-
-pub type Result<T> = ::std::result::Result<T, SsError>;
+type Result<T> = ::std::result::Result<T, SsError>;
 
 const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_ATTRS: (&str, &str) = ("application", "authenticator-rs");
 const ACCOUNT_ID_KEY: &str = "account_id";
 
-pub struct TotpSecretService;
+pub struct Keyring;
 
-impl TotpSecretService {
+impl Keyring {
     fn store(label: &str, account_id: u32, secret: &str) -> Result<()> {
         Self::remove(account_id).unwrap();
 
@@ -40,15 +35,17 @@ impl TotpSecretService {
         Ok(())
     }
 
-    pub fn upsert(label: &str, account_id: u32, secret: &str) -> Result<()> {
-        match Self::secret(account_id) {
+    pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
+        let result = match Self::secret(account_id) {
             Ok(Some(_)) => {
                 Self::remove(account_id)?;
                 Self::store(label, account_id, secret)
             }
             Ok(None) => Self::store(label, account_id, secret),
             Err(e) => Err(e),
-        }
+        };
+
+        result.map_err(RepositoryError::KeyringError)
     }
 
     pub fn secret(account_id: u32) -> Result<Option<String>> {
@@ -82,9 +79,9 @@ mod test {
 
     #[test]
     fn should_create_collection_struct() {
-        TotpSecretService::store("x22", 1, "secret").unwrap();
+        Keyring::store("x22", 1, "secret").unwrap();
 
-        let result = TotpSecretService::secret(1).unwrap().unwrap();
+        let result = Keyring::secret(1).unwrap().unwrap();
 
         assert_eq!("secret", result);
     }

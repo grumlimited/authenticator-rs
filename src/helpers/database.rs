@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use crate::helpers::Paths;
 use crate::model::{Account, AccountGroup};
+use secret_service::SsError;
 
 #[derive(Debug, Clone)]
 pub struct Database;
@@ -17,9 +18,10 @@ pub struct Database;
 #[derive(Debug, Error)]
 #[error("{0}")]
 pub enum RepositoryError {
-    SqlError(rusqlite::Error),
-    IoError(io::Error),
-    SerialiationError(serde_yaml::Error),
+    SqlError(#[from] rusqlite::Error),
+    IoError(#[from] io::Error),
+    SerialisationError(#[from] serde_yaml::Error),
+    KeyringError(#[from] SsError),
 }
 
 impl Database {
@@ -263,7 +265,7 @@ impl Database {
     pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), RepositoryError> {
         let file = std::fs::File::create(out).map_err(RepositoryError::IoError);
 
-        let yaml = serde_yaml::to_string(&account_groups).map_err(RepositoryError::SerialiationError);
+        let yaml = serde_yaml::to_string(&account_groups).map_err(RepositoryError::SerialisationError);
 
         let combined = file.and_then(|file| yaml.map(|yaml| (yaml, file)));
 
@@ -303,7 +305,7 @@ impl Database {
     fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, RepositoryError> {
         let file = std::fs::File::open(out).map_err(RepositoryError::IoError);
 
-        file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialiationError))
+        file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialisationError))
     }
 }
 
