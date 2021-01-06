@@ -8,7 +8,7 @@ use log::error;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
 
-use crate::helpers::{Paths, Keyring};
+use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 use secret_service::SsError;
 
@@ -255,7 +255,7 @@ impl Database {
             Self::load_account_groups(&connection, None).unwrap()
         };
 
-        let _ =Keyring::associate_secrets(&mut group_accounts, &all_secrets).unwrap();
+        let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets).unwrap();
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
