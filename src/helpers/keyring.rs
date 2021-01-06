@@ -93,7 +93,7 @@ impl Keyring {
                         .map(|t| t.1)
                         .collect::<Vec<String>>()
                         .first()
-                        .map(|v| v.clone()),
+                        .cloned(),
                     Err(_) => None,
                 };
 
@@ -110,15 +110,15 @@ impl Keyring {
     fn group_account_secret(
         ss: &SecretService,
         group_account: &mut AccountGroup,
-        all_secrets: &Vec<(String, String)>,
+        all_secrets: &[(String, String)],
     ) -> std::result::Result<(), RepositoryError> {
         group_account.entries.iter_mut().try_for_each(|a| Self::account_secret(ss, a, all_secrets))
     }
 
-    fn account_secret(ss: &SecretService, account: &mut Account, all_secrets: &Vec<(String, String)>) -> std::result::Result<(), RepositoryError> {
+    fn account_secret(ss: &SecretService, account: &mut Account, all_secrets: &[(String, String)]) -> std::result::Result<(), RepositoryError> {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
-        match all_secrets.into_iter().find(|v| v.0 == format!("{}", account.id)) {
+        match all_secrets.iter().find(|v| v.0 == format!("{}", account.id)) {
             Some(secret) => account.secret = secret.1.clone(),
             None => Self::store(&ss, account.label.as_str(), account.id, account.secret.as_str())?,
         }

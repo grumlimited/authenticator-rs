@@ -183,7 +183,7 @@ impl AccountsWindow {
         }
         .await;
 
-        Keyring::groups_account_secret(&mut accounts);
+        let _ = Keyring::groups_account_secret(&mut accounts).unwrap();
 
         tx.send((accounts, has_groups)).expect("boom!");
     }
