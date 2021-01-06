@@ -1,7 +1,7 @@
 pub struct Paths;
 
-use log::debug;
 use anyhow::Result;
+use log::debug;
 
 impl Paths {
     pub fn db_path() -> std::path::PathBuf {
