@@ -352,7 +352,7 @@ unsafe impl Sync for RepositoryError {}
 impl ToSql for SecretType {
     #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::from(format!("{}", self.to_string())))
+        Ok(ToSqlOutput::from(self.to_string()))
     }
 }
 

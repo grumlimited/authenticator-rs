@@ -59,7 +59,7 @@ impl Paths {
             .filter(|account| account.secret_type == SecretType::LOCAL)
             .for_each(|account| {
                 Keyring::upsert(account.label.as_str(), account.id, account.secret.as_str()).unwrap();
-                let mut c = account.clone();
+                let mut c = account;
                 c.secret = "".to_owned();
                 c.secret_type = SecretType::KEYRING;
                 Database::update_account(&connection, &mut c).unwrap();
