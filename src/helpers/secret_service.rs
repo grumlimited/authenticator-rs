@@ -33,6 +33,17 @@ impl TotpSecretService {
         Ok(())
     }
 
+    fn upsert(label: &str, account_id: u32, secret: &str) -> Result<()> {
+        match Self::secret(account_id) {
+            Ok(Some(_)) => {
+                Self::remove(account_id)?;
+                Self::store(label, account_id, secret)
+            }
+            Ok(None) => Self::store(label, account_id, secret),
+            Err(e) => Err(e)
+        }
+    }
+
     fn secret(account_id: u32) -> Result<Option<String>> {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
@@ -53,7 +64,7 @@ impl TotpSecretService {
 
         match search_items.get(0) {
             Some(i) => i.delete(),
-            None => Err(SsError::NoResult)
+            None => Err(SsError::NoResult),
         }
     }
 }
