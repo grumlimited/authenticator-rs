@@ -1,4 +1,4 @@
-use crate::helpers::Database;
+use crate::helpers::{Database, Keyring};
 use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 use gettextrs::*;
@@ -38,6 +38,8 @@ impl Exporting for MainWindow {
 
             dialog.show();
 
+            let connection = connection.clone();
+
             match dialog.run() {
                 gtk::ResponseType::Accept => {
                     let path = dialog.get_filename().unwrap();
@@ -46,7 +48,6 @@ impl Exporting for MainWindow {
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(Database::save_accounts(path, connection.clone(), tx));
 
                     rx.attach(
                         None,
@@ -61,6 +62,11 @@ impl Exporting for MainWindow {
                             glib::Continue(true)
                         }),
                     );
+
+                    gui.pool.spawn_ok(async move {
+                        let all_secrets = Keyring::all_secrets().unwrap();
+                       Database::save_accounts(path, connection.clone(), all_secrets, tx).await;
+                    });
 
                     dialog.close();
                 }

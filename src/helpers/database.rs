@@ -249,7 +249,7 @@ impl Database {
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
-    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
+    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<bool>) {
         let group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
