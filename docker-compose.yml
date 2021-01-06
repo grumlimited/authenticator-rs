@@ -1,7 +1,8 @@
 version: '3'
 services:
   rust:
-    image: ubuntu
+    image: library/rust:1.49.0-slim-buster
     command: [/bin/sleep, '60000']
     volumes:
       - '.:/authenticator-rs'
+      - '~/.cargo:/root/.cargo'

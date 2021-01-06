@@ -5,22 +5,18 @@ use log::debug;
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
 
-use crate::helpers::ConfigManager;
-
 pub type Result<T> = ::std::result::Result<T, SsError>;
 
 const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_ATTRS: (&str, &str) = ("application", "authenticator-rs");
 const ACCOUNT_ID_KEY: &str = "account_id";
 
-pub trait TotpSecretService {
-    fn store(label: &str, account_id: u32, secret: &str) -> Result<()>;
+pub struct TotpSecretService;
 
-    fn secret(account_id: u32) -> Result<Option<String>>;
-}
-
-impl TotpSecretService for ConfigManager {
+impl TotpSecretService {
     fn store(label: &str, account_id: u32, secret: &str) -> Result<()> {
+        Self::remove(account_id).unwrap();
+
         let ss = SecretService::new(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
@@ -49,6 +45,17 @@ impl TotpSecretService for ConfigManager {
             .map(|r| r.map(Some))
             .unwrap_or(Ok(None))
     }
+
+    fn remove(account_id: u32) -> Result<()> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+
+        let search_items: Vec<Item> = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
+
+        match search_items.get(0) {
+            Some(i) => i.delete(),
+            None => Err(SsError::NoResult)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -57,9 +64,9 @@ mod test {
 
     #[test]
     fn should_create_collection_struct() {
-        ConfigManager::store("x", 1, "secret");
+        TotpSecretService::store("x22", 1, "secret").unwrap();
 
-        let result = ConfigManager::secret(1).unwrap().unwrap();
+        let result = TotpSecretService::secret(1).unwrap().unwrap();
 
         assert_eq!("secret", result);
     }
