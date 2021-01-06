@@ -4,8 +4,8 @@ use log::debug;
 
 use crate::helpers::RepositoryError;
 use crate::model::{Account, AccountGroup};
-use secret_service::{EncryptionType, SsError};
 use secret_service::SecretService;
+use secret_service::{EncryptionType, SsError};
 
 type Result<T> = ::std::result::Result<T, SsError>;
 
