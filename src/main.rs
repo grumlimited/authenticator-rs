@@ -58,7 +58,7 @@ fn main() {
 
         configure_logging();
 
-        match ConfigManager::check_configuration_dir() {
+        match Paths::check_configuration_dir() {
             Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
             Err(e) => panic!(e),
         }

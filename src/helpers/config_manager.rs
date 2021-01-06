@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use glib::Sender;
-use log::debug;
 use log::error;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
@@ -66,28 +65,6 @@ impl ConfigManager {
                 .collect()
         })
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-    }
-
-    pub fn check_configuration_dir() -> Result<(), LoadError> {
-        let path = Paths::path();
-
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
-        }
-
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))?;
-
-        let path = Paths::icons_path("");
-
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
-        }
-
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {

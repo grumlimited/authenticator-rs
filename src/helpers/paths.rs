@@ -1,5 +1,16 @@
 pub struct Paths;
 
+use thiserror::Error;
+use log::debug;
+use std::io;
+
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub enum PathError {
+    WriteError(#[from] io::Error),
+}
+
+
 impl Paths {
     pub fn db_path() -> std::path::PathBuf {
         let mut path = Self::path();
@@ -22,5 +33,27 @@ impl Paths {
         } else {
             std::env::current_dir().unwrap_or_default()
         }
+    }
+
+    pub fn check_configuration_dir() -> Result<(), PathError> {
+        let path = Paths::path();
+
+        if !path.exists() {
+            debug!("Creating directory {}", path.display());
+        }
+
+        std::fs::create_dir_all(path)
+            .map(|_| ())
+            .map_err(PathError::WriteError)?;
+
+        let path = Paths::icons_path("");
+
+        if !path.exists() {
+            debug!("Creating directory {}", path.display());
+        }
+
+        std::fs::create_dir_all(path)
+            .map(|_| ())
+            .map_err(PathError::WriteError)
     }
 }

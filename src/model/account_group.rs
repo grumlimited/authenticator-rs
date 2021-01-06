@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::{ConfigManager, IconParser, Paths};
+use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
