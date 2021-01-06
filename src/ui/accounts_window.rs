@@ -305,8 +305,9 @@ impl AccountsWindow {
 
                     edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
+                    let secret = Keyring::secret(account.id).unwrap().unwrap();
                     let buffer = edit_account.input_secret.get_buffer().unwrap();
-                    buffer.set_text(account.secret.as_str());
+                    buffer.set_text(secret.as_str());
 
                     popover.hide();
 

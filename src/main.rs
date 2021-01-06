@@ -58,6 +58,11 @@ fn main() {
 
         configure_logging();
 
+        let mut connection = Database::create_connection().unwrap();
+
+        // SQL migrations
+        runner::run(&mut connection).unwrap();
+
         match Paths::update_keyring_secrets() {
             Ok(()) => info!("Added local accounts to keyring"),
             Err(e) => panic!(e),
@@ -72,11 +77,7 @@ fn main() {
     application.connect_activate(move |app| {
         let mut gui = MainWindow::new();
 
-        let mut connection = Database::create_connection().unwrap();
-
-        // SQL migrations
-        runner::run(&mut connection).unwrap();
-
+        let connection = Database::create_connection().unwrap();
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
         gui.set_application(&app, connection);
