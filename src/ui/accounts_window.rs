@@ -15,7 +15,7 @@ use rusqlite::Connection;
 use glib::clone;
 use gtk_macros::*;
 
-use crate::helpers::{ConfigManager, IconParser, Paths};
+use crate::helpers::{Database, IconParser, Paths};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
@@ -60,7 +60,7 @@ impl AccountsWindow {
             .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
-                    ConfigManager::delete_account(&connection, account_id).unwrap();
+                    Database::delete_account(&connection, account_id).unwrap();
                 }
 
                 Self::load_account_groups(tx, connection, filter).await;
@@ -99,8 +99,8 @@ impl AccountsWindow {
             .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+                    let group = Database::get_group(&connection, group_id).unwrap();
+                    Database::delete_group(&connection, group_id).expect("Could not delete group");
 
                     if let Some(path) = group.icon {
                         AddGroupWindow::delete_icon_file(&path);
@@ -174,12 +174,12 @@ impl AccountsWindow {
     pub async fn load_account_groups(tx: Sender<(Vec<AccountGroup>, bool)>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         let has_groups = async {
             let connection = connection.lock().unwrap();
-            ConfigManager::has_groups(&connection).unwrap()
+            Database::has_groups(&connection).unwrap()
         };
 
         let accounts = async {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
+            Database::load_account_groups(&connection, filter.as_deref()).unwrap()
         };
 
         tx.send(join!(accounts, has_groups)).expect("boom!");
@@ -207,7 +207,7 @@ impl AccountsWindow {
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
                     let group = {
                         let connection = connection.lock().unwrap();
-                        ConfigManager::get_group(&connection, group_id).unwrap()
+                        Database::get_group(&connection, group_id).unwrap()
                     };
                     debug!("Loading group {:?}", group);
 
@@ -284,8 +284,8 @@ impl AccountsWindow {
                     edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
-                    let account = ConfigManager::get_account(&connection, id).unwrap();
+                    let groups = Database::load_account_groups(&connection, None).unwrap();
+                    let account = Database::get_account(&connection, id).unwrap();
 
                     edit_account.input_group.remove_all(); //re-added and refreshed just below
 
@@ -385,7 +385,7 @@ impl AccountsWindow {
 
             let groups = {
                 let connection = connection.lock().unwrap();
-                ConfigManager::load_account_groups(&connection, None).unwrap()
+                Database::load_account_groups(&connection, None).unwrap()
             };
 
             let edit_account = EditAccountWindow::new(&builder);

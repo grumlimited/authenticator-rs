@@ -13,7 +13,7 @@ use rusqlite::Connection;
 
 use glib::clone;
 
-use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, Paths};
+use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
@@ -244,7 +244,7 @@ impl AddGroupWindow {
         match group_id.parse() {
             Ok(group_id) => {
                 debug!("updating existing group id {:?}", group_id);
-                let mut group = ConfigManager::get_group(&connection, group_id).unwrap();
+                let mut group = Database::get_group(&connection, group_id).unwrap();
 
                 group.name = group_name;
                 group.icon = icon_filename;
@@ -252,13 +252,13 @@ impl AddGroupWindow {
 
                 Self::write_icon(group.icon.clone());
 
-                ConfigManager::update_group(&connection, &group).unwrap();
+                Database::update_group(&connection, &group).unwrap();
             }
             Err(_) => {
                 debug!("creating new group");
                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), vec![]);
 
-                ConfigManager::save_group(&connection, &mut group).unwrap();
+                Database::save_group(&connection, &mut group).unwrap();
 
                 //has no icon -> delete icon file if any
                 if group.icon.is_none() {

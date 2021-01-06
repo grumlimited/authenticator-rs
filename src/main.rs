@@ -12,7 +12,7 @@ use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 
-use crate::helpers::ConfigManager;
+use crate::helpers::Database;
 use crate::helpers::{runner, Paths};
 use main_window::MainWindow;
 
@@ -67,7 +67,7 @@ fn main() {
     application.connect_activate(move |app| {
         let mut gui = MainWindow::new();
 
-        let mut connection = ConfigManager::create_connection().unwrap();
+        let mut connection = Database::create_connection().unwrap();
 
         // SQL migrations
         runner::run(&mut connection).unwrap();

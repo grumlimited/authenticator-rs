@@ -40,7 +40,7 @@ impl TotpSecretService {
         Ok(())
     }
 
-    fn upsert(label: &str, account_id: u32, secret: &str) -> Result<()> {
+    pub fn upsert(label: &str, account_id: u32, secret: &str) -> Result<()> {
         match Self::secret(account_id) {
             Ok(Some(_)) => {
                 Self::remove(account_id)?;
@@ -51,7 +51,7 @@ impl TotpSecretService {
         }
     }
 
-    fn secret(account_id: u32) -> Result<Option<String>> {
+    pub fn secret(account_id: u32) -> Result<Option<String>> {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
         let search_items: Vec<Item> = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;

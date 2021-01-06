@@ -13,7 +13,7 @@ use crate::model::{Account, AccountGroup};
 use std::{thread, time};
 
 #[derive(Debug, Clone)]
-pub struct ConfigManager;
+pub struct Database;
 
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum LoadError {
@@ -27,7 +27,7 @@ pub enum LoadError {
     DbError(String),
 }
 
-impl ConfigManager {
+impl Database {
     pub fn has_groups(connection: &Connection) -> Result<bool, LoadError> {
         let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
 
@@ -136,7 +136,7 @@ impl ConfigManager {
                     Self::save_account(&connection, account)
                 })
                 .into_iter()
-                .collect::<Result<Vec<()>, LoadError>>()
+                .collect::<Result<Vec<u32>, LoadError>>()
                 .map(|_| ()),
             Err(group_saved_error) => Err(group_saved_error),
         }
@@ -179,13 +179,12 @@ impl ConfigManager {
         .map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
-    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, LoadError> {
         connection
             .execute(
                 "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
                 params![account.label, account.group_id, account.secret],
-            )
-            .unwrap();
+            ).map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
@@ -195,10 +194,9 @@ impl ConfigManager {
                 id
             })
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-            .map(|_| ())
     }
 
-    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, LoadError> {
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
@@ -206,7 +204,6 @@ impl ConfigManager {
             )
             .map(|_| account.id)
             .map_err(|e| LoadError::DbError(format!("{:?}", e)))
-            .map(|_| ())
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, LoadError> {
@@ -329,7 +326,7 @@ mod tests {
     use crate::helpers::runner;
     use crate::model::{Account, AccountGroup};
 
-    use super::ConfigManager;
+    use super::Database;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -340,24 +337,24 @@ mod tests {
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
         let mut account = Account::new(0, 0, "label", "secret");
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         account.group_id = group.id;
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = ConfigManager::get_account(&connection, account.id).unwrap();
+        let account_reloaded = Database::get_account(&connection, account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        ConfigManager::update_account(&connection, &mut account_reloaded).unwrap();
+        Database::update_account(&connection, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -371,7 +368,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         assert_eq!("new group", group.name);
 
@@ -379,9 +376,9 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        ConfigManager::update_group(&connection, &mut group).unwrap();
+        Database::update_group(&connection, &mut group).unwrap();
 
-        let group = ConfigManager::get_group(&connection, group.id).unwrap();
+        let group = Database::get_group(&connection, group.id).unwrap();
 
         assert_eq!("other name", group.name);
         assert_eq!("url", group.url.unwrap());
@@ -396,16 +393,16 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "label", "secret");
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert_eq!(group.id, account.group_id);
 
-        let reloaded_group = ConfigManager::get_group(&connection, group.id).unwrap();
+        let reloaded_group = Database::get_group(&connection, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
@@ -418,10 +415,10 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
+        Database::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
             1,
@@ -435,7 +432,7 @@ mod tests {
                 secret: "secret3".to_owned(),
             }],
         );
-        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
+        let groups = Database::load_account_groups(&connection, None).unwrap();
 
         assert_eq!(vec![expected], groups);
     }
@@ -447,19 +444,19 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        Database::save_account(&connection, &mut account).expect("boom!");
         let mut account = Account::new(0, group.id, "ccc", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        Database::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).expect("boom!");
+        Database::save_group(&connection, &mut group).expect("boom!");
         let mut account = Account::new(0, group.id, "ppp", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        Database::save_account(&connection, &mut account).expect("boom!");
 
-        let results = ConfigManager::load_account_groups(&connection, None).unwrap();
+        let results = Database::load_account_groups(&connection, None).unwrap();
 
         //groups in order
         assert_eq!("AAA", results.get(0).unwrap().name);
@@ -479,11 +476,11 @@ mod tests {
 
         let mut account = Account::new(0, 0, "label", "secret");
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert_eq!(1, account.id);
 
-        let result = ConfigManager::delete_account(&connection, account.id).unwrap();
+        let result = Database::delete_account(&connection, account.id).unwrap();
         assert!(result > 0);
     }
 
@@ -494,12 +491,12 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        Database::save_account(&connection, &mut account).expect("boom!");
 
-        let result = ConfigManager::has_groups(&connection).unwrap();
+        let result = Database::has_groups(&connection).unwrap();
         assert!(result);
     }
 
@@ -510,14 +507,14 @@ mod tests {
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
-        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+        let result = Database::serialise_accounts(vec![account_group], path).unwrap();
 
         assert_eq!((), result);
 
         let account_from_yaml = Account::new(0, 0, "label", "secret");
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
-        let result = ConfigManager::deserialise_accounts(path).unwrap();
+        let result = Database::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
     }
 
@@ -530,7 +527,7 @@ mod tests {
         let account = Account::new(0, 0, "label", "secret");
         let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
 
-        ConfigManager::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
+        Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
         assert_eq!(1, account_group.entries.len());
@@ -550,18 +547,18 @@ mod tests {
 
             let path = PathBuf::from("test.yaml");
             let path = path.as_path();
-            let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+            let result = Database::serialise_accounts(vec![account_group], path).unwrap();
 
             assert_eq!((), result);
         }
 
-        let result = { task::block_on(ConfigManager::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
+        let result = { task::block_on(Database::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
 
         assert_eq!(Ok(()), result);
 
         {
             let connection = connection.lock().unwrap();
-            let account_groups = ConfigManager::load_account_groups(&connection, None).unwrap();
+            let account_groups = Database::load_account_groups(&connection, None).unwrap();
 
             assert_eq!(1, account_groups.len());
             assert!(account_groups.first().unwrap().id > 0);
