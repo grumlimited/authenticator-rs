@@ -1,15 +1,14 @@
 pub struct Paths;
 
-use thiserror::Error;
 use log::debug;
 use std::io;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 #[error("{0}")]
 pub enum PathError {
     WriteError(#[from] io::Error),
 }
-
 
 impl Paths {
     pub fn db_path() -> std::path::PathBuf {
@@ -42,9 +41,7 @@ impl Paths {
             debug!("Creating directory {}", path.display());
         }
 
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(PathError::WriteError)?;
+        std::fs::create_dir_all(path).map(|_| ()).map_err(PathError::WriteError)?;
 
         let path = Paths::icons_path("");
 
@@ -52,8 +49,6 @@ impl Paths {
             debug!("Creating directory {}", path.display());
         }
 
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(PathError::WriteError)
+        std::fs::create_dir_all(path).map(|_| ()).map_err(PathError::WriteError)
     }
 }
