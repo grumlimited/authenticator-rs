@@ -1,5 +1,6 @@
 pub struct Paths;
 
+use crate::helpers::{Database, Keyring, SecretType};
 use anyhow::Result;
 use log::debug;
 
@@ -43,6 +44,26 @@ impl Paths {
         }
 
         std::fs::create_dir_all(path).map(|_| ())?;
+
+        Ok(())
+    }
+
+    pub fn update_keyring_secrets() -> Result<()> {
+        let connection = Database::create_connection()?;
+
+        let accounts = Database::load_account_groups(&connection, None)?;
+
+        accounts
+            .iter()
+            .flat_map(|group| group.entries.iter().cloned())
+            .filter(|account| account.secret_type == SecretType::LOCAL)
+            .for_each(|account| {
+                Keyring::upsert(account.label.as_str(), account.id, account.secret.as_str()).unwrap();
+                let mut c = account.clone();
+                c.secret = "".to_owned();
+                c.secret_type = SecretType::KEYRING;
+                Database::update_account(&connection, &mut c).unwrap();
+            });
 
         Ok(())
     }

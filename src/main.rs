@@ -58,6 +58,11 @@ fn main() {
 
         configure_logging();
 
+        match Paths::update_keyring_secrets() {
+            Ok(()) => info!("Added local accounts to keyring"),
+            Err(e) => panic!(e),
+        }
+
         match Paths::check_configuration_dir() {
             Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
             Err(e) => panic!(e),

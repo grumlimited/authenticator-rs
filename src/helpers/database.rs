@@ -6,7 +6,7 @@ use std::{io, thread, time};
 use glib::Sender;
 use log::error;
 use log::warn;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, NO_PARAMS};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
 use thiserror::Error;
 
 use crate::helpers::{Keyring, Paths};
@@ -14,9 +14,15 @@ use crate::model::{Account, AccountGroup};
 use secret_service::SsError;
 
 use crate::helpers::SecretType::LOCAL;
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use std::str::FromStr;
 use strum_macros::EnumString;
+
+use std::string::ToString;
+use strum_macros::Display;
+
 #[derive(Debug, Clone)]
 pub struct Database;
 
@@ -30,7 +36,7 @@ pub enum RepositoryError {
     KeyringDecodingError(#[from] std::string::FromUtf8Error),
 }
 
-#[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
 pub enum SecretType {
     LOCAL,
     KEYRING,
@@ -182,8 +188,8 @@ impl Database {
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
         connection
             .execute(
-                "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
-                params![account.label, account.group_id, account.secret],
+                "INSERT INTO accounts (label, group_id, secret, secret_type) VALUES (?1, ?2, ?3, ?4)",
+                params![account.label, account.group_id, account.secret, account.secret_type],
             )
             .map_err(RepositoryError::SqlError)?;
 
@@ -200,8 +206,8 @@ impl Database {
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
         connection
             .execute(
-                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
-                params![account.id, account.label, account.secret, account.group_id],
+                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5 WHERE id = ?1",
+                params![account.id, account.label, account.secret, account.group_id, account.secret_type],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
@@ -333,6 +339,31 @@ impl Database {
         let file = std::fs::File::open(out).map_err(RepositoryError::IoError);
 
         file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialisationError))
+    }
+}
+
+/**
+* avoids
+* *const std::ffi::c_void` cannot be shared between threads safely
+* when using ...?; with anyhow.
+*/
+unsafe impl Sync for RepositoryError {}
+
+impl ToSql for SecretType {
+    #[inline]
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(format!("{}", self.to_string())))
+    }
+}
+
+impl FromSql for SecretType {
+    #[inline]
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        match value {
+            ValueRef::Text(s) => SecretType::from_str(std::str::from_utf8(s).unwrap()),
+            _ => return Err(FromSqlError::InvalidType),
+        }
+        .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 
