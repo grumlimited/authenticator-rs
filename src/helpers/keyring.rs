@@ -5,7 +5,7 @@ use log::debug;
 use crate::helpers::RepositoryError;
 use crate::model::{Account, AccountGroup};
 use secret_service::{EncryptionType, SsError};
-use secret_service::{Item, SecretService};
+use secret_service::SecretService;
 
 type Result<T> = ::std::result::Result<T, SsError>;
 
@@ -17,7 +17,7 @@ pub struct Keyring;
 
 impl Keyring {
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
-        let _ = Self::remove(ss, account_id);
+        let _ = Self::remove(account_id);
 
         let collection = ss.get_default_collection()?;
 
@@ -39,7 +39,7 @@ impl Keyring {
 
         let result = match Self::secret(account_id) {
             Ok(Some(_)) => {
-                Self::remove(&ss, account_id)?;
+                Self::remove(account_id)?;
                 Self::store(&ss, label, account_id, secret)
             }
             Ok(None) => Self::store(&ss, label, account_id, secret),
@@ -52,7 +52,7 @@ impl Keyring {
     pub fn secret(account_id: u32) -> Result<Option<String>> {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
-        let search_items: Vec<Item> = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
+        let search_items = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
 
         search_items
             .get(0)
@@ -62,8 +62,9 @@ impl Keyring {
             .unwrap_or(Ok(None))
     }
 
-    fn remove(ss: &SecretService, account_id: u32) -> Result<()> {
-        let search_items: Vec<Item> = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
+    pub fn remove(account_id: u32) -> Result<()> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+        let search_items = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
 
         match search_items.get(0) {
             Some(i) => i.delete(),

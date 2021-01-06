@@ -62,6 +62,8 @@ impl AccountsWindow {
                     Database::delete_account(&connection, account_id).unwrap();
                 }
 
+                Keyring::remove(account_id).unwrap();
+
                 Self::load_account_groups(tx, connection, filter).await;
                 tx_done.send(true).expect("boom!");
             })(filter, connection, tx_done));
