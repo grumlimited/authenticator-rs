@@ -1,9 +1,16 @@
 extern crate secret_service;
 
 use log::debug;
+use thiserror::Error;
 
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
+
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub enum KeyringError {
+    Error(#[from] SsError),
+}
 
 pub type Result<T> = ::std::result::Result<T, SsError>;
 
