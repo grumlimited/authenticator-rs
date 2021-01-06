@@ -8,7 +8,7 @@ use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
-use crate::helpers::{Database, RepositoryError, Keyring};
+use crate::helpers::{Database, Keyring, RepositoryError};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
@@ -297,11 +297,8 @@ impl EditAccountWindow {
             }
         };
 
-        // db_result.map(|account_id| {
-        //     TotpSecretService::upsert(name.as_str(), account_id, secret.as_str())
-        // }).unwrap();
-
-        db_result.unwrap();
-        ()
+        db_result
+            .and_then(|account_id| Keyring::upsert(name.as_str(), account_id, secret.as_str()))
+            .unwrap();
     }
 }

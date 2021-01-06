@@ -1,11 +1,10 @@
 extern crate secret_service;
 
 use log::debug;
-use thiserror::Error;
 
+use crate::helpers::RepositoryError;
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
-use crate::helpers::RepositoryError;
 
 type Result<T> = ::std::result::Result<T, SsError>;
 
@@ -16,10 +15,9 @@ const ACCOUNT_ID_KEY: &str = "account_id";
 pub struct Keyring;
 
 impl Keyring {
-    fn store(label: &str, account_id: u32, secret: &str) -> Result<()> {
-        Self::remove(account_id).unwrap();
+    fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
+        let _ = Self::remove(ss, account_id);
 
-        let ss = SecretService::new(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
         collection.create_item(
@@ -36,12 +34,14 @@ impl Keyring {
     }
 
     pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+
         let result = match Self::secret(account_id) {
             Ok(Some(_)) => {
-                Self::remove(account_id)?;
-                Self::store(label, account_id, secret)
+                Self::remove(&ss, account_id)?;
+                Self::store(&ss, label, account_id, secret)
             }
-            Ok(None) => Self::store(label, account_id, secret),
+            Ok(None) => Self::store(&ss, label, account_id, secret),
             Err(e) => Err(e),
         };
 
@@ -61,9 +61,7 @@ impl Keyring {
             .unwrap_or(Ok(None))
     }
 
-    fn remove(account_id: u32) -> Result<()> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
-
+    fn remove(ss: &SecretService, account_id: u32) -> Result<()> {
         let search_items: Vec<Item> = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
 
         match search_items.get(0) {
@@ -79,7 +77,8 @@ mod test {
 
     #[test]
     fn should_create_collection_struct() {
-        Keyring::store("x22", 1, "secret").unwrap();
+        let ss = SecretService::new(EncryptionType::Dh).unwrap();
+        Keyring::store(&ss, "x22", 1, "secret").unwrap();
 
         let result = Keyring::secret(1).unwrap().unwrap();
 

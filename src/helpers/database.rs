@@ -249,7 +249,6 @@ impl Database {
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
-        thread::sleep(time::Duration::from_millis(10 * 1000));
         let group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
