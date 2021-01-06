@@ -71,7 +71,7 @@ impl Keyring {
         }
     }
 
-    pub fn groups_account_secret(group_accounts: &mut Vec<AccountGroup>) -> std::result::Result<(), RepositoryError> {
+    pub fn set_secrets(group_accounts: &mut Vec<AccountGroup>) -> std::result::Result<(), RepositoryError> {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
         let collection = ss.get_default_collection()?;
