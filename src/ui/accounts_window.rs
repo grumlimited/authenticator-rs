@@ -15,7 +15,7 @@ use rusqlite::Connection;
 use glib::clone;
 use gtk_macros::*;
 
-use crate::helpers::{ConfigManager, IconParser};
+use crate::helpers::{ConfigManager, IconParser, Paths};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
@@ -228,7 +228,7 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         add_group.icon_filename.set_label(image.as_str());
 
-                        let dir = ConfigManager::icons_path(&image);
+                        let dir = Paths::icons_path(&image);
                         let state = gui.state.borrow();
                         match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),

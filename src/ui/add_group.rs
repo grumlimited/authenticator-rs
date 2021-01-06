@@ -13,7 +13,7 @@ use rusqlite::Connection;
 
 use glib::clone;
 
-use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser};
+use crate::helpers::{AccountGroupIcon, ConfigManager, IconParser, Paths};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
 use crate::ui::{AccountsWindow, ValidationError};
@@ -312,7 +312,7 @@ impl AddGroupWindow {
 
             match std::fs::read(&temp_filepath) {
                 Ok(bytes) => {
-                    let icon_filepath = ConfigManager::icons_path(&icon_filename_text);
+                    let icon_filepath = Paths::icons_path(&icon_filename_text);
                     debug!("icon_filepath: {}", icon_filepath.display());
 
                     let mut file = File::create(&icon_filepath).unwrap_or_else(|_| panic!("could not create file {}", icon_filepath.display()));
@@ -355,7 +355,7 @@ impl AddGroupWindow {
     }
 
     pub fn delete_icon_file(icon_filename: &str) {
-        let icon_filepath = ConfigManager::icons_path(icon_filename);
+        let icon_filepath = Paths::icons_path(icon_filename);
 
         if icon_filepath.is_file() {
             match std::fs::remove_file(&icon_filepath) {

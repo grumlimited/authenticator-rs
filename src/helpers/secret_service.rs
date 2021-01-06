@@ -40,7 +40,7 @@ impl TotpSecretService {
                 Self::store(label, account_id, secret)
             }
             Ok(None) => Self::store(label, account_id, secret),
-            Err(e) => Err(e)
+            Err(e) => Err(e),
         }
     }
 

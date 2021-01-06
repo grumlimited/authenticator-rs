@@ -12,7 +12,7 @@ use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 
-use crate::helpers::runner;
+use crate::helpers::{runner, Paths};
 use crate::helpers::ConfigManager;
 use main_window::MainWindow;
 
@@ -59,7 +59,7 @@ fn main() {
         configure_logging();
 
         match ConfigManager::check_configuration_dir() {
-            Ok(()) => info!("Reading configuration from {}", ConfigManager::path().display()),
+            Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
             Err(e) => panic!(e),
         }
     });

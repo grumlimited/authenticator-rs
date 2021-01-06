@@ -11,9 +11,10 @@ use thiserror::Error;
 use crate::helpers::LoadError::{FileError, SaveError};
 use crate::model::{Account, AccountGroup};
 use std::{thread, time};
+use crate::helpers::Paths;
 
 #[derive(Debug, Clone)]
-pub struct ConfigManager {}
+pub struct ConfigManager;
 
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum LoadError {
@@ -28,29 +29,6 @@ pub enum LoadError {
 }
 
 impl ConfigManager {
-    fn db_path() -> std::path::PathBuf {
-        let mut path = Self::path();
-        path.push("authenticator.db");
-
-        path
-    }
-
-    pub fn icons_path(filename: &str) -> std::path::PathBuf {
-        let mut path = Self::path();
-        path.push("icons");
-        path.push(filename);
-
-        path
-    }
-
-    pub fn path() -> std::path::PathBuf {
-        if let Some(project_dirs) = directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs") {
-            project_dirs.data_dir().into()
-        } else {
-            std::env::current_dir().unwrap_or_default()
-        }
-    }
-
     pub fn has_groups(connection: &Connection) -> Result<bool, LoadError> {
         let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
 
@@ -91,7 +69,7 @@ impl ConfigManager {
     }
 
     pub fn check_configuration_dir() -> Result<(), LoadError> {
-        let path = Self::path();
+        let path = Paths::path();
 
         if !path.exists() {
             debug!("Creating directory {}", path.display());
@@ -101,7 +79,7 @@ impl ConfigManager {
             .map(|_| ())
             .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))?;
 
-        let path = Self::icons_path("");
+        let path = Paths::icons_path("");
 
         if !path.exists() {
             debug!("Creating directory {}", path.display());
@@ -113,7 +91,7 @@ impl ConfigManager {
     }
 
     pub fn create_connection() -> Result<Connection, LoadError> {
-        Connection::open_with_flags(Self::db_path(), OpenFlags::default()).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        Connection::open_with_flags(Paths::db_path(), OpenFlags::default()).map_err(|e| LoadError::DbError(format!("{:?}", e)))
     }
 
     pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), LoadError> {
