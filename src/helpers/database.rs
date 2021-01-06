@@ -238,12 +238,12 @@ impl Database {
             Ok(v) => match SecretType::from_str(v.as_str()) {
                 Ok(secret_type) => secret_type,
                 Err(_) => {
-                    warn!("Invalid secret type {}", v);
+                    warn!("Invalid secret type [{}]", v);
                     LOCAL
                 }
             },
             Err(e) => {
-                warn!("Invalid secret type {:?}", e);
+                warn!("Invalid secret type [{:?}]", e);
                 LOCAL
             }
         }
