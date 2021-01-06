@@ -132,6 +132,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn should_create_collection_struct() {
         let ss = SecretService::new(EncryptionType::Dh).unwrap();
         Keyring::store(&ss, "x22", 1, "secret").unwrap();
