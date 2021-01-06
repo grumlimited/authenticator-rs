@@ -3,6 +3,7 @@ extern crate secret_service;
 use log::debug;
 
 use crate::helpers::RepositoryError;
+use crate::model::{Account, AccountGroup};
 use secret_service::{EncryptionType, SsError};
 use secret_service::{Item, SecretService};
 
@@ -68,6 +69,28 @@ impl Keyring {
             Some(i) => i.delete(),
             None => Err(SsError::NoResult),
         }
+    }
+
+    pub fn groups_account_secret(group_accounts: &mut Vec<AccountGroup>) -> Result<()> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+        group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g))
+    }
+
+    fn group_account_secret(ss: &SecretService, group_account: &mut AccountGroup) -> Result<()> {
+        group_account.entries.iter_mut().try_for_each(|a| Self::account_secret(ss, a))
+    }
+
+    fn account_secret(ss: &SecretService, account: &mut Account) -> Result<()> {
+        let secret = Self::secret(account.id)?;
+
+        debug!("Loading keyring secret for {} ({})", account.label, account.id);
+
+        match secret {
+            Some(secret) => account.secret = secret,
+            None => Self::store(&ss, account.label.as_str(), account.id, account.secret.as_str())?,
+        }
+
+        Ok(())
     }
 }
 

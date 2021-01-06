@@ -4,7 +4,6 @@ use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
-use futures::join;
 use gettextrs::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
@@ -15,7 +14,7 @@ use rusqlite::Connection;
 use glib::clone;
 use gtk_macros::*;
 
-use crate::helpers::{Database, IconParser, Paths};
+use crate::helpers::{Database, IconParser, Keyring, Paths};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
@@ -175,14 +174,18 @@ impl AccountsWindow {
         let has_groups = async {
             let connection = connection.lock().unwrap();
             Database::has_groups(&connection).unwrap()
-        };
+        }
+        .await;
 
-        let accounts = async {
+        let mut accounts = async {
             let connection = connection.lock().unwrap();
             Database::load_account_groups(&connection, filter.as_deref()).unwrap()
-        };
+        }
+        .await;
 
-        tx.send(join!(accounts, has_groups)).expect("boom!");
+        Keyring::groups_account_secret(&mut accounts);
+
+        tx.send((accounts, has_groups)).expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
