@@ -89,7 +89,7 @@ impl Keyring {
                 let account_id = match v.get_attributes() {
                     Ok(attributes) => attributes
                         .into_iter()
-                        .filter(|a| a.0 == ACCOUNT_ID_KEY)
+                        .filter(|t| t.0 == ACCOUNT_ID_KEY)
                         .map(|t| t.1)
                         .collect::<Vec<String>>()
                         .first()
