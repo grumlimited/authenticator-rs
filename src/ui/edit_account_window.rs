@@ -286,7 +286,7 @@ impl EditAccountWindow {
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
         let connection = connection.lock().unwrap();
 
-        let db_result: Result<u32, LoadError> =  match account_id.parse() {
+        let db_result: Result<u32, LoadError> = match account_id.parse() {
             Ok(account_id) => {
                 let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
                 Database::update_account(&connection, &mut account)
@@ -297,8 +297,8 @@ impl EditAccountWindow {
             }
         };
 
-        db_result.map(|account_id| {
-            TotpSecretService::upsert(name.as_str(), account_id, secret.as_str())
-        }).unwrap();
+        db_result
+            .map(|account_id| TotpSecretService::upsert(name.as_str(), account_id, secret.as_str()))
+            .unwrap();
     }
 }

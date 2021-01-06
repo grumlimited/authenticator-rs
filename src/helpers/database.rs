@@ -184,7 +184,8 @@ impl Database {
             .execute(
                 "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
                 params![account.label, account.group_id, account.secret],
-            ).map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+            )
+            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
