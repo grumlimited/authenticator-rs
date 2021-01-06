@@ -1,34 +1,29 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::{io, thread, time};
 
 use glib::Sender;
 use log::error;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
 
-use crate::helpers::LoadError::{FileError, SaveError};
 use crate::helpers::Paths;
 use crate::model::{Account, AccountGroup};
-use std::{thread, time};
 
 #[derive(Debug, Clone)]
 pub struct Database;
 
-#[derive(Debug, Clone, PartialEq, Error)]
-pub enum LoadError {
-    #[error("file error `{0}`")]
-    FileError(String),
-
-    #[error("file saving error `{0}`")]
-    SaveError(String),
-
-    #[error("database error `{0}`")]
-    DbError(String),
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub enum RepositoryError {
+    SqlError(rusqlite::Error),
+    IoError(io::Error),
+    SerialiationError(serde_yaml::Error),
 }
 
 impl Database {
-    pub fn has_groups(connection: &Connection) -> Result<bool, LoadError> {
+    pub fn has_groups(connection: &Connection) -> Result<bool, RepositoryError> {
         let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
 
         stmt.query_row(params![], |row| {
@@ -36,10 +31,10 @@ impl Database {
             Ok(count)
         })
         .map(|count| count > 0)
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
@@ -64,24 +59,24 @@ impl Database {
                 .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
                 .collect()
         })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn create_connection() -> Result<Connection, LoadError> {
-        Connection::open_with_flags(Paths::db_path(), OpenFlags::default()).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+    pub fn create_connection() -> Result<Connection, RepositoryError> {
+        Connection::open_with_flags(Paths::db_path(), OpenFlags::default()).map_err(RepositoryError::SqlError)
     }
 
-    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), LoadError> {
+    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), RepositoryError> {
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
                 params![group.id, group.name, group.icon, group.url],
             )
             .map(|_| ())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
+    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
         connection
             .execute(
                 "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
@@ -95,10 +90,10 @@ impl Database {
             .map(|id| {
                 group.id = id;
             })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, LoadError> {
+    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
@@ -116,10 +111,10 @@ impl Database {
             ))
         })
         .optional()
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
+    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
         let existing_group = Self::group_by_name(connection, group.name.as_str())?;
 
         let group_saved_result = match existing_group {
@@ -136,13 +131,13 @@ impl Database {
                     Self::save_account(&connection, account)
                 })
                 .into_iter()
-                .collect::<Result<Vec<u32>, LoadError>>()
+                .collect::<Result<Vec<u32>, RepositoryError>>()
                 .map(|_| ()),
             Err(group_saved_error) => Err(group_saved_error),
         }
     }
 
-    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {
+    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id").unwrap();
 
         stmt.query_row_named(
@@ -176,16 +171,16 @@ impl Database {
                     .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
             },
         )
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, LoadError> {
+    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
         connection
             .execute(
                 "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
                 params![account.label, account.group_id, account.secret],
             )
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))?;
+            .map_err(RepositoryError::SqlError)?;
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
@@ -194,20 +189,20 @@ impl Database {
                 account.id = id;
                 id
             })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, LoadError> {
+    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
                 params![account.id, account.label, account.secret, account.group_id],
             )
             .map(|_| account.id)
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, LoadError> {
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1").unwrap();
 
         stmt.query_row(params![account_id], |row| {
@@ -220,19 +215,19 @@ impl Database {
 
             Ok(account)
         })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, LoadError> {
+    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, RepositoryError> {
         let mut stmt = connection.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
 
-        stmt.execute(params![group_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        stmt.execute(params![group_id]).map_err(RepositoryError::SqlError)
     }
 
-    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, LoadError> {
+    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, RepositoryError> {
         let mut stmt = connection.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
-        stmt.execute(params![account_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        stmt.execute(params![account_id]).map_err(RepositoryError::SqlError)
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
@@ -265,10 +260,10 @@ impl Database {
         }
     }
 
-    pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), LoadError> {
-        let file = std::fs::File::create(out).map_err(|_| SaveError(format!("Could not open file {} for writing.", out.display())));
+    pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), RepositoryError> {
+        let file = std::fs::File::create(out).map_err(RepositoryError::IoError);
 
-        let yaml = serde_yaml::to_string(&account_groups).map_err(|_| SaveError("Could not serialise accounts".to_owned()));
+        let yaml = serde_yaml::to_string(&account_groups).map_err(RepositoryError::SerialiationError);
 
         let combined = file.and_then(|file| yaml.map(|yaml| (yaml, file)));
 
@@ -276,8 +271,7 @@ impl Database {
             let mut file = &file;
             let yaml = yaml.as_bytes();
 
-            file.write_all(yaml)
-                .map_err(|_| SaveError(format!("Could not write serialised accounts to {}", out.display())))
+            file.write_all(yaml).map_err(RepositoryError::IoError)
         })
     }
 
@@ -294,25 +288,22 @@ impl Database {
         }
     }
 
-    async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), LoadError> {
-        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> = Self::deserialise_accounts(path.as_path());
+    async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
+        let mut deserialised_accounts = Self::deserialise_accounts(path.as_path())?;
 
         let connection = connection.lock().unwrap();
 
-        deserialised_accounts.and_then(|ref mut account_groups| {
-            let results: Vec<Result<(), LoadError>> = account_groups
-                .iter_mut()
-                .map(|group| Self::save_group_and_accounts(&connection, group))
-                .collect();
+        deserialised_accounts
+            .iter_mut()
+            .try_for_each(|account_groups| Self::save_group_and_accounts(&connection, account_groups))?;
 
-            results.iter().cloned().collect::<Result<(), LoadError>>()
-        })
+        Ok(())
     }
 
-    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
-        let file = std::fs::File::open(out).map_err(|_| FileError(format!("Could not open file {} for reading.", out.display())));
+    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, RepositoryError> {
+        let file = std::fs::File::open(out).map_err(RepositoryError::IoError);
 
-        file.and_then(|file| serde_yaml::from_reader(file).map_err(|e| SaveError(format!("Could not serialise accounts: {}", e))))
+        file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialiationError))
     }
 }
 
@@ -553,9 +544,9 @@ mod tests {
             assert_eq!((), result);
         }
 
-        let result = { task::block_on(Database::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
+        let result = { task::block_on(Database::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) }.unwrap();
 
-        assert_eq!(Ok(()), result);
+        assert_eq!((), result);
 
         {
             let connection = connection.lock().unwrap();
