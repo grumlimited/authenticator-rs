@@ -5,13 +5,18 @@ use std::{io, thread, time};
 
 use glib::Sender;
 use log::error;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
+use log::warn;
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS, Row};
 use thiserror::Error;
 
 use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 use secret_service::SsError;
 
+use std::str::FromStr;
+use strum_macros::EnumString;
+use crate::helpers::SecretType::LOCAL;
+use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct Database;
 
@@ -23,6 +28,12 @@ pub enum RepositoryError {
     SerialisationError(#[from] serde_yaml::Error),
     KeyringError(#[from] SsError),
     KeyringDecodingError(#[from] std::string::FromUtf8Error),
+}
+
+#[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone)]
+pub enum SecretType {
+    LOCAL,
+    KEYRING,
 }
 
 impl Database {
@@ -153,22 +164,13 @@ impl Database {
                 let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
                 let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
 
-                let mut stmt = connection
-                    .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
-                    .unwrap();
-
-                let accounts = stmt
-                    .query_map(params![group_id], |row| {
-                        let label: String = row.get_unwrap(1);
-                        let secret: String = row.get_unwrap(3);
-                        let id: u32 = row.get(0)?;
-                        let account = Account::new(id, group_id, label.as_str(), secret.as_str());
-
-                        Ok(account)
-                    })
-                    .unwrap()
-                    .map(|e| e.unwrap())
-                    .collect();
+                let accounts = match Self::get_accounts(connection, group_id, None) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        warn!("Error getting accounts for group {}: {:?}", group_id, e);
+                        vec![]
+                    }
+                };
 
                 row.get(0)
                     .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
@@ -206,7 +208,7 @@ impl Database {
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1").unwrap();
+        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1").unwrap();
 
         stmt.query_row(params![account_id], |row| {
             let group_id: u32 = row.get_unwrap(1);
@@ -214,11 +216,31 @@ impl Database {
             let secret: String = row.get_unwrap(3);
             let id = row.get_unwrap(0);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
+            let secret_type = Database::extract_secret_type(row, 3);
+
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
 
             Ok(account)
         })
         .map_err(RepositoryError::SqlError)
+    }
+
+    fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
+        match row.get::<_, String>(idx) {
+            Ok(v) => {
+                match SecretType::from_str(v.as_str()) {
+                    Ok(secret_type) => secret_type,
+                    Err(_) => {
+                        warn!("Invalid secret type {}", v);
+                        LOCAL
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Invalid secret type {:?}", e);
+                LOCAL
+            }
+        }
     }
 
     pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, RepositoryError> {
@@ -234,16 +256,19 @@ impl Database {
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt = connection.prepare("SELECT id, label, 'secret' as secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
+        let mut stmt = connection.prepare("SELECT id, label, secret, secret_type FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
         stmt.query_map(params![group_id, label_filter], |row| {
             let id: u32 = row.get_unwrap(0);
             let label: String = row.get_unwrap(1);
+
+            let secret_type = Self::extract_secret_type(&row, 3);
+
             let secret: String = row.get_unwrap(2);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
@@ -323,6 +348,7 @@ mod tests {
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
+    use crate::helpers::SecretType::LOCAL;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -331,7 +357,7 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
-        let mut account = Account::new(0, 0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -391,7 +417,7 @@ mod tests {
 
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "label", "secret");
+        let mut account = Account::new(0, group.id, "label", "secret", LOCAL);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -413,7 +439,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account1 = Account::new(0, group.id, "hhh", "secret3");
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL);
         Database::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
@@ -426,6 +452,7 @@ mod tests {
                 group_id: 1,
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
+                secret_type: LOCAL
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();
@@ -442,14 +469,14 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
-        let mut account = Account::new(0, group.id, "ccc", "secret3");
+        let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
         Database::save_group(&connection, &mut group).expect("boom!");
-        let mut account = Account::new(0, group.id, "ppp", "secret3");
+        let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let results = Database::load_account_groups(&connection, None).unwrap();
@@ -470,7 +497,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut account = Account::new(0, 0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -489,7 +516,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let result = Database::has_groups(&connection).unwrap();
@@ -498,7 +525,7 @@ mod tests {
 
     #[test]
     fn serialise_accounts() {
-        let account = Account::new(1, 0, "label", "secret");
+        let account = Account::new(1, 0, "label", "secret", LOCAL);
         let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), vec![account]);
 
         let path = PathBuf::from("test.yaml");
@@ -507,7 +534,7 @@ mod tests {
 
         assert_eq!((), result);
 
-        let account_from_yaml = Account::new(0, 0, "label", "secret");
+        let account_from_yaml = Account::new(0, 0, "label", "secret", LOCAL);
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
         let result = Database::deserialise_accounts(path).unwrap();
@@ -520,7 +547,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let account = Account::new(0, 0, "label", "secret");
+        let account = Account::new(0, 0, "label", "secret", LOCAL);
         let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
@@ -538,7 +565,7 @@ mod tests {
             let mut connection = connection.lock().unwrap();
             runner::run(&mut connection).unwrap();
 
-            let account = Account::new(1, 0, "label", "secret");
+            let account = Account::new(1, 0, "label", "secret", LOCAL);
             let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
 
             let path = PathBuf::from("test.yaml");
