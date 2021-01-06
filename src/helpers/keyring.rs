@@ -72,13 +72,13 @@ impl Keyring {
         }
     }
 
-    pub fn set_secrets(group_accounts: &mut Vec<AccountGroup>) -> std::result::Result<(), RepositoryError> {
+    pub fn all_secrets() -> std::result::Result<Vec<(String, String)>, RepositoryError> {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
         let collection = ss.get_default_collection()?;
         let results = collection.search_items(vec![APPLICATION_ATTRS])?;
 
-        let all_secrets: Vec<(String, String)> = results
+        let secrets = results
             .iter()
             .map(|v| {
                 let secret = v
@@ -105,6 +105,12 @@ impl Keyring {
             .map(|v| (v.0.unwrap(), v.1.unwrap()))
             .collect::<Vec<(String, String)>>();
 
+        Ok(secrets)
+    }
+
+    pub fn set_secrets(group_accounts: &mut Vec<AccountGroup>) -> std::result::Result<(), RepositoryError> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+        let all_secrets = Self::all_secrets()?;
         group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g, &all_secrets))
     }
 
