@@ -107,7 +107,11 @@ impl Keyring {
         group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g, &all_secrets))
     }
 
-    fn group_account_secret(ss: &SecretService, group_account: &mut AccountGroup, all_secrets: &Vec<(String, String)>) -> std::result::Result<(), RepositoryError> {
+    fn group_account_secret(
+        ss: &SecretService,
+        group_account: &mut AccountGroup,
+        all_secrets: &Vec<(String, String)>,
+    ) -> std::result::Result<(), RepositoryError> {
         group_account.entries.iter_mut().try_for_each(|a| Self::account_secret(ss, a, all_secrets))
     }
 
