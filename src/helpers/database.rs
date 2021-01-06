@@ -22,6 +22,7 @@ pub enum RepositoryError {
     IoError(#[from] io::Error),
     SerialisationError(#[from] serde_yaml::Error),
     KeyringError(#[from] SsError),
+    KeyringDecodingError(#[from] std::string::FromUtf8Error),
 }
 
 impl Database {
