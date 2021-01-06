@@ -12,8 +12,8 @@ use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 
-use crate::helpers::{runner, Paths};
 use crate::helpers::ConfigManager;
+use crate::helpers::{runner, Paths};
 use main_window::MainWindow;
 
 mod main_window;

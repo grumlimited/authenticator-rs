@@ -9,9 +9,9 @@ use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, R
 use thiserror::Error;
 
 use crate::helpers::LoadError::{FileError, SaveError};
+use crate::helpers::Paths;
 use crate::model::{Account, AccountGroup};
 use std::{thread, time};
-use crate::helpers::Paths;
 
 #[derive(Debug, Clone)]
 pub struct ConfigManager;

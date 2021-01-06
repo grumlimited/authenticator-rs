@@ -1,5 +1,3 @@
-
-
 pub struct Paths;
 
 impl Paths {
