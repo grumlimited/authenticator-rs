@@ -6,17 +6,17 @@ use std::{io, thread, time};
 use glib::Sender;
 use log::error;
 use log::warn;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS, Row};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, NO_PARAMS};
 use thiserror::Error;
 
 use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 use secret_service::SsError;
 
-use std::str::FromStr;
-use strum_macros::EnumString;
 use crate::helpers::SecretType::LOCAL;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+use strum_macros::EnumString;
 #[derive(Debug, Clone)]
 pub struct Database;
 
@@ -208,7 +208,9 @@ impl Database {
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1").unwrap();
+        let mut stmt = connection
+            .prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")
+            .unwrap();
 
         stmt.query_row(params![account_id], |row| {
             let group_id: u32 = row.get_unwrap(1);
@@ -227,15 +229,13 @@ impl Database {
 
     fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
         match row.get::<_, String>(idx) {
-            Ok(v) => {
-                match SecretType::from_str(v.as_str()) {
-                    Ok(secret_type) => secret_type,
-                    Err(_) => {
-                        warn!("Invalid secret type {}", v);
-                        LOCAL
-                    }
+            Ok(v) => match SecretType::from_str(v.as_str()) {
+                Ok(secret_type) => secret_type,
+                Err(_) => {
+                    warn!("Invalid secret type {}", v);
+                    LOCAL
                 }
-            }
+            },
             Err(e) => {
                 warn!("Invalid secret type {:?}", e);
                 LOCAL
@@ -452,7 +452,7 @@ mod tests {
                 group_id: 1,
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
-                secret_type: LOCAL
+                secret_type: LOCAL,
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();

@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use glib::clone;
 use gtk_macros::*;
 
-use crate::NAMESPACE_PREFIX;
 use crate::helpers::SecretType;
+use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Account {
@@ -61,7 +61,7 @@ impl Account {
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
-            secret_type
+            secret_type,
         }
     }
 
