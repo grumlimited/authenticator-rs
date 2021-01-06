@@ -109,9 +109,14 @@ impl Keyring {
     }
 
     pub fn set_secrets(group_accounts: &mut Vec<AccountGroup>) -> std::result::Result<(), RepositoryError> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
         let all_secrets = Self::all_secrets()?;
-        group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g, &all_secrets))
+
+        Self::associate_secrets(group_accounts, &all_secrets)
+    }
+
+    pub fn associate_secrets(group_accounts: &mut Vec<AccountGroup>, all_secrets: &[(String, String)]) -> std::result::Result<(), RepositoryError> {
+        let ss = SecretService::new(EncryptionType::Dh)?;
+        group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets))
     }
 
     fn group_account_secret(

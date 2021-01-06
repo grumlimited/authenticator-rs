@@ -8,7 +8,7 @@ use log::error;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
 use thiserror::Error;
 
-use crate::helpers::Paths;
+use crate::helpers::{Paths, Keyring};
 use crate::model::{Account, AccountGroup};
 use secret_service::SsError;
 
@@ -234,7 +234,7 @@ impl Database {
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt = connection.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
+        let mut stmt = connection.prepare("SELECT id, label, 'secret' as secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
@@ -250,10 +250,12 @@ impl Database {
     }
 
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<bool>) {
-        let group_accounts = {
+        let mut group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
         };
+
+        let _ =Keyring::associate_secrets(&mut group_accounts, &all_secrets).unwrap();
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
