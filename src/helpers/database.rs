@@ -284,7 +284,8 @@ impl Database {
             Self::load_account_groups(&connection, None).unwrap()
         };
 
-        let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets).unwrap();
+        let connection = connection.lock().unwrap();
+        let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
