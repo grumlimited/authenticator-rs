@@ -1,6 +1,6 @@
 pub struct Paths;
 
-use crate::helpers::{Database, Keyring, SecretType};
+use crate::helpers::{Database, Keyring, SecretType, RepositoryError};
 use anyhow::Result;
 use log::debug;
 
@@ -28,7 +28,7 @@ impl Paths {
         }
     }
 
-    pub fn check_configuration_dir() -> Result<()> {
+    pub fn check_configuration_dir() -> Result<(), RepositoryError> {
         let path = Paths::path();
 
         if !path.exists() {
@@ -48,7 +48,7 @@ impl Paths {
         Ok(())
     }
 
-    pub fn update_keyring_secrets() -> Result<()> {
+    pub fn update_keyring_secrets() -> Result<(), RepositoryError> {
         let connection = Database::create_connection()?;
 
         let accounts = Database::load_account_groups(&connection, None)?;
