@@ -17,6 +17,10 @@ const ACCOUNT_ID_KEY: &str = "account_id";
 pub struct Keyring;
 
 impl Keyring {
+    pub fn ensure_unlocked() -> Result<()> {
+        Self::secret(1).map(|_| ())
+    }
+
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
         let _ = Self::remove(account_id);
 

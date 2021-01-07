@@ -12,7 +12,7 @@ use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 
-use crate::helpers::Database;
+use crate::helpers::{Database, Keyring};
 use crate::helpers::{runner, Paths};
 use main_window::MainWindow;
 
@@ -30,6 +30,21 @@ const GETTEXT_PACKAGE: &str = "authenticator-rs";
 const LOCALEDIR: &str = "/usr/share/locale";
 
 fn main() {
+    match Keyring::ensure_unlocked() {
+        Ok(()) => info!("Keyring is not available"),
+        Err(e) => panic!("{:?}", e),
+    }
+
+    match Paths::update_keyring_secrets() {
+        Ok(()) => info!("Added local accounts to keyring"),
+        Err(e) => panic!("{:?}", e),
+    }
+
+    match Paths::check_configuration_dir() {
+        Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
+        Err(e) => panic!("{:?}", e),
+    }
+
     let resource = {
         match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
             Ok(resource) => resource,
@@ -58,20 +73,9 @@ fn main() {
 
         configure_logging();
 
-        let mut connection = Database::create_connection().unwrap();
-
         // SQL migrations
+        let mut connection = Database::create_connection().unwrap();
         runner::run(&mut connection).unwrap();
-
-        match Paths::update_keyring_secrets() {
-            Ok(()) => info!("Added local accounts to keyring"),
-            Err(e) => panic!(e),
-        }
-
-        match Paths::check_configuration_dir() {
-            Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
-            Err(e) => panic!(e),
-        }
     });
 
     application.connect_activate(move |app| {
