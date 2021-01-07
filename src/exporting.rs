@@ -1,4 +1,5 @@
-use crate::helpers::{Database, Keyring, RepositoryError};
+use crate::helpers::Backup;
+use crate::helpers::{Keyring, RepositoryError};
 use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 use gettextrs::*;
@@ -69,7 +70,7 @@ impl Exporting for MainWindow {
 
                     gui.pool.spawn_ok(async move {
                         let all_secrets = Keyring::all_secrets().unwrap();
-                       Database::save_accounts(path, connection.clone(), all_secrets, tx).await;
+                        Backup::save_accounts(path, connection.clone(), all_secrets, tx).await;
                     });
 
                     dialog.close();
@@ -109,7 +110,7 @@ impl Exporting for MainWindow {
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(Database::restore_account_and_signal_back(path, connection.clone(), tx));
+                    gui.pool.spawn_ok(Backup::restore_account_and_signal_back(path, connection.clone(), tx));
 
                     rx.attach(None, clone!(@strong gui, @strong connection => move |result| {
                         match result {
