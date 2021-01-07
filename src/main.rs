@@ -35,11 +35,6 @@ fn main() {
         Err(e) => panic!("{:?}", e),
     }
 
-    match Paths::update_keyring_secrets() {
-        Ok(()) => info!("Added local accounts to keyring"),
-        Err(e) => panic!("{:?}", e),
-    }
-
     match Paths::check_configuration_dir() {
         Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
         Err(e) => panic!("{:?}", e),
@@ -76,6 +71,11 @@ fn main() {
         // SQL migrations
         let mut connection = Database::create_connection().unwrap();
         runner::run(&mut connection).unwrap();
+
+        match Paths::update_keyring_secrets() {
+            Ok(()) => info!("Added local accounts to keyring"),
+            Err(e) => panic!("{:?}", e),
+        }
     });
 
     application.connect_activate(move |app| {
