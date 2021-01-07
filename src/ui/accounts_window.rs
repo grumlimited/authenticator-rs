@@ -4,7 +4,6 @@ use std::{thread, time};
 
 use chrono::prelude::*;
 use chrono::Local;
-use futures::join;
 use gettextrs::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
@@ -15,7 +14,7 @@ use rusqlite::Connection;
 use glib::clone;
 use gtk_macros::*;
 
-use crate::helpers::{ConfigManager, IconParser};
+use crate::helpers::{Database, IconParser, Keyring, Paths};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
@@ -60,8 +59,10 @@ impl AccountsWindow {
             .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
-                    ConfigManager::delete_account(&connection, account_id).unwrap();
+                    Database::delete_account(&connection, account_id).unwrap();
                 }
+
+                Keyring::remove(account_id).unwrap();
 
                 Self::load_account_groups(tx, connection, filter).await;
                 tx_done.send(true).expect("boom!");
@@ -99,8 +100,8 @@ impl AccountsWindow {
             .spawn_ok(self.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                 {
                     let connection = connection.lock().unwrap();
-                    let group = ConfigManager::get_group(&connection, group_id).unwrap();
-                    ConfigManager::delete_group(&connection, group_id).expect("Could not delete group");
+                    let group = Database::get_group(&connection, group_id).unwrap();
+                    Database::delete_group(&connection, group_id).expect("Could not delete group");
 
                     if let Some(path) = group.icon {
                         AddGroupWindow::delete_icon_file(&path);
@@ -174,15 +175,20 @@ impl AccountsWindow {
     pub async fn load_account_groups(tx: Sender<(Vec<AccountGroup>, bool)>, connection: Arc<Mutex<Connection>>, filter: Option<String>) {
         let has_groups = async {
             let connection = connection.lock().unwrap();
-            ConfigManager::has_groups(&connection).unwrap()
-        };
+            Database::has_groups(&connection).unwrap()
+        }
+        .await;
 
-        let accounts = async {
+        let mut accounts = async {
             let connection = connection.lock().unwrap();
-            ConfigManager::load_account_groups(&connection, filter.as_deref()).unwrap()
-        };
+            Database::load_account_groups(&connection, filter.as_deref()).unwrap()
+        }
+        .await;
 
-        tx.send(join!(accounts, has_groups)).expect("boom!");
+        let connection = connection.lock().unwrap();
+        let _ = Keyring::set_secrets(&mut accounts, &connection).unwrap();
+
+        tx.send((accounts, has_groups)).expect("boom!");
     }
 
     fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -207,7 +213,7 @@ impl AccountsWindow {
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
                     let group = {
                         let connection = connection.lock().unwrap();
-                        ConfigManager::get_group(&connection, group_id).unwrap()
+                        Database::get_group(&connection, group_id).unwrap()
                     };
                     debug!("Loading group {:?}", group);
 
@@ -228,7 +234,7 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         add_group.icon_filename.set_label(image.as_str());
 
-                        let dir = ConfigManager::icons_path(&image);
+                        let dir = Paths::icons_path(&image);
                         let state = gui.state.borrow();
                         match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),
@@ -284,8 +290,8 @@ impl AccountsWindow {
                     edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
                     let connection = connection.lock().unwrap();
-                    let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
-                    let account = ConfigManager::get_account(&connection, id).unwrap();
+                    let groups = Database::load_account_groups(&connection, None).unwrap();
+                    let account = Database::get_account(&connection, id).unwrap();
 
                     edit_account.input_group.remove_all(); //re-added and refreshed just below
 
@@ -300,8 +306,14 @@ impl AccountsWindow {
 
                     edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
+                    let secret = match Keyring::secret(account.id) {
+                        Ok(Some(v)) => v,
+                        Ok(None) => "".to_owned(),
+                        Err(e) => panic!("Could not get secret: {}", e)
+                    };
+
                     let buffer = edit_account.input_secret.get_buffer().unwrap();
-                    buffer.set_text(account.secret.as_str());
+                    buffer.set_text(secret.as_str());
 
                     popover.hide();
 
@@ -385,7 +397,7 @@ impl AccountsWindow {
 
             let groups = {
                 let connection = connection.lock().unwrap();
-                ConfigManager::load_account_groups(&connection, None).unwrap()
+                Database::load_account_groups(&connection, None).unwrap()
             };
 
             let edit_account = EditAccountWindow::new(&builder);

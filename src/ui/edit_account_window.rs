@@ -8,7 +8,7 @@ use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
-use crate::helpers::ConfigManager;
+use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
@@ -286,15 +286,19 @@ impl EditAccountWindow {
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
         let connection = connection.lock().unwrap();
 
-        match account_id.parse() {
+        let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
-                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str());
-                ConfigManager::update_account(&connection, &mut account).unwrap();
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                Database::update_account(&connection, &mut account)
             }
             Err(_) => {
-                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str());
-                ConfigManager::save_account(&connection, &mut account).unwrap();
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                Database::save_account(&connection, &mut account)
             }
         };
+
+        db_result
+            .and_then(|account_id| Keyring::upsert(name.as_str(), account_id, secret.as_str()))
+            .unwrap();
     }
 }

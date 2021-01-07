@@ -1,7 +1,8 @@
 version: '3'
 services:
   rust:
-    image: ubuntu
+    build: .
     command: [/bin/sleep, '60000']
     volumes:
       - '.:/authenticator-rs'
+      - '~/.cargo:/root/.cargo'

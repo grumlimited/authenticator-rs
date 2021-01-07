@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use glib::clone;
 use gtk_macros::*;
 
+use crate::helpers::SecretType;
 use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -19,6 +20,8 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
+    #[serde(skip)]
+    pub secret_type: SecretType,
 }
 
 #[derive(Debug, Clone)]
@@ -53,12 +56,13 @@ impl AccountWidget {
 }
 
 impl Account {
-    pub fn new(id: u32, group_id: u32, label: &str, secret: &str) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType) -> Self {
         Account {
             id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
+            secret_type,
         }
     }
 

@@ -1,59 +1,47 @@
+use std::fmt::Debug;
+use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::string::ToString;
 use std::sync::{Arc, Mutex};
 
 use glib::Sender;
-use log::debug;
 use log::error;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, NO_PARAMS};
+use log::warn;
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
+use secret_service::SsError;
+use serde::{Deserialize, Serialize};
+use strum_macros::Display;
+use strum_macros::EnumString;
 use thiserror::Error;
 
-use crate::helpers::LoadError::{FileError, SaveError};
+use crate::helpers::SecretType::{KEYRING, LOCAL};
+use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
-use std::{thread, time};
 
 #[derive(Debug, Clone)]
-pub struct ConfigManager {
-    pub groups: Vec<AccountGroup>,
+pub struct Database;
+
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub enum RepositoryError {
+    SqlError(#[from] rusqlite::Error),
+    IoError(#[from] io::Error),
+    SerialisationError(#[from] serde_yaml::Error),
+    KeyringError(#[from] SsError),
+    KeyringDecodingError(#[from] std::string::FromUtf8Error),
 }
 
-#[derive(Debug, Clone, PartialEq, Error)]
-pub enum LoadError {
-    #[error("file error `{0}`")]
-    FileError(String),
-
-    #[error("file saving error `{0}`")]
-    SaveError(String),
-
-    #[error("database error `{0}`")]
-    DbError(String),
+#[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
+pub enum SecretType {
+    LOCAL,
+    KEYRING,
 }
 
-impl ConfigManager {
-    fn db_path() -> std::path::PathBuf {
-        let mut path = Self::path();
-        path.push("authenticator.db");
-
-        path
-    }
-
-    pub fn icons_path(filename: &str) -> std::path::PathBuf {
-        let mut path = Self::path();
-        path.push("icons");
-        path.push(filename);
-
-        path
-    }
-
-    pub fn path() -> std::path::PathBuf {
-        if let Some(project_dirs) = directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs") {
-            project_dirs.data_dir().into()
-        } else {
-            std::env::current_dir().unwrap_or_default()
-        }
-    }
-
-    pub fn has_groups(connection: &Connection) -> Result<bool, LoadError> {
+impl Database {
+    pub fn has_groups(connection: &Connection) -> Result<bool, RepositoryError> {
         let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
 
         stmt.query_row(params![], |row| {
@@ -61,10 +49,10 @@ impl ConfigManager {
             Ok(count)
         })
         .map(|count| count > 0)
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, LoadError> {
+    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
 
         stmt.query_map(params![], |row| {
@@ -89,46 +77,24 @@ impl ConfigManager {
                 .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
                 .collect()
         })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn check_configuration_dir() -> Result<(), LoadError> {
-        let path = Self::path();
-
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
-        }
-
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))?;
-
-        let path = Self::icons_path("");
-
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
-        }
-
-        std::fs::create_dir_all(path)
-            .map(|_| ())
-            .map_err(|e| LoadError::FileError(format!("Could not create directory {:?}", e)))
+    pub fn create_connection() -> Result<Connection, RepositoryError> {
+        Connection::open_with_flags(Paths::db_path(), OpenFlags::default()).map_err(RepositoryError::SqlError)
     }
 
-    pub fn create_connection() -> Result<Connection, LoadError> {
-        Connection::open_with_flags(Self::db_path(), OpenFlags::default()).map_err(|e| LoadError::DbError(format!("{:?}", e)))
-    }
-
-    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), LoadError> {
+    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), RepositoryError> {
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
                 params![group.id, group.name, group.icon, group.url],
             )
             .map(|_| ())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
+    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
         connection
             .execute(
                 "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
@@ -142,10 +108,10 @@ impl ConfigManager {
             .map(|id| {
                 group.id = id;
             })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, LoadError> {
+    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
@@ -163,10 +129,10 @@ impl ConfigManager {
             ))
         })
         .optional()
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), LoadError> {
+    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
         let existing_group = Self::group_by_name(connection, group.name.as_str())?;
 
         let group_saved_result = match existing_group {
@@ -183,13 +149,13 @@ impl ConfigManager {
                     Self::save_account(&connection, account)
                 })
                 .into_iter()
-                .collect::<Result<Vec<()>, LoadError>>()
+                .collect::<Result<Vec<u32>, RepositoryError>>()
                 .map(|_| ()),
             Err(group_saved_error) => Err(group_saved_error),
         }
     }
 
-    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, LoadError> {
+    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, RepositoryError> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id").unwrap();
 
         stmt.query_row_named(
@@ -202,59 +168,57 @@ impl ConfigManager {
                 let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
                 let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
 
-                let mut stmt = connection
-                    .prepare("SELECT id, label, group_id, secret FROM accounts WHERE group_id = ?1")
-                    .unwrap();
-
-                let accounts = stmt
-                    .query_map(params![group_id], |row| {
-                        let label: String = row.get_unwrap(1);
-                        let secret: String = row.get_unwrap(3);
-                        let id: u32 = row.get(0)?;
-                        let account = Account::new(id, group_id, label.as_str(), secret.as_str());
-
-                        Ok(account)
-                    })
-                    .unwrap()
-                    .map(|e| e.unwrap())
-                    .collect();
+                let accounts = match Self::get_accounts(connection, group_id, None) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        warn!("Error getting accounts for group {}: {:?}", group_id, e);
+                        vec![]
+                    }
+                };
 
                 row.get(0)
                     .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
             },
         )
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+
         connection
             .execute(
-                "INSERT INTO accounts (label, group_id, secret) VALUES (?1, ?2, ?3)",
-                params![account.label, account.group_id, account.secret],
+                "INSERT INTO accounts (label, group_id, secret, secret_type) VALUES (?1, ?2, ?3, ?4)",
+                params![account.label, account.group_id, secret, account.secret_type],
             )
-            .unwrap();
+            .map_err(RepositoryError::SqlError)?;
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
 
         stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
                 account.id = id;
+                id
             })
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<(), LoadError> {
+    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+
         connection
             .execute(
-                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4 WHERE id = ?1",
-                params![account.id, account.label, account.secret, account.group_id],
+                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5 WHERE id = ?1",
+                params![account.id, account.label, secret, account.group_id, account.secret_type],
             )
-            .map(|_| ())
-            .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+            .map(|_| account.id)
+            .map_err(RepositoryError::SqlError)
     }
 
-    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, LoadError> {
-        let mut stmt = connection.prepare("SELECT id, group_id, label, secret FROM accounts WHERE id = ?1").unwrap();
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
+        let mut stmt = connection
+            .prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")
+            .unwrap();
 
         stmt.query_row(params![account_id], |row| {
             let group_id: u32 = row.get_unwrap(1);
@@ -262,47 +226,70 @@ impl ConfigManager {
             let secret: String = row.get_unwrap(3);
             let id = row.get_unwrap(0);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
+            let secret_type = Database::extract_secret_type(row, 4);
+
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
 
             Ok(account)
         })
-        .map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        .map_err(RepositoryError::SqlError)
     }
 
-    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, LoadError> {
+    fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
+        match row.get::<_, String>(idx) {
+            Ok(v) => match SecretType::from_str(v.as_str()) {
+                Ok(secret_type) => secret_type,
+                Err(_) => {
+                    warn!("Invalid secret type [{}]", v);
+                    LOCAL
+                }
+            },
+            Err(e) => {
+                warn!("Invalid secret type [{:?}]", e);
+                LOCAL
+            }
+        }
+    }
+
+    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, RepositoryError> {
         let mut stmt = connection.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
 
-        stmt.execute(params![group_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        stmt.execute(params![group_id]).map_err(RepositoryError::SqlError)
     }
 
-    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, LoadError> {
+    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, RepositoryError> {
         let mut stmt = connection.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
-        stmt.execute(params![account_id]).map_err(|e| LoadError::DbError(format!("{:?}", e)))
+        stmt.execute(params![account_id]).map_err(RepositoryError::SqlError)
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
-        let mut stmt = connection.prepare("SELECT id, label, secret FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
+        let mut stmt = connection.prepare("SELECT id, label, secret, secret_type FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
         stmt.query_map(params![group_id, label_filter], |row| {
             let id: u32 = row.get_unwrap(0);
             let label: String = row.get_unwrap(1);
+
+            let secret_type = Self::extract_secret_type(&row, 3);
+
             let secret: String = row.get_unwrap(2);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str());
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
-    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
-        thread::sleep(time::Duration::from_millis(10 * 1000));
-        let group_accounts = {
+    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<bool>) {
+        let mut group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
         };
+
+        let connection = connection.lock().unwrap();
+        let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
@@ -311,10 +298,10 @@ impl ConfigManager {
         }
     }
 
-    pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), LoadError> {
-        let file = std::fs::File::create(out).map_err(|_| SaveError(format!("Could not open file {} for writing.", out.display())));
+    pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), RepositoryError> {
+        let file = std::fs::File::create(out).map_err(RepositoryError::IoError);
 
-        let yaml = serde_yaml::to_string(&account_groups).map_err(|_| SaveError("Could not serialise accounts".to_owned()));
+        let yaml = serde_yaml::to_string(&account_groups).map_err(RepositoryError::SerialisationError);
 
         let combined = file.and_then(|file| yaml.map(|yaml| (yaml, file)));
 
@@ -322,16 +309,14 @@ impl ConfigManager {
             let mut file = &file;
             let yaml = yaml.as_bytes();
 
-            file.write_all(yaml)
-                .map_err(|_| SaveError(format!("Could not write serialised accounts to {}", out.display())))
+            file.write_all(yaml).map_err(RepositoryError::IoError)
         })
     }
 
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
-        thread::sleep(time::Duration::from_millis(10 * 1000));
-        let results = Self::restore_accounts(path, connection).await;
+        let db = Self::restore_accounts(path, connection).await;
 
-        match results {
+        match db.and_then(|_| Paths::update_keyring_secrets()) {
             Ok(_) => tx.send(true).expect("Could not send message"),
             Err(e) => {
                 tx.send(false).expect("Could not send message");
@@ -340,25 +325,58 @@ impl ConfigManager {
         }
     }
 
-    async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), LoadError> {
-        let deserialised_accounts: Result<Vec<AccountGroup>, LoadError> = Self::deserialise_accounts(path.as_path());
+    async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
+        let mut deserialised_accounts = Self::deserialise_accounts(path.as_path())?;
 
         let connection = connection.lock().unwrap();
 
-        deserialised_accounts.and_then(|ref mut account_groups| {
-            let results: Vec<Result<(), LoadError>> = account_groups
-                .iter_mut()
-                .map(|group| Self::save_group_and_accounts(&connection, group))
-                .collect();
+        deserialised_accounts
+            .iter_mut()
+            .map(|group| {
+                group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
 
-            results.iter().cloned().collect::<Result<(), LoadError>>()
-        })
+                group
+            })
+            .try_for_each(|account_groups| Self::save_group_and_accounts(&connection, account_groups))?;
+
+        Ok(())
     }
 
-    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, LoadError> {
-        let file = std::fs::File::open(out).map_err(|_| FileError(format!("Could not open file {} for reading.", out.display())));
+    fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, RepositoryError> {
+        let file = std::fs::File::open(out).map_err(RepositoryError::IoError);
 
-        file.and_then(|file| serde_yaml::from_reader(file).map_err(|e| SaveError(format!("Could not serialise accounts: {}", e))))
+        file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialisationError))
+    }
+}
+
+/**
+* avoids
+* *const std::ffi::c_void` cannot be shared between threads safely
+* when using ...?; with anyhow.
+*/
+unsafe impl Sync for RepositoryError {}
+
+impl Default for SecretType {
+    fn default() -> Self {
+        SecretType::KEYRING
+    }
+}
+
+impl ToSql for SecretType {
+    #[inline]
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.to_string()))
+    }
+}
+
+impl FromSql for SecretType {
+    #[inline]
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        match value {
+            ValueRef::Text(s) => SecretType::from_str(std::str::from_utf8(s).unwrap()),
+            _ => return Err(FromSqlError::InvalidType),
+        }
+        .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 
@@ -371,9 +389,10 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::helpers::runner;
+    use crate::helpers::SecretType::{KEYRING, LOCAL};
     use crate::model::{Account, AccountGroup};
 
-    use super::ConfigManager;
+    use super::Database;
 
     #[test]
     fn create_new_account_and_new_group() {
@@ -382,26 +401,26 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
-        let mut account = Account::new(0, 0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         account.group_id = group.id;
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = ConfigManager::get_account(&connection, account.id).unwrap();
+        let account_reloaded = Database::get_account(&connection, account.id).unwrap();
 
         assert_eq!(account, account_reloaded);
 
         let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
-        ConfigManager::update_account(&connection, &mut account_reloaded).unwrap();
+        Database::update_account(&connection, &mut account_reloaded).unwrap();
 
         assert_eq!("new label", account_reloaded.label);
         assert_eq!("new secret", account_reloaded.secret);
@@ -415,7 +434,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
         assert_eq!("new group", group.name);
 
@@ -423,9 +442,9 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        ConfigManager::update_group(&connection, &mut group).unwrap();
+        Database::update_group(&connection, &mut group).unwrap();
 
-        let group = ConfigManager::get_group(&connection, group.id).unwrap();
+        let group = Database::get_group(&connection, group.id).unwrap();
 
         assert_eq!("other name", group.name);
         assert_eq!("url", group.url.unwrap());
@@ -440,16 +459,16 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
 
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "label", "secret");
+        let mut account = Account::new(0, group.id, "label", "secret", LOCAL);
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert!(account.id > 0);
         assert_eq!(group.id, account.group_id);
 
-        let reloaded_group = ConfigManager::get_group(&connection, group.id).unwrap();
+        let reloaded_group = Database::get_group(&connection, group.id).unwrap();
         assert_eq!(group.id, reloaded_group.id);
         assert_eq!("existing_group2", reloaded_group.name);
         assert_eq!(vec![account], reloaded_group.entries);
@@ -462,10 +481,10 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account1 = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account1).expect("boom!");
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        Database::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
             1,
@@ -477,9 +496,10 @@ mod tests {
                 group_id: 1,
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
+                secret_type: LOCAL,
             }],
         );
-        let groups = ConfigManager::load_account_groups(&connection, None).unwrap();
+        let groups = Database::load_account_groups(&connection, None).unwrap();
 
         assert_eq!(vec![expected], groups);
     }
@@ -491,19 +511,19 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
-        let mut account = Account::new(0, group.id, "ccc", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        Database::save_account(&connection, &mut account).expect("boom!");
+        let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL);
+        Database::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).expect("boom!");
-        let mut account = Account::new(0, group.id, "ppp", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        Database::save_group(&connection, &mut group).expect("boom!");
+        let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL);
+        Database::save_account(&connection, &mut account).expect("boom!");
 
-        let results = ConfigManager::load_account_groups(&connection, None).unwrap();
+        let results = Database::load_account_groups(&connection, None).unwrap();
 
         //groups in order
         assert_eq!("AAA", results.get(0).unwrap().name);
@@ -521,13 +541,13 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut account = Account::new(0, 0, "label", "secret");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
-        ConfigManager::save_account(&connection, &mut account).unwrap();
+        Database::save_account(&connection, &mut account).unwrap();
 
         assert_eq!(1, account.id);
 
-        let result = ConfigManager::delete_account(&connection, account.id).unwrap();
+        let result = Database::delete_account(&connection, account.id).unwrap();
         assert!(result > 0);
     }
 
@@ -538,30 +558,30 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
-        ConfigManager::save_group(&connection, &mut group).unwrap();
+        Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3");
-        ConfigManager::save_account(&connection, &mut account).expect("boom!");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        Database::save_account(&connection, &mut account).expect("boom!");
 
-        let result = ConfigManager::has_groups(&connection).unwrap();
+        let result = Database::has_groups(&connection).unwrap();
         assert!(result);
     }
 
     #[test]
     fn serialise_accounts() {
-        let account = Account::new(1, 0, "label", "secret");
+        let account = Account::new(1, 0, "label", "secret", KEYRING);
         let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), vec![account]);
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
-        let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+        let result = Database::serialise_accounts(vec![account_group], path).unwrap();
 
         assert_eq!((), result);
 
-        let account_from_yaml = Account::new(0, 0, "label", "secret");
+        let account_from_yaml = Account::new(0, 0, "label", "secret", KEYRING);
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
-        let result = ConfigManager::deserialise_accounts(path).unwrap();
+        let result = Database::deserialise_accounts(path).unwrap();
         assert_eq!(vec![account_group_from_yaml], result);
     }
 
@@ -571,10 +591,10 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let account = Account::new(0, 0, "label", "secret");
+        let account = Account::new(0, 0, "label", "secret", LOCAL);
         let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
 
-        ConfigManager::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
+        Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
         assert_eq!(1, account_group.entries.len());
@@ -589,23 +609,23 @@ mod tests {
             let mut connection = connection.lock().unwrap();
             runner::run(&mut connection).unwrap();
 
-            let account = Account::new(1, 0, "label", "secret");
+            let account = Account::new(1, 0, "label", "secret", LOCAL);
             let account_group = AccountGroup::new(2, "group", None, None, vec![account]);
 
             let path = PathBuf::from("test.yaml");
             let path = path.as_path();
-            let result = ConfigManager::serialise_accounts(vec![account_group], path).unwrap();
+            let result = Database::serialise_accounts(vec![account_group], path).unwrap();
 
             assert_eq!((), result);
         }
 
-        let result = { task::block_on(ConfigManager::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) };
+        let result = { task::block_on(Database::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) }.unwrap();
 
-        assert_eq!(Ok(()), result);
+        assert_eq!((), result);
 
         {
             let connection = connection.lock().unwrap();
-            let account_groups = ConfigManager::load_account_groups(&connection, None).unwrap();
+            let account_groups = Database::load_account_groups(&connection, None).unwrap();
 
             assert_eq!(1, account_groups.len());
             assert!(account_groups.first().unwrap().id > 0);

@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::{ConfigManager, IconParser};
+use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
@@ -80,7 +80,7 @@ impl AccountGroup {
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         if let Some(image) = &self.icon {
-            let dir = ConfigManager::icons_path(&image);
+            let dir = Paths::icons_path(&image);
             match IconParser::load_icon(&dir, state.dark_mode) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
