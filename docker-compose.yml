@@ -1,7 +1,7 @@
 version: '3'
 services:
   rust:
-    image: library/rust:1.49.0-slim-buster
+    build: .
     command: [/bin/sleep, '60000']
     volumes:
       - '.:/authenticator-rs'

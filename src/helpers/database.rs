@@ -17,7 +17,7 @@ use strum_macros::Display;
 use strum_macros::EnumString;
 use thiserror::Error;
 
-use crate::helpers::SecretType::{LOCAL, KEYRING};
+use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 
@@ -184,11 +184,7 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
-        let secret = if account.secret_type == KEYRING {
-            ""
-        } else {
-            account.secret.as_str()
-        };
+        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
             .execute(
@@ -208,11 +204,7 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
-        let secret = if account.secret_type == KEYRING {
-            ""
-        } else {
-            account.secret.as_str()
-        };
+        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
             .execute(
@@ -397,7 +389,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::helpers::runner;
-    use crate::helpers::SecretType::{LOCAL, KEYRING};
+    use crate::helpers::SecretType::{KEYRING, LOCAL};
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
