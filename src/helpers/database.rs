@@ -9,16 +9,16 @@ use std::sync::{Arc, Mutex};
 use glib::Sender;
 use log::error;
 use log::warn;
-use rusqlite::{Connection, named_params, NO_PARAMS, OpenFlags, OptionalExtension, params, Result, Row, ToSql};
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
 use secret_service::SsError;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
 use thiserror::Error;
 
-use crate::helpers::{Keyring, Paths};
 use crate::helpers::SecretType::LOCAL;
+use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
@@ -354,7 +354,9 @@ impl Database {
 unsafe impl Sync for RepositoryError {}
 
 impl Default for SecretType {
-    fn default() -> Self { SecretType::KEYRING }
+    fn default() -> Self {
+        SecretType::KEYRING
+    }
 }
 
 impl ToSql for SecretType {
