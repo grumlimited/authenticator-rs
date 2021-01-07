@@ -8,7 +8,8 @@ use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
-use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
+use crate::helpers::RepositoryError;
+use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};

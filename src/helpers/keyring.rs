@@ -2,7 +2,8 @@ extern crate secret_service;
 
 use log::{debug, warn};
 
-use crate::helpers::{Database, RepositoryError, SecretType};
+use crate::helpers::repository_error::RepositoryError;
+use crate::helpers::{Database, SecretType};
 use crate::model::{Account, AccountGroup};
 use rusqlite::Connection;
 use secret_service::SecretService;

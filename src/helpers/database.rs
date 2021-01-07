@@ -1,34 +1,21 @@
 use std::fmt::Debug;
-use std::io;
 use std::str::FromStr;
 use std::string::ToString;
 
-use log::error;
 use log::warn;
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
-use secret_service::SsError;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
-use thiserror::Error;
 
+use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::Paths;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
 pub struct Database;
-
-#[derive(Debug, Error)]
-#[error("{0}")]
-pub enum RepositoryError {
-    SqlError(#[from] rusqlite::Error),
-    IoError(#[from] io::Error),
-    SerialisationError(#[from] serde_yaml::Error),
-    KeyringError(#[from] SsError),
-    KeyringDecodingError(#[from] std::string::FromUtf8Error),
-}
 
 #[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
 pub enum SecretType {
@@ -274,13 +261,6 @@ impl Database {
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 }
-
-/**
-* avoids
-* *const std::ffi::c_void` cannot be shared between threads safely
-* when using ...?; with anyhow.
-*/
-unsafe impl Sync for RepositoryError {}
 
 impl Default for SecretType {
     fn default() -> Self {
