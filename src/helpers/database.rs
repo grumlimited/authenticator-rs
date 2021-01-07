@@ -17,7 +17,7 @@ use strum_macros::Display;
 use strum_macros::EnumString;
 use thiserror::Error;
 
-use crate::helpers::SecretType::LOCAL;
+use crate::helpers::SecretType::{LOCAL, KEYRING};
 use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
 
@@ -184,10 +184,16 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+        let secret = if account.secret_type == KEYRING {
+            ""
+        } else {
+            account.secret.as_str()
+        };
+
         connection
             .execute(
                 "INSERT INTO accounts (label, group_id, secret, secret_type) VALUES (?1, ?2, ?3, ?4)",
-                params![account.label, account.group_id, account.secret, account.secret_type],
+                params![account.label, account.group_id, secret, account.secret_type],
             )
             .map_err(RepositoryError::SqlError)?;
 
@@ -202,10 +208,16 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+        let secret = if account.secret_type == KEYRING {
+            ""
+        } else {
+            account.secret.as_str()
+        };
+
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5 WHERE id = ?1",
-                params![account.id, account.label, account.secret, account.group_id, account.secret_type],
+                params![account.id, account.label, secret, account.group_id, account.secret_type],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
@@ -385,7 +397,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::helpers::runner;
-    use crate::helpers::SecretType::LOCAL;
+    use crate::helpers::SecretType::{LOCAL, KEYRING};
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
@@ -565,7 +577,7 @@ mod tests {
 
     #[test]
     fn serialise_accounts() {
-        let account = Account::new(1, 0, "label", "secret", LOCAL);
+        let account = Account::new(1, 0, "label", "secret", KEYRING);
         let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), vec![account]);
 
         let path = PathBuf::from("test.yaml");
@@ -574,7 +586,7 @@ mod tests {
 
         assert_eq!((), result);
 
-        let account_from_yaml = Account::new(0, 0, "label", "secret", LOCAL);
+        let account_from_yaml = Account::new(0, 0, "label", "secret", KEYRING);
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), vec![account_from_yaml]);
 
         let result = Database::deserialise_accounts(path).unwrap();
