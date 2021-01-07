@@ -1,27 +1,25 @@
+use std::fmt::Debug;
+use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::string::ToString;
 use std::sync::{Arc, Mutex};
-use std::{io, thread, time};
 
 use glib::Sender;
 use log::error;
 use log::warn;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
+use rusqlite::{Connection, named_params, NO_PARAMS, OpenFlags, OptionalExtension, params, Result, Row, ToSql};
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
+use secret_service::SsError;
+use serde::{Deserialize, Serialize};
+use strum_macros::Display;
+use strum_macros::EnumString;
 use thiserror::Error;
 
 use crate::helpers::{Keyring, Paths};
-use crate::model::{Account, AccountGroup};
-use secret_service::SsError;
-
 use crate::helpers::SecretType::LOCAL;
-use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
-use std::str::FromStr;
-use strum_macros::EnumString;
-
-use std::string::ToString;
-use strum_macros::Display;
+use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
 pub struct Database;
@@ -311,8 +309,9 @@ impl Database {
     }
 
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
-        thread::sleep(time::Duration::from_millis(10 * 1000));
         let results = Self::restore_accounts(path, connection).await;
+
+        let _ = Paths::update_keyring_secrets().unwrap();
 
         match results {
             Ok(_) => tx.send(true).expect("Could not send message"),
@@ -330,6 +329,11 @@ impl Database {
 
         deserialised_accounts
             .iter_mut()
+            .map(|group| {
+                group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
+
+                group
+            })
             .try_for_each(|account_groups| Self::save_group_and_accounts(&connection, account_groups))?;
 
         Ok(())
@@ -348,6 +352,10 @@ impl Database {
 * when using ...?; with anyhow.
 */
 unsafe impl Sync for RepositoryError {}
+
+impl Default for SecretType {
+    fn default() -> Self { SecretType::KEYRING }
+}
 
 impl ToSql for SecretType {
     #[inline]
@@ -376,10 +384,10 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::helpers::runner;
+    use crate::helpers::SecretType::LOCAL;
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
-    use crate::helpers::SecretType::LOCAL;
 
     #[test]
     fn create_new_account_and_new_group() {

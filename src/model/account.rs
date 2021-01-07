@@ -20,6 +20,7 @@ pub struct Account {
     pub group_id: u32,
     pub label: String,
     pub secret: String,
+    #[serde(skip)]
     pub secret_type: SecretType,
 }
 
