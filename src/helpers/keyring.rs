@@ -2,11 +2,11 @@ extern crate secret_service;
 
 use log::{debug, warn};
 
-use crate::helpers::{RepositoryError, SecretType, Database};
+use crate::helpers::{Database, RepositoryError, SecretType};
 use crate::model::{Account, AccountGroup};
+use rusqlite::Connection;
 use secret_service::SecretService;
 use secret_service::{EncryptionType, SsError};
-use rusqlite::Connection;
 
 type Result<T> = ::std::result::Result<T, SsError>;
 
@@ -115,9 +115,15 @@ impl Keyring {
         Self::associate_secrets(group_accounts, &all_secrets, connection)
     }
 
-    pub fn associate_secrets(group_accounts: &mut Vec<AccountGroup>, all_secrets: &[(String, String)], connection: &Connection) -> std::result::Result<(), RepositoryError> {
+    pub fn associate_secrets(
+        group_accounts: &mut Vec<AccountGroup>,
+        all_secrets: &[(String, String)],
+        connection: &Connection,
+    ) -> std::result::Result<(), RepositoryError> {
         let ss = SecretService::new(EncryptionType::Dh)?;
-        group_accounts.iter_mut().try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets, connection))
+        group_accounts
+            .iter_mut()
+            .try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets, connection))
     }
 
     fn group_account_secret(
@@ -126,10 +132,18 @@ impl Keyring {
         all_secrets: &[(String, String)],
         connection: &Connection,
     ) -> std::result::Result<(), RepositoryError> {
-        group_account.entries.iter_mut().try_for_each(|a| Self::account_secret(ss, a, all_secrets, connection))
+        group_account
+            .entries
+            .iter_mut()
+            .try_for_each(|a| Self::account_secret(ss, a, all_secrets, connection))
     }
 
-    fn account_secret(ss: &SecretService, account: &mut Account, all_secrets: &[(String, String)], connection: &Connection,) -> std::result::Result<(), RepositoryError> {
+    fn account_secret(
+        ss: &SecretService,
+        account: &mut Account,
+        all_secrets: &[(String, String)],
+        connection: &Connection,
+    ) -> std::result::Result<(), RepositoryError> {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
         match all_secrets.iter().find(|v| v.0 == format!("{}", account.id)) {
@@ -140,7 +154,7 @@ impl Keyring {
                 account.secret_type = SecretType::KEYRING;
                 account.secret = "".to_string();
                 Database::update_account(connection, account)?;
-            },
+            }
         }
 
         Ok(())
