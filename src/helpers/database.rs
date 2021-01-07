@@ -17,6 +17,7 @@ use strum_macros::Display;
 use strum_macros::EnumString;
 use thiserror::Error;
 
+use crate::exporting::AccountsImportExportResult;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::helpers::{Keyring, Paths};
 use crate::model::{Account, AccountGroup};
@@ -42,7 +43,7 @@ pub enum SecretType {
 
 impl Database {
     pub fn has_groups(connection: &Connection) -> Result<bool, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups").unwrap();
+        let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups")?;
 
         stmt.query_row(params![], |row| {
             let count: u32 = row.get_unwrap(0);
@@ -53,7 +54,7 @@ impl Database {
     }
 
     pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)").unwrap();
+        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)")?;
 
         stmt.query_map(params![], |row| {
             let id = row.get_unwrap(0);
@@ -95,14 +96,12 @@ impl Database {
     }
 
     pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
-        connection
-            .execute(
-                "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
-                params![group.name, group.icon, group.url],
-            )
-            .unwrap();
+        connection.execute(
+            "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
+            params![group.name, group.icon, group.url],
+        )?;
 
-        let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;
 
         stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
@@ -112,7 +111,7 @@ impl Database {
     }
 
     fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name").unwrap();
+        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name")?;
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
             let group_id = row.get_unwrap(0);
@@ -156,7 +155,7 @@ impl Database {
     }
 
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id").unwrap();
+        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id")?;
 
         stmt.query_row_named(
             named_params! {
@@ -193,7 +192,7 @@ impl Database {
             )
             .map_err(RepositoryError::SqlError)?;
 
-        let mut stmt = connection.prepare("SELECT last_insert_rowid()").unwrap();
+        let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;
 
         stmt.query_row(NO_PARAMS, |row| row.get(0))
             .map(|id| {
@@ -216,9 +215,7 @@ impl Database {
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
-        let mut stmt = connection
-            .prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")
-            .unwrap();
+        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
 
         stmt.query_row(params![account_id], |row| {
             let group_id: u32 = row.get_unwrap(1);
@@ -282,7 +279,7 @@ impl Database {
         .map(|rows| rows.map(|row| row.unwrap()).collect())
     }
 
-    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<bool>) {
+    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<AccountsImportExportResult>) {
         let mut group_accounts = {
             let connection = connection.lock().unwrap();
             Self::load_account_groups(&connection, None).unwrap()
@@ -293,8 +290,8 @@ impl Database {
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
-            Ok(()) => tx.send(true).expect("Could not send message"),
-            Err(_) => tx.send(false).expect("Could not send message"),
+            Ok(()) => tx.send(Ok(())).expect("Could not send message"),
+            Err(e) => tx.send(Err(e)).expect("Could not send message"),
         }
     }
 
@@ -313,15 +310,12 @@ impl Database {
         })
     }
 
-    pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
+    pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<AccountsImportExportResult>) {
         let db = Self::restore_accounts(path, connection).await;
 
         match db.and_then(|_| Paths::update_keyring_secrets()) {
-            Ok(_) => tx.send(true).expect("Could not send message"),
-            Err(e) => {
-                tx.send(false).expect("Could not send message");
-                error!("{:?}", e);
-            }
+            Ok(_) => tx.send(Ok(())).expect("Could not send message"),
+            Err(e) => tx.send(Err(e)).expect("Could not send message"),
         }
     }
 

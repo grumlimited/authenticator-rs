@@ -14,6 +14,8 @@ use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
 use futures::executor::ThreadPool;
 
+use crate::ui::accounts_window::AccountsRefreshResult;
+
 use glib::clone;
 
 #[derive(Clone, Debug)]
@@ -253,7 +255,7 @@ impl EditAccountWindow {
                     }
                 };
 
-                let (tx, rx) = glib::MainContext::channel::<(Vec<AccountGroup>, bool)>(glib::PRIORITY_DEFAULT);
+                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
                 let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
                 let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding account is completed
 
