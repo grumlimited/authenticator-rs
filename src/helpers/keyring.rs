@@ -18,7 +18,10 @@ pub struct Keyring;
 
 impl Keyring {
     pub fn ensure_unlocked() -> Result<()> {
-        Self::secret(1).map(|_| ())
+        let ss = SecretService::new(EncryptionType::Dh)?;
+        let collection = ss.get_default_collection()?;
+
+        collection.ensure_unlocked()
     }
 
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
