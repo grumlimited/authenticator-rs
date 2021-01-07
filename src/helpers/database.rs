@@ -311,9 +311,7 @@ impl Database {
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<bool>) {
         let db = Self::restore_accounts(path, connection).await;
 
-        let keyring = Paths::update_keyring_secrets();
-
-        match db.and(keyring) {
+        match db.and_then(|_| Paths::update_keyring_secrets()) {
             Ok(_) => tx.send(true).expect("Could not send message"),
             Err(e) => {
                 tx.send(false).expect("Could not send message");
