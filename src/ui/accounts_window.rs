@@ -305,7 +305,12 @@ impl AccountsWindow {
 
                     edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
-                    let secret = Keyring::secret(account.id).unwrap().unwrap();
+                    let secret = match Keyring::secret(account.id) {
+                        Ok(Some(v)) => v,
+                        Ok(None) => "".to_owned(),
+                        Err(e) => panic!("Could not get secret: {}", e)
+                    };
+
                     let buffer = edit_account.input_secret.get_buffer().unwrap();
                     buffer.set_text(secret.as_str());
 

@@ -1,6 +1,6 @@
 pub struct Paths;
 
-use crate::helpers::{Database, Keyring, SecretType, RepositoryError};
+use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
 use anyhow::Result;
 use log::debug;
 
