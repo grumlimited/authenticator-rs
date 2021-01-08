@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
 use glib::clone;
-use gtk::{Button, PopoverMenu};
 use gtk::prelude::*;
+use gtk::{Button, PopoverMenu};
 use gtk_macros::*;
 use rusqlite::Connection;
 
-use crate::helpers::{Keyring, RepositoryError};
 use crate::helpers::Backup;
+use crate::helpers::{Keyring, RepositoryError};
 use crate::main_window::Display::DisplayErrors;
 use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
