@@ -73,7 +73,7 @@ impl Exporting for MainWindow {
                         let all_secrets = Keyring::all_secrets().unwrap();
                         Backup::save_accounts(path, connection.clone(), all_secrets, tx).await;
                         tx_done.send(true).expect("boom!");
-                    })(None, connection.clone(), tx_done));
+                    })(None, connection, tx_done));
 
                     dialog.close();
                 }
