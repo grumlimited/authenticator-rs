@@ -156,9 +156,9 @@ impl AccountsWindow {
                     }
 
                     if has_groups {
-                        Self::edit_buttons_actions(&gui, connection.clone());
-                        Self::group_edit_buttons_actions(&gui, connection.clone());
-                        Self::delete_buttons_actions(&gui, connection.clone());
+                        gui.accounts_window.edit_buttons_actions(&gui, connection.clone());
+                        gui.accounts_window.group_edit_buttons_actions(&gui, connection.clone());
+                        gui.accounts_window.delete_buttons_actions(&gui, connection.clone());
 
                         gui.switch_to(Display::DisplayAccounts);
                     } else {
@@ -202,19 +202,16 @@ impl AccountsWindow {
         tx.send(r).expect("boom!");
     }
 
-    fn group_edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+    fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        let widgets_list = self.widgets.lock().unwrap();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widgets in widgets_list.iter() {
             let group_id = group_widgets.id;
 
-            group_widgets.add_account_button.connect_clicked(gui.accounts_window.display_add_account_form(
-                connection.clone(),
-                &group_widgets.popover,
-                &gui,
-                Some(group_id),
-            ));
+            group_widgets
+                .add_account_button
+                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, &gui, Some(group_id)));
 
             group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
                 gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
@@ -260,8 +257,8 @@ impl AccountsWindow {
         }
     }
 
-    fn edit_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+    fn edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        let widgets_list = self.widgets.lock().unwrap();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widget in widgets_list.iter() {
@@ -317,13 +314,12 @@ impl AccountsWindow {
 
                     edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
+                    popover.hide();
+
                     match Keyring::secret(account.id) {
                         Ok(secret) => {
                             let buffer = edit_account.input_secret.get_buffer().unwrap();
                             buffer.set_text(secret.unwrap_or_default().as_str());
-
-                            popover.hide();
-
                             gui.switch_to(Display::DisplayEditAccount);
                         },
                         Err(e) => {
@@ -331,15 +327,13 @@ impl AccountsWindow {
                             gui.switch_to(Display::DisplayErrors);
                         }
                     };
-
-
                 }));
             }
         }
     }
 
-    fn delete_buttons_actions(gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = gui.accounts_window.widgets.lock().unwrap();
+    fn delete_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+        let widgets_list = self.widgets.lock().unwrap();
 
         for group_widget in widgets_list.iter() {
             let account_widgets = group_widget.account_widgets.clone();

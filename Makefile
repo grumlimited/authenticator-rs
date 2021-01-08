@@ -27,6 +27,7 @@ run: gresource
 	cargo run
 
 clippy:
+	cargo fmt
 	find src/ -name "*.rs" -exec touch {} \;
 	cargo clippy
 

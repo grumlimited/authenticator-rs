@@ -1,16 +1,17 @@
-use crate::helpers::{Database, Keyring, RepositoryError};
-use crate::main_window::MainWindow;
-use crate::NAMESPACE_PREFIX;
-use gettextrs::*;
-use gtk::prelude::*;
-use gtk::{Button, PopoverMenu};
-use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
+use gettextrs::*;
 use glib::clone;
+use gtk::prelude::*;
+use gtk::{Button, PopoverMenu};
 use gtk_macros::*;
+use rusqlite::Connection;
 
+use crate::helpers::Backup;
+use crate::helpers::{Keyring, RepositoryError};
 use crate::main_window::Display::DisplayErrors;
+use crate::main_window::MainWindow;
+use crate::NAMESPACE_PREFIX;
 
 pub type AccountsImportExportResult = ::std::result::Result<(), RepositoryError>;
 
@@ -48,6 +49,7 @@ impl Exporting for MainWindow {
                     let path = dialog.get_filename().unwrap();
 
                     let (tx, rx) = glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
@@ -67,10 +69,11 @@ impl Exporting for MainWindow {
                         }),
                     );
 
-                    gui.pool.spawn_ok(async move {
+                    gui.pool.spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |_, connection, tx_done| async move {
                         let all_secrets = Keyring::all_secrets().unwrap();
-                       Database::save_accounts(path, connection.clone(), all_secrets, tx).await;
-                    });
+                        Backup::save_accounts(path, connection.clone(), all_secrets, tx).await;
+                        tx_done.send(true).expect("boom!");
+                    })(None, connection, tx_done));
 
                     dialog.close();
                 }
@@ -106,10 +109,14 @@ impl Exporting for MainWindow {
                     let path = dialog.get_filename().unwrap();
 
                     let (tx, rx)= glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(Database::restore_account_and_signal_back(path, connection.clone(), tx));
+                    gui.pool.spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |_, connection, tx_done| async move {
+                            Backup::restore_account_and_signal_back(path, connection, tx).await;
+                            tx_done.send(true).expect("boom!");
+                    })(None, connection.clone(), tx_done));
 
                     rx.attach(None, clone!(@strong gui, @strong connection => move |result| {
                         match result {
