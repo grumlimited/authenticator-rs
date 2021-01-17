@@ -93,7 +93,7 @@ msgid "Icon URL"
 msgstr "Icon URL"
 
 msgid "Import accounts"
-msgstr "Import account"
+msgstr "Import accounts"
 
 msgid "Name"
 msgstr "Name"
