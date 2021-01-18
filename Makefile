@@ -114,4 +114,3 @@ debian-pkg : install
 	chmod 775 $(DESTDIR)/DEBIAN/postinst
 	dpkg-deb --build $(DESTDIR) authenticator-rs-$(RELEASE_VERSION)-x86_64.deb
 	md5sum authenticator-rs-$(RELEASE_VERSION)-x86_64.deb > authenticator-rs-$(RELEASE_VERSION)-x86_64.deb.md5sum
-
