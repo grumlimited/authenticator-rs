@@ -197,9 +197,9 @@ impl AccountsWindow {
             Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
         });
 
-        let r: AccountsRefreshResult = has_groups.and_then(|v| accounts.map(|v2| (v2, v)));
+        let results = has_groups.and_then(|has_groups| accounts.map(|account_groups| (account_groups, has_groups)));
 
-        tx.send(r).expect("boom!");
+        tx.send(results).expect("boom!");
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -413,7 +413,7 @@ impl AccountsWindow {
             edit_account.add_accounts_container_edit.set_visible(false);
             edit_account.add_accounts_container_add.set_visible(true);
             edit_account.edit_account_buttons_actions(&main_window, connection.clone());
-            edit_account.set_group_dropdown(None, &groups);
+            edit_account.set_group_dropdown(group_id, &groups);
 
             main_window.edit_account.replace_with(&edit_account);
 
