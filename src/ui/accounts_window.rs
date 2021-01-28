@@ -147,7 +147,7 @@ impl AccountsWindow {
                         // empty list of accounts first
                         accounts_container.foreach(|e| accounts_container.remove(e));
 
-                        *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
+                        *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone(), gui.accounts_window.get_filter_value().clone())).collect();
 
                         m_widgets
                             .iter()

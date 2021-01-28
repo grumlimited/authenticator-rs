@@ -66,7 +66,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidget {
+    pub fn widget(&self, state: Rc<RefCell<State>>, filter: Option<String>) -> AccountGroupWidget {
         let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
@@ -106,7 +106,7 @@ impl AccountGroup {
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
 
-        accounts.set_visible(!self.collapsed);
+        accounts.set_visible(filter.is_some() || !self.collapsed);
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
