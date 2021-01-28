@@ -5,14 +5,13 @@ use std::{thread, time};
 use chrono::prelude::*;
 use chrono::Local;
 use gettextrs::*;
+use glib::clone;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::Builder;
+use gtk_macros::*;
 use log::{debug, error, warn};
 use rusqlite::Connection;
-
-use glib::clone;
-use gtk_macros::*;
 
 use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
 use crate::main_window::{Display, MainWindow};
@@ -148,7 +147,10 @@ impl AccountsWindow {
                         // empty list of accounts first
                         accounts_container.foreach(|e| accounts_container.remove(e));
 
-                        *m_widgets = groups.iter().map(|group| group.widget(gui.state.clone())).collect();
+                        *m_widgets = groups
+                            .iter()
+                            .map(|group| group.widget(gui.state.clone(), gui.accounts_window.get_filter_value()))
+                            .collect();
 
                         m_widgets
                             .iter()
@@ -202,6 +204,33 @@ impl AccountsWindow {
         tx.send(results).expect("boom!");
     }
 
+    fn toggle_group_collapse(&self, gui: &MainWindow, group_id: u32, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) {
+        popover.hide();
+
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+        rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+        let filter = gui.accounts_window.get_filter_value();
+
+        gui.pool
+            .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                {
+                    debug!("Collapsing/expanding group {:?}", group_id);
+
+                    let connection = connection.lock().unwrap();
+                    let mut group = Database::get_group(&connection, group_id).unwrap();
+
+                    group.collapsed = !group.collapsed;
+                    Database::update_group(&connection, &group).unwrap();
+                }
+
+                Self::load_account_groups(tx, connection.clone(), filter).await;
+                tx_done.send(true).expect("boom!");
+            })(filter, connection, tx_done));
+    }
+
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = self.widgets.lock().unwrap();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
@@ -216,6 +245,18 @@ impl AccountsWindow {
             group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
                 gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
             }));
+
+            group_widgets
+                .collapse_button
+                .connect_clicked(clone!(@strong connection, @strong group_widgets.popover as popover, @strong gui => move |_| {
+                     gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
+                }));
+
+            group_widgets
+                .expand_button
+                .connect_clicked(clone!(@strong connection, @strong group_widgets.popover as popover, @strong gui => move |_| {
+                     gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
+                }));
 
             group_widgets.edit_button.connect_clicked(
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {

@@ -1,6 +1,6 @@
 use crate::exporting::Exporting;
 use crate::main_window::{Display, MainWindow};
-use crate::ui::AddGroupWindow;
+use crate::ui::{AccountsWindow, AddGroupWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 use gio::prelude::*;
 use glib::clone;
@@ -10,10 +10,12 @@ use gtk_macros::*;
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
+use crate::ui::AccountsRefreshResult;
+
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
 
-    fn build_search_button(&mut self) -> gtk::Button;
+    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
 
@@ -26,7 +28,7 @@ impl Menus for MainWindow {
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
 
-        titlebar.pack_start(&self.build_search_button());
+        titlebar.pack_start(&self.build_search_button(connection.clone()));
 
         titlebar.pack_end(&self.build_system_menu(connection));
         self.window.set_titlebar(Some(&titlebar));
@@ -34,13 +36,25 @@ impl Menus for MainWindow {
         titlebar.show_all();
     }
 
-    fn build_search_button(&mut self) -> Button {
+    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> Button {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
         get_widget!(builder, gtk::Button, search_button);
 
-        search_button.connect_clicked(clone!(@strong self.accounts_window.filter as filter => move |_| {
+        search_button.connect_clicked(clone!(@strong self as gui, @strong self.accounts_window.filter as filter => move |_| {
             if filter.is_visible() {
-                filter.hide()
+                filter.hide();
+                filter.set_text("");
+
+                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+                gui.pool
+                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
+                        tx_done.send(true).expect("boom!");
+                    })(None, connection.clone(), tx_done));
             } else {
                 filter.show();
                 filter.grab_focus()

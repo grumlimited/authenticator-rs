@@ -204,32 +204,26 @@ impl MainWindow {
     pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
         {
             //First bind user input event to refreshing account list
-            {
-                let gui = self.clone();
-                self.accounts_window.filter.connect_changed(move |_| {
-                    gui.accounts_window.refresh_accounts(&gui, connection.clone());
-                });
-            }
+            let gui = self.clone();
+            self.accounts_window.filter.connect_changed(move |_| {
+                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+            });
         }
 
         {
             //then bind "x" icon to empty the filter input.
             let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
 
-            {
-                let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                    let _ = tx.send(true);
-                    None
-                });
-            }
+            let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
+                let _ = tx.send(true);
+                None
+            });
 
-            {
-                let filter = self.accounts_window.filter.clone();
-                rx.attach(None, move |_| {
-                    filter.get_buffer().set_text("");
-                    glib::Continue(true)
-                });
-            }
+            let filter = self.accounts_window.filter.clone();
+            rx.attach(None, move |_| {
+                filter.get_buffer().set_text("");
+                glib::Continue(true)
+            });
         }
     }
 

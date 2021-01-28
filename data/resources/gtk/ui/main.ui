@@ -111,6 +111,7 @@
                 <property name="margin-top">3</property>
                 <property name="margin-bottom">5</property>
                 <property name="caps-lock-warning">False</property>
+                <property name="primary-icon-name">edit-find-symbolic</property>
                 <property name="secondary-icon-name">dialog-close-symbolic</property>
                 <property name="primary-icon-tooltip-text" translatable="yes">filter accounts</property>
                 <property name="placeholder-text" translatable="yes">filter</property>

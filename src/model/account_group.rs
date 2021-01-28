@@ -25,6 +25,9 @@ pub struct AccountGroup {
 
     pub url: Option<String>,
 
+    #[serde(skip)]
+    pub collapsed: bool,
+
     pub entries: Vec<Account>,
 }
 
@@ -35,6 +38,8 @@ pub struct AccountGroupWidget {
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub add_account_button: gtk::Button,
+    pub collapse_button: gtk::Button,
+    pub expand_button: gtk::Button,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
@@ -51,17 +56,18 @@ impl AccountGroupWidget {
 }
 
 impl AccountGroup {
-    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, entries: Vec<Account>) -> Self {
+    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, collapsed: bool, entries: Vec<Account>) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
             icon: icon.map(str::to_owned),
             url: url.map(str::to_owned),
+            collapsed,
             entries,
         }
     }
 
-    pub fn widget(&self, state: Rc<RefCell<State>>) -> AccountGroupWidget {
+    pub fn widget(&self, state: Rc<RefCell<State>>, filter: Option<String>) -> AccountGroupWidget {
         let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
@@ -74,6 +80,8 @@ impl AccountGroup {
         get_widget!(builder, gtk::Button, edit_button);
         get_widget!(builder, gtk::Button, add_account_button);
         get_widget!(builder, gtk::Button, delete_button);
+        get_widget!(builder, gtk::Button, collapse_button);
+        get_widget!(builder, gtk::Button, expand_button);
         get_widget!(builder, gtk::Box, buttons_container);
         get_widget!(builder, gtk::Box, accounts);
 
@@ -99,6 +107,10 @@ impl AccountGroup {
         // However doing so produces annoying (yet seemingly harmless) warnings:
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
+
+        accounts.set_visible(filter.is_some() || !self.collapsed);
+        collapse_button.set_visible(!self.collapsed);
+        expand_button.set_visible(!collapse_button.get_visible());
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
@@ -135,6 +147,8 @@ impl AccountGroup {
             edit_button,
             delete_button,
             add_account_button,
+            collapse_button,
+            expand_button,
             event_box,
             group_label,
             group_image,
