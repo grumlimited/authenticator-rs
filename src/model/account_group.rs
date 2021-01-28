@@ -39,6 +39,7 @@ pub struct AccountGroupWidget {
     pub delete_button: gtk::Button,
     pub add_account_button: gtk::Button,
     pub collapse_button: gtk::Button,
+    pub expand_button: gtk::Button,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
@@ -80,6 +81,7 @@ impl AccountGroup {
         get_widget!(builder, gtk::Button, add_account_button);
         get_widget!(builder, gtk::Button, delete_button);
         get_widget!(builder, gtk::Button, collapse_button);
+        get_widget!(builder, gtk::Button, expand_button);
         get_widget!(builder, gtk::Box, buttons_container);
         get_widget!(builder, gtk::Box, accounts);
 
@@ -107,6 +109,8 @@ impl AccountGroup {
         popover.add(&buttons_container);
 
         accounts.set_visible(filter.is_some() || !self.collapsed);
+        collapse_button.set_visible(!self.collapsed);
+        expand_button.set_visible(!collapse_button.get_visible());
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
@@ -144,6 +148,7 @@ impl AccountGroup {
             delete_button,
             add_account_button,
             collapse_button,
+            expand_button,
             event_box,
             group_label,
             group_image,

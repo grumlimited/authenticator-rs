@@ -252,6 +252,12 @@ impl AccountsWindow {
                      gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
                 }));
 
+            group_widgets
+                .expand_button
+                .connect_clicked(clone!(@strong connection, @strong group_widgets.popover as popover, @strong gui => move |_| {
+                     gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
+                }));
+
             group_widgets.edit_button.connect_clicked(
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
                     let group = {

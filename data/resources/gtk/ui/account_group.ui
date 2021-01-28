@@ -156,6 +156,7 @@
         <property name="visible">True</property>
         <property name="can-focus">True</property>
         <property name="receives-default">True</property>
+        <property name="no-show-all">True</property>
         <property name="margin-start">1</property>
         <property name="margin-end">1</property>
         <property name="margin-bottom">3</property>
@@ -194,6 +195,52 @@
         <property name="expand">False</property>
         <property name="fill">True</property>
         <property name="position">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="expand_button">
+        <property name="name">expand_button</property>
+        <property name="can-focus">True</property>
+        <property name="receives-default">True</property>
+        <property name="no-show-all">True</property>
+        <property name="margin-start">1</property>
+        <property name="margin-end">1</property>
+        <property name="margin-bottom">3</property>
+        <child>
+          <!-- n-columns=2 n-rows=1 -->
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="icon-name">view-fullscreen</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-start">3</property>
+                <property name="label" translatable="yes">Expand</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">4</property>
       </packing>
     </child>
   </object>
