@@ -36,19 +36,21 @@ impl Database {
     }
 
     pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups ORDER BY LOWER(name)")?;
+        let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups ORDER BY LOWER(name)")?;
 
         stmt.query_map(params![], |row| {
             let id = row.get_unwrap(0);
             let name: String = row.get_unwrap(1);
             let icon: Option<String> = row.get(2).optional().unwrap_or(None);
             let url: Option<String> = row.get(3).optional().unwrap_or(None);
+            let collapsed: bool = row.get_unwrap(4);
 
             Ok(AccountGroup::new(
                 id,
                 name.as_str(),
                 icon.as_deref(),
                 url.as_deref(),
+                collapsed,
                 Self::get_accounts(&connection, id, filter)?,
             ))
         })
@@ -93,19 +95,21 @@ impl Database {
     }
 
     fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE name = :name")?;
+        let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE name = :name")?;
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
             let group_id = row.get_unwrap(0);
             let group_name: String = row.get_unwrap(1);
             let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
             let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
+            let collapsed: bool = row.get_unwrap(4);
 
             Ok(AccountGroup::new(
                 group_id,
                 group_name.as_str(),
                 group_icon.as_deref(),
                 group_url.as_deref(),
+                collapsed,
                 vec![],
             ))
         })
@@ -137,7 +141,7 @@ impl Database {
     }
 
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, RepositoryError> {
-        let mut stmt = connection.prepare("SELECT id, name, icon, url FROM groups WHERE id = :group_id")?;
+        let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE id = :group_id")?;
 
         stmt.query_row_named(
             named_params! {
@@ -148,6 +152,7 @@ impl Database {
                 let group_name: String = row.get_unwrap(1);
                 let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
                 let group_url: Option<String> = row.get(3).optional().unwrap_or(None);
+                let collapsed: bool = row.get_unwrap(4);
 
                 let accounts = match Self::get_accounts(connection, group_id, None) {
                     Ok(v) => v,
@@ -158,7 +163,7 @@ impl Database {
                 };
 
                 row.get(0)
-                    .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), accounts))
+                    .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), collapsed, accounts))
             },
         )
         .map_err(RepositoryError::SqlError)
@@ -302,7 +307,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
         let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
         Database::save_group(&connection, &mut group).unwrap();
@@ -334,7 +339,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "new group", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -359,7 +364,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "existing_group2", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "existing_group2", None, None, false, vec![]);
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -382,7 +387,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), vec![]);
+        let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
         let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL);
@@ -393,6 +398,7 @@ mod tests {
             "bbb",
             Some("icon"),
             Some("url"),
+            false,
             vec![Account {
                 id: 1,
                 group_id: 1,
@@ -412,7 +418,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "bbb", None, None, false,vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
@@ -420,7 +426,7 @@ mod tests {
         let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
 
-        let mut group = AccountGroup::new(0, "AAA", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "AAA", None, None, false,vec![]);
         Database::save_group(&connection, &mut group).expect("boom!");
         let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
@@ -459,7 +465,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "bbb", None, None, vec![]);
+        let mut group = AccountGroup::new(0, "bbb", None, None,false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
@@ -476,7 +482,7 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let account = Account::new(0, 0, "label", "secret", LOCAL);
-        let mut account_group = AccountGroup::new(0, "group", None, None, vec![account]);
+        let mut account_group = AccountGroup::new(0, "group", None, None, false,vec![account]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 

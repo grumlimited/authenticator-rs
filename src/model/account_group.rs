@@ -25,6 +25,9 @@ pub struct AccountGroup {
 
     pub url: Option<String>,
 
+    #[serde(skip)]
+    pub collapsed: bool,
+
     pub entries: Vec<Account>,
 }
 
@@ -51,12 +54,13 @@ impl AccountGroupWidget {
 }
 
 impl AccountGroup {
-    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, entries: Vec<Account>) -> Self {
+    pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, collapsed: bool, entries: Vec<Account>) -> Self {
         AccountGroup {
             id,
             name: name.to_owned(),
             icon: icon.map(str::to_owned),
             url: url.map(str::to_owned),
+            collapsed,
             entries,
         }
     }

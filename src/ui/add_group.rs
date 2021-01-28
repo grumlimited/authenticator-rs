@@ -258,7 +258,7 @@ impl AddGroupWindow {
             }
             Err(_) => {
                 debug!("creating new group");
-                let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), vec![]);
+                let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), false, vec![]);
 
                 Database::save_group(&connection, &mut group).unwrap();
 
