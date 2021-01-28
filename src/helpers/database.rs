@@ -418,7 +418,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "bbb", None, None, false,vec![]);
+        let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
@@ -426,7 +426,7 @@ mod tests {
         let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
 
-        let mut group = AccountGroup::new(0, "AAA", None, None, false,vec![]);
+        let mut group = AccountGroup::new(0, "AAA", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).expect("boom!");
         let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL);
         Database::save_account(&connection, &mut account).expect("boom!");
@@ -465,7 +465,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut group = AccountGroup::new(0, "bbb", None, None,false, vec![]);
+        let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
         let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
@@ -482,7 +482,7 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let account = Account::new(0, 0, "label", "secret", LOCAL);
-        let mut account_group = AccountGroup::new(0, "group", None, None, false,vec![account]);
+        let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
