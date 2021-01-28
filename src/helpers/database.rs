@@ -72,8 +72,8 @@ impl Database {
     pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), RepositoryError> {
         connection
             .execute(
-                "UPDATE groups SET name = ?2, icon = ?3, url = ?4 WHERE id = ?1",
-                params![group.id, group.name, group.icon, group.url],
+                "UPDATE groups SET name = ?2, icon = ?3, url = ?4, collapsed = ?5 WHERE id = ?1",
+                params![group.id, group.name, group.icon, group.url, group.collapsed],
             )
             .map(|_| ())
             .map_err(RepositoryError::SqlError)
@@ -81,8 +81,8 @@ impl Database {
 
     pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
         connection.execute(
-            "INSERT INTO groups (name, icon, url) VALUES (?1, ?2, ?3)",
-            params![group.name, group.icon, group.url],
+            "INSERT INTO groups (name, icon, url, collapsed) VALUES (?1, ?2, ?3, ?4)",
+            params![group.name, group.icon, group.url, group.collapsed],
         )?;
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;

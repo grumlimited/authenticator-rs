@@ -38,6 +38,7 @@ pub struct AccountGroupWidget {
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub add_account_button: gtk::Button,
+    pub collapse_button: gtk::Button,
     pub event_box: gtk::EventBox,
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
@@ -78,6 +79,7 @@ impl AccountGroup {
         get_widget!(builder, gtk::Button, edit_button);
         get_widget!(builder, gtk::Button, add_account_button);
         get_widget!(builder, gtk::Button, delete_button);
+        get_widget!(builder, gtk::Button, collapse_button);
         get_widget!(builder, gtk::Box, buttons_container);
         get_widget!(builder, gtk::Box, accounts);
 
@@ -103,6 +105,8 @@ impl AccountGroup {
         // However doing so produces annoying (yet seemingly harmless) warnings:
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
+
+        accounts.set_visible(!self.collapsed);
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
@@ -139,6 +143,7 @@ impl AccountGroup {
             edit_button,
             delete_button,
             add_account_button,
+            collapse_button,
             event_box,
             group_label,
             group_image,

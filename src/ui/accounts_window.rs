@@ -5,14 +5,13 @@ use std::{thread, time};
 use chrono::prelude::*;
 use chrono::Local;
 use gettextrs::*;
+use glib::clone;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::Builder;
+use gtk_macros::*;
 use log::{debug, error, warn};
 use rusqlite::Connection;
-
-use glib::clone;
-use gtk_macros::*;
 
 use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
 use crate::main_window::{Display, MainWindow};
@@ -216,6 +215,41 @@ impl AccountsWindow {
             group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
                 gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
             }));
+
+            group_widgets.collapse_button.connect_clicked(
+                clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
+                    // let connection = connection.lock().unwrap();
+                    // let mut group = Database::get_group(&connection, group_id).unwrap();
+                    // debug!("Collapsing group {:?}", group);
+                    //
+                    // group.collapsed = true;
+                    // Database::update_group(&connection, &group);
+
+                    popover.hide();
+
+                    let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+
+                    rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+
+                    let filter = gui.accounts_window.get_filter_value();
+
+                    gui.pool
+                        .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
+                            {
+                                let connection = connection.lock().unwrap();
+                                let mut group = Database::get_group(&connection, group_id).unwrap();
+
+                                group.collapsed = !group.collapsed;
+                                Database::update_group(&connection, &group);
+                            }
+
+                            Self::load_account_groups(tx, connection.clone(), filter).await;
+                            tx_done.send(true).expect("boom!");
+                        })(filter, connection.clone(), tx_done));
+
+                }),
+            );
 
             group_widgets.edit_button.connect_clicked(
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
