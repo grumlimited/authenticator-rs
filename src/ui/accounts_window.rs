@@ -149,7 +149,7 @@ impl AccountsWindow {
 
                         *m_widgets = groups
                             .iter()
-                            .map(|group| group.widget(gui.state.clone(), gui.accounts_window.get_filter_value().clone()))
+                            .map(|group| group.widget(gui.state.clone(), gui.accounts_window.get_filter_value()))
                             .collect();
 
                         m_widgets
@@ -221,13 +221,6 @@ impl AccountsWindow {
 
             group_widgets.collapse_button.connect_clicked(
                 clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
-                    // let connection = connection.lock().unwrap();
-                    // let mut group = Database::get_group(&connection, group_id).unwrap();
-                    // debug!("Collapsing group {:?}", group);
-                    //
-                    // group.collapsed = true;
-                    // Database::update_group(&connection, &group);
-
                     popover.hide();
 
                     let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
@@ -240,11 +233,13 @@ impl AccountsWindow {
                     gui.pool
                         .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
                             {
+                                debug!("Collapsing/expanding group {:?}", group_id);
+
                                 let connection = connection.lock().unwrap();
                                 let mut group = Database::get_group(&connection, group_id).unwrap();
 
                                 group.collapsed = !group.collapsed;
-                                Database::update_group(&connection, &group);
+                                Database::update_group(&connection, &group).unwrap();
                             }
 
                             Self::load_account_groups(tx, connection.clone(), filter).await;
