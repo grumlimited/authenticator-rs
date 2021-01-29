@@ -142,3 +142,9 @@ msgstr "Création de compte"
 
 msgid "use QR code"
 msgstr "uploader un QR code"
+
+msgid "Collapse"
+msgstr "Réduire"
+
+msgid "Expand"
+msgstr "Étendre"

@@ -1,8 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use glib::clone;
 use glib::prelude::*;
 use gtk::prelude::*;
+use gtk_macros::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -10,9 +12,6 @@ use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
-
-use glib::clone;
-use gtk_macros::*;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
@@ -72,7 +71,8 @@ impl AccountGroup {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         get_widget!(builder, gtk::Box, group);
-        get_widget!(builder, gtk::EventBox, event_box); //allows for group labels to respond to click events
+        get_widget!(builder, gtk::EventBox, event_box);
+        //allows for group labels to respond to click events
         get_widget!(builder, gtk::Image, group_image);
         get_widget!(builder, gtk::Grid, group_label_box);
         get_widget!(builder, gtk::Label, group_label);
@@ -108,9 +108,11 @@ impl AccountGroup {
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
 
+        // Handling collapsed elements
         accounts.set_visible(filter.is_some() || !self.collapsed);
         collapse_button.set_visible(!self.collapsed);
         expand_button.set_visible(!collapse_button.get_visible());
+        group_label_box.set_opacity(if self.collapsed { 0.7f64 } else { 1f64 });
 
         let account_widgets: Vec<AccountWidget> = self
             .entries
