@@ -39,6 +39,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-start">3</property>
+                <property name="margin-end">3</property>
                 <property name="label" translatable="yes">Edit</property>
               </object>
               <packing>
@@ -74,6 +75,7 @@
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="margin-top">2</property>
                 <property name="icon-name">edit-delete-symbolic</property>
               </object>
               <packing>
@@ -86,6 +88,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-start">3</property>
+                <property name="margin-end">3</property>
                 <property name="label" translatable="yes">Delete</property>
               </object>
               <packing>
@@ -169,6 +172,7 @@
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="margin-top">2</property>
                 <property name="icon-name">view-restore</property>
               </object>
               <packing>
@@ -181,6 +185,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-start">3</property>
+                <property name="margin-end">3</property>
                 <property name="label" translatable="yes">Collapse</property>
               </object>
               <packing>
@@ -215,6 +220,7 @@
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="margin-top">2</property>
                 <property name="icon-name">view-fullscreen</property>
               </object>
               <packing>
@@ -227,6 +233,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-start">3</property>
+                <property name="margin-end">3</property>
                 <property name="label" translatable="yes">Expand</property>
               </object>
               <packing>
