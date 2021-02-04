@@ -8,6 +8,7 @@ use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
+use crate::helpers::QRCode;
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Display, MainWindow};
@@ -195,13 +196,12 @@ impl EditAccountWindow {
                 save_button.set_sensitive(true);
 
                 if ok {
-                    buffer.set_text(qr_code.as_str());
-                    let _ = w.validate();
+                    buffer.set_text(QRCode::extract(qr_code.as_str()));
                 } else {
                     buffer.set_text(&gettext(qr_code));
-                    let _ = w.validate();
                 }
 
+                let _ = w.validate();
                 glib::Continue(true)
             }),
         );
