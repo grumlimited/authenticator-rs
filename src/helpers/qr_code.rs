@@ -3,14 +3,14 @@ use regex::Regex;
 pub struct QRCode;
 
 impl QRCode {
-    pub fn extract(qr_code_payload: &str) -> String {
+    pub fn extract(qr_code_payload: &str) -> &str {
         let re = Regex::new(r".*secret=(.*?)(&.*)?$").unwrap();
 
         let secret = re.captures(qr_code_payload).and_then(|cap| cap.get(1).map(|secret| secret.as_str()));
 
         match secret {
-            Some(v) => v.to_owned(),
-            None => qr_code_payload.to_owned(),
+            Some(v) => v,
+            None => qr_code_payload,
         }
     }
 }

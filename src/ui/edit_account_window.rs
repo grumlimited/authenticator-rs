@@ -196,7 +196,7 @@ impl EditAccountWindow {
                 save_button.set_sensitive(true);
 
                 if ok {
-                    buffer.set_text(QRCode::extract(qr_code.as_str()).as_str());
+                    buffer.set_text(QRCode::extract(qr_code.as_str()));
                 } else {
                     buffer.set_text(&gettext(qr_code));
                 }
