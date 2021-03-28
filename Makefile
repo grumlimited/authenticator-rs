@@ -15,6 +15,9 @@ sharedir=$(DESTDIR)$(PREFIX)/share
 # These targets have no associated build files.
 .PHONY : clean clean-all install uninstall
 
+check-update: # cargo install cargo-update
+	cargo install-update -a
+
 # Build the application
 release : src
 	cargo build --release
