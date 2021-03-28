@@ -8,11 +8,15 @@ use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
+use gettextrs::*;
+use log::error;
+use log::info;
 use rusqlite::Connection;
 
+use crate::{NAMESPACE, NAMESPACE_PREFIX, ui};
+use crate::helpers::Keyring;
+use crate::main_window::Display::DisplayErrors;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
-use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
-
 use crate::ui::menu::*;
 
 #[derive(Clone, Debug)]
@@ -196,7 +200,17 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        self.accounts_window.refresh_accounts(&self, connection);
+        match Keyring::ensure_unlocked() {
+            Ok(()) => {
+                info!("Keyring is available");
+                self.accounts_window.refresh_accounts(&self, connection);
+            },
+            Err(e) => {
+                error!("{}", format!("Keyring is {:?}", e));
+                self.errors.error_display_message.set_text(&gettext("keyring_locked"));
+                self.switch_to(DisplayErrors);
+            },
+        }
 
         self.window.show();
     }

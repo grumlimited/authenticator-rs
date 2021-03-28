@@ -98,6 +98,9 @@ msgstr "URL de l'icône"
 msgid "Import accounts"
 msgstr "Importer"
 
+msgid "keyring_locked"
+msgstr "Gnome keyring est verrouillé."
+
 msgid "Name"
 msgstr "Nom"
 

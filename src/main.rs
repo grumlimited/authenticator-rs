@@ -7,14 +7,17 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
-use log::info;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
+use log::error;
+use log::info;
 use rusqlite::Connection;
 
-use crate::helpers::{runner, Paths};
-use crate::helpers::{Database, Keyring};
 use main_window::MainWindow;
+
+use crate::helpers::{Paths, runner};
+use crate::helpers::{Database, Keyring};
+use crate::main_window::Display::DisplayErrors;
 
 mod main_window;
 
@@ -30,11 +33,6 @@ const GETTEXT_PACKAGE: &str = "authenticator-rs";
 const LOCALEDIR: &str = "/usr/share/locale";
 
 fn main() {
-    match Keyring::ensure_unlocked() {
-        Ok(()) => info!("Keyring is not available"),
-        Err(e) => panic!("{:?}", e),
-    }
-
     match Paths::check_configuration_dir() {
         Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
         Err(e) => panic!("{:?}", e),
