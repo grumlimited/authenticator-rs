@@ -71,8 +71,11 @@ msgstr "Edit"
 msgid "Edit account"
 msgstr "Edit account"
 
-msgid "Error"
-msgstr "Error"
+msgid "empty"
+msgstr "no secret"
+
+msgid "error"
+msgstr "Error!"
 
 msgid "Export accounts"
 msgstr "Export accounts"
@@ -94,6 +97,9 @@ msgstr "Icon URL"
 
 msgid "Import accounts"
 msgstr "Import accounts"
+
+msgid "keyring_locked"
+msgstr "Gnome keyring is locked."
 
 msgid "Name"
 msgstr "Name"

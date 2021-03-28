@@ -12,10 +12,9 @@ use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
 use rusqlite::Connection;
 
-use crate::helpers::{runner, Paths};
-use crate::helpers::{Database, Keyring};
 use main_window::MainWindow;
 
+use crate::helpers::{runner, Database, Paths};
 mod main_window;
 
 mod exporting;
@@ -30,11 +29,6 @@ const GETTEXT_PACKAGE: &str = "authenticator-rs";
 const LOCALEDIR: &str = "/usr/share/locale";
 
 fn main() {
-    match Keyring::ensure_unlocked() {
-        Ok(()) => info!("Keyring is not available"),
-        Err(e) => panic!("{:?}", e),
-    }
-
     match Paths::check_configuration_dir() {
         Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
         Err(e) => panic!("{:?}", e),
@@ -70,7 +64,10 @@ fn main() {
 
         // SQL migrations
         let mut connection = Database::create_connection().unwrap();
-        runner::run(&mut connection).unwrap();
+        match runner::run(&mut connection) {
+            Ok(_) => info!("Migrations done running"),
+            Err(e) => panic!("{:?}", e),
+        }
 
         match Paths::update_keyring_secrets() {
             Ok(()) => info!("Added local accounts to keyring"),

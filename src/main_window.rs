@@ -4,16 +4,20 @@ use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 use futures_executor::ThreadPool;
+use gettextrs::*;
 use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
+use log::error;
+use log::info;
 use rusqlite::Connection;
 
+use crate::helpers::Keyring;
+use crate::main_window::Display::DisplayErrors;
+use crate::ui::menu::*;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
-
-use crate::ui::menu::*;
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
@@ -196,7 +200,17 @@ impl MainWindow {
 
         self.start_progress_bar();
 
-        self.accounts_window.refresh_accounts(&self, connection);
+        match Keyring::ensure_unlocked() {
+            Ok(()) => {
+                info!("Keyring is available");
+                self.accounts_window.refresh_accounts(&self, connection);
+            }
+            Err(e) => {
+                error!("{}", format!("Keyring is {:?}", e));
+                self.errors.error_display_message.set_text(&gettext("keyring_locked"));
+                self.switch_to(DisplayErrors);
+            }
+        }
 
         self.window.show();
     }

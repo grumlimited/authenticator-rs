@@ -46,8 +46,8 @@ impl AccountWidget {
     pub fn update(&mut self) {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
-            Err(_) => {
-                self.totp_label.set_label(&format!("{} !", &gettext("Error")));
+            Err(error_key) => {
+                self.totp_label.set_label(&gettext(error_key));
                 let context = self.totp_label.get_style_context();
                 context.add_class("error");
             }
@@ -125,21 +125,12 @@ impl Account {
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);
 
-        match Self::generate_time_based_password(self.secret.as_str()) {
-            Ok(totp) => totp_label.set_label(totp.as_str()),
-            Err(_) => {
-                totp_label.set_label(&format!("{} !", &gettext("Error")));
-                let context = totp_label.get_style_context();
-                context.add_class("error");
-            }
-        };
-
         copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             clipboard.set_text(totp_label.get_label().as_str());
         }));
 
-        AccountWidget {
+        let mut widget = AccountWidget {
             eventgrid,
             account_id: self.id,
             group_id: self.group_id,
@@ -154,10 +145,18 @@ impl Account {
             popover,
             totp_label,
             totp_secret: self.secret.clone(),
-        }
+        };
+
+        widget.update();
+
+        widget
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {
+        if key.is_empty() {
+            return Err("empty".to_owned());
+        }
+
         let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
         Self::generate_time_based_password_with_time(time, key)
@@ -169,7 +168,7 @@ impl Account {
             totp_sha1.generate(time);
             Ok(totp_sha1.generate(time))
         } else {
-            Err("error!".to_owned())
+            Err("error".to_owned())
         }
     }
 }
