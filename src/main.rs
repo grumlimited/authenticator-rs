@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
-use log::error;
 use log::info;
 use log4rs::config::Config;
 use log4rs::file::{Deserializers, RawConfig};
@@ -15,10 +14,7 @@ use rusqlite::Connection;
 
 use main_window::MainWindow;
 
-use crate::helpers::{runner, Paths};
-use crate::helpers::{Database, Keyring};
-use crate::main_window::Display::DisplayErrors;
-
+use crate::helpers::{runner, Database, Paths};
 mod main_window;
 
 mod exporting;
