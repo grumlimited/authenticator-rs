@@ -46,8 +46,8 @@ impl AccountWidget {
     pub fn update(&mut self) {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
-            Err(_) => {
-                self.totp_label.set_label(&format!("{} !", &gettext("Error")));
+            Err(error_key) => {
+                self.totp_label.set_label(&gettext(error_key));
                 let context = self.totp_label.get_style_context();
                 context.add_class("error");
             }
@@ -153,6 +153,10 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {
+        if key.is_empty() {
+            return Err("empty".to_owned());
+        }
+
         let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
         Self::generate_time_based_password_with_time(time, key)
@@ -164,7 +168,7 @@ impl Account {
             totp_sha1.generate(time);
             Ok(totp_sha1.generate(time))
         } else {
-            Err("error!".to_owned())
+            Err("error".to_owned())
         }
     }
 }

@@ -71,8 +71,11 @@ msgstr "Edit"
 msgid "Edit account"
 msgstr "Edit account"
 
-msgid "Error"
-msgstr "Error"
+msgid "empty"
+msgstr "no secret"
+
+msgid "error"
+msgstr "Error!"
 
 msgid "Export accounts"
 msgstr "Export accounts"
