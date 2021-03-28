@@ -125,21 +125,12 @@ impl Account {
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);
 
-        match Self::generate_time_based_password(self.secret.as_str()) {
-            Ok(totp) => totp_label.set_label(totp.as_str()),
-            Err(_) => {
-                totp_label.set_label(&format!("{} !", &gettext("Error")));
-                let context = totp_label.get_style_context();
-                context.add_class("error");
-            }
-        };
-
         copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
             clipboard.set_text(totp_label.get_label().as_str());
         }));
 
-        AccountWidget {
+        let mut widget = AccountWidget {
             eventgrid,
             account_id: self.id,
             group_id: self.group_id,
@@ -154,7 +145,11 @@ impl Account {
             popover,
             totp_label,
             totp_secret: self.secret.clone(),
-        }
+        };
+
+        widget.update();
+
+        widget
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, String> {
