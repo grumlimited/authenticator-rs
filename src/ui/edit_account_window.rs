@@ -291,11 +291,11 @@ impl EditAccountWindow {
 
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
-                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::Keyring);
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
                 Database::update_account(&connection, &mut account)
             }
             Err(_) => {
-                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::Keyring);
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
                 Database::save_account(&connection, &mut account)
             }
         };

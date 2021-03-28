@@ -58,7 +58,7 @@ impl Backup {
         deserialised_accounts
             .iter_mut()
             .map(|group| {
-                group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::Local);
+                group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
 
                 group
             })
@@ -76,7 +76,7 @@ impl Backup {
 
 #[cfg(test)]
 mod tests {
-    use crate::helpers::SecretType::{Keyring, Local};
+    use crate::helpers::SecretType::{KEYRING, LOCAL};
     use crate::helpers::{runner, Backup, Database};
     use crate::model::{Account, AccountGroup};
     use rusqlite::Connection;
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn serialise_accounts() {
-        let account = Account::new(1, 0, "label", "secret", Keyring);
+        let account = Account::new(1, 0, "label", "secret", KEYRING);
         let account_group = AccountGroup::new(2, "group", Some("icon"), Some("url"), false, vec![account]);
 
         let path = PathBuf::from("test.yaml");
@@ -98,7 +98,7 @@ mod tests {
 
         assert_eq!((), result);
 
-        let account_from_yaml = Account::new(0, 0, "label", "secret", Keyring);
+        let account_from_yaml = Account::new(0, 0, "label", "secret", KEYRING);
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), false, vec![account_from_yaml]);
 
         let result = Backup::deserialise_accounts(path).unwrap();
@@ -113,7 +113,7 @@ mod tests {
             let mut connection = connection.lock().unwrap();
             runner::run(&mut connection).unwrap();
 
-            let account = Account::new(1, 0, "label", "secret", Local);
+            let account = Account::new(1, 0, "label", "secret", LOCAL);
             let account_group = AccountGroup::new(2, "group", None, None, false, vec![account]);
 
             let path = PathBuf::from("test.yaml");

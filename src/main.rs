@@ -70,7 +70,10 @@ fn main() {
 
         // SQL migrations
         let mut connection = Database::create_connection().unwrap();
-        runner::run(&mut connection).unwrap();
+        match runner::run(&mut connection) {
+            Ok(_) => info!("Migrations done running"),
+            Err(e) => panic!("{:?}", e),
+        }
 
         match Paths::update_keyring_secrets() {
             Ok(()) => info!("Added local accounts to keyring"),
