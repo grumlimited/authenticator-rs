@@ -11,7 +11,7 @@ use strum_macros::EnumString;
 
 use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::Paths;
-use crate::helpers::SecretType::{KEYRING, LOCAL};
+use crate::helpers::SecretType::{Keyring, Local};
 use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
@@ -19,8 +19,8 @@ pub struct Database;
 
 #[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
 pub enum SecretType {
-    LOCAL,
-    KEYRING,
+    Local,
+    Keyring,
 }
 
 impl Database {
@@ -170,7 +170,7 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
-        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+        let secret = if account.secret_type == Keyring { "" } else { account.secret.as_str() };
 
         connection
             .execute(
@@ -190,7 +190,7 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
-        let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+        let secret = if account.secret_type == Keyring { "" } else { account.secret.as_str() };
 
         connection
             .execute(
@@ -225,12 +225,12 @@ impl Database {
                 Ok(secret_type) => secret_type,
                 Err(_) => {
                     warn!("Invalid secret type [{}]", v);
-                    LOCAL
+                    Local
                 }
             },
             Err(e) => {
                 warn!("Invalid secret type [{:?}]", e);
-                LOCAL
+                Local
             }
         }
     }
@@ -269,7 +269,7 @@ impl Database {
 
 impl Default for SecretType {
     fn default() -> Self {
-        SecretType::KEYRING
+        SecretType::Keyring
     }
 }
 
@@ -296,7 +296,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::helpers::runner;
-    use crate::helpers::SecretType::LOCAL;
+    use crate::helpers::SecretType::Local;
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
@@ -308,7 +308,7 @@ mod tests {
         runner::run(&mut connection).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
-        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
+        let mut account = Account::new(0, 0, "label", "secret", Local);
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -368,7 +368,7 @@ mod tests {
 
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "label", "secret", LOCAL);
+        let mut account = Account::new(0, group.id, "label", "secret", Local);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -390,7 +390,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3", Local);
         Database::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
@@ -404,7 +404,7 @@ mod tests {
                 group_id: 1,
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
-                secret_type: LOCAL,
+                secret_type: Local,
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();
@@ -421,14 +421,14 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        let mut account = Account::new(0, group.id, "hhh", "secret3", Local);
         Database::save_account(&connection, &mut account).expect("boom!");
-        let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL);
+        let mut account = Account::new(0, group.id, "ccc", "secret3", Local);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).expect("boom!");
-        let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL);
+        let mut account = Account::new(0, group.id, "ppp", "secret3", Local);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let results = Database::load_account_groups(&connection, None).unwrap();
@@ -449,7 +449,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
+        let mut account = Account::new(0, 0, "label", "secret", Local);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -468,7 +468,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL);
+        let mut account = Account::new(0, group.id, "hhh", "secret3", Local);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let result = Database::has_groups(&connection).unwrap();
@@ -481,7 +481,7 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let account = Account::new(0, 0, "label", "secret", LOCAL);
+        let account = Account::new(0, 0, "label", "secret", Local);
         let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
