@@ -45,6 +45,14 @@
     <property name="page-increment">10</property>
   </object>
   <object class="GtkTextBuffer" id="error_display_message"/>
+  <object class="GtkSizeGroup" id="form_buttons">
+    <widgets>
+      <widget name="edit_account_save"/>
+      <widget name="edit_account_cancel"/>
+      <widget name="add_group_save"/>
+      <widget name="add_group_cancel"/>
+    </widgets>
+  </object>
   <object class="GtkImage" id="group_cancel">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -66,12 +74,6 @@
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="icon-name">system-search-symbolic</property>
-    <property name="use-fallback">True</property>
-  </object>
-  <object class="GtkImage" id="group_save">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="icon-name">emblem-ok-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
   <object class="GtkApplicationWindow" id="main_window">
@@ -242,7 +244,7 @@
                     <property name="label-xalign">0</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <!-- n-columns=2 n-rows=5 -->
+                      <!-- n-columns=2 n-rows=6 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -438,6 +440,55 @@
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="margin-end">5</property>
+                            <property name="margin-top">30</property>
+                            <property name="margin-bottom">20</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkButton" id="edit_account_cancel">
+                                <property name="label" translatable="yes">Cancel</property>
+                                <property name="name">edit_account_cancel</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Cancel</property>
+                                <property name="image">account_cancel</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="edit_account_save">
+                                <property name="label" translatable="yes">Save</property>
+                                <property name="name">edit_account_save</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Save</property>
+                                <property name="image">account_save</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
                           <placeholder/>
                         </child>
                         <child>
@@ -469,50 +520,7 @@
               </packing>
             </child>
             <child>
-              <!-- n-columns=2 n-rows=1 -->
-              <object class="GtkGrid">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="halign">end</property>
-                <property name="margin-end">10</property>
-                <property name="margin-top">20</property>
-                <property name="column-spacing">5</property>
-                <child>
-                  <object class="GtkButton" id="edit_account_cancel">
-                    <property name="label" translatable="yes">Cancel</property>
-                    <property name="name">edit_account_cancel</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Cancel</property>
-                    <property name="image">account_cancel</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">0</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="edit_account_save">
-                    <property name="label" translatable="yes">Save</property>
-                    <property name="name">edit_account_save</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Save</property>
-                    <property name="image">account_save</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">1</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">2</property>
-              </packing>
+              <placeholder/>
             </child>
           </object>
           <packing>
@@ -594,7 +602,7 @@
                     <property name="label-xalign">0</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <!-- n-columns=2 n-rows=6 -->
+                      <!-- n-columns=2 n-rows=7 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -772,6 +780,55 @@
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=2 n-rows=1 -->
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="margin-end">5</property>
+                            <property name="margin-top">30</property>
+                            <property name="margin-bottom">20</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkButton" id="add_group_cancel">
+                                <property name="label" translatable="yes">Cancel</property>
+                                <property name="name">add_group_cancel</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Cancel</property>
+                                <property name="image">group_cancel</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="add_group_save">
+                                <property name="label" translatable="yes">Save</property>
+                                <property name="name">add_group_save</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Save</property>
+                                <property name="image">group_save</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">6</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
                           <placeholder/>
                         </child>
                         <child>
@@ -806,50 +863,7 @@
               </packing>
             </child>
             <child>
-              <!-- n-columns=2 n-rows=1 -->
-              <object class="GtkGrid">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="halign">end</property>
-                <property name="margin-end">10</property>
-                <property name="margin-top">20</property>
-                <property name="column-spacing">5</property>
-                <child>
-                  <object class="GtkButton" id="add_group_cancel">
-                    <property name="label" translatable="yes">Cancel</property>
-                    <property name="name">add_group_cancel</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Cancel</property>
-                    <property name="image">group_cancel</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">0</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="add_group_save">
-                    <property name="label" translatable="yes">Save</property>
-                    <property name="name">add_group_save</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Save</property>
-                    <property name="image">group_save</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">1</property>
-                    <property name="top-attach">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
-              </packing>
+              <placeholder/>
             </child>
           </object>
           <packing>
@@ -1178,18 +1192,16 @@
       <widget name="add_group_url_input"/>
     </widgets>
   </object>
-  <object class="GtkSizeGroup" id="form_buttons">
-    <widgets>
-      <widget name="edit_account_save"/>
-      <widget name="edit_account_cancel"/>
-      <widget name="add_group_save"/>
-      <widget name="add_group_cancel"/>
-    </widgets>
-  </object>
   <object class="GtkSizeGroup" id="group_form_entries">
     <widgets>
       <widget name="add_group_input_name"/>
     </widgets>
+  </object>
+  <object class="GtkImage" id="group_save">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">emblem-ok-symbolic</property>
+    <property name="use-fallback">True</property>
   </object>
   <object class="GtkFileFilter" id="icon_filter">
     <mime-types>
