@@ -1,16 +1,17 @@
-use crate::exporting::Exporting;
-use crate::main_window::{Display, MainWindow};
-use crate::ui::{AccountsWindow, AddGroupWindow};
-use crate::{NAMESPACE, NAMESPACE_PREFIX};
+use std::sync::{Arc, Mutex};
+
 use gio::prelude::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Button, MenuButton};
-use gtk_macros::*;
+use gtk_macros::get_widget;
 use rusqlite::Connection;
-use std::sync::{Arc, Mutex};
 
+use crate::exporting::Exporting;
+use crate::main_window::{Display, MainWindow};
 use crate::ui::AccountsRefreshResult;
+use crate::ui::{AccountsWindow, AddGroupWindow};
+use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
@@ -151,28 +152,26 @@ impl Menus for MainWindow {
             gui.switch_to(Display::DisplayAddGroup);
         }));
 
-        action_menu.connect_clicked(
-            clone!(@strong popover, @strong state, @strong add_account_button, @strong widgets, @strong action_menu => move |_| {
-                let widgets = widgets.lock().unwrap();
+        action_menu.connect_clicked(clone!(@strong popover, @strong state, @strong add_account_button, @strong widgets => move |_| {
+            let widgets = widgets.lock().unwrap();
 
-                /*
-                 * Both add group and account buttons are available only if on
-                 * main accounts display. This is to avoid having to clean temp files
-                 * (ie. group icons) if switching half-way editing/adding a group.
-                 *
-                 * Todo: consider hiding the action menu altogether.
-                 */
+            /*
+             * Both add group and account buttons are available only if on
+             * main accounts display. This is to avoid having to clean temp files
+             * (ie. group icons) if switching half-way editing/adding a group.
+             *
+             * Todo: consider hiding the action menu altogether.
+             */
 
-                let state = state.borrow();
-                let display = state.display.clone();
-                // can't add account if no groups
-                add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
+            let state = state.borrow();
+            let display = state.display.clone();
+            // can't add account if no groups
+            add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
 
-                add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
+            add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
 
-                popover.show_all();
-            }),
-        );
+            popover.show_all();
+        }));
 
         // creates a shortcut on the "+" image to action menu when no account page is displayed
         self.no_accounts

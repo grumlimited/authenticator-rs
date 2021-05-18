@@ -1,3 +1,6 @@
+use std::path::Path;
+use std::time::Duration;
+
 use anyhow::Result;
 use curl::easy::Easy;
 use gdk_pixbuf::Pixbuf;
@@ -5,8 +8,6 @@ use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
-use std::path::Path;
-use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Debug, Clone)]
@@ -125,8 +126,9 @@ impl IconParser {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use async_std::task;
+
+    use super::*;
 
     #[test]
     fn extension() {

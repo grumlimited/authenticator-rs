@@ -6,20 +6,18 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
+use futures::executor::ThreadPool;
+use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
-use glib::clone;
-
 use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
-use crate::ui::{AccountsWindow, ValidationError};
-use futures::executor::ThreadPool;
-
 use crate::ui::accounts_window::AccountsRefreshResult;
+use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
 pub struct AddGroupWindow {

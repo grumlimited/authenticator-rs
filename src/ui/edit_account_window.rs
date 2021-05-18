@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 
+use futures::executor::ThreadPool;
 use gettextrs::*;
+use glib::clone;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::{Builder, StateFlags};
@@ -13,12 +15,8 @@ use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
-use crate::ui::{AccountsWindow, ValidationError};
-use futures::executor::ThreadPool;
-
 use crate::ui::accounts_window::AccountsRefreshResult;
-
-use glib::clone;
+use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {

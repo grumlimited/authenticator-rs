@@ -12,35 +12,35 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.37"
 base32 = "0.4.0"
-bytes = "0.5.6"
+bytes = "1.0.1"
 chrono = "0.4.19"
-curl = "0.4.34"
-directories = "3.0.1"
-futures = {version = "0.3.8", features = ["thread-pool"]}
-futures-executor = "0.3.8"
+curl = "0.4.37"
+directories = "3.0.2"
+futures = {version = "0.3.15", features = ["thread-pool"]}
+futures-executor = "0.3.15"
 gdk = "0.13.2"
 gdk-pixbuf = "0.9.0"
-gettext-rs = {version = "0.5.0", features = ["gettext-system"]}
+gettext-rs = {version = "0.7.0", features = ["gettext-system"]}
 gio = "0.9.1"
 gtk-macros = "0.2.0"
-image = "0.23.13"
-log = "0.4.11"
-log4rs = "0.12.0"
+image = "0.23.14"
+log = "0.4.14"
+log4rs = "1.0.0"
 refinery = { version = "0.5.0", features = ["rusqlite"]}
-regex = "1.4.2"
-rqrr = "0.3.1"
+regex = "1.5.4"
+rqrr = "0.3.2"
 rusqlite = "0.24.2"
 scraper = "0.12.0"
-secret-service = "1.1.3"
-serde = { version = "1.0.118", features = ["derive"] }
-serde_json = "1.0.60"
-serde_yaml = "0.8.16"
+secret-service = "2.0.1"
+serde = { version = "1.0.126", features = ["derive"] }
+serde_json = "1.0.64"
+serde_yaml = "0.8.17"
 strum = "0.20"
 strum_macros = "0.20.1"
 tempfile-fast = "0.3.3"
-thiserror = "1.0.22"
+thiserror = "1.0.24"
 totp-rs = "0.6.3"
-uuid = { version = "0.8.1", features = ["v4"] }
+uuid = { version = "0.8.2", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.9.2"
@@ -50,4 +50,4 @@ features = ["v3_22_30"]
 version = "0.10.3"
 
 [dev-dependencies]
-async-std = {version ="1.8.0", features = [] }
+async-std = {version ="1.9.0", features = [] }

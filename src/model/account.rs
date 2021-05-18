@@ -3,11 +3,10 @@ use std::time::SystemTime;
 use base32::decode;
 use base32::Alphabet::RFC4648;
 use gettextrs::*;
-use gtk::prelude::*;
-use serde::{Deserialize, Serialize};
-
 use glib::clone;
+use gtk::prelude::*;
 use gtk_macros::*;
+use serde::{Deserialize, Serialize};
 
 use crate::helpers::SecretType;
 use crate::NAMESPACE_PREFIX;
