@@ -26,6 +26,7 @@ impl Keyring {
         let ss = SecretService::new(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
+        collection.unlock()?;
         collection.ensure_unlocked()
     }
 

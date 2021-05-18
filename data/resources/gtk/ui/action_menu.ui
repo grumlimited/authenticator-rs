@@ -79,7 +79,6 @@
     <property name="receives-default">True</property>
     <property name="tooltip-text" translatable="yes">Action menu</property>
     <property name="halign">start</property>
-    <property name="margin-start">15</property>
     <property name="popover">popover</property>
     <child>
       <object class="GtkImage" id="add_image">
