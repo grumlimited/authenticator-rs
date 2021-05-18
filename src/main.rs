@@ -14,6 +14,7 @@ use rusqlite::Connection;
 use main_window::MainWindow;
 
 use crate::helpers::{runner, Database, Paths};
+
 mod main_window;
 
 mod exporting;

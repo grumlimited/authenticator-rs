@@ -1,8 +1,9 @@
-pub struct Paths;
-
-use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
 use anyhow::Result;
 use log::debug;
+
+use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
+
+pub struct Paths;
 
 impl Paths {
     pub fn db_path() -> std::path::PathBuf {

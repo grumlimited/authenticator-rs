@@ -1,16 +1,17 @@
-use crate::exporting::Exporting;
-use crate::main_window::{Display, MainWindow};
-use crate::ui::{AccountsWindow, AddGroupWindow};
-use crate::{NAMESPACE, NAMESPACE_PREFIX};
+use std::sync::{Arc, Mutex};
+
 use gio::prelude::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Button, MenuButton};
-use gtk_macros::*;
+use gtk_macros::get_widget;
 use rusqlite::Connection;
-use std::sync::{Arc, Mutex};
 
+use crate::exporting::Exporting;
+use crate::main_window::{Display, MainWindow};
 use crate::ui::AccountsRefreshResult;
+use crate::ui::{AccountsWindow, AddGroupWindow};
+use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);

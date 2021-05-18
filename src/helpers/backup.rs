@@ -1,11 +1,13 @@
-use crate::exporting::AccountsImportExportResult;
-use crate::helpers::{Database, Keyring, Paths, RepositoryError, SecretType};
-use crate::model::AccountGroup;
-use glib::Sender;
-use rusqlite::Connection;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+
+use glib::Sender;
+use rusqlite::Connection;
+
+use crate::exporting::AccountsImportExportResult;
+use crate::helpers::{Database, Keyring, Paths, RepositoryError, SecretType};
+use crate::model::AccountGroup;
 
 pub struct Backup;
 
@@ -76,16 +78,16 @@ impl Backup {
 
 #[cfg(test)]
 mod tests {
+    use async_std::task;
+    use rusqlite::Connection;
+
     use crate::helpers::SecretType::{KEYRING, LOCAL};
     use crate::helpers::{runner, Backup, Database};
     use crate::model::{Account, AccountGroup};
-    use rusqlite::Connection;
 
     use super::Arc;
     use super::Mutex;
     use super::PathBuf;
-
-    use async_std::task;
 
     #[test]
     fn serialise_accounts() {
