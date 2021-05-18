@@ -1,18 +1,22 @@
 extern crate secret_service;
 
+use std::collections::HashMap;
+
 use log::{debug, warn};
+use rusqlite::Connection;
+use secret_service::SecretService;
+use secret_service::{EncryptionType, Error};
 
 use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::{Database, SecretType};
 use crate::model::{Account, AccountGroup};
-use rusqlite::Connection;
-use secret_service::SecretService;
-use secret_service::{EncryptionType, SsError};
 
-type Result<T> = ::std::result::Result<T, SsError>;
+type Result<T> = ::std::result::Result<T, Error>;
 
 const APPLICATION: &str = "Authenticator-rs";
-const APPLICATION_ATTRS: (&str, &str) = ("application", "authenticator-rs");
+const APPLICATION_KEY: &str = "application";
+const APPLICATION_VALUE: &str = "authenticator-rs";
+const APPLICATION_ATTRS: (&str, &str) = (APPLICATION_KEY, APPLICATION_KEY);
 const ACCOUNT_ID_KEY: &str = "account_id";
 
 pub struct Keyring;
@@ -30,9 +34,14 @@ impl Keyring {
 
         let collection = ss.get_default_collection()?;
 
+        let mut attributes = HashMap::new();
+        let str_account_id = format!("{}", account_id);
+        attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
+        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
+
         collection.create_item(
             format!("{} TOTP ({})", APPLICATION, label).as_str(),
-            vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS],
+            attributes,
             secret.as_bytes(),
             false,
             "text/plain",
@@ -66,7 +75,7 @@ impl Keyring {
         search_items
             .get(0)
             .map(|i| i.get_secret())
-            .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|_| SsError::NoResult)))
+            .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|_| Error::NoResult)))
             .map(|r| r.map(Some))
             .unwrap_or(Ok(None))
     }
@@ -77,7 +86,7 @@ impl Keyring {
 
         match search_items.get(0) {
             Some(i) => i.delete(),
-            None => Err(SsError::NoResult),
+            None => Err(Error::NoResult),
         }
     }
 
@@ -85,7 +94,11 @@ impl Keyring {
         let ss = SecretService::new(EncryptionType::Dh)?;
 
         let collection = ss.get_default_collection()?;
-        let results = collection.search_items(vec![APPLICATION_ATTRS])?;
+
+        let mut attributes = HashMap::new();
+        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
+
+        let results = collection.search_items(attributes)?;
 
         let secrets = results
             .iter()

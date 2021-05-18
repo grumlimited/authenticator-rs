@@ -45,14 +45,6 @@
     <property name="page-increment">10</property>
   </object>
   <object class="GtkTextBuffer" id="error_display_message"/>
-  <object class="GtkSizeGroup" id="form_buttons">
-    <widgets>
-      <widget name="edit_account_save"/>
-      <widget name="edit_account_cancel"/>
-      <widget name="add_group_save"/>
-      <widget name="add_group_cancel"/>
-    </widgets>
-  </object>
   <object class="GtkImage" id="group_cancel">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -76,8 +68,15 @@
     <property name="icon-name">system-search-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
+  <object class="GtkImage" id="group_save">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">emblem-ok-symbolic</property>
+    <property name="use-fallback">True</property>
+  </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
+    <property name="window-position">center</property>
     <property name="default-width">250</property>
     <property name="default-height">710</property>
     <child>
@@ -1192,16 +1191,18 @@
       <widget name="add_group_url_input"/>
     </widgets>
   </object>
+  <object class="GtkSizeGroup" id="form_buttons">
+    <widgets>
+      <widget name="edit_account_save"/>
+      <widget name="edit_account_cancel"/>
+      <widget name="add_group_save"/>
+      <widget name="add_group_cancel"/>
+    </widgets>
+  </object>
   <object class="GtkSizeGroup" id="group_form_entries">
     <widgets>
       <widget name="add_group_input_name"/>
     </widgets>
-  </object>
-  <object class="GtkImage" id="group_save">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="icon-name">emblem-ok-symbolic</property>
-    <property name="use-fallback">True</property>
   </object>
   <object class="GtkFileFilter" id="icon_filter">
     <mime-types>

@@ -56,7 +56,7 @@ impl Exporting for MainWindow {
 
                     rx.attach(
                         None,
-                        clone!(@strong connection, @strong error_popup, @strong gui  => move |result| {
+                        clone!(@strong connection, @strong gui  => move |result| {
                             match result {
                                 Ok(_) => gui.accounts_window.refresh_accounts(&gui, connection.clone()),
                                 Err(e) => {

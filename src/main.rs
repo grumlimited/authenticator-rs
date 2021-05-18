@@ -8,8 +8,7 @@ use gettextrs::*;
 use gio::prelude::*;
 use gtk::prelude::*;
 use log::info;
-use log4rs::config::Config;
-use log4rs::file::{Deserializers, RawConfig};
+use log4rs::config::{Config, Deserializers, RawConfig};
 use rusqlite::Connection;
 
 use main_window::MainWindow;
@@ -57,8 +56,8 @@ fn main() {
 
         // Prepare i18n
         setlocale(LocaleCategory::LcAll, "");
-        bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
-        textdomain(GETTEXT_PACKAGE);
+        bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR).unwrap();
+        textdomain(GETTEXT_PACKAGE).unwrap();
 
         configure_logging();
 
