@@ -16,7 +16,6 @@ type Result<T> = ::std::result::Result<T, Error>;
 const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_KEY: &str = "application";
 const APPLICATION_VALUE: &str = "authenticator-rs";
-const APPLICATION_ATTRS: (&str, &str) = (APPLICATION_KEY, APPLICATION_KEY);
 const ACCOUNT_ID_KEY: &str = "account_id";
 
 pub struct Keyring;
@@ -70,8 +69,14 @@ impl Keyring {
 
     pub fn secret(account_id: u32) -> Result<Option<String>> {
         let ss = SecretService::new(EncryptionType::Dh)?;
+        let collection = ss.get_default_collection()?;
 
-        let search_items = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
+        let mut attributes = HashMap::new();
+        let str_account_id = format!("{}", account_id);
+        attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
+        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
+
+        let search_items = collection.search_items(attributes)?;
 
         search_items
             .get(0)
@@ -83,7 +88,14 @@ impl Keyring {
 
     pub fn remove(account_id: u32) -> Result<()> {
         let ss = SecretService::new(EncryptionType::Dh)?;
-        let search_items = ss.search_items(vec![(ACCOUNT_ID_KEY, &format!("{}", account_id)), APPLICATION_ATTRS])?;
+        let collection = ss.get_default_collection()?;
+
+        let mut attributes = HashMap::new();
+        let str_account_id = format!("{}", account_id);
+        attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
+        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
+
+        let search_items = collection.search_items(attributes)?;
 
         match search_items.get(0) {
             Some(i) => i.delete(),
@@ -93,7 +105,6 @@ impl Keyring {
 
     pub fn all_secrets() -> std::result::Result<Vec<(String, String)>, RepositoryError> {
         let ss = SecretService::new(EncryptionType::Dh)?;
-
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
