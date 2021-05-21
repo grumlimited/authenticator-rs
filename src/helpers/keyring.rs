@@ -16,7 +16,6 @@ type Result<T> = ::std::result::Result<T, Error>;
 const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_KEY: &str = "application";
 const APPLICATION_VALUE: &str = "authenticator-rs";
-const APPLICATION_ATTRS: (&str, &str) = (APPLICATION_KEY, APPLICATION_KEY);
 const ACCOUNT_ID_KEY: &str = "account_id";
 
 pub struct Keyring;
