@@ -3,14 +3,14 @@ use std::str::FromStr;
 use std::string::ToString;
 
 use log::warn;
-use rusqlite::{Connection, named_params, NO_PARAMS, OpenFlags, OptionalExtension, params, Row, ToSql};
 use rusqlite::types::ToSqlOutput;
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql, NO_PARAMS};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
 
-use crate::helpers::Paths;
 use crate::helpers::repository_error::RepositoryError;
+use crate::helpers::Paths;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::model::{Account, AccountGroup};
 
@@ -34,8 +34,8 @@ impl Database {
             let count: u32 = row.get_unwrap(0);
             Ok(count)
         })
-            .map(|count| count > 0)
-            .map_err(RepositoryError::SqlError)
+        .map(|count| count > 0)
+        .map_err(RepositoryError::SqlError)
     }
 
     pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>> {
@@ -48,25 +48,17 @@ impl Database {
             let url: Option<String> = row.get(3).optional().unwrap_or(None);
             let collapsed: bool = row.get_unwrap(4);
 
-            let entries = Self::get_accounts(&connection, id, filter)
-                .map_err(|_| rusqlite::Error::InvalidQuery)?;
+            let entries = Self::get_accounts(&connection, id, filter).map_err(|_| rusqlite::Error::InvalidQuery)?;
 
-            Ok(AccountGroup::new(
-                id,
-                name.as_str(),
-                icon.as_deref(),
-                url.as_deref(),
-                collapsed,
-                entries,
-            ))
+            Ok(AccountGroup::new(id, name.as_str(), icon.as_deref(), url.as_deref(), collapsed, entries))
         })
-            .map(|rows| {
-                rows.map(|each| each.unwrap())
-                    //filter out empty groups - unless no filter is applied then display everything
-                    .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
-                    .collect()
-            })
-            .map_err(RepositoryError::SqlError)
+        .map(|rows| {
+            rows.map(|each| each.unwrap())
+                //filter out empty groups - unless no filter is applied then display everything
+                .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
+                .collect()
+        })
+        .map_err(RepositoryError::SqlError)
     }
 
     pub fn create_connection() -> Result<Connection> {
@@ -117,8 +109,8 @@ impl Database {
                 vec![],
             ))
         })
-            .optional()
-            .map_err(RepositoryError::SqlError)
+        .optional()
+        .map_err(RepositoryError::SqlError)
     }
 
     pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
@@ -169,7 +161,7 @@ impl Database {
                     .map(|id| AccountGroup::new(id, group_name.as_str(), group_icon.as_deref(), group_url.as_deref(), collapsed, accounts))
             },
         )
-            .map_err(RepositoryError::SqlError)
+        .map_err(RepositoryError::SqlError)
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
@@ -219,7 +211,7 @@ impl Database {
 
             Ok(account)
         })
-            .map_err(RepositoryError::SqlError)
+        .map_err(RepositoryError::SqlError)
     }
 
     fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
@@ -266,8 +258,8 @@ impl Database {
             let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
             Ok(account)
         })
-            .map(|rows| rows.map(|row| row.unwrap()).collect())
-            .map_err(RepositoryError::SqlError)
+        .map(|rows| rows.map(|row| row.unwrap()).collect())
+        .map_err(RepositoryError::SqlError)
     }
 }
 
