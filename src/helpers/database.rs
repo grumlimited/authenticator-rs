@@ -41,7 +41,7 @@ impl Database {
     pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups ORDER BY LOWER(name)")?;
 
-        stmt.query_map(params![], |row| {
+        let row_iter = stmt.query_map(params![], |row| {
             let id = row.get_unwrap(0);
             let name: String = row.get_unwrap(1);
             let icon: Option<String> = row.get(2).optional().unwrap_or(None);
@@ -51,14 +51,14 @@ impl Database {
             let entries = Self::get_accounts(&connection, id, filter).map_err(|_| rusqlite::Error::InvalidQuery)?;
 
             Ok(AccountGroup::new(id, name.as_str(), icon.as_deref(), url.as_deref(), collapsed, entries))
-        })
-        .map(|rows| {
-            rows.map(|each| each.unwrap())
-                //filter out empty groups - unless no filter is applied then display everything
-                .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
-                .collect()
-        })
-        .map_err(RepositoryError::SqlError)
+        })?;
+
+        let account_groups = row_iter
+            .flatten()
+            .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
+            .collect::<Vec<AccountGroup>>();
+
+        Ok(account_groups)
     }
 
     pub fn create_connection() -> Result<Connection> {
