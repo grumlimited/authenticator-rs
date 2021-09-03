@@ -3,8 +3,8 @@ use std::str::FromStr;
 use std::string::ToString;
 
 use log::warn;
-use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Result, Row, ToSql, NO_PARAMS};
+use rusqlite::types::ToSqlOutput;
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql, NO_PARAMS};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
@@ -24,8 +24,10 @@ pub enum SecretType {
     KEYRING,
 }
 
+type Result<T> = rusqlite::Result<T, RepositoryError>;
+
 impl Database {
-    pub fn has_groups(connection: &Connection) -> Result<bool, RepositoryError> {
+    pub fn has_groups(connection: &Connection) -> Result<bool> {
         let mut stmt = connection.prepare("SELECT COUNT(*) FROM groups")?;
 
         stmt.query_row(params![], |row| {
@@ -36,41 +38,34 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
-    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>, RepositoryError> {
+    pub fn load_account_groups(connection: &Connection, filter: Option<&str>) -> Result<Vec<AccountGroup>> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups ORDER BY LOWER(name)")?;
 
-        stmt.query_map(params![], |row| {
+        let row_iter = stmt.query_map(params![], |row| {
             let id = row.get_unwrap(0);
             let name: String = row.get_unwrap(1);
             let icon: Option<String> = row.get(2).optional().unwrap_or(None);
             let url: Option<String> = row.get(3).optional().unwrap_or(None);
             let collapsed: bool = row.get_unwrap(4);
 
-            Ok(AccountGroup::new(
-                id,
-                name.as_str(),
-                icon.as_deref(),
-                url.as_deref(),
-                collapsed,
-                Self::get_accounts(&connection, id, filter)?,
-            ))
-        })
-        .map(|rows| {
-            rows.map(|each| each.unwrap())
-                .collect::<Vec<AccountGroup>>()
-                .into_iter()
-                //filter out empty groups - unless no filter is applied then display everything
-                .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
-                .collect()
-        })
-        .map_err(RepositoryError::SqlError)
+            let entries = Self::get_accounts(&connection, id, filter).map_err(|_| rusqlite::Error::InvalidQuery)?;
+
+            Ok(AccountGroup::new(id, name.as_str(), icon.as_deref(), url.as_deref(), collapsed, entries))
+        })?;
+
+        let account_groups = row_iter
+            .flatten()
+            .filter(|account_group| !account_group.entries.is_empty() || filter.is_none())
+            .collect::<Vec<AccountGroup>>();
+
+        Ok(account_groups)
     }
 
-    pub fn create_connection() -> Result<Connection, RepositoryError> {
+    pub fn create_connection() -> Result<Connection> {
         Connection::open_with_flags(Paths::db_path(), OpenFlags::default()).map_err(RepositoryError::SqlError)
     }
 
-    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<(), RepositoryError> {
+    pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<()> {
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4, collapsed = ?5 WHERE id = ?1",
@@ -80,7 +75,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
+    pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
         connection.execute(
             "INSERT INTO groups (name, icon, url, collapsed) VALUES (?1, ?2, ?3, ?4)",
             params![group.name, group.icon, group.url, group.collapsed],
@@ -95,7 +90,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>, RepositoryError> {
+    fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE name = :name")?;
 
         stmt.query_row_named(named_params! {":name": name}, |row| {
@@ -118,7 +113,7 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<(), RepositoryError> {
+    pub fn save_group_and_accounts(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
         let existing_group = Self::group_by_name(connection, group.name.as_str())?;
 
         let group_saved_result = match existing_group {
@@ -134,14 +129,13 @@ impl Database {
                     account.group_id = group_id;
                     Self::save_account(&connection, account)
                 })
-                .into_iter()
-                .collect::<Result<Vec<u32>, RepositoryError>>()
+                .collect::<Result<Vec<u32>>>()
                 .map(|_| ()),
             Err(group_saved_error) => Err(group_saved_error),
         }
     }
 
-    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup, RepositoryError> {
+    pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE id = :group_id")?;
 
         stmt.query_row_named(
@@ -170,7 +164,7 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
-    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+    pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -190,7 +184,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32, RepositoryError> {
+    pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -202,7 +196,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account, RepositoryError> {
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account> {
         let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
 
         stmt.query_row(params![account_id], |row| {
@@ -236,19 +230,19 @@ impl Database {
         }
     }
 
-    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize, RepositoryError> {
+    pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize> {
         let mut stmt = connection.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
 
         stmt.execute(params![group_id]).map_err(RepositoryError::SqlError)
     }
 
-    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize, RepositoryError> {
+    pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize> {
         let mut stmt = connection.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
 
         stmt.execute(params![account_id]).map_err(RepositoryError::SqlError)
     }
 
-    fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>, rusqlite::Error> {
+    fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>> {
         let mut stmt = connection.prepare("SELECT id, label, secret, secret_type FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
@@ -265,6 +259,7 @@ impl Database {
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
+        .map_err(RepositoryError::SqlError)
     }
 }
 
@@ -276,19 +271,8 @@ impl Default for SecretType {
 
 impl ToSql for SecretType {
     #[inline]
-    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.to_string()))
-    }
-}
-
-impl FromSql for SecretType {
-    #[inline]
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        match value {
-            ValueRef::Text(s) => SecretType::from_str(std::str::from_utf8(s).unwrap()),
-            _ => return Err(FromSqlError::InvalidType),
-        }
-        .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 

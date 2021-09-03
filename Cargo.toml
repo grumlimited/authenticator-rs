@@ -10,44 +10,44 @@ authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.37"
-base32 = "0.4.0"
-bytes = "1.0.1"
-chrono = "0.4.19"
-curl = "0.4.37"
-directories = "3.0.2"
-futures = {version = "0.3.15", features = ["thread-pool"]}
-futures-executor = "0.3.15"
-gdk = "0.13.2"
-gdk-pixbuf = "0.9.0"
-gettext-rs = {version = "0.7.0", features = ["gettext-system"]}
-gio = "0.9.1"
-gtk-macros = "0.2.0"
-image = "0.23.14"
-log = "0.4.14"
-log4rs = "1.0.0"
-refinery = { version = "0.5.0", features = ["rusqlite"]}
-regex = "1.5.4"
-rqrr = "0.3.2"
-rusqlite = "0.24.2"
-scraper = "0.12.0"
-secret-service = "2.0.1"
-serde = { version = "1.0.126", features = ["derive"] }
-serde_json = "1.0.64"
-serde_yaml = "0.8.17"
-strum = "0.20"
-strum_macros = "0.20.1"
-tempfile-fast = "0.3.3"
-thiserror = "1.0.24"
-totp-rs = "0.6.3"
-uuid = { version = "0.8.2", features = ["v4"] }
+anyhow = "1"
+base32 = "0"
+bytes = "1"
+chrono = "0"
+curl = "0"
+directories = "3"
+futures = {version = "0", features = ["thread-pool"]}
+futures-executor = "0"
+gdk = "0"
+gdk-pixbuf = "0"
+gettext-rs = {version = "0", features = ["gettext-system"]}
+gio = "0"
+gtk-macros = "0"
+image = "0"
+log = "0"
+log4rs = "1"
+refinery = { version = "0", features = ["rusqlite"]}
+regex = "1"
+rqrr = "0"
+rusqlite = "0"
+scraper = "0"
+secret-service = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0"
+strum = "0"
+strum_macros = "0"
+tempfile-fast = "0"
+thiserror = "1"
+totp-rs = "0"
+uuid = { version = "0", features = ["v4"] }
 
 [dependencies.gtk]
-version = "0.9.2"
+version = "0"
 features = ["v3_22_30"]
 
 [dependencies.glib]
-version = "0.10.3"
+version = "0"
 
 [dev-dependencies]
-async-std = {version ="1.9.0", features = [] }
+async-std = {version ="1", features = [] }

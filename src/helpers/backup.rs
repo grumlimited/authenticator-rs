@@ -13,12 +13,10 @@ pub struct Backup;
 
 impl Backup {
     pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<AccountsImportExportResult>) {
-        let mut group_accounts = {
-            let connection = connection.lock().unwrap();
-            Database::load_account_groups(&connection, None).unwrap()
-        };
-
         let connection = connection.lock().unwrap();
+
+        let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
+
         let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
         let path = path.as_path();
@@ -53,15 +51,14 @@ impl Backup {
     }
 
     async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
-        let mut deserialised_accounts = Self::deserialise_accounts(path.as_path())?;
+        let mut accounts = Self::deserialise_accounts(path.as_path())?;
 
         let connection = connection.lock().unwrap();
 
-        deserialised_accounts
+        accounts
             .iter_mut()
             .map(|group| {
                 group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
-
                 group
             })
             .try_for_each(|account_groups| Database::save_group_and_accounts(&connection, account_groups))?;
