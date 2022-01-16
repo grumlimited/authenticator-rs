@@ -359,7 +359,7 @@ impl AccountsWindow {
 
                     match Keyring::secret(account.id) {
                         Ok(secret) => {
-                            let buffer = edit_account.input_secret.get_buffer().unwrap();
+                            let buffer = edit_account.input_secret.buffer().unwrap();
                             buffer.set_text(secret.unwrap_or_default().as_str());
                             gui.switch_to(Display::DisplayEditAccount);
                         },
@@ -464,12 +464,12 @@ impl AccountsWindow {
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
-        let filter_text = self.filter.get_text();
+        let filter_text = self.filter.text();
 
         if filter_text.is_empty() {
             None
         } else {
-            Some(filter_text.to_owned())
+            Some(filter_text.as_str().to_owned())
         }
     }
 }

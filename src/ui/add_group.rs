@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use futures::executor::ThreadPool;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Builder, IconSize};
+use gtk::{Builder, EntryIconPosition, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
@@ -41,28 +41,28 @@ pub struct AddGroupWindow {
 impl AddGroupWindow {
     pub fn new(builder: &Builder) -> AddGroupWindow {
         AddGroupWindow {
-            container: builder.get_object("add_group").unwrap(),
-            input_group: builder.get_object("add_group_input_name").unwrap(),
-            url_input: builder.get_object("add_group_url_input").unwrap(),
-            cancel_button: builder.get_object("add_group_cancel").unwrap(),
-            save_button: builder.get_object("add_group_save").unwrap(),
-            image_input: builder.get_object("add_group_image_input").unwrap(),
-            icon_filename: builder.get_object("add_group_icon_filename").unwrap(),
-            icon_reload: builder.get_object("group_icon_reload").unwrap(),
-            icon_delete: builder.get_object("group_icon_delete").unwrap(),
-            icon_error: builder.get_object("add_group_icon_error").unwrap(),
-            group_id: builder.get_object("add_group_input_group_id").unwrap(),
-            image_button: builder.get_object("add_group_image_button").unwrap(),
-            image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
-            add_group_container_add: builder.get_object("add_group_container_add").unwrap(),
-            add_group_container_edit: builder.get_object("add_group_container_edit").unwrap(),
+            container: builder.object("add_group").unwrap(),
+            input_group: builder.object("add_group_input_name").unwrap(),
+            url_input: builder.object("add_group_url_input").unwrap(),
+            cancel_button: builder.object("add_group_cancel").unwrap(),
+            save_button: builder.object("add_group_save").unwrap(),
+            image_input: builder.object("add_group_image_input").unwrap(),
+            icon_filename: builder.object("add_group_icon_filename").unwrap(),
+            icon_reload: builder.object("group_icon_reload").unwrap(),
+            icon_delete: builder.object("group_icon_delete").unwrap(),
+            icon_error: builder.object("add_group_icon_error").unwrap(),
+            group_id: builder.object("add_group_input_group_id").unwrap(),
+            image_button: builder.object("add_group_image_button").unwrap(),
+            image_dialog: builder.object("file_chooser_dialog").unwrap(),
+            add_group_container_add: builder.object("add_group_container_add").unwrap(),
+            add_group_container_edit: builder.object("add_group_container_edit").unwrap(),
         }
     }
 
     pub fn replace_with(&self, other: &AddGroupWindow) {
-        self.container.get_children().iter().for_each(|w| self.container.remove(w));
+        self.container.children().iter().for_each(|w| self.container.remove(w));
 
-        other.container.get_children().iter().for_each(|w| {
+        other.container.children().iter().for_each(|w| {
             other.container.remove(w);
             self.container.add(w)
         });
@@ -71,9 +71,9 @@ impl AddGroupWindow {
     fn validate(&self) -> Result<(), ValidationError> {
         let name = self.input_group.clone();
 
-        if name.get_buffer().get_text().is_empty() {
-            name.set_property_primary_icon_name(Some("gtk-dialog-error"));
-            name.get_style_context().add_class("error");
+        if name.buffer().text().is_empty() {
+            name.set_icon_from_icon_name(EntryIconPosition::Primary, Some("gtk-dialog-error"));
+            name.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
             Ok(())
@@ -81,7 +81,7 @@ impl AddGroupWindow {
     }
 
     pub fn reset(&self) {
-        Self::remove_tmp_file(Self::get_label_text(&self.icon_filename));
+        Self::remove_tmp_file(Self::label_text(&self.icon_filename));
 
         self.input_group.set_text("");
         self.url_input.set_text("");
@@ -97,8 +97,8 @@ impl AddGroupWindow {
         self.icon_delete.set_sensitive(true);
         self.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-        self.input_group.set_property_primary_icon_name(None);
-        let style_context = self.input_group.get_style_context();
+        self.input_group.set_icon_from_icon_name(EntryIconPosition::Primary, None);
+        let style_context = self.input_group.style_context();
         style_context.remove_class("error");
     }
 
@@ -122,7 +122,7 @@ impl AddGroupWindow {
                 gtk::ResponseType::Accept => {
                     dialog.hide();
 
-                    let path = dialog.get_filename().unwrap();
+                    let path = dialog.filename().unwrap();
                     debug!("path: {}", path.display());
 
                     match fs::read(&path) {
@@ -139,7 +139,7 @@ impl AddGroupWindow {
         );
 
         icon_reload.connect_clicked(clone!(@strong self as add_group => move |_| {
-            let url: String = add_group.url_input.get_buffer().get_text();
+            let url: String = add_group.url_input.buffer().text();
 
             add_group.icon_error.set_label("");
             add_group.icon_error.set_visible(false);
@@ -203,10 +203,10 @@ impl AddGroupWindow {
 
         self.save_button.connect_clicked(clone!(@strong gui, @strong self as add_group => move |_| {
             if let Ok(()) = add_group.validate() {
-                let icon_filename = Self::get_label_text(&add_group.icon_filename);
-                let group_name: String = add_group.input_group.get_buffer().get_text();
-                let url_input: Option<String> = Some(add_group.url_input.get_buffer().get_text());
-                let group_id = add_group.group_id.get_label();
+                let icon_filename = Self::label_text(&add_group.icon_filename);
+                let group_name: String = add_group.input_group.buffer().text();
+                let url_input: Option<String> = Some(add_group.url_input.buffer().text());
+                let group_id = add_group.group_id.label();
                 let group_id = group_id.as_str().to_owned();
 
                 let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
@@ -273,7 +273,7 @@ impl AddGroupWindow {
     }
 
     fn reuse_filename(icon_filename: &gtk::Label) -> String {
-        let existing = icon_filename.get_label().as_str().to_owned();
+        let existing = icon_filename.label().as_str().to_owned();
 
         if existing.is_empty() {
             let uuid = uuid::Uuid::new_v4().to_string();
@@ -344,8 +344,8 @@ impl AddGroupWindow {
         };
     }
 
-    fn get_label_text(label: &gtk::Label) -> Option<String> {
-        let icon_filename = label.get_label();
+    fn label_text(label: &gtk::Label) -> Option<String> {
+        let icon_filename = label.label();
         let icon_filename = icon_filename.as_str();
 
         match icon_filename {

@@ -5,7 +5,6 @@ extern crate gtk;
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
-use gio::prelude::*;
 use gtk::prelude::*;
 use log::info;
 use log4rs::config::{Config, Deserializers, RawConfig};
@@ -43,14 +42,14 @@ fn main() {
 
     gio::functions::resources_register(&resource);
 
-    let application = gtk::Application::new(Some(NAMESPACE), Default::default()).expect("Initialization failed...");
+    let application = gtk::Application::new(Some(NAMESPACE), Default::default());
 
     application.connect_startup(move |_| {
         let provider = gtk::CssProvider::new();
         provider.load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
 
         gtk::StyleContext::add_provider_for_screen(
-            &gdk::Screen::get_default().expect("Error initializing gtk css provider."),
+            &gdk::Screen::default().expect("Error initializing gtk css provider."),
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
@@ -87,7 +86,7 @@ fn main() {
         gdk::notify_startup_complete();
     });
 
-    application.run(&[]);
+    application.run();
 }
 
 /**

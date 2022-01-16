@@ -55,8 +55,8 @@ impl Default for State {
         let g_settings = gio::Settings::new(NAMESPACE);
 
         State {
-            dark_mode: g_settings.get_boolean("dark-theme"),
-            searchbar_visible: g_settings.get_boolean("search-visible"),
+            dark_mode: g_settings.boolean("dark-theme"),
+            searchbar_visible: g_settings.boolean("search-visible"),
             display: Display::DisplayAccounts,
         }
     }
@@ -123,7 +123,7 @@ impl MainWindow {
         state.display = display;
 
         let g_settings = gio::Settings::new(NAMESPACE);
-        state.dark_mode = g_settings.get_boolean("dark-theme");
+        state.dark_mode = g_settings.boolean("dark-theme");
 
         match state.display {
             Display::DisplayAccounts => {
@@ -235,7 +235,7 @@ impl MainWindow {
 
             let filter = self.accounts_window.filter.clone();
             rx.attach(None, move |_| {
-                filter.get_buffer().set_text("");
+                filter.set_text("");
                 glib::Continue(true)
             });
         }

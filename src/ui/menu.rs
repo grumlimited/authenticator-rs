@@ -25,7 +25,7 @@ pub trait Menus {
 
 impl Menus for MainWindow {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::HeaderBarBuilder::new().show_close_button(true).build();
+        let titlebar = gtk::builders::HeaderBarBuilder::new().show_close_button(true).build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
 
@@ -42,7 +42,7 @@ impl Menus for MainWindow {
         get_widget!(builder, gtk::Button, search_button);
 
         search_button.connect_clicked(clone!(@strong self as gui, @strong self.accounts_window.filter as filter => move |_| {
-            if filter.is_visible() {
+            if WidgetExt::is_visible(&filter) {
                 filter.hide();
                 filter.set_text("");
 
@@ -62,11 +62,11 @@ impl Menus for MainWindow {
             }
 
             gio::Settings::new(NAMESPACE)
-                .set_boolean("search-visible", filter.is_visible())
+                .set_boolean("search-visible",WidgetExt::is_visible(&filter))
                 .expect("Could not find setting search-visible");
         }));
 
-        if gio::Settings::new(NAMESPACE).get_boolean("search-visible") {
+        if gio::Settings::new(NAMESPACE).boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
             filter.show()
         }
@@ -82,9 +82,9 @@ impl Menus for MainWindow {
         get_widget!(builder, gtk::Button, export_button);
 
         let dark_mode_slider: gtk::Switch = {
-            let switch: gtk::Switch = builder.get_object("dark_mode_slider").unwrap();
+            let switch: gtk::Switch = builder.object("dark_mode_slider").unwrap();
             let g_settings = gio::Settings::new(NAMESPACE);
-            switch.set_state(g_settings.get_boolean("dark-theme"));
+            switch.set_state(g_settings.boolean("dark-theme"));
             switch
         };
 
@@ -102,17 +102,17 @@ impl Menus for MainWindow {
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
 
-        let import_button: gtk::Button = builder.get_object("import_button").unwrap();
+        let import_button: gtk::Button = builder.object("import_button").unwrap();
 
         import_button.connect_clicked(self.import_accounts(popover.clone(), connection));
 
-        let system_menu: gtk::MenuButton = builder.get_object("system_menu").unwrap();
+        let system_menu: gtk::MenuButton = builder.object("system_menu").unwrap();
 
         system_menu.connect_clicked(clone!(@strong popover => move |_| {
             popover.show_all();
         }));
 
-        let titlebar = gtk::HeaderBarBuilder::new().decoration_layout(":").title("About").build();
+        let titlebar = gtk::builders::HeaderBarBuilder::new().decoration_layout(":").title("About").build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
 

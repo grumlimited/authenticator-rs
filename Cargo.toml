@@ -7,7 +7,7 @@ readme = "README.md"
 homepage = "https://github.com/grumlimited/authenticator-rs/"
 repository = "https://github.com/grumlimited/authenticator-rs/"
 authors = ["Romain Gallet <rgallet@grumlimited.co.uk>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1"
@@ -18,11 +18,11 @@ curl = "0"
 directories = "3"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
-gdk = "0"
-gdk-pixbuf = "0"
+gdk = "0.15"
+gdk-pixbuf = "0.15"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0"
-gtk-macros = "0"
+gio = "0.15.2"
+gtk-macros = "0.3.0"
 image = "0"
 log = "0"
 log4rs = "1"
@@ -43,11 +43,11 @@ totp-rs = "0"
 uuid = { version = "0", features = ["v4"] }
 
 [dependencies.gtk]
-version = "0"
-features = ["v3_22_30"]
+version = "0.15"
+features = ["v3_24_9"]
 
 [dependencies.glib]
-version = "0"
+version = "0.15"
 
 [dev-dependencies]
 async-std = {version ="1", features = [] }

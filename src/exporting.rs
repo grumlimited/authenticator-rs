@@ -46,7 +46,7 @@ impl Exporting for MainWindow {
 
             match dialog.run() {
                 gtk::ResponseType::Accept => {
-                    let path = dialog.get_filename().unwrap();
+                    let path = dialog.filename().unwrap();
 
                     let (tx, rx) = glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
                     let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
@@ -106,7 +106,7 @@ impl Exporting for MainWindow {
                 gtk::ResponseType::Accept => {
                     dialog.close();
 
-                    let path = dialog.get_filename().unwrap();
+                    let path = dialog.filename().unwrap();
 
                     let (tx, rx)= glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
                     let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);

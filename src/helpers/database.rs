@@ -4,7 +4,7 @@ use std::string::ToString;
 
 use log::warn;
 use rusqlite::types::ToSqlOutput;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql, NO_PARAMS};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
@@ -83,7 +83,7 @@ impl Database {
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;
 
-        stmt.query_row(NO_PARAMS, |row| row.get(0))
+        stmt.query_row([], |row| row.get(0))
             .map(|id| {
                 group.id = id;
             })
@@ -176,7 +176,7 @@ impl Database {
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;
 
-        stmt.query_row(NO_PARAMS, |row| row.get(0))
+        stmt.query_row([], |row| row.get(0))
             .map(|id| {
                 account.id = id;
                 id

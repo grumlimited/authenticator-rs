@@ -13,6 +13,8 @@ use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
 
+use crate::gtk::prelude::ObjectExt;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
     #[serde(skip)]
@@ -127,21 +129,19 @@ impl AccountGroup {
 
         let account_widgets = Rc::new(RefCell::new(account_widgets));
 
-        event_box
-            .connect_local(
-                "button-press-event",
-                false,
-                clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
-                    let account_widgets = account_widgets.borrow();
+        event_box.connect_local(
+            "button-press-event",
+            false,
+            clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
+                let account_widgets = account_widgets.borrow();
 
-                    delete_button.set_sensitive(account_widgets.is_empty());
+                delete_button.set_sensitive(account_widgets.is_empty());
 
-                    popover.show_all();
+                popover.show_all();
 
-                    Some(true.to_value())
-                }),
-            )
-            .expect("Could not associate handler");
+                Some(true.to_value())
+            }),
+        );
 
         AccountGroupWidget {
             id: self.id,
