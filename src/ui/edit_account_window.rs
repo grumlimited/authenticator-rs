@@ -5,7 +5,7 @@ use gettextrs::*;
 use glib::clone;
 use glib::Sender;
 use gtk::prelude::*;
-use gtk::{Builder, StateFlags};
+use gtk::{Builder, EntryIconPosition, StateFlags};
 use log::{debug, warn};
 use rqrr::PreparedImage;
 use rusqlite::Connection;
@@ -37,25 +37,25 @@ pub struct EditAccountWindow {
 impl EditAccountWindow {
     pub fn new(builder: &Builder) -> EditAccountWindow {
         EditAccountWindow {
-            container: builder.get_object("edit_account").unwrap(),
-            input_group: builder.get_object("edit_account_input_group").unwrap(),
-            input_name: builder.get_object("edit_account_input_name").unwrap(),
-            input_secret: builder.get_object("edit_account_input_secret").unwrap(),
-            input_account_id: builder.get_object("edit_account_input_account_id").unwrap(),
-            cancel_button: builder.get_object("edit_account_cancel").unwrap(),
-            add_accounts_container_edit: builder.get_object("add_accounts_container_edit").unwrap(),
-            add_accounts_container_add: builder.get_object("add_accounts_container_add").unwrap(),
-            save_button: builder.get_object("edit_account_save").unwrap(),
-            qr_button: builder.get_object("qrcode_button").unwrap(),
-            image_dialog: builder.get_object("file_chooser_dialog").unwrap(),
-            input_secret_frame: builder.get_object("edit_account_input_secret_frame").unwrap(),
+            container: builder.object("edit_account").unwrap(),
+            input_group: builder.object("edit_account_input_group").unwrap(),
+            input_name: builder.object("edit_account_input_name").unwrap(),
+            input_secret: builder.object("edit_account_input_secret").unwrap(),
+            input_account_id: builder.object("edit_account_input_account_id").unwrap(),
+            cancel_button: builder.object("edit_account_cancel").unwrap(),
+            add_accounts_container_edit: builder.object("add_accounts_container_edit").unwrap(),
+            add_accounts_container_add: builder.object("add_accounts_container_add").unwrap(),
+            save_button: builder.object("edit_account_save").unwrap(),
+            qr_button: builder.object("qrcode_button").unwrap(),
+            image_dialog: builder.object("file_chooser_dialog").unwrap(),
+            input_secret_frame: builder.object("edit_account_input_secret_frame").unwrap(),
         }
     }
 
     pub fn replace_with(&self, other: &EditAccountWindow) {
-        self.container.get_children().iter().for_each(|w| self.container.remove(w));
+        self.container.children().iter().for_each(|w| self.container.remove(w));
 
-        other.container.get_children().iter().for_each(|w| {
+        other.container.children().iter().for_each(|w| {
             other.container.remove(w);
             self.container.add(w)
         });
@@ -68,29 +68,29 @@ impl EditAccountWindow {
 
         let mut result: Result<(), ValidationError> = Ok(());
 
-        if name.get_buffer().get_text().is_empty() {
-            name.set_property_primary_icon_name(Some("gtk-dialog-error"));
-            let style_context = name.get_style_context();
+        if name.buffer().text().is_empty() {
+            name.set_icon_from_icon_name(EntryIconPosition::Primary, Some("gtk-dialog-error"));
+            let style_context = name.style_context();
             style_context.add_class("error");
             result = Err(ValidationError::FieldError("name".to_owned()));
         }
 
-        let buffer = secret.get_buffer().unwrap();
-        let (start, end) = buffer.get_bounds();
-        let secret_value: String = match buffer.get_slice(&start, &end, true) {
+        let buffer = secret.buffer().unwrap();
+        let (start, end) = buffer.bounds();
+        let secret_value: String = match buffer.slice(&start, &end, true) {
             Some(secret_value) => secret_value.to_string(),
             None => "".to_owned(),
         };
 
         if secret_value.is_empty() {
-            let style_context = input_secret_frame.get_style_context();
+            let style_context = input_secret_frame.style_context();
             style_context.set_state(StateFlags::INCONSISTENT);
             result = Err(ValidationError::FieldError("secret".to_owned()));
         } else {
             match Account::generate_time_based_password(secret_value.as_str()) {
                 Ok(_) => {}
                 Err(_) => {
-                    let style_context = input_secret_frame.get_style_context();
+                    let style_context = input_secret_frame.style_context();
                     style_context.set_state(StateFlags::INCONSISTENT);
                     result = Err(ValidationError::FieldError("secret".to_owned()));
                 }
@@ -106,17 +106,17 @@ impl EditAccountWindow {
         let group = self.input_group.clone();
         let input_secret_frame = self.input_secret_frame.clone();
 
-        name.set_property_primary_icon_name(None);
-        let style_context = name.get_style_context();
+        name.set_icon_from_icon_name(EntryIconPosition::Primary, None);
+        let style_context = name.style_context();
         style_context.remove_class("error");
 
-        let style_context = secret.get_style_context();
+        let style_context = secret.style_context();
         style_context.remove_class("error");
 
-        let style_context = group.get_style_context();
+        let style_context = group.style_context();
         style_context.remove_class("error");
 
-        let style_context = input_secret_frame.get_style_context();
+        let style_context = input_secret_frame.style_context();
         style_context.set_state(StateFlags::NORMAL);
     }
 
@@ -124,7 +124,7 @@ impl EditAccountWindow {
         self.input_name.set_text("");
         self.input_account_id.set_text("");
 
-        let buffer = self.input_secret.get_buffer().unwrap();
+        let buffer = self.input_secret.buffer().unwrap();
         buffer.set_text("");
 
         self.reset_errors();
@@ -188,7 +188,7 @@ impl EditAccountWindow {
         rx.attach(
             None,
             clone!(@strong save_button, @strong input_secret, @strong self as w => move |(ok, qr_code)| {
-                let buffer = input_secret.get_buffer().unwrap();
+                let buffer = input_secret.buffer().unwrap();
 
                 w.reset_errors();
                 save_button.set_sensitive(true);
@@ -208,10 +208,10 @@ impl EditAccountWindow {
             let tx = tx.clone();
             match dialog.run() {
                 gtk::ResponseType::Accept => {
-                    let path = dialog.get_filename().unwrap();
+                    let path = dialog.filename().unwrap();
                     debug!("path: {}", path.display());
 
-                    let buffer = input_secret.get_buffer().unwrap();
+                    let buffer = input_secret.buffer().unwrap();
                     buffer.set_text(&gettext("Processing QR code"));
 
                     save_button.set_sensitive(false);
@@ -243,12 +243,12 @@ impl EditAccountWindow {
                 let secret = edit_account_window.input_secret.clone();
                 let account_id = edit_account_window.input_account_id.clone();
                 let group = edit_account_window.input_group;
-                let name: String = name.get_buffer().get_text();
-                let group_id: u32 = group.get_active_id().unwrap().as_str().to_owned().parse().unwrap();
+                let name: String = name.buffer().text();
+                let group_id: u32 = group.active_id().unwrap().as_str().to_owned().parse().unwrap();
                 let secret: String = {
-                    let buffer = secret.get_buffer().unwrap();
-                    let (start, end) = buffer.get_bounds();
-                    match buffer.get_slice(&start, &end, true) {
+                    let buffer = secret.buffer().unwrap();
+                    let (start, end) = buffer.bounds();
+                    match buffer.slice(&start, &end, true) {
                         Some(secret_value) => secret_value.to_string(),
                         None => "".to_owned(),
                     }
@@ -269,7 +269,7 @@ impl EditAccountWindow {
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
-                let account_id = account_id.get_buffer().get_text();
+                let account_id = account_id.buffer().text();
 
                 gui.pool
                     .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
@@ -279,7 +279,7 @@ impl EditAccountWindow {
                         tx_done.send(true).expect("boom!");
                     })(filter, connection, tx_done));
 
-                gui.switch_to(Display::DisplayAccounts);
+                gui.switch_to(Display::Accounts);
             }
         }));
     }

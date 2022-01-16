@@ -47,7 +47,7 @@ impl AccountWidget {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 self.totp_label.set_label(&gettext(error_key));
-                let context = self.totp_label.get_style_context();
+                let context = self.totp_label.style_context();
                 context.add_class("error");
             }
         }
@@ -96,16 +96,16 @@ impl Account {
         }));
 
         if is_first {
-            let context = account_frame.get_style_context();
+            let context = account_frame.style_context();
             context.add_class("account_frame_first");
         }
 
         if is_last {
-            let context = account_frame.get_style_context();
+            let context = account_frame.style_context();
             context.add_class("account_frame_last");
         }
 
-        fn add_hovering_class<T: gtk::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
+        fn add_hovering_class<T: gtk::prelude::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
             let context = style_context.clone();
             w.connect_enter_notify_event(move |_, _| {
                 context.add_class("account_row_hover");
@@ -119,14 +119,14 @@ impl Account {
             });
         }
 
-        let context = grid.get_style_context();
+        let context = grid.style_context();
         add_hovering_class(&context, &eventgrid);
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);
 
         copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
             let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-            clipboard.set_text(totp_label.get_label().as_str());
+            clipboard.set_text(totp_label.label().as_str());
         }));
 
         let mut widget = AccountWidget {

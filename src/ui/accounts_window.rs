@@ -162,14 +162,14 @@ impl AccountsWindow {
                         gui.accounts_window.group_edit_buttons_actions(&gui, connection.clone());
                         gui.accounts_window.delete_buttons_actions(&gui, connection.clone());
 
-                        gui.switch_to(Display::DisplayAccounts);
+                        gui.switch_to(Display::Accounts);
                     } else {
-                        gui.switch_to(Display::DisplayNoAccounts);
+                        gui.switch_to(Display::NoAccounts);
                     }
                 }
                 Err(e) => {
                     gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                    gui.switch_to(Display::DisplayErrors);
+                    gui.switch_to(Display::Errors);
                 }
             }
 
@@ -240,7 +240,7 @@ impl AccountsWindow {
 
             group_widgets
                 .add_account_button
-                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, &gui, Some(group_id)));
+                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, gui, Some(group_id)));
 
             group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
                 gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
@@ -283,7 +283,7 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         add_group.icon_filename.set_label(image.as_str());
 
-                        let dir = Paths::icons_path(&image);
+                        let dir = Paths::icons_path(image);
                         let state = gui.state.borrow();
                         match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),
@@ -292,7 +292,7 @@ impl AccountsWindow {
                     }
 
                     popover.hide();
-                    gui.switch_to(Display::DisplayEditGroup);
+                    gui.switch_to(Display::EditGroup);
                 }),
             );
         }
@@ -359,13 +359,13 @@ impl AccountsWindow {
 
                     match Keyring::secret(account.id) {
                         Ok(secret) => {
-                            let buffer = edit_account.input_secret.get_buffer().unwrap();
+                            let buffer = edit_account.input_secret.buffer().unwrap();
                             buffer.set_text(secret.unwrap_or_default().as_str());
-                            gui.switch_to(Display::DisplayEditAccount);
+                            gui.switch_to(Display::EditAccount);
                         },
                         Err(e) => {
                             gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                            gui.switch_to(Display::DisplayErrors);
+                            gui.switch_to(Display::Errors);
                         }
                     };
                 }));
@@ -459,17 +459,17 @@ impl AccountsWindow {
             main_window.edit_account.replace_with(&edit_account);
 
             popover.hide();
-            main_window.switch_to(Display::DisplayAddAccount);
+            main_window.switch_to(Display::AddAccount);
         }))
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
-        let filter_text = self.filter.get_text();
+        let filter_text = self.filter.text();
 
         if filter_text.is_empty() {
             None
         } else {
-            Some(filter_text.to_owned())
+            Some(filter_text.as_str().to_owned())
         }
     }
 }

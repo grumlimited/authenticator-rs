@@ -13,6 +13,8 @@ use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
 
+use crate::gtk::prelude::ObjectExt;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
     #[serde(skip)]
@@ -88,7 +90,7 @@ impl AccountGroup {
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         if let Some(image) = &self.icon {
-            let dir = Paths::icons_path(&image);
+            let dir = Paths::icons_path(image);
             match IconParser::load_icon(&dir, state.dark_mode) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),
@@ -127,21 +129,19 @@ impl AccountGroup {
 
         let account_widgets = Rc::new(RefCell::new(account_widgets));
 
-        event_box
-            .connect_local(
-                "button-press-event",
-                false,
-                clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
-                    let account_widgets = account_widgets.borrow();
+        event_box.connect_local(
+            "button-press-event",
+            false,
+            clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
+                let account_widgets = account_widgets.borrow();
 
-                    delete_button.set_sensitive(account_widgets.is_empty());
+                delete_button.set_sensitive(account_widgets.is_empty());
 
-                    popover.show_all();
+                popover.show_all();
 
-                    Some(true.to_value())
-                }),
-            )
-            .expect("Could not associate handler");
+                Some(true.to_value())
+            }),
+        );
 
         AccountGroupWidget {
             id: self.id,
