@@ -26,6 +26,9 @@ release : src
 gresource:
 	glib-compile-resources data/uk.co.grumlimited.authenticator-rs.xml
 
+test:
+	cargo test
+
 run: gresource
 	cargo run
 

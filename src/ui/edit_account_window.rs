@@ -7,6 +7,7 @@ use glib::Sender;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
 use log::{debug, warn};
+use regex::Regex;
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
@@ -87,8 +88,9 @@ impl EditAccountWindow {
             style_context.set_state(StateFlags::INCONSISTENT);
             result = Err(ValidationError::FieldError("secret".to_owned()));
         } else {
-            match Account::generate_time_based_password(secret_value.as_str()) {
-                Ok(_) => {}
+            let stripped = Self::strip_secret(&secret_value);
+            match Account::generate_time_based_password(stripped.as_str()) {
+                Ok(_) => buffer.set_text(&stripped),
                 Err(_) => {
                     let style_context = input_secret_frame.style_context();
                     style_context.set_state(StateFlags::INCONSISTENT);
@@ -301,5 +303,29 @@ impl EditAccountWindow {
         db_result
             .and_then(|account_id| Keyring::upsert(name.as_str(), account_id, secret.as_str()))
             .unwrap();
+    }
+
+    /**
+     * Strips spaces out of string.
+     */
+    fn strip_secret(secret: &str) -> String {
+        let re = Regex::new(r"\s").unwrap();
+        re.replace_all(secret, "").as_ref().to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ui::EditAccountWindow;
+
+    #[test]
+    fn should_strip_non_alphanum() {
+        assert_eq!("abcd", EditAccountWindow::strip_secret("a b c d"));
+        assert_eq!("b", EditAccountWindow::strip_secret(" b"));
+        assert_eq!("c", EditAccountWindow::strip_secret("c "));
+        assert_eq!(
+            "kfai5qjfvbz7u6uu3iqd4n2iajdvtzvg",
+            EditAccountWindow::strip_secret("kfai 5qjf vbz7 u6uu 3iqd 4n2i ajdv tzvg")
+        );
     }
 }
