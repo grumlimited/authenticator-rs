@@ -181,7 +181,7 @@ impl Menus for MainWindow {
                 Inhibit(true)
             }));
 
-        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, &self, None));
+        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, self, None));
 
         action_menu
     }

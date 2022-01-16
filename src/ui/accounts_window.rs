@@ -240,7 +240,7 @@ impl AccountsWindow {
 
             group_widgets
                 .add_account_button
-                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, &gui, Some(group_id)));
+                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, gui, Some(group_id)));
 
             group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
                 gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
@@ -283,7 +283,7 @@ impl AccountsWindow {
                     if let Some(image) = &group.icon {
                         add_group.icon_filename.set_label(image.as_str());
 
-                        let dir = Paths::icons_path(&image);
+                        let dir = Paths::icons_path(image);
                         let state = gui.state.borrow();
                         match IconParser::load_icon(&dir, state.dark_mode) {
                             Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),

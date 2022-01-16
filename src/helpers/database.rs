@@ -48,7 +48,7 @@ impl Database {
             let url: Option<String> = row.get(3).optional().unwrap_or(None);
             let collapsed: bool = row.get_unwrap(4);
 
-            let entries = Self::get_accounts(&connection, id, filter).map_err(|_| rusqlite::Error::InvalidQuery)?;
+            let entries = Self::get_accounts(connection, id, filter).map_err(|_| rusqlite::Error::InvalidQuery)?;
 
             Ok(AccountGroup::new(id, name.as_str(), icon.as_deref(), url.as_deref(), collapsed, entries))
         })?;
@@ -93,7 +93,7 @@ impl Database {
     fn group_by_name(connection: &Connection, name: &str) -> Result<Option<AccountGroup>> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE name = :name")?;
 
-        stmt.query_row_named(named_params! {":name": name}, |row| {
+        stmt.query_row(named_params! {":name": name}, |row| {
             let group_id = row.get_unwrap(0);
             let group_name: String = row.get_unwrap(1);
             let group_icon: Option<String> = row.get(2).optional().unwrap_or(None);
@@ -127,7 +127,7 @@ impl Database {
                 .iter_mut()
                 .map(|account| {
                     account.group_id = group_id;
-                    Self::save_account(&connection, account)
+                    Self::save_account(connection, account)
                 })
                 .collect::<Result<Vec<u32>>>()
                 .map(|_| ()),
@@ -138,7 +138,7 @@ impl Database {
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE id = :group_id")?;
 
-        stmt.query_row_named(
+        stmt.query_row(
             named_params! {
             ":group_id": group_id
             },
@@ -251,7 +251,7 @@ impl Database {
             let id: u32 = row.get_unwrap(0);
             let label: String = row.get_unwrap(1);
 
-            let secret_type = Self::extract_secret_type(&row, 3);
+            let secret_type = Self::extract_secret_type(row, 3);
 
             let secret: String = row.get_unwrap(2);
 

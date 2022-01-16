@@ -80,7 +80,7 @@ fn main() {
         let connection = Database::create_connection().unwrap();
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        gui.set_application(&app, connection);
+        gui.set_application(app, connection);
 
         info!("Authenticator RS initialised");
         gdk::notify_startup_complete();

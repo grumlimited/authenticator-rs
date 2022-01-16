@@ -183,7 +183,7 @@ impl Keyring {
             Some(secret) => account.secret = secret.1.clone(),
             None => {
                 warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
-                Self::store(&ss, account.label.as_str(), account.id, account.secret.as_str())?;
+                Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;
                 account.secret_type = SecretType::KEYRING;
                 account.secret = "".to_string();
                 Database::update_account(connection, account)?;

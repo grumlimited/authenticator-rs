@@ -90,7 +90,7 @@ impl AccountGroup {
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
         if let Some(image) = &self.icon {
-            let dir = Paths::icons_path(&image);
+            let dir = Paths::icons_path(image);
             match IconParser::load_icon(&dir, state.dark_mode) {
                 Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
                 Err(_) => error!("Could not load image {}", dir.display()),

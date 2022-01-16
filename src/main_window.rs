@@ -203,7 +203,7 @@ impl MainWindow {
         match Keyring::ensure_unlocked() {
             Ok(()) => {
                 info!("Keyring is available");
-                self.accounts_window.refresh_accounts(&self, connection);
+                self.accounts_window.refresh_accounts(self, connection);
             }
             Err(e) => {
                 error!("{}", format!("Keyring is {:?}", e));
