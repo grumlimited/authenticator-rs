@@ -14,7 +14,7 @@ use log::info;
 use rusqlite::Connection;
 
 use crate::helpers::Keyring;
-use crate::main_window::Display::DisplayErrors;
+use crate::main_window::Display::Errors;
 use crate::ui::menu::*;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
 use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
@@ -41,13 +41,13 @@ pub struct State {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Display {
-    DisplayAccounts,
-    DisplayEditAccount,
-    DisplayAddAccount,
-    DisplayAddGroup,
-    DisplayEditGroup,
-    DisplayNoAccounts,
-    DisplayErrors,
+    Accounts,
+    EditAccount,
+    AddAccount,
+    AddGroup,
+    EditGroup,
+    NoAccounts,
+    Errors,
 }
 
 impl Default for State {
@@ -57,7 +57,7 @@ impl Default for State {
         State {
             dark_mode: g_settings.boolean("dark-theme"),
             searchbar_visible: g_settings.boolean("search-visible"),
-            display: Display::DisplayAccounts,
+            display: Display::Accounts,
         }
     }
 }
@@ -126,7 +126,7 @@ impl MainWindow {
         state.dark_mode = g_settings.boolean("dark-theme");
 
         match state.display {
-            Display::DisplayAccounts => {
+            Display::Accounts => {
                 self.accounts_window.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -134,7 +134,7 @@ impl MainWindow {
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
-            Display::DisplayEditAccount => {
+            Display::EditAccount => {
                 self.edit_account.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -142,7 +142,7 @@ impl MainWindow {
                 self.add_group.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
-            Display::DisplayAddAccount => {
+            Display::AddAccount => {
                 self.edit_account.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -150,7 +150,7 @@ impl MainWindow {
                 self.add_group.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
-            Display::DisplayAddGroup => {
+            Display::AddGroup => {
                 self.add_group.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -158,7 +158,7 @@ impl MainWindow {
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
-            Display::DisplayEditGroup => {
+            Display::EditGroup => {
                 self.add_group.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -166,7 +166,7 @@ impl MainWindow {
                 self.edit_account.container.set_visible(false);
                 self.no_accounts.container.set_visible(false);
             }
-            Display::DisplayNoAccounts => {
+            Display::NoAccounts => {
                 self.no_accounts.container.set_visible(true);
 
                 self.errors.container.set_visible(false);
@@ -174,7 +174,7 @@ impl MainWindow {
                 self.add_group.container.set_visible(false);
                 self.edit_account.container.set_visible(false);
             }
-            Display::DisplayErrors => {
+            Display::Errors => {
                 self.errors.container.set_visible(true);
 
                 self.no_accounts.container.set_visible(false);
@@ -208,7 +208,7 @@ impl MainWindow {
             Err(e) => {
                 error!("{}", format!("Keyring is {:?}", e));
                 self.errors.error_display_message.set_text(&gettext("keyring_locked"));
-                self.switch_to(DisplayErrors);
+                self.switch_to(Errors);
             }
         }
 

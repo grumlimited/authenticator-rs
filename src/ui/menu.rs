@@ -93,7 +93,7 @@ impl Menus for MainWindow {
             g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
             // switch first then redraw - to take into account state change
-            gui.switch_to(Display::DisplayAccounts);
+            gui.switch_to(Display::Accounts);
 
             gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
@@ -149,7 +149,7 @@ impl Menus for MainWindow {
             popover.hide();
             add_group.reset();
 
-            gui.switch_to(Display::DisplayAddGroup);
+            gui.switch_to(Display::AddGroup);
         }));
 
         action_menu.connect_clicked(clone!(@strong popover, @strong state, @strong add_account_button, @strong widgets => move |_| {
@@ -166,9 +166,9 @@ impl Menus for MainWindow {
             let state = state.borrow();
             let display = state.display.clone();
             // can't add account if no groups
-            add_account_button.set_sensitive(!widgets.is_empty() && display == Display::DisplayAccounts);
+            add_account_button.set_sensitive(!widgets.is_empty() && display == Display::Accounts);
 
-            add_group_button.set_sensitive(display == Display::DisplayAccounts || display == Display::DisplayNoAccounts);
+            add_group_button.set_sensitive(display == Display::Accounts || display == Display::NoAccounts);
 
             popover.show_all();
         }));

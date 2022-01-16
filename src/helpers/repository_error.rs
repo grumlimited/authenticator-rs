@@ -4,6 +4,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 #[error("{0}")]
+#[allow(clippy::enum_variant_names)]
 pub enum RepositoryError {
     SqlError(#[from] rusqlite::Error),
     IoError(#[from] io::Error),

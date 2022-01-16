@@ -162,14 +162,14 @@ impl AccountsWindow {
                         gui.accounts_window.group_edit_buttons_actions(&gui, connection.clone());
                         gui.accounts_window.delete_buttons_actions(&gui, connection.clone());
 
-                        gui.switch_to(Display::DisplayAccounts);
+                        gui.switch_to(Display::Accounts);
                     } else {
-                        gui.switch_to(Display::DisplayNoAccounts);
+                        gui.switch_to(Display::NoAccounts);
                     }
                 }
                 Err(e) => {
                     gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                    gui.switch_to(Display::DisplayErrors);
+                    gui.switch_to(Display::Errors);
                 }
             }
 
@@ -292,7 +292,7 @@ impl AccountsWindow {
                     }
 
                     popover.hide();
-                    gui.switch_to(Display::DisplayEditGroup);
+                    gui.switch_to(Display::EditGroup);
                 }),
             );
         }
@@ -361,11 +361,11 @@ impl AccountsWindow {
                         Ok(secret) => {
                             let buffer = edit_account.input_secret.buffer().unwrap();
                             buffer.set_text(secret.unwrap_or_default().as_str());
-                            gui.switch_to(Display::DisplayEditAccount);
+                            gui.switch_to(Display::EditAccount);
                         },
                         Err(e) => {
                             gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                            gui.switch_to(Display::DisplayErrors);
+                            gui.switch_to(Display::Errors);
                         }
                     };
                 }));
@@ -459,7 +459,7 @@ impl AccountsWindow {
             main_window.edit_account.replace_with(&edit_account);
 
             popover.hide();
-            main_window.switch_to(Display::DisplayAddAccount);
+            main_window.switch_to(Display::AddAccount);
         }))
     }
 

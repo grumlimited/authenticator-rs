@@ -233,7 +233,7 @@ impl AddGroupWindow {
                         tx_done.send(true).expect("boom!");
                     })(filter, connection, tx_done));
 
-                gui.switch_to(Display::DisplayAccounts);
+                gui.switch_to(Display::Accounts);
             }
         }));
     }

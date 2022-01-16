@@ -9,7 +9,7 @@ use rusqlite::Connection;
 
 use crate::helpers::Backup;
 use crate::helpers::{Keyring, RepositoryError};
-use crate::main_window::Display::DisplayErrors;
+use crate::main_window::Display;
 use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 
@@ -61,7 +61,7 @@ impl Exporting for MainWindow {
                                 Ok(_) => gui.accounts_window.refresh_accounts(&gui, connection.clone()),
                                 Err(e) => {
                                     gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                                    gui.switch_to(DisplayErrors);
+                                    gui.switch_to(Display::Errors);
                                 }
                             }
 
@@ -123,7 +123,7 @@ impl Exporting for MainWindow {
                             Ok(_) => gui.accounts_window.refresh_accounts(&gui, connection.clone()),
                             Err(e) => {
                                 gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                                gui.switch_to(DisplayErrors);
+                                gui.switch_to(Display::Errors);
                             }
                         }
 
