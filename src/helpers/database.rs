@@ -215,7 +215,7 @@ impl Database {
     }
 
     fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
-        match row.get::<_, String>(idx) {
+        match row.get::<usize, String>(idx) {
             Ok(v) => match SecretType::from_str(v.as_str()) {
                 Ok(secret_type) => secret_type,
                 Err(_) => {
@@ -223,10 +223,7 @@ impl Database {
                     LOCAL
                 }
             },
-            Err(e) => {
-                warn!("Invalid secret type [{:?}]", e);
-                LOCAL
-            }
+            Err(e) => panic!("Index {} is invalid. [{:?}]", idx, e),
         }
     }
 
@@ -265,7 +262,7 @@ impl Database {
 
 impl Default for SecretType {
     fn default() -> Self {
-        SecretType::KEYRING
+        KEYRING
     }
 }
 
