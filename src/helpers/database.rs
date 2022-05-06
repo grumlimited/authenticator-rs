@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use std::string::ToString;
 
-use log::warn;
+use log::{info, warn};
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql};
 use serde::{Deserialize, Serialize};
@@ -66,6 +66,7 @@ impl Database {
     }
 
     pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<()> {
+        info!("Updating group {}", group.name);
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4, collapsed = ?5 WHERE id = ?1",
@@ -76,6 +77,8 @@ impl Database {
     }
 
     pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
+        info!("Adding group {}", group.name);
+
         connection.execute(
             "INSERT INTO groups (name, icon, url, collapsed) VALUES (?1, ?2, ?3, ?4)",
             params![group.name, group.icon, group.url, group.collapsed],
@@ -172,6 +175,7 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        info!("Adding account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -192,12 +196,13 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        info!("Updating account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5 WHERE id = ?1",
-                params![account.id, account.label, secret, account.group_id, account.secret_type],
+                params![account.id, account.label, secret, account.group_id, LOCAL],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
