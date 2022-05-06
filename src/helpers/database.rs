@@ -169,7 +169,11 @@ impl Database {
 
     pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
         match Self::get_account_by_name(connection, account.label.as_str()).unwrap() {
-            Some(_) => Self::update_account(connection, account),
+            Some(a) => {
+                account.id = a.id;
+                account.secret_type = LOCAL; // so that keyring get updated too
+                Self::update_account(connection, account)
+            }
             None => Self::save_account(connection, account),
         }
     }
@@ -196,13 +200,13 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        info!("Updating account {}", account.label);
+        info!("Updating account [{}:{}]", account.label, account.id);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5 WHERE id = ?1",
-                params![account.id, account.label, secret, account.group_id, LOCAL],
+                params![account.id, account.label, secret, account.group_id, account.secret_type],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
