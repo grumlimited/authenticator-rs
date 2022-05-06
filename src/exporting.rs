@@ -13,19 +13,19 @@ use crate::main_window::Display;
 use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 
-pub type AccountsImportExportResult = ::std::result::Result<(), RepositoryError>;
+pub type AccountsImportExportResult = Result<(), RepositoryError>;
 
 pub trait Exporting {
-    fn export_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)>;
+    fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
 
-    fn import_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)>;
+    fn import_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
 
     fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
 }
 
 impl Exporting for MainWindow {
     fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)> {
-        Box::new(clone!(@strong self as gui  => move |_: &gtk::Button| {
+        Box::new(clone!(@strong self as gui  => move |_| {
             popover.set_visible(false);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
@@ -33,6 +33,7 @@ impl Exporting for MainWindow {
             get_widget!(builder, gtk::Window, error_popup);
             get_widget!(builder, gtk::Label, error_popup_body);
 
+            dialog.set_do_overwrite_confirmation(true);
             error_popup_body.set_label(&gettext("Could not export accounts!"));
 
             builder.connect_signals(clone!(@strong error_popup  => move |_, handler_name| match handler_name {
@@ -82,7 +83,7 @@ impl Exporting for MainWindow {
         }))
     }
 
-    fn import_accounts(&self, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&gtk::Button)> {
+    fn import_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)> {
         Box::new(clone!(@strong self as gui  => move |_b: &gtk::Button| {
             popover.set_visible(false);
 

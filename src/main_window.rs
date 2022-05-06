@@ -75,35 +75,33 @@ impl MainWindow {
         let accounts_window = AccountsWindow::new(builder.clone());
         let errors = ErrorsWindow::new(builder.clone());
 
-        {
-            get_widget!(builder, gtk::Button, add_group_save);
-            get_widget!(builder, gtk::Button, edit_account_save);
+        get_widget!(builder, gtk::Button, add_group_save);
+        get_widget!(builder, gtk::Button, edit_account_save);
 
-            builder.connect_signals(clone!(@strong about_popup  => move |_, handler_name| {
-                match handler_name {
-                    // handler_name as defined in the glade file
-                    "about_popup_close" => {
-                        Box::new(clone!( @strong about_popup => move |_| {
-                            about_popup.hide();
-                            None
-                        }))
-                    }
-                    "save_group" => {
-                        Box::new(clone!( @strong add_group_save => move |_| {
-                            add_group_save.clicked();
-                            None
-                        }))
-                    }
-                    "save_account" => {
-                        Box::new(clone!( @strong edit_account_save => move |_| {
-                            edit_account_save.clicked();
-                            None
-                        }))
-                    }
-                    _ => Box::new(|_| None),
+        builder.connect_signals(clone!(@strong about_popup  => move |_, handler_name| {
+            match handler_name {
+                // handler_name as defined in the glade file
+                "about_popup_close" => {
+                    Box::new(clone!( @strong about_popup => move |_| {
+                        about_popup.hide();
+                        None
+                    }))
                 }
-            }));
-        }
+                "save_group" => {
+                    Box::new(clone!( @strong add_group_save => move |_| {
+                        add_group_save.clicked();
+                        None
+                    }))
+                }
+                "save_account" => {
+                    Box::new(clone!( @strong edit_account_save => move |_| {
+                        edit_account_save.clicked();
+                        None
+                    }))
+                }
+                _ => Box::new(|_| None),
+            }
+        }));
 
         MainWindow {
             window: main_window,

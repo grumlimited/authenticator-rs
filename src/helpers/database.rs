@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use std::string::ToString;
 
-use log::warn;
+use log::{info, warn};
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql};
 use serde::{Deserialize, Serialize};
@@ -66,6 +66,7 @@ impl Database {
     }
 
     pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<()> {
+        info!("Updating group {}", group.name);
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4, collapsed = ?5 WHERE id = ?1",
@@ -76,6 +77,8 @@ impl Database {
     }
 
     pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
+        info!("Adding group {}", group.name);
+
         connection.execute(
             "INSERT INTO groups (name, icon, url, collapsed) VALUES (?1, ?2, ?3, ?4)",
             params![group.name, group.icon, group.url, group.collapsed],
@@ -127,7 +130,7 @@ impl Database {
                 .iter_mut()
                 .map(|account| {
                     account.group_id = group_id;
-                    Self::save_account(connection, account)
+                    Self::upsert_account(connection, account)
                 })
                 .collect::<Result<Vec<u32>>>()
                 .map(|_| ()),
@@ -164,7 +167,19 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
+    pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        match Self::get_account_by_name(connection, account.label.as_str()).unwrap() {
+            Some(a) => {
+                account.id = a.id;
+                account.secret_type = LOCAL; // so that keyring get updated too
+                Self::update_account(connection, account)
+            }
+            None => Self::save_account(connection, account),
+        }
+    }
+
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        info!("Adding account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -185,6 +200,7 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        info!("Updating account [{}:{}]", account.label, account.id);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -196,7 +212,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account> {
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Option<Account>> {
         let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
 
         stmt.query_row(params![account_id], |row| {
@@ -211,11 +227,31 @@ impl Database {
 
             Ok(account)
         })
+        .optional()
+        .map_err(RepositoryError::SqlError)
+    }
+
+    pub fn get_account_by_name(connection: &Connection, name: &str) -> Result<Option<Account>> {
+        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
+
+        stmt.query_row(params![name], |row| {
+            let group_id: u32 = row.get_unwrap(1);
+            let label: String = row.get_unwrap(2);
+            let secret: String = row.get_unwrap(3);
+            let id = row.get_unwrap(0);
+
+            let secret_type = Database::extract_secret_type(row, 4);
+
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
+
+            Ok(account)
+        })
+        .optional()
         .map_err(RepositoryError::SqlError)
     }
 
     fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
-        match row.get::<_, String>(idx) {
+        match row.get::<usize, String>(idx) {
             Ok(v) => match SecretType::from_str(v.as_str()) {
                 Ok(secret_type) => secret_type,
                 Err(_) => {
@@ -223,10 +259,7 @@ impl Database {
                     LOCAL
                 }
             },
-            Err(e) => {
-                warn!("Invalid secret type [{:?}]", e);
-                LOCAL
-            }
+            Err(e) => panic!("Index {} is invalid. [{:?}]", idx, e),
         }
     }
 
@@ -265,7 +298,7 @@ impl Database {
 
 impl Default for SecretType {
     fn default() -> Self {
-        SecretType::KEYRING
+        KEYRING
     }
 }
 
@@ -279,6 +312,7 @@ impl ToSql for SecretType {
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
+    use serde_json::error::Category::Data;
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
@@ -305,7 +339,7 @@ mod tests {
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = Database::get_account(&connection, account.id).unwrap();
+        let account_reloaded = Database::get_account(&connection, account.id).unwrap().unwrap();
 
         assert_eq!(account, account_reloaded);
 
@@ -466,13 +500,21 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let account = Account::new(0, 0, "label", "secret", LOCAL);
-        let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account]);
+        let account1 = Account::new(0, 0, "label", "secret", LOCAL);
+        let account2 = Account::new(0, 0, "label2", "secret2", LOCAL);
+        let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account1, account2]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
-        assert_eq!(1, account_group.entries.len());
+        assert_eq!(2, account_group.entries.len());
         assert!(account_group.entries.first().unwrap().id > 0);
+
+        // saving sames accounts a second time should not produce duplicates
+        Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
+
+        let accounts = Database::get_accounts(&connection, account_group.id, None).unwrap();
+        assert_eq!(2, account_group.entries.len());
+        assert_eq!(2, accounts.len());
     }
 }

@@ -342,32 +342,37 @@ impl AccountsWindow {
                     let groups = Database::load_account_groups(&connection, None).unwrap();
                     let account = Database::get_account(&connection, id).unwrap();
 
-                    edit_account.input_group.remove_all(); //re-added and refreshed just below
+                    match account {
+                        Some(account) => {
+                            edit_account.input_group.remove_all(); //re-added and refreshed just below
 
-                    edit_account.set_group_dropdown(Some(account.group_id), &groups);
+                            edit_account.set_group_dropdown(Some(account.group_id), &groups);
 
-                    let account_id = account.id.to_string();
-                    edit_account.input_account_id.set_text(account_id.as_str());
-                    edit_account.input_name.set_text(account.label.as_str());
+                            let account_id = account.id.to_string();
+                            edit_account.input_account_id.set_text(account_id.as_str());
+                            edit_account.input_name.set_text(account.label.as_str());
 
-                    edit_account.add_accounts_container_add.set_visible(false);
-                    edit_account.add_accounts_container_edit.set_visible(true);
+                            edit_account.add_accounts_container_add.set_visible(false);
+                            edit_account.add_accounts_container_edit.set_visible(true);
 
-                    edit_account.add_accounts_container_edit.set_text(account.label.as_str());
+                            edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
-                    popover.hide();
+                            popover.hide();
 
-                    match Keyring::secret(account.id) {
-                        Ok(secret) => {
-                            let buffer = edit_account.input_secret.buffer().unwrap();
-                            buffer.set_text(secret.unwrap_or_default().as_str());
-                            gui.switch_to(Display::EditAccount);
+                            match Keyring::secret(account.id) {
+                                Ok(secret) => {
+                                    let buffer = edit_account.input_secret.buffer().unwrap();
+                                    buffer.set_text(secret.unwrap_or_default().as_str());
+                                    gui.switch_to(Display::EditAccount);
+                                },
+                                Err(e) => {
+                                    gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                                    gui.switch_to(Display::Errors);
+                                }
+                            };
                         },
-                        Err(e) => {
-                            gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                            gui.switch_to(Display::Errors);
-                        }
-                    };
+                        None => panic!("Account {} not found", id)
+                    }
                 }));
             }
         }

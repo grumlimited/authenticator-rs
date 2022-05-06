@@ -68,7 +68,7 @@ fn main() {
             Err(e) => panic!("{:?}", e),
         }
 
-        match Paths::update_keyring_secrets() {
+        match Paths::update_keyring_secrets(&connection) {
             Ok(()) => info!("Added local accounts to keyring"),
             Err(e) => panic!("{:?}", e),
         }
