@@ -42,9 +42,10 @@ impl Backup {
     }
 
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<AccountsImportExportResult>) {
-        let db = Self::restore_accounts(path, connection).await;
+        let db = Self::restore_accounts(path, connection.clone()).await;
 
-        match db.and_then(|_| Paths::update_keyring_secrets()) {
+        let connection = connection.lock().unwrap();
+        match db.and_then(|_| Paths::update_keyring_secrets(&connection)) {
             Ok(_) => tx.send(Ok(())).expect("Could not send message"),
             Err(e) => tx.send(Err(e)).expect("Could not send message"),
         }

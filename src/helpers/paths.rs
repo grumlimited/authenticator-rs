@@ -1,5 +1,6 @@
 use anyhow::Result;
 use log::debug;
+use rusqlite::Connection;
 
 use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
 
@@ -49,10 +50,8 @@ impl Paths {
         Ok(())
     }
 
-    pub fn update_keyring_secrets() -> Result<(), RepositoryError> {
-        let connection = Database::create_connection()?;
-
-        let accounts = Database::load_account_groups(&connection, None)?;
+    pub fn update_keyring_secrets(connection: &Connection) -> Result<(), RepositoryError> {
+        let accounts = Database::load_account_groups(connection, None)?;
 
         accounts
             .iter()
@@ -62,7 +61,7 @@ impl Paths {
                 Keyring::upsert(account.label.as_str(), account.id, account.secret.as_str()).unwrap();
                 account.secret = "".to_owned();
                 account.secret_type = SecretType::KEYRING;
-                Database::update_account(&connection, account).unwrap();
+                Database::update_account(connection, account).unwrap();
             });
 
         Ok(())

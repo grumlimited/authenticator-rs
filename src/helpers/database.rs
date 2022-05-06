@@ -127,7 +127,7 @@ impl Database {
                 .iter_mut()
                 .map(|account| {
                     account.group_id = group_id;
-                    Self::save_account(connection, account)
+                    Self::upsert_account(connection, account)
                 })
                 .collect::<Result<Vec<u32>>>()
                 .map(|_| ()),
@@ -164,6 +164,13 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
+    pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        match Self::get_account_by_name(connection, account.label.as_str()).unwrap() {
+            Some(_) => Self::update_account(connection, account),
+            None => Self::save_account(connection, account),
+        }
+    }
+
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
@@ -196,7 +203,7 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Account> {
+    pub fn get_account(connection: &Connection, account_id: u32) -> Result<Option<Account>> {
         let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
 
         stmt.query_row(params![account_id], |row| {
@@ -211,6 +218,26 @@ impl Database {
 
             Ok(account)
         })
+        .optional()
+        .map_err(RepositoryError::SqlError)
+    }
+
+    pub fn get_account_by_name(connection: &Connection, name: &str) -> Result<Option<Account>> {
+        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
+
+        stmt.query_row(params![name], |row| {
+            let group_id: u32 = row.get_unwrap(1);
+            let label: String = row.get_unwrap(2);
+            let secret: String = row.get_unwrap(3);
+            let id = row.get_unwrap(0);
+
+            let secret_type = Database::extract_secret_type(row, 4);
+
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
+
+            Ok(account)
+        })
+        .optional()
         .map_err(RepositoryError::SqlError)
     }
 
@@ -276,6 +303,7 @@ impl ToSql for SecretType {
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
+    use serde_json::error::Category::Data;
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
@@ -302,7 +330,7 @@ mod tests {
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = Database::get_account(&connection, account.id).unwrap();
+        let account_reloaded = Database::get_account(&connection, account.id).unwrap().unwrap();
 
         assert_eq!(account, account_reloaded);
 
@@ -463,13 +491,21 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let account = Account::new(0, 0, "label", "secret", LOCAL);
-        let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account]);
+        let account1 = Account::new(0, 0, "label", "secret", LOCAL);
+        let account2 = Account::new(0, 0, "label2", "secret2", LOCAL);
+        let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account1, account2]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
 
         assert!(account_group.id > 0);
-        assert_eq!(1, account_group.entries.len());
+        assert_eq!(2, account_group.entries.len());
         assert!(account_group.entries.first().unwrap().id > 0);
+
+        // saving sames accounts a second time should not produce duplicates
+        Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
+
+        let accounts = Database::get_accounts(&connection, account_group.id, None).unwrap();
+        assert_eq!(2, account_group.entries.len());
+        assert_eq!(2, accounts.len());
     }
 }
