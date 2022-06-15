@@ -63,6 +63,13 @@ Authenticator RS is also available from [AUR](https://aur.archlinux.org/packages
 
     pacman -U authenticator-rs-bin-x.x.x-1-x86_64.pkg.tar.xz
     
+#### Alpine Linux
+
+Available in Alpine from (edge/testing)[https://pkgs.alpinelinux.org/package/edge/testing/aarch64/authenticator-rs].
+
+    # echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+    # apk update
+    apk add authenticator-rs@testing
 
 ## Building (dev)
 
