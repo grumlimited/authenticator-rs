@@ -52,17 +52,17 @@ impl Backup {
     }
 
     async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
-        let mut accounts = Self::deserialise_accounts(path.as_path())?;
+        let accounts = Self::deserialise_accounts(path.as_path())?;
 
         let connection = connection.lock().unwrap();
 
         accounts
-            .iter_mut()
-            .map(|group| {
+            .into_iter()
+            .map(|mut group| {
                 group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
                 group
             })
-            .try_for_each(|account_groups| Database::save_group_and_accounts(&connection, account_groups))?;
+            .try_for_each(|mut account_groups| Database::save_group_and_accounts(&connection, &mut account_groups))?;
 
         Ok(())
     }
