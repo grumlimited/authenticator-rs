@@ -21,7 +21,7 @@ futures-executor = "0"
 gdk = "0.15"
 gdk-pixbuf = "0.15"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.15.2"
+gio = "0.15"
 gtk-macros = "0.3.0"
 image = "0"
 log = "0"
@@ -44,7 +44,7 @@ uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.15"
-features = ["v3_24_9"]
+features = ["v3_24_30"]
 
 [dependencies.glib]
 version = "0.15"
