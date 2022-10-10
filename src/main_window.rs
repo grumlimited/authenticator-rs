@@ -39,7 +39,7 @@ pub struct State {
     pub display: Display,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Display {
     Accounts,
     EditAccount,

@@ -15,7 +15,7 @@ base32 = "0"
 bytes = "1"
 chrono = "0"
 curl = "0"
-directories = "3"
+directories = "4"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
 gdk = "0.15"
@@ -39,8 +39,8 @@ strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
 thiserror = "1"
-totp-rs = "0"
-uuid = { version = "0", features = ["v4"] }
+totp-rs = "3"
+uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.15"

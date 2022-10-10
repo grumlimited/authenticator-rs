@@ -19,7 +19,7 @@ pub enum IconError {
     ParsingError,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AccountGroupIcon {
     pub content: Vec<u8>,
     pub extension: Option<String>,

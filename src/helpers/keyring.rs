@@ -142,14 +142,14 @@ impl Keyring {
         Ok(secrets)
     }
 
-    pub fn set_secrets(group_accounts: &mut Vec<AccountGroup>, connection: &Connection) -> std::result::Result<(), RepositoryError> {
+    pub fn set_secrets(group_accounts: &mut [AccountGroup], connection: &Connection) -> std::result::Result<(), RepositoryError> {
         let all_secrets = Self::all_secrets()?;
 
         Self::associate_secrets(group_accounts, &all_secrets, connection)
     }
 
     pub fn associate_secrets(
-        group_accounts: &mut Vec<AccountGroup>,
+        group_accounts: &mut [AccountGroup],
         all_secrets: &[(String, String)],
         connection: &Connection,
     ) -> std::result::Result<(), RepositoryError> {
