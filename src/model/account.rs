@@ -2,6 +2,7 @@ use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use model::account_errors::TotpError;
@@ -44,6 +45,7 @@ impl AccountWidget {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
+                error!("{}", error_key.error());
                 self.totp_label.set_label(&gettext(error_key.error()));
                 let context = self.totp_label.style_context();
                 context.add_class("error");

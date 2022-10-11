@@ -312,7 +312,6 @@ impl ToSql for SecretType {
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
-    use serde_json::error::Category::Data;
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;

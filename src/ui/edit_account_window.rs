@@ -92,7 +92,7 @@ impl EditAccountWindow {
             match Account::generate_time_based_password(stripped.as_str()) {
                 Ok(_) => buffer.set_text(&stripped),
                 Err(error_key) => {
-                    error!("xx {} ss", error_key);
+                    error!("{}", error_key.error());
                     let style_context = input_secret_frame.style_context();
                     style_context.set_state(StateFlags::INCONSISTENT);
                     result = Err(ValidationError::FieldError("secret".to_owned()));
