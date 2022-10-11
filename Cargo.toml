@@ -44,7 +44,7 @@ uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.15"
-features = ["v3_24_30"]
+features = ["v3_24_11"]
 
 [dependencies.glib]
 version = "0.15"
