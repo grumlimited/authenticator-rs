@@ -72,8 +72,8 @@ impl AccountGroup {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         get_widget!(builder, gtk::Box, group);
+        // allows for group labels to respond to click events
         get_widget!(builder, gtk::EventBox, event_box);
-        //allows for group labels to respond to click events
         get_widget!(builder, gtk::Image, group_image);
         get_widget!(builder, gtk::Grid, group_label_box);
         get_widget!(builder, gtk::Label, group_label);
@@ -88,16 +88,19 @@ impl AccountGroup {
 
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
-        if let Some(image) = &self.icon {
-            let dir = Paths::icons_path(image);
-            match IconParser::load_icon(&dir, state.dark_mode) {
-                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
-                Err(_) => error!("Could not load image {}", dir.display()),
-            };
-        } else {
-            group_image.clear();
-            group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
-            group_label_box.remove(&group_image);
+        match &self.icon {
+            Some(image) => {
+                let dir = Paths::icons_path(image);
+                match IconParser::load_icon(&dir, state.dark_mode) {
+                    Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                    Err(_) => error!("Could not load image {}", dir.display()),
+                }
+            }
+            _ => {
+                group_image.clear();
+                group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
+                group_label_box.remove(&group_image);
+            }
         }
 
         group_label.set_label(self.name.as_str());
