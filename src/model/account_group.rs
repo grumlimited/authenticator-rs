@@ -44,7 +44,7 @@ pub struct AccountGroupWidget {
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
     pub popover: gtk::PopoverMenu,
-    pub account_widgets: Rc<RefCell<Vec<AccountWidget>>>,
+    pub account_widgets: RefCell<Vec<AccountWidget>>,
 }
 
 impl AccountGroupWidget {
@@ -129,7 +129,7 @@ impl AccountGroup {
             })
             .collect::<Vec<AccountWidget>>();
 
-        let account_widgets = Rc::new(RefCell::new(account_widgets));
+        let account_widgets = RefCell::new(account_widgets);
 
         event_box.connect_local(
             "button-press-event",
