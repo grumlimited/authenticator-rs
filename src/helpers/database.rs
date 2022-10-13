@@ -17,7 +17,7 @@ use crate::model::{Account, AccountGroup};
 #[derive(Debug, Clone)]
 pub struct Database;
 
-#[derive(Debug, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
+#[derive(Debug, Eq, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum SecretType {
     LOCAL,
@@ -312,7 +312,6 @@ impl ToSql for SecretType {
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
-    use serde_json::error::Category::Data;
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;

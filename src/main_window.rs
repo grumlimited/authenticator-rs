@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
@@ -29,7 +28,7 @@ pub struct MainWindow {
     pub no_accounts: ui::NoAccountsWindow,
     pub errors: ui::ErrorsWindow,
     pub pool: ThreadPool,
-    pub state: Rc<RefCell<State>>,
+    pub state: RefCell<State>,
 }
 
 #[derive(Clone, Debug)]
@@ -39,7 +38,7 @@ pub struct State {
     pub display: Display,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Display {
     Accounts,
     EditAccount,
@@ -112,7 +111,7 @@ impl MainWindow {
             errors,
             add_group: AddGroupWindow::new(&builder),
             pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
-            state: Rc::new(RefCell::new(State::default())),
+            state: RefCell::new(State::default()),
         }
     }
 

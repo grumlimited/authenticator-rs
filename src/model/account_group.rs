@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 
 use glib::clone;
 use glib::prelude::*;
@@ -8,14 +7,13 @@ use gtk_macros::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
+use crate::gtk::prelude::ObjectExt;
 use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
 use crate::NAMESPACE_PREFIX;
 
-use crate::gtk::prelude::ObjectExt;
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Eq, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {
     #[serde(skip)]
     pub id: u32,
@@ -45,7 +43,7 @@ pub struct AccountGroupWidget {
     pub group_label: gtk::Label,
     pub group_image: gtk::Image,
     pub popover: gtk::PopoverMenu,
-    pub account_widgets: Rc<RefCell<Vec<AccountWidget>>>,
+    pub account_widgets: RefCell<Vec<AccountWidget>>,
 }
 
 impl AccountGroupWidget {
@@ -68,13 +66,13 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&self, state: Rc<RefCell<State>>, filter: Option<String>) -> AccountGroupWidget {
+    pub fn widget(&self, state: RefCell<State>, filter: Option<String>) -> AccountGroupWidget {
         let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
         get_widget!(builder, gtk::Box, group);
+        // allows for group labels to respond to click events
         get_widget!(builder, gtk::EventBox, event_box);
-        //allows for group labels to respond to click events
         get_widget!(builder, gtk::Image, group_image);
         get_widget!(builder, gtk::Grid, group_label_box);
         get_widget!(builder, gtk::Label, group_label);
@@ -89,16 +87,19 @@ impl AccountGroup {
 
         group.set_widget_name(format!("group_id_{}", self.id).as_str());
 
-        if let Some(image) = &self.icon {
-            let dir = Paths::icons_path(image);
-            match IconParser::load_icon(&dir, state.dark_mode) {
-                Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
-                Err(_) => error!("Could not load image {}", dir.display()),
-            };
-        } else {
-            group_image.clear();
-            group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
-            group_label_box.remove(&group_image);
+        match &self.icon {
+            Some(image) => {
+                let dir = Paths::icons_path(image);
+                match IconParser::load_icon(&dir, state.dark_mode) {
+                    Ok(pixbuf) => group_image.set_from_pixbuf(Some(&pixbuf)),
+                    Err(_) => error!("Could not load image {}", dir.display()),
+                }
+            }
+            _ => {
+                group_image.clear();
+                group_image.set_visible(self.icon.is_some()); //apparently not enough to not draw some empty space
+                group_label_box.remove(&group_image);
+            }
         }
 
         group_label.set_label(self.name.as_str());
@@ -127,7 +128,7 @@ impl AccountGroup {
             })
             .collect::<Vec<AccountWidget>>();
 
-        let account_widgets = Rc::new(RefCell::new(account_widgets));
+        let account_widgets = RefCell::new(account_widgets);
 
         event_box.connect_local(
             "button-press-event",

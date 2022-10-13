@@ -14,13 +14,14 @@ use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 
 pub type AccountsImportExportResult = Result<(), RepositoryError>;
+type PopupButtonClosure = Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
 
 pub trait Exporting {
     fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
 
     fn import_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
 
-    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
+    fn popup_close(popup: gtk::Window) -> PopupButtonClosure;
 }
 
 impl Exporting for MainWindow {

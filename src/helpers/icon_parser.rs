@@ -19,7 +19,7 @@ pub enum IconError {
     ParsingError,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AccountGroupIcon {
     pub content: Vec<u8>,
     pub extension: Option<String>,
@@ -32,25 +32,8 @@ impl IconParser {
     }
 
     pub async fn html(url: &str) -> Result<AccountGroupIcon> {
-        let mut data = Vec::new();
-
-        let mut handle = Easy::new();
-        handle.follow_location(true)?;
-        handle.autoreferer(true)?;
-        handle.timeout(Duration::from_secs(5))?;
-        handle.url(url)?;
-
-        {
-            let mut transfer = handle.transfer();
-            transfer.write_function(|new_data| {
-                data.extend_from_slice(new_data);
-                Ok(new_data.len())
-            })?;
-            transfer.perform()?;
-        }
-
+        let (data, _) = Self::download(url).await?;
         let html = String::from_utf8_lossy(data.as_slice()).into_owned();
-
         Self::icon(url, html.as_str()).await
     }
 
@@ -78,10 +61,15 @@ impl IconParser {
 
         debug!("icon_url: {}", icon_url);
 
-        Self::download(icon_url.as_str()).await
+        Self::download_icon(icon_url.as_str()).await
     }
 
-    async fn download(icon_url: &str) -> Result<AccountGroupIcon> {
+    async fn download_icon(icon_url: &str) -> Result<AccountGroupIcon> {
+        let (data, extension) = Self::download(icon_url).await?;
+        Ok(AccountGroupIcon { content: data, extension })
+    }
+
+    async fn download(icon_url: &str) -> Result<(Vec<u8>, Option<String>)> {
         let mut data = Vec::new();
         let mut handle = Easy::new();
 
@@ -102,7 +90,7 @@ impl IconParser {
 
         let extension = handle.content_type().map(|e| e.and_then(Self::extension).map(str::to_owned))?;
 
-        Ok(AccountGroupIcon { content: data, extension })
+        Ok((data, extension))
     }
 
     fn extension(content_type: &str) -> Option<&str> {
@@ -139,7 +127,7 @@ mod tests {
 
     #[test]
     fn download() {
-        let fut = IconParser::download("https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg");
+        let fut = IconParser::download_icon("https://static.bbci.co.uk/wwhp/1.145.0/responsive/img/apple-touch/apple-touch-180.jpg");
 
         let icon_parser_result = task::block_on(fut).unwrap();
         assert_eq!("jpeg", icon_parser_result.extension.unwrap());

@@ -19,7 +19,7 @@ use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 use crate::NAMESPACE_PREFIX;
 
-pub type AccountsRefreshResult = ::std::result::Result<(Vec<AccountGroup>, bool), RepositoryError>;
+pub type AccountsRefreshResult = Result<(Vec<AccountGroup>, bool), RepositoryError>;
 
 #[derive(Clone, Debug)]
 pub struct AccountsWindow {

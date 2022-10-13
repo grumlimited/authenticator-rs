@@ -6,7 +6,7 @@ use glib::clone;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
-use log::{debug, warn};
+use log::{debug, error, warn};
 use regex::Regex;
 use rqrr::PreparedImage;
 use rusqlite::Connection;
@@ -91,7 +91,8 @@ impl EditAccountWindow {
             let stripped = Self::strip_secret(&secret_value);
             match Account::generate_time_based_password(stripped.as_str()) {
                 Ok(_) => buffer.set_text(&stripped),
-                Err(_) => {
+                Err(error_key) => {
+                    error!("{}", error_key.error());
                     let style_context = input_secret_frame.style_context();
                     style_context.set_state(StateFlags::INCONSISTENT);
                     result = Err(ValidationError::FieldError("secret".to_owned()));

@@ -1,17 +1,16 @@
-use std::time::SystemTime;
-
-use base32::decode;
-use base32::Alphabet::RFC4648;
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
+use log::warn;
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::SecretType;
-use crate::NAMESPACE_PREFIX;
+use model::account_errors::TotpError;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+use crate::helpers::SecretType;
+use crate::{model, NAMESPACE_PREFIX};
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(skip)]
     pub id: u32,
@@ -46,7 +45,8 @@ impl AccountWidget {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
-                self.totp_label.set_label(&gettext(error_key));
+                warn!("Account {} {}", self.account_id, error_key.error());
+                self.totp_label.set_label(&gettext(error_key.error()));
                 let context = self.totp_label.style_context();
                 context.add_class("error");
             }
@@ -105,17 +105,17 @@ impl Account {
             context.add_class("account_frame_last");
         }
 
-        fn add_hovering_class<T: gtk::prelude::WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
+        fn add_hovering_class<T: WidgetExt>(style_context: &gtk::StyleContext, w: &T) {
             let context = style_context.clone();
             w.connect_enter_notify_event(move |_, _| {
                 context.add_class("account_row_hover");
-                glib::signal::Inhibit(true)
+                Inhibit(true)
             });
 
             let context = style_context.clone();
             w.connect_leave_notify_event(move |_, _| {
                 context.remove_class("account_row_hover");
-                glib::signal::Inhibit(true)
+                Inhibit(true)
             });
         }
 
@@ -151,23 +151,13 @@ impl Account {
         widget
     }
 
-    pub fn generate_time_based_password(key: &str) -> Result<String, String> {
+    pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
         if key.is_empty() {
-            return Err("empty".to_owned());
+            return Err(TotpError::Empty);
         }
 
-        let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
-
-        Self::generate_time_based_password_with_time(time, key)
-    }
-
-    fn generate_time_based_password_with_time(time: u64, key: &str) -> Result<String, String> {
-        if let Some(b32) = decode(RFC4648 { padding: false }, key) {
-            let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32);
-            totp_sha1.generate(time);
-            Ok(totp_sha1.generate(time))
-        } else {
-            Err("error".to_owned())
-        }
+        let secret = totp_rs::Secret::Raw(key.as_bytes().to_vec()).to_bytes()?;
+        let totp = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
+        totp.generate_current().map_err(TotpError::SystemTimeError)
     }
 }

@@ -17,7 +17,7 @@ impl Backup {
 
         let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
 
-        let _ = Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
+        Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
