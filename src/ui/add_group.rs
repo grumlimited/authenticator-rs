@@ -3,7 +3,6 @@ use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use futures::executor::ThreadPool;
@@ -102,7 +101,7 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(&self, state: Rc<RefCell<State>>, pool: ThreadPool) {
+    fn url_input_action(&self, state: RefCell<State>, pool: ThreadPool) {
         let url_input = self.url_input.clone();
         let icon_reload = self.icon_reload.clone();
         let icon_delete = self.icon_delete.clone();
@@ -129,7 +128,7 @@ impl AddGroupWindow {
                         Ok(bytes) => {
                             let filename = path.file_name().unwrap();
                             debug!("filename: {:?}", filename);
-                            Self::write_tmp_icon(state.clone(), &icon_filename, &image_input, bytes.as_slice());
+                            Self::write_tmp_icon(&state, &icon_filename, &image_input, bytes.as_slice());
                         }
                         Err(_) => warn!("Could not read file {}", &path.display()),
                     }
@@ -163,7 +162,7 @@ impl AddGroupWindow {
                 add_group.save_button.set_sensitive(true);
 
                 match account_group_icon {
-                    Ok(account_group_icon) => Self::write_tmp_icon(state.clone(), &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
+                    Ok(account_group_icon) => Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
                     Err(e) => {
                         add_group.icon_error.set_label(format!("{}", e).as_str());
                         add_group.icon_error.set_visible(true);
@@ -327,15 +326,15 @@ impl AddGroupWindow {
         }
     }
 
-    fn write_tmp_icon(state: Rc<RefCell<State>>, icon_filename: &gtk::Label, image_input: &gtk::Image, buf: &[u8]) {
+    fn write_tmp_icon(state: &RefCell<State>, icon_filename: &gtk::Label, image_input: &gtk::Image, buf: &[u8]) {
         let mut temp_filepath = PathBuf::new();
 
         temp_filepath.push(std::env::temp_dir());
         temp_filepath.push(Self::reuse_filename(icon_filename));
 
-        let mut tempfile = tempfile_fast::Sponge::new_for(&temp_filepath).unwrap();
-        tempfile.write_all(buf).unwrap();
-        tempfile.commit().unwrap();
+        let mut temp_file = tempfile_fast::Sponge::new_for(&temp_filepath).unwrap();
+        temp_file.write_all(buf).unwrap();
+        temp_file.commit().unwrap();
 
         let state = state.borrow();
         match IconParser::load_icon(&temp_filepath, state.dark_mode) {

@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 
 use glib::clone;
 use glib::prelude::*;
@@ -67,7 +66,7 @@ impl AccountGroup {
         }
     }
 
-    pub fn widget(&self, state: Rc<RefCell<State>>, filter: Option<String>) -> AccountGroupWidget {
+    pub fn widget(&self, state: RefCell<State>, filter: Option<String>) -> AccountGroupWidget {
         let state = state.borrow();
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "account_group.ui").as_str());
 
