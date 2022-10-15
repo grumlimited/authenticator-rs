@@ -1,5 +1,6 @@
 use std::time::SystemTimeError;
 use thiserror::Error;
+use totp_rs::SecretParseError;
 use totp_rs::TotpUrlError;
 
 #[derive(Debug, Error)]
@@ -7,8 +8,8 @@ use totp_rs::TotpUrlError;
 pub enum TotpError {
     #[error("")]
     Empty,
-    #[error("")]
-    SecretParseError,
+    #[error("{0:?}")]
+    SecretParseError(SecretParseError),
     #[error{""}]
     TotpUrlError(TotpUrlError),
     #[error("{0}")]
@@ -24,6 +25,12 @@ impl TotpError {
 impl From<TotpUrlError> for TotpError {
     fn from(e: TotpUrlError) -> Self {
         TotpError::TotpUrlError(e)
+    }
+}
+
+impl From<SecretParseError> for TotpError {
+    fn from(e: SecretParseError) -> Self {
+        TotpError::SecretParseError(e)
     }
 }
 
