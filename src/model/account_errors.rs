@@ -1,15 +1,15 @@
 use std::time::SystemTimeError;
 use thiserror::Error;
-use totp_rs::{SecretParseError, TotpUrlError};
+use totp_rs::TotpUrlError;
 
 #[derive(Debug, Error)]
 #[allow(clippy::enum_variant_names)]
 pub enum TotpError {
     #[error("")]
     Empty,
-    #[error("{0:?}")]
-    SecretParseError(SecretParseError),
-    #[error("{0}")]
+    #[error("")]
+    SecretParseError,
+    #[error{""}]
     TotpUrlError(TotpUrlError),
     #[error("{0}")]
     SystemTimeError(SystemTimeError),
@@ -18,12 +18,6 @@ pub enum TotpError {
 impl TotpError {
     pub fn error(&self) -> String {
         format!("{:?}", self)
-    }
-}
-
-impl From<SecretParseError> for TotpError {
-    fn from(e: SecretParseError) -> Self {
-        TotpError::SecretParseError(e)
     }
 }
 
