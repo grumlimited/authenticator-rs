@@ -39,7 +39,7 @@ strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
 thiserror = "1"
-totp-rs = "3"
+totp-rs = "2"
 uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]

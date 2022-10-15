@@ -1,3 +1,7 @@
+use std::time::SystemTime;
+
+use base32::decode;
+use base32::Alphabet::RFC4648;
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
@@ -156,8 +160,18 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let secret = totp_rs::Secret::Raw(key.as_bytes().to_vec()).to_bytes()?;
-        let totp = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
-        totp.generate_current().map_err(TotpError::SystemTimeError)
+        let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+
+        Self::generate_time_based_password_with_time(time, key)
+    }
+
+    fn generate_time_based_password_with_time(time: u64, key: &str) -> Result<String, TotpError> {
+        if let Some(b32) = decode(RFC4648 { padding: false }, key) {
+            let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32, None, "none".to_string())?;
+            totp_sha1.generate(time);
+            Ok(totp_sha1.generate(time))
+        } else {
+            Err(TotpError::SecretParseError)
+        }
     }
 }
