@@ -163,6 +163,11 @@ impl Account {
         totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
     }
 
+    /*
+     * Pads key with = up to 32 characters long.
+     * In turns this produces 128-byte long secrets for totp.
+     * Note: this 128-byte long requirement has been added with totp 3.0.
+     */
     fn pad(key: &str) -> String {
         match key {
             _ if key.len() < 32 => {
@@ -181,8 +186,12 @@ mod tests {
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO2TJNA================", Account::pad("IXXETN6MTQO2TJNW"));
-        assert_eq!("AXXETN6MTQO2TJN=================", Account::pad("IXXETN6MTQO2TJN"));
-        assert_eq!("AXXETN6MTQO2TJNAAXXETN6MTQO2TJNA", Account::pad("IXXETN6MTQO2TJNWIXXETN6MTQO2TJNW"));
+        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad("AXXETN6MTQO3TJNA"));
+        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad("AXXETN6MTQO3TJN"));
+        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"));
+        assert_eq!(
+            "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
+            Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")
+        );
     }
 }
