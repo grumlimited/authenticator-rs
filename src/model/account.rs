@@ -1,13 +1,10 @@
-use std::time::SystemTime;
-
-use base32::decode;
-use base32::Alphabet::RFC4648;
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
+use totp_rs::Secret;
 
 use model::account_errors::TotpError;
 
@@ -160,18 +157,41 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        let secret = Secret::Encoded(Account::pad(key)).to_bytes()?;
+        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
 
-        Self::generate_time_based_password_with_time(time, key)
+        totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
     }
 
-    fn generate_time_based_password_with_time(time: u64, key: &str) -> Result<String, TotpError> {
-        if let Some(b32) = decode(RFC4648 { padding: false }, key) {
-            let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, b32, None, "none".to_string())?;
-            totp_sha1.generate(time);
-            Ok(totp_sha1.generate(time))
-        } else {
-            Err(TotpError::SecretParseError)
+    /*
+     * Pads key with = up to 32 characters long.
+     * In turns this produces 128-byte long secrets for totp.
+     * Note: this 128-byte long requirement has been added with totp 3.0.
+     */
+    fn pad(key: &str) -> String {
+        match key {
+            _ if key.len() < 32 => {
+                let pad = 32 - key.len();
+                let s = format!("{:=^1$}", "=", pad);
+                format!("{}{}", key, s)
+            }
+            _ => key.to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::model::Account;
+
+    #[test]
+    fn pad() {
+        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad("AXXETN6MTQO3TJNA"));
+        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad("AXXETN6MTQO3TJN"));
+        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"));
+        assert_eq!(
+            "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
+            Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")
+        );
     }
 }
