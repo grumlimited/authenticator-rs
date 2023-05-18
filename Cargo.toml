@@ -42,7 +42,6 @@ thiserror = "1"
 tokio = "1.28"
 totp-rs = "5"
 uuid = { version = "1", features = ["v4"] }
-zbus = { version = "3"}
 
 [dependencies.gtk]
 version = "0.17"
@@ -52,4 +51,4 @@ features = ["v3_24"]
 version = "0.17"
 
 [dev-dependencies]
-async-std = {version ="1", features = [] }
+async-std = {version = "1", features = [] }
