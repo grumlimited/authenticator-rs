@@ -32,9 +32,18 @@ impl IconParser {
     }
 
     pub async fn html(url: &str) -> Result<AccountGroupIcon> {
-        let (data, _) = Self::download(url).await?;
-        let html = String::from_utf8_lossy(data.as_slice()).into_owned();
-        Self::icon(url, html.as_str()).await
+        let (data, extension) = Self::download(url).await?;
+
+        match extension {
+            Some(extension) if extension.ends_with("icon") => Ok(AccountGroupIcon {
+                content: data,
+                extension: Some(extension),
+            }),
+            _ => {
+                let html = String::from_utf8_lossy(data.as_slice()).into_owned();
+                Self::icon(url, html.as_str()).await
+            }
+        }
     }
 
     async fn icon(url: &str, html: &str) -> Result<AccountGroupIcon> {
@@ -74,6 +83,7 @@ impl IconParser {
         let mut handle = Easy::new();
 
         handle.follow_location(true)?;
+        handle.useragent("Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/113.0")?;
         handle.autoreferer(true)?;
         handle.timeout(Duration::from_secs(5))?;
         handle.url(icon_url)?;
@@ -106,8 +116,7 @@ impl IconParser {
 
         debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
 
-        let pixbuf = Pixbuf::from_file_at_scale(filepath, 48, 48, true)
-            .map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2));
+        let pixbuf = Pixbuf::from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2));
 
         pixbuf.map_err(|e| e.into())
     }
