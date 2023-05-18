@@ -15,7 +15,7 @@ pub struct IconParser {}
 
 #[derive(Debug, Error)]
 pub enum IconError {
-    #[error("parsing error")]
+    #[error("Could not find icon in html")]
     ParsingError,
 }
 
