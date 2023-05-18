@@ -17,10 +17,11 @@ use crate::model::{Account, AccountGroup};
 #[derive(Debug, Clone)]
 pub struct Database;
 
-#[derive(Debug, Eq, PartialEq, EnumString, Serialize, Deserialize, Clone, Display)]
+#[derive(Debug, Eq, PartialEq, EnumString, Serialize, Deserialize, Clone, Display, Default)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum SecretType {
     LOCAL,
+    #[default]
     KEYRING,
 }
 
@@ -293,12 +294,6 @@ impl Database {
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
         .map_err(RepositoryError::SqlError)
-    }
-}
-
-impl Default for SecretType {
-    fn default() -> Self {
-        KEYRING
     }
 }
 
