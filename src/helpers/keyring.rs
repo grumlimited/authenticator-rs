@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use log::{debug, warn};
 use rusqlite::Connection;
-use secret_service::SecretService;
+use secret_service::blocking::SecretService;
 use secret_service::{EncryptionType, Error};
 
 use crate::helpers::repository_error::RepositoryError;
@@ -22,7 +22,7 @@ pub struct Keyring;
 
 impl Keyring {
     pub fn ensure_unlocked() -> Result<()> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
         collection.unlock()?;
@@ -53,7 +53,7 @@ impl Keyring {
     }
 
     pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
 
         let result = match Self::secret(account_id) {
             Ok(Some(_)) => {
@@ -68,7 +68,7 @@ impl Keyring {
     }
 
     pub fn secret(account_id: u32) -> Result<Option<String>> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
@@ -87,7 +87,7 @@ impl Keyring {
     }
 
     pub fn remove(account_id: u32) -> Result<()> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
@@ -104,7 +104,7 @@ impl Keyring {
     }
 
     pub fn all_secrets() -> std::result::Result<Vec<(String, String)>, RepositoryError> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
@@ -153,7 +153,7 @@ impl Keyring {
         all_secrets: &[(String, String)],
         connection: &Connection,
     ) -> std::result::Result<(), RepositoryError> {
-        let ss = SecretService::new(EncryptionType::Dh)?;
+        let ss = SecretService::connect(EncryptionType::Dh)?;
         group_accounts
             .iter_mut()
             .try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets, connection))
@@ -201,7 +201,7 @@ mod test {
     #[test]
     #[ignore]
     fn should_create_collection_struct() {
-        let ss = SecretService::new(EncryptionType::Dh).unwrap();
+        let ss = SecretService::connect(EncryptionType::Dh).unwrap();
         Keyring::store(&ss, "x22", 1, "secret").unwrap();
 
         let result = Keyring::secret(1).unwrap().unwrap();

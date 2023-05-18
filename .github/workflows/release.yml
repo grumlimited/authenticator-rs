@@ -11,14 +11,14 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.64.0  # MSRV
+          - 1.69.0  # MSRV
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/release
@@ -69,24 +69,25 @@ jobs:
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
 
       - name: Upload Debian release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb'
-          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb'
-          asset_content_type: application/octet-stream
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
+            authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb.md5sum
 
-      - name: Upload Debian release checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create CentOS 8 package
+        run: |
+          alien -r -k --scripts --target=x86_64 authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
+          md5sum authenticator-rs-${{ github.event.release.tag_name }}-1.x86_64.rpm >> authenticator-rs-${{ github.event.release.tag_name }}-1.x86_64.rpm.md5sum
+
+      - name: Upload CentOS 8 release
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb.md5sum'
-          asset_name: 'authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb.md5sum'
-          asset_content_type: text/plain
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            authenticator-rs-${{ github.event.release.tag_name }}-1.x86_64.rpm
+            authenticator-rs-${{ github.event.release.tag_name }}-1.x86_64.rpm.md5sum
 
   arch:
     runs-on: ubuntu-latest
@@ -94,7 +95,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Prepare arch package metadata
         run: |
@@ -118,21 +119,9 @@ jobs:
           md5sum build-aux/arch/authenticator-rs-bin/*.zst >> build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst.md5sum
 
       - name: Upload Arch Linux release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst'
-          asset_name: 'authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst'
-          asset_content_type: application/octet-stream
-
-      - name: Upload Arch Linux release checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: '${{ github.event.release.upload_url }}'
-          asset_path: 'build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst.md5sum'
-          asset_name: 'authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst.md5sum'
-          asset_content_type: text/plain
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst
+            build-aux/arch/authenticator-rs-bin/authenticator-rs-bin-${{ github.event.release.tag_name }}-1-x86_64.pkg.tar.zst.md5sum

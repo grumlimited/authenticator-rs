@@ -277,7 +277,7 @@ impl AccountsWindow {
                     gui.add_group.replace_with(&add_group);
 
                     add_group.input_group.set_text(group.name.as_str());
-                    add_group.url_input.set_text(group.url.unwrap_or_else(|| "".to_string()).as_str());
+                    add_group.url_input.set_text(group.url.unwrap_or_default().as_str());
                     add_group.group_id.set_label(format!("{}", group.id).as_str());
 
                     if let Some(image) = &group.icon {
@@ -435,7 +435,7 @@ impl AccountsWindow {
     }
 
     fn fraction_for(seconds: u32) -> f64 {
-        (1_f64 - ((seconds % 30) as f64 / 30_f64)) as f64
+        1_f64 - ((seconds % 30) as f64 / 30_f64)
     }
 
     pub fn display_add_account_form(

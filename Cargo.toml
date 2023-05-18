@@ -15,13 +15,13 @@ base32 = "0"
 bytes = "1"
 chrono = "0"
 curl = "0"
-directories = "4"
+directories = "5"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
-gdk = "0.16.0"
-gdk-pixbuf = "0.16.0"
+gdk = "0.17"
+gdk-pixbuf = "0.17"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.16.2"
+gio = "0.17"
 gtk-macros = "0.3.0"
 image = "0"
 log = "0"
@@ -31,7 +31,7 @@ regex = "1"
 rqrr = "0"
 rusqlite = "0"
 scraper = "0"
-secret-service = "2"
+secret-service = { version = "3", features = ["rt-tokio-crypto-rust"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0"
@@ -39,15 +39,16 @@ strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
 thiserror = "1"
-totp-rs = "3"
+tokio = { version = "1.28.0", features = ["rt-multi-thread",  "macros"] }
+totp-rs = "5"
 uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
-version = "0.16.0"
-features = ["v3_24_11"]
+version = "0.17"
+features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.16.2"
+version = "0.17"
 
 [dev-dependencies]
-async-std = {version ="1", features = [] }
+async-std = {version = "1", features = [] }
