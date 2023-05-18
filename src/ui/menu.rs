@@ -25,7 +25,7 @@ pub trait Menus {
 
 impl Menus for MainWindow {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::builders::HeaderBarBuilder::new().show_close_button(true).build();
+        let titlebar = gtk::HeaderBar::builder().show_close_button(true).build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
 
@@ -112,7 +112,7 @@ impl Menus for MainWindow {
             popover.show_all();
         }));
 
-        let titlebar = gtk::builders::HeaderBarBuilder::new().decoration_layout(":").title("About").build();
+        let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title("About").build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
 

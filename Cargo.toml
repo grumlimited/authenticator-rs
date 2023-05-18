@@ -19,10 +19,10 @@ curl = "0"
 directories = "5"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
-gdk = "0.16"
-gdk-pixbuf = "0.16"
+gdk = "0.17"
+gdk-pixbuf = "0.17"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.17.9"
+gio = "0.17"
 gtk-macros = "0.3.0"
 image = "0"
 log = "0"
@@ -46,11 +46,11 @@ uuid = { version = "1", features = ["v4"] }
 zbus = { version = "3", features = ["tokio"]}
 
 [dependencies.gtk]
-version = "0.16"
+version = "0.17"
 features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.16"
+version = "0.17"
 
 [dev-dependencies]
 async-std = {version ="1", features = [] }
