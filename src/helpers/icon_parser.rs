@@ -106,7 +106,9 @@ impl IconParser {
 
         debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
 
-        let pixbuf = Pixbuf::from_file_at_scale(filepath, 48, 48, true).map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2).unwrap_or(pixbuf))?;
+        let pixbuf = Pixbuf::from_file_at_scale(filepath, 48, 48, true)
+            .map(|pixbuf| pixbuf.add_alpha(true, alpha.0, alpha.1, alpha.2)
+                .unwrap_or(pixbuf))?;
 
         Ok(pixbuf)
     }
