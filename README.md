@@ -57,6 +57,10 @@ Download from the [release](https://github.com/grumlimited/authenticator-rs/rele
 
     dpkg -i authenticator-rs-x.x.x-x86-64.deb
 
+#### CentOS 9.x
+
+    rpm -ivh  authenticator-rs-x.x.x-1.x86_64.rpm 
+
 #### Arch Linux
 
 Authenticator RS is also available from [AUR](https://aur.archlinux.org/packages/authenticator-rs-bin/). Or from the release page:
