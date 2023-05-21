@@ -616,7 +616,6 @@
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
                             <property name="margin-start">5</property>
-                            <property name="margin-end">50</property>
                             <property name="margin-top">20</property>
                             <property name="margin-bottom">5</property>
                             <property name="label" translatable="yes">Name</property>
@@ -651,7 +650,6 @@
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
                             <property name="margin-start">5</property>
-                            <property name="margin-end">5</property>
                             <property name="margin-bottom">5</property>
                             <property name="label">URL</property>
                           </object>
