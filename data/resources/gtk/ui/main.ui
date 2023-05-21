@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkImage" id="about_close_button_image">
@@ -457,6 +457,7 @@
                                 <property name="receives-default">True</property>
                                 <property name="tooltip-text" translatable="yes">Cancel</property>
                                 <property name="image">account_cancel</property>
+                                <property name="always-show-image">True</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -472,6 +473,7 @@
                                 <property name="receives-default">True</property>
                                 <property name="tooltip-text" translatable="yes">Save</property>
                                 <property name="image">account_save</property>
+                                <property name="always-show-image">True</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -797,6 +799,7 @@
                                 <property name="receives-default">True</property>
                                 <property name="tooltip-text" translatable="yes">Cancel</property>
                                 <property name="image">group_cancel</property>
+                                <property name="always-show-image">True</property>
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
@@ -812,6 +815,7 @@
                                 <property name="receives-default">True</property>
                                 <property name="tooltip-text" translatable="yes">Save</property>
                                 <property name="image">group_save</property>
+                                <property name="always-show-image">True</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
