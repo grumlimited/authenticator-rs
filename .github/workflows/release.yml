@@ -112,15 +112,11 @@ jobs:
 
       - name: Prepare arch package metadata
         run: |
-          wget -q https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O build-aux/arch/${DEB_PKG_NAME}
+          wget -q https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O build-aux/arch/authenticator-rs-bin/${DEB_PKG_NAME}
 
           MD5_SUM=$(md5sum build-aux/arch/authenticator-rs-bin/${DEB_PKG_NAME}  | awk '{print $1}')
           awk -v q="'" -v MD5_SUM=$MD5_SUM -i inplace 'BEGINFILE{print "md5sums=(" q MD5_SUM q ")"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
           awk -i inplace 'BEGINFILE{print "pkgver=${{ github.event.release.tag_name }}"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
-          
-          ls
-          cat build-aux/arch/authenticator-rs-bin/PKGBUILD
-          md5sum build-aux/arch/authenticator-rs-bin/${DEB_PKG_NAME}
 
       - name: Validate PKGBUILD
         id: validate-pkgbuild
