@@ -118,9 +118,7 @@ mod tests {
 
             let path = PathBuf::from("test.yaml");
             let path = path.as_path();
-            let result = Backup::serialise_accounts(vec![account_group], path).unwrap();
-
-            assert_eq!((), result);
+            Backup::serialise_accounts(vec![account_group], path).unwrap();
         }
 
         task::block_on(Backup::restore_accounts(PathBuf::from("test.yaml"), connection.clone())).unwrap();
