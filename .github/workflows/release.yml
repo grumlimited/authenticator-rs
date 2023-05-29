@@ -88,7 +88,7 @@ jobs:
 
       - name: Create CentOS 8 package
         run: |
-          wget https://github.com/grumlimited/kinesis-tailr/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O ${DEB_PKG_NAME}
+          wget https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O ${DEB_PKG_NAME}
           
           alien -r -k --scripts --target=x86_64 ${DEB_PKG_NAME}
           md5sum ${RPM_PKG_NAME} >> ${RPM_PKG_NAME}.md5sum
@@ -136,5 +136,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            build-aux/arch/kinesis-tailr-bin/${{ env.ARCH_PKG_NAME }}
-            build-aux/arch/kinesis-tailr-bin/${{ env.ARCH_PKG_NAME }}.md5sum
+            build-aux/arch/authenticator-rs-bin/${{ env.ARCH_PKG_NAME }}
+            build-aux/arch/authenticator-rs-bin/${{ env.ARCH_PKG_NAME }}.md5sum
