@@ -94,9 +94,7 @@ mod tests {
 
         let path = PathBuf::from("test.yaml");
         let path = path.as_path();
-        let result = Backup::serialise_accounts(vec![account_group], path).unwrap();
-
-        assert_eq!((), result);
+        Backup::serialise_accounts(vec![account_group], path).unwrap();
 
         let account_from_yaml = Account::new(0, 0, "label", "secret", KEYRING);
         let account_group_from_yaml = AccountGroup::new(0, "group", None, Some("url"), false, vec![account_from_yaml]);
@@ -118,14 +116,10 @@ mod tests {
 
             let path = PathBuf::from("test.yaml");
             let path = path.as_path();
-            let result = Backup::serialise_accounts(vec![account_group], path).unwrap();
-
-            assert_eq!((), result);
+            Backup::serialise_accounts(vec![account_group], path).unwrap();
         }
 
-        let result = { task::block_on(Backup::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) }.unwrap();
-
-        assert_eq!((), result);
+        task::block_on(Backup::restore_accounts(PathBuf::from("test.yaml"), connection.clone())).unwrap();
 
         {
             let connection = connection.lock().unwrap();

@@ -22,7 +22,7 @@ noextract=()
 
 build() {
 	rm control.tar.zst
-    tar xvf data.tar.zst
+	tar xvf data.tar.zst
 }
 
 package() {
