@@ -333,11 +333,10 @@ mod tests {
         assert!(account.group_id > 0);
         assert_eq!("label", account.label);
 
-        let account_reloaded = Database::get_account(&connection, account.id).unwrap().unwrap();
+        let mut account_reloaded = Database::get_account(&connection, account.id).unwrap().unwrap();
 
         assert_eq!(account, account_reloaded);
 
-        let mut account_reloaded = account_reloaded.clone();
         account_reloaded.label = "new label".to_owned();
         account_reloaded.secret = "new secret".to_owned();
         Database::update_account(&connection, &mut account_reloaded).unwrap();
@@ -362,7 +361,7 @@ mod tests {
         group.url = Some("url".to_owned());
         group.icon = Some("icon".to_owned());
 
-        Database::update_group(&connection, &mut group).unwrap();
+        Database::update_group(&connection, &group).unwrap();
 
         let group = Database::get_group(&connection, group.id).unwrap();
 
