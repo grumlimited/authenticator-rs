@@ -123,9 +123,7 @@ mod tests {
             assert_eq!((), result);
         }
 
-        let result = { task::block_on(Backup::restore_accounts(PathBuf::from("test.yaml"), connection.clone())) }.unwrap();
-
-        assert_eq!((), result);
+        task::block_on(Backup::restore_accounts(PathBuf::from("test.yaml"), connection.clone())).unwrap();
 
         {
             let connection = connection.lock().unwrap();
