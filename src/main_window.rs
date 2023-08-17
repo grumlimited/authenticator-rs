@@ -190,7 +190,7 @@ impl MainWindow {
         let add_group = self.add_group.clone();
         self.window.connect_delete_event(move |_, _| {
             add_group.reset(); // to ensure temp files deletion
-            Inhibit(false)
+            glib::Propagation::Proceed
         });
 
         self.bind_account_filter_events(connection.clone());
@@ -223,7 +223,7 @@ impl MainWindow {
 
         {
             //then bind "x" icon to empty the filter input.
-            let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+            let (tx, rx) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
             let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
                 let _ = tx.send(true);
@@ -233,7 +233,7 @@ impl MainWindow {
             let filter = self.accounts_window.filter.clone();
             rx.attach(None, move |_| {
                 filter.set_text("");
-                glib::Continue(true)
+                glib::ControlFlow::Continue
             });
         }
     }
@@ -251,7 +251,7 @@ impl MainWindow {
                 widgets.iter_mut().for_each(|group| group.update());
             }
 
-            glib::Continue(true)
+            glib::ControlFlow::Continue
         };
 
         glib::timeout_add_seconds_local(1, tick);

@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.69.0  # MSRV
+          - 1.71.1  # MSRV
 
     steps:
       - name: Checkout
@@ -43,16 +43,26 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-      - uses: actions-rs/cargo@v1
-
-      - name: Formatting
-        run: cargo fmt --all -- --check
-
       - name: Build
-        run: cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
 
       - name: Tests
-        run: cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
 
       - name: Clippy
-        run: cargo clippy --all -- -D warnings
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings

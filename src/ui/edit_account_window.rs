@@ -186,7 +186,7 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::Priority::DEFAULT);
 
         rx.attach(
             None,
@@ -203,7 +203,7 @@ impl EditAccountWindow {
                 }
 
                 let _ = w.validate();
-                glib::Continue(true)
+                 glib::ControlFlow::Continue
             }),
         );
 
@@ -257,16 +257,16 @@ impl EditAccountWindow {
                     }
                 };
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding account is completed
+                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
+                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT); // used to signal adding account is completed
 
                 rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
                 rx_reset.attach(None, clone!(@strong edit_account => move |_| {
                     // upon completion, reset form
                     edit_account.reset();
-                    glib::Continue(true)
+                    glib::ControlFlow::Continue
                 }));
 
                 let filter = gui.accounts_window.get_filter_value();

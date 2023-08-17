@@ -50,8 +50,8 @@ impl Exporting for MainWindow {
                 gtk::ResponseType::Accept => {
                     let path = dialog.filename().unwrap();
 
-                    let (tx, rx) = glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    let (tx, rx) = glib::MainContext::channel::<AccountsImportExportResult>(glib::Priority::DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
@@ -67,7 +67,7 @@ impl Exporting for MainWindow {
                                 }
                             }
 
-                            glib::Continue(true)
+                            glib::ControlFlow::Continue
                         }),
                     );
 
@@ -110,8 +110,8 @@ impl Exporting for MainWindow {
 
                     let path = dialog.filename().unwrap();
 
-                    let (tx, rx)= glib::MainContext::channel::<AccountsImportExportResult>(glib::PRIORITY_DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                    let (tx, rx)= glib::MainContext::channel::<AccountsImportExportResult>(glib::Priority::DEFAULT);
+                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
                     // sensitivity is restored in refresh_accounts()
                     gui.accounts_window.accounts_container.set_sensitive(false);
@@ -129,7 +129,7 @@ impl Exporting for MainWindow {
                             }
                         }
 
-                        glib::Continue(true)
+                        glib::ControlFlow::Continue
                     }));
                 }
                 _ => dialog.close(),

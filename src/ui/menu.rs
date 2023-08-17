@@ -46,8 +46,8 @@ impl Menus for MainWindow {
                 filter.hide();
                 filter.set_text("");
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
                 rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -97,7 +97,7 @@ impl Menus for MainWindow {
 
             gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
-            Inhibit(false)
+            glib::Propagation::Proceed
         }));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
@@ -178,7 +178,7 @@ impl Menus for MainWindow {
             .no_accounts_plus_sign
             .connect_button_press_event(clone!(@strong action_menu => move |_, _| {
                 action_menu.clicked();
-                Inhibit(true)
+                glib::Propagation::Stop
             }));
 
         add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, self, None));
