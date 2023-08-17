@@ -204,7 +204,6 @@ impl EditAccountWindow {
 
                 let _ = w.validate();
                  glib::ControlFlow::Continue
-                // glib::Continue(true)
             }),
         );
 
@@ -268,7 +267,6 @@ impl EditAccountWindow {
                     // upon completion, reset form
                     edit_account.reset();
                     glib::ControlFlow::Continue
-                    // glib::Continue(true)
                 }));
 
                 let filter = gui.accounts_window.get_filter_value();

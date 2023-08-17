@@ -169,7 +169,6 @@ impl AddGroupWindow {
                     }
                 }
 
-                // glib::Continue(true)
                 glib::ControlFlow::Continue
             }),
         );
@@ -219,7 +218,6 @@ impl AddGroupWindow {
                 rx_reset.attach(None, move |_| {
                     // upon completion, reset form
                     add_group.reset();
-                    // glib::Continue(true)
                     glib::ControlFlow::Continue
                 });
 

@@ -82,7 +82,6 @@ impl AccountsWindow {
             None,
             clone!(@strong self.accounts_container as accounts_container => move |_| {
                 accounts_container.set_sensitive(true);
-                // glib::Continue(true)
              glib::ControlFlow::Continue
             }),
         );
@@ -178,7 +177,6 @@ impl AccountsWindow {
                 }
             }
 
-            // glib::Continue(true)
             glib::ControlFlow::Continue
         })
     }
@@ -325,7 +323,6 @@ impl AccountsWindow {
                     None,
                     clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => move |_| {
                         copy_button.set_image(Some(&edit_copy_img));
-                        // glib::Continue(true)
                         glib::ControlFlow::Continue
                     }),
                 );
@@ -423,7 +420,6 @@ impl AccountsWindow {
                                 confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
                             }
 
-                            // glib::Continue(true)
                          glib::ControlFlow::Continue
                         }),
                     );
