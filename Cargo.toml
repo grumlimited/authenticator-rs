@@ -18,11 +18,11 @@ curl = "0"
 directories = "5"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
-gdk = "0.18.0"
-gdk-pixbuf = "0.18.0"
+gdk = "0.18"
+gdk-pixbuf = "0.18"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.18.1"
-gtk-macros = "0.3.0"
+gio = "0.18"
+gtk-macros = "0.3"
 image = "0"
 log = "0"
 log4rs = "1"
@@ -39,16 +39,16 @@ strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
 thiserror = "1"
-tokio = { version = "1.28.2", features = ["rt-multi-thread",  "macros"] }
+tokio = { version = "1.28", features = ["rt-multi-thread",  "macros"] }
 totp-rs = "5"
 uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
-version = "0.18.0"
+version = "0.18"
 features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.18.1"
+version = "0.18"
 
 [dev-dependencies]
 async-std = {version = "1", features = [] }
