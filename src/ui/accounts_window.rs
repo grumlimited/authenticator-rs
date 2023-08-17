@@ -49,8 +49,8 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -82,7 +82,8 @@ impl AccountsWindow {
             None,
             clone!(@strong self.accounts_container as accounts_container => move |_| {
                 accounts_container.set_sensitive(true);
-                glib::Continue(true)
+                // glib::Continue(true)
+             glib::ControlFlow::Continue
             }),
         );
 
@@ -90,8 +91,8 @@ impl AccountsWindow {
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -115,8 +116,8 @@ impl AccountsWindow {
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
         rx.attach(None, self.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -136,7 +137,11 @@ impl AccountsWindow {
      * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
      * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
      */
-    pub fn replace_accounts_and_widgets(&self, gui: MainWindow, connection: Arc<Mutex<Connection>>) -> Box<dyn FnMut(AccountsRefreshResult) -> glib::Continue> {
+    pub fn replace_accounts_and_widgets(
+        &self,
+        gui: MainWindow,
+        connection: Arc<Mutex<Connection>>,
+    ) -> Box<dyn FnMut(AccountsRefreshResult) -> glib::ControlFlow> {
         Box::new(move |accounts_refresh_result| {
             match accounts_refresh_result {
                 Ok((groups, has_groups)) => {
@@ -173,7 +178,8 @@ impl AccountsWindow {
                 }
             }
 
-            glib::Continue(true)
+            // glib::Continue(true)
+            glib::ControlFlow::Continue
         })
     }
 
@@ -207,8 +213,8 @@ impl AccountsWindow {
     fn toggle_group_collapse(&self, gui: &MainWindow, group_id: u32, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) {
         popover.hide();
 
-        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+        let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
         rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -313,13 +319,14 @@ impl AccountsWindow {
 
                 let gui = gui.clone();
 
-                let (tx, rx) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                let (tx, rx) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
 
                 rx.attach(
                     None,
                     clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => move |_| {
                         copy_button.set_image(Some(&edit_copy_img));
-                        glib::Continue(true)
+                        // glib::Continue(true)
+                        glib::ControlFlow::Continue
                     }),
                 );
 
@@ -404,7 +411,7 @@ impl AccountsWindow {
                     confirm_button.show();
                     delete_button.hide();
 
-                    let (tx, rx) = glib::MainContext::channel::<u8>(glib::PRIORITY_DEFAULT);
+                    let (tx, rx) = glib::MainContext::channel::<u8>(glib::Priority::DEFAULT);
 
                     rx.attach(
                         None,
@@ -416,7 +423,8 @@ impl AccountsWindow {
                                 confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
                             }
 
-                            glib::Continue(true)
+                            // glib::Continue(true)
+                         glib::ControlFlow::Continue
                         }),
                     );
 
@@ -491,9 +499,9 @@ async fn update_button(tx: Sender<u8>, seconds: u8) {
 }
 
 /**
-* Sleeps for some time then messages end of wait, so that copy button
-* gets its default image restored.
-*/
+ * Sleeps for some time then messages end of wait, so that copy button
+ * gets its default image restored.
+ */
 async fn times_up(tx: Sender<bool>, wait_ms: u64) {
     thread::sleep(time::Duration::from_millis(wait_ms));
     tx.send(true).expect("Couldn't send data to channel");

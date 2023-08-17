@@ -110,7 +110,7 @@ impl AddGroupWindow {
         let icon_filename = self.icon_filename.clone();
         let image_input = self.image_input.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::PRIORITY_DEFAULT);
+        let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::Priority::DEFAULT);
 
         url_input.connect_activate(clone!(@strong icon_reload => move |_| {
             icon_reload.clicked();
@@ -169,7 +169,8 @@ impl AddGroupWindow {
                     }
                 }
 
-                glib::Continue(true)
+                // glib::Continue(true)
+                glib::ControlFlow::Continue
             }),
         );
 
@@ -208,9 +209,9 @@ impl AddGroupWindow {
                 let group_id = add_group.group_id.label();
                 let group_id = group_id.as_str().to_owned();
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::PRIORITY_DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
-                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT); // used to signal adding group is completed
+                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
+                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
+                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT); // used to signal adding group is completed
 
                 rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
 
@@ -218,7 +219,8 @@ impl AddGroupWindow {
                 rx_reset.attach(None, move |_| {
                     // upon completion, reset form
                     add_group.reset();
-                    glib::Continue(true)
+                    // glib::Continue(true)
+                    glib::ControlFlow::Continue
                 });
 
                 let filter = gui.accounts_window.get_filter_value();
