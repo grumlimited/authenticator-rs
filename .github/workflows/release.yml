@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.71.1  # MSRV
+          - 1.73.0  # MSRV
 
     steps:
       - name: Checkout
