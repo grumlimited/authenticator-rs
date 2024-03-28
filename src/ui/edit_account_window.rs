@@ -5,9 +5,8 @@ use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
-use log::{debug, error, warn};
+use log::{debug, error};
 use regex::Regex;
-use rqrr::PreparedImage;
 use rusqlite::Connection;
 
 use crate::helpers::QrCodeResult::{Invalid, Valid};
@@ -153,32 +152,6 @@ impl EditAccountWindow {
         }
     }
 
-    async fn process_qr_code(path: String, tx: async_channel::Sender<QrCodeResult>) {
-        let _ = match image::open(&path).map(|v| v.to_luma8()) {
-            Ok(img) => {
-                let mut luma = PreparedImage::prepare(img);
-                let grids = luma.detect_grids();
-
-                if grids.len() != 1 {
-                    warn!("No grids found in {}", path);
-                    tx.send(Invalid("Invalid QR code".to_owned())).await
-                } else {
-                    match grids[0].decode() {
-                        Ok((_, content)) => tx.send(Valid(QrCode::new(content))).await,
-                        Err(e) => {
-                            warn!("{}", e);
-                            tx.send(Invalid("Invalid QR code".to_owned())).await
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                warn!("{}", e);
-                tx.send(Invalid("Invalid QR code".to_owned())).await
-            }
-        };
-    }
-
     fn qrcode_action(&self, pool: ThreadPool) {
         let qr_button = self.qr_button.clone();
         let dialog = self.image_dialog.clone();
@@ -218,7 +191,7 @@ impl EditAccountWindow {
 
                     save_button.set_sensitive(false);
                     dialog.hide();
-                    pool.spawn_ok(Self::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+                    pool.spawn_ok(QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx));
                 }
                 _ => dialog.hide(),
             }

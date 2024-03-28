@@ -7,7 +7,7 @@ use gtk::{Button, MenuButton};
 use gtk_macros::get_widget;
 use rusqlite::Connection;
 
-use crate::exporting::Exporting;
+use crate::exporting::{Exporting, ImportType};
 use crate::main_window::{Display, MainWindow};
 use crate::ui::{AccountsWindow, AddGroupWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
@@ -76,8 +76,10 @@ impl Menus for MainWindow {
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
         get_widget!(builder, gtk::PopoverMenu, popover);
-        get_widget!(builder, gtk::Button, about_button);
-        get_widget!(builder, gtk::Button, export_button);
+        get_widget!(builder, Button, about_button);
+        get_widget!(builder, Button, export_button);
+        get_widget!(builder, Button, import_button);
+        get_widget!(builder, Button, import_button_ga);
 
         let dark_mode_slider: gtk::Switch = {
             let switch: gtk::Switch = builder.object("dark_mode_slider").unwrap();
@@ -99,12 +101,10 @@ impl Menus for MainWindow {
         }));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
+        import_button.connect_clicked(self.import_accounts(ImportType::Internal, popover.clone(), connection.clone()));
+        import_button_ga.connect_clicked(self.import_accounts(ImportType::GoogleAuthenticator, popover.clone(), connection));
 
-        let import_button: gtk::Button = builder.object("import_button").unwrap();
-
-        import_button.connect_clicked(self.import_accounts(popover.clone(), connection));
-
-        let system_menu: gtk::MenuButton = builder.object("system_menu").unwrap();
+        let system_menu: MenuButton = builder.object("system_menu").unwrap();
 
         system_menu.connect_clicked(clone!(@strong popover => move |_| {
             popover.show_all();
