@@ -17,11 +17,14 @@ impl Backup {
         all_secrets: Vec<(String, String)>,
         tx: async_channel::Sender<AccountsImportExportResult>,
     ) {
-        let connection = connection.lock().unwrap();
+        let group_accounts = {
+            let connection = connection.lock().unwrap();
 
-        let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
+            let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
+            Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
-        Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
+            group_accounts
+        };
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
@@ -48,8 +51,7 @@ impl Backup {
     pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: async_channel::Sender<AccountsImportExportResult>) {
         let db = Self::restore_accounts(path, connection.clone()).await;
 
-        let connection = connection.lock().unwrap();
-        match db.and_then(|_| Paths::update_keyring_secrets(&connection)) {
+        match db.and_then(|_| Paths::update_keyring_secrets(connection)) {
             Ok(_) => tx.send(Ok(())).await.expect("Could not send message"),
             Err(e) => tx.send(Err(e)).await.expect("Could not send message"),
         }
