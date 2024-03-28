@@ -34,10 +34,8 @@ fn main() {
     }
 
     let resource = {
-        match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
-            Ok(resource) => resource,
-            Err(_) => gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap(),
-        }
+        gio::Resource::load(format!("data/{}.gresource", NAMESPACE))
+            .unwrap_or_else(|_| gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap())
     };
 
     gio::functions::resources_register(&resource);

@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use futures::executor::ThreadPool;
 use gettextrs::*;
 use glib::clone;
-use glib::Sender;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
 use log::{debug, error, warn};
@@ -16,7 +15,6 @@ use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
-use crate::ui::accounts_window::AccountsRefreshResult;
 use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
@@ -154,7 +152,7 @@ impl EditAccountWindow {
         }
     }
 
-    async fn process_qr_code(path: String, tx: Sender<(bool, String)>) {
+    async fn process_qr_code(path: String, tx: async_channel::Sender<(bool, String)>) {
         let _ = match image::open(&path).map(|v| v.to_luma8()) {
             Ok(img) => {
                 let mut luma = PreparedImage::prepare(img);
@@ -162,20 +160,20 @@ impl EditAccountWindow {
 
                 if grids.len() != 1 {
                     warn!("No grids found in {}", path);
-                    tx.send((false, "Invalid QR code".to_owned()))
+                    tx.send((false, "Invalid QR code".to_owned())).await
                 } else {
                     match grids[0].decode() {
-                        Ok((_, content)) => tx.send((true, content)),
+                        Ok((_, content)) => tx.send((true, content)).await,
                         Err(e) => {
                             warn!("{}", e);
-                            tx.send((false, "Invalid QR code".to_owned()))
+                            tx.send((false, "Invalid QR code".to_owned())).await
                         }
                     }
                 }
             }
             Err(e) => {
                 warn!("{}", e);
-                tx.send((false, "Invalid QR code".to_owned()))
+                tx.send((false, "Invalid QR code".to_owned())).await
             }
         };
     }
@@ -186,26 +184,23 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<(bool, String)>(glib::Priority::DEFAULT);
+        let (tx, rx) = async_channel::unbounded::<(bool, String)>();
 
-        rx.attach(
-            None,
-            clone!(@strong save_button, @strong input_secret, @strong self as w => move |(ok, qr_code)| {
-                let buffer = input_secret.buffer().unwrap();
+        glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
+            let (ok, qr_code) = rx.recv().await.unwrap();
+            let buffer = input_secret.buffer().unwrap();
 
-                w.reset_errors();
-                save_button.set_sensitive(true);
+            w.reset_errors();
+            save_button.set_sensitive(true);
 
-                if ok {
-                    buffer.set_text(QrCode::extract(qr_code.as_str()));
-                } else {
-                    buffer.set_text(&gettext(qr_code));
-                }
+            if ok {
+              buffer.set_text(QrCode::extract(qr_code.as_str()));
+            } else {
+              buffer.set_text(&gettext(qr_code));
+            }
 
-                let _ = w.validate();
-                 glib::ControlFlow::Continue
-            }),
-        );
+            w.validate()
+        }));
 
         qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret => move |_| {
             let tx = tx.clone();
@@ -257,16 +252,10 @@ impl EditAccountWindow {
                     }
                 };
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
-                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT); // used to signal adding account is completed
+                let (tx, rx) = async_channel::bounded(1);
 
-                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
-
-                rx_reset.attach(None, clone!(@strong edit_account => move |_| {
-                    // upon completion, reset form
-                    edit_account.reset();
-                    glib::ControlFlow::Continue
+                 glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
+                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap())
                 }));
 
                 let filter = gui.accounts_window.get_filter_value();
@@ -274,13 +263,10 @@ impl EditAccountWindow {
 
                 let account_id = account_id.buffer().text();
 
-                gui.pool
-                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                        Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                        tx_reset.send(true).expect("Could not send true");
-                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                        tx_done.send(true).expect("boom!");
-                    })(filter, connection, tx_done));
+                gui.pool.spawn_ok(Self::create_account(account_id, name, secret, group_id, connection.clone()));
+                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+
+                edit_account.reset();
 
                 gui.switch_to(Display::Accounts);
             }

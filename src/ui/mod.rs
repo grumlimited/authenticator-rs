@@ -3,7 +3,6 @@ pub use self::add_group::*;
 pub use self::edit_account_window::*;
 pub use self::error_display::*;
 pub use self::form_errors::*;
-pub use self::menu::*;
 pub use self::no_accounts::*;
 
 mod accounts_window;

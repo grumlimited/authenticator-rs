@@ -9,7 +9,6 @@ use rusqlite::Connection;
 
 use crate::exporting::Exporting;
 use crate::main_window::{Display, MainWindow};
-use crate::ui::AccountsRefreshResult;
 use crate::ui::{AccountsWindow, AddGroupWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
@@ -46,23 +45,22 @@ impl Menus for MainWindow {
                 filter.hide();
                 filter.set_text("");
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
+                let (tx, rx) = async_channel::bounded(1);
 
-                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
+                glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
+                    let _ = rx.recv().await.unwrap();
+                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())
+                }));
 
-                gui.pool
-                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                        tx_done.send(true).expect("boom!");
-                    })(None, connection.clone(), tx_done));
+                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), None));
+
             } else {
                 filter.show();
                 filter.grab_focus()
             }
 
             gio::Settings::new(NAMESPACE)
-                .set_boolean("search-visible",WidgetExt::is_visible(&filter))
+                .set_boolean("search-visible", WidgetExt::is_visible(&filter))
                 .expect("Could not find setting search-visible");
         }));
 

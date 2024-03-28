@@ -11,6 +11,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
+async-channel = "2.2"
 base32 = "0"
 bytes = "1"
 chrono = "0"
@@ -23,6 +24,7 @@ gdk-pixbuf = "0.18"
 gettext-rs = {version = "0", features = ["gettext-system"]}
 gio = "0.18"
 gtk-macros = "0.3"
+glib-macros = "0.18"
 image = "0"
 log = "0"
 log4rs = "1"
@@ -45,7 +47,7 @@ uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.18"
-features = ["v3_24"]
+features = ["v3_24_30"]
 
 [dependencies.glib]
 version = "0.18"

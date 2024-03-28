@@ -4,7 +4,6 @@ use std::time::Duration;
 use anyhow::Result;
 use curl::easy::Easy;
 use gdk_pixbuf::Pixbuf;
-use glib::Sender;
 use log::debug;
 use regex::Regex;
 use scraper::*;
@@ -26,9 +25,9 @@ pub struct AccountGroupIcon {
 }
 
 impl IconParser {
-    pub async fn html_notify(sender: Sender<Result<AccountGroupIcon>>, url: String) {
+    pub async fn html_notify(sender: async_channel::Sender<Result<AccountGroupIcon>>, url: String) {
         let result = Self::html(&url).await;
-        sender.send(result).expect("Could not send results");
+        sender.send(result).await.expect("Could not send result")
     }
 
     pub async fn html(url: &str) -> Result<AccountGroupIcon> {
