@@ -16,17 +16,17 @@ use crate::helpers::Keyring;
 use crate::main_window::Display::Errors;
 use crate::ui::menu::*;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
-use crate::{ui, NAMESPACE, NAMESPACE_PREFIX};
+use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     pub window: gtk::ApplicationWindow,
     pub about_popup: gtk::Window,
-    pub edit_account: ui::EditAccountWindow,
-    pub accounts_window: ui::AccountsWindow,
-    pub add_group: ui::AddGroupWindow,
-    pub no_accounts: ui::NoAccountsWindow,
-    pub errors: ui::ErrorsWindow,
+    pub edit_account: EditAccountWindow,
+    pub accounts_window: AccountsWindow,
+    pub add_group: AddGroupWindow,
+    pub no_accounts: NoAccountsWindow,
+    pub errors: ErrorsWindow,
     pub pool: ThreadPool,
     pub state: RefCell<State>,
 }
@@ -190,7 +190,7 @@ impl MainWindow {
         let add_group = self.add_group.clone();
         self.window.connect_delete_event(move |_, _| {
             add_group.reset(); // to ensure temp files deletion
-            glib::Propagation::Proceed
+            gtk::glib::Propagation::Proceed
         });
 
         self.bind_account_filter_events(connection.clone());
@@ -223,17 +223,20 @@ impl MainWindow {
 
         {
             //then bind "x" icon to empty the filter input.
-            let (tx, rx) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
-
-            let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                let _ = tx.send(true);
-                None
-            });
+            let (tx, rx) = async_channel::bounded::<bool>(1);
 
             let filter = self.accounts_window.filter.clone();
-            rx.attach(None, move |_| {
-                filter.set_text("");
-                glib::ControlFlow::Continue
+            glib::spawn_future_local(async move {
+                while (rx.recv().await).is_ok() {
+                    filter.set_text("");
+                }
+            });
+
+            let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
+                glib::spawn_future_local(clone!(@strong tx  => async move {
+                    tx.send(true).await
+                }));
+                None
             });
         }
     }

@@ -34,10 +34,8 @@ fn main() {
     }
 
     let resource = {
-        match gio::Resource::load(format!("data/{}.gresource", NAMESPACE)) {
-            Ok(resource) => resource,
-            Err(_) => gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap(),
-        }
+        gio::Resource::load(format!("data/{}.gresource", NAMESPACE))
+            .unwrap_or_else(|_| gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap())
     };
 
     gio::functions::resources_register(&resource);
@@ -68,7 +66,7 @@ fn main() {
             Err(e) => panic!("{:?}", e),
         }
 
-        match Paths::update_keyring_secrets(&connection) {
+        match Paths::update_keyring_secrets(Arc::new(Mutex::new(connection))) {
             Ok(()) => info!("Added local accounts to keyring"),
             Err(e) => panic!("{:?}", e),
         }
@@ -90,9 +88,9 @@ fn main() {
 }
 
 /**
-* Loads log4rs yaml config from gResource.
-* And in the most convoluted possible way, feeds it to Log4rs.
-*/
+ * Loads log4rs yaml config from gResource.
+ * And in the most convoluted possible way, feeds it to Log4rs.
+ */
 fn configure_logging() {
     let log4rs_yaml =
         gio::functions::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();

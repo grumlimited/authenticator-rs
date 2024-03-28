@@ -110,7 +110,7 @@ impl AddGroupWindow {
         let icon_filename = self.icon_filename.clone();
         let image_input = self.image_input.clone();
 
-        let (tx, rx) = glib::MainContext::channel::<anyhow::Result<AccountGroupIcon>>(glib::Priority::DEFAULT);
+        let (tx, rx) = async_channel::bounded::<anyhow::Result<AccountGroupIcon>>(1);
 
         url_input.connect_activate(clone!(@strong icon_reload => move |_| {
             icon_reload.clicked();
@@ -155,23 +155,20 @@ impl AddGroupWindow {
             }
         }));
 
-        rx.attach(
-            None,
-            clone!(@strong self as add_group => move |account_group_icon| {
-                add_group.icon_reload.set_sensitive(true);
-                add_group.save_button.set_sensitive(true);
+        glib::spawn_future_local(clone!(@strong self as add_group => async move {
+            let account_group_icon = rx.recv().await.unwrap();
 
-                match account_group_icon {
-                    Ok(account_group_icon) => Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
-                    Err(e) => {
-                        add_group.icon_error.set_label(format!("{}", e).as_str());
-                        add_group.icon_error.set_visible(true);
-                    }
+            add_group.icon_reload.set_sensitive(true);
+            add_group.save_button.set_sensitive(true);
+
+            match account_group_icon {
+                Ok(account_group_icon) => Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
+                Err(e) => {
+                    add_group.icon_error.set_label(format!("{}", e).as_str());
+                    add_group.icon_error.set_visible(true);
                 }
-
-                glib::ControlFlow::Continue
-            }),
-        );
+            }
+        }));
 
         {
             let add_group = self.clone();
@@ -208,29 +205,18 @@ impl AddGroupWindow {
                 let group_id = add_group.group_id.label();
                 let group_id = group_id.as_str().to_owned();
 
-                let (tx, rx) = glib::MainContext::channel::<AccountsRefreshResult>(glib::Priority::DEFAULT);
-                let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
-                let (tx_reset, rx_reset) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT); // used to signal adding group is completed
+                let (tx, rx) = async_channel::bounded::<AccountsRefreshResult>(1);
 
-                rx.attach(None, gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone()));
-
-                let add_group = add_group.clone();
-                rx_reset.attach(None, move |_| {
-                    // upon completion, reset form
+                glib::spawn_future_local(clone!(@strong add_group, @strong gui, @strong connection => async move {
+                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap());
                     add_group.reset();
-                    glib::ControlFlow::Continue
-                });
+                }));
 
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
-                gui.pool
-                    .spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |filter, connection, tx_done| async move {
-                        Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
-                        tx_reset.send(true).expect("Could not send true");
-                        AccountsWindow::load_account_groups(tx, connection.clone(), filter).await;
-                        tx_done.send(true).expect("boom!");
-                    })(filter, connection, tx_done));
+                gui.pool.spawn_ok(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
+                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
 
                 gui.switch_to(Display::Accounts);
             }
@@ -309,7 +295,7 @@ impl AddGroupWindow {
             temp_filepath.push(std::env::temp_dir());
             temp_filepath.push(&icon_filename_text);
 
-            match std::fs::read(&temp_filepath) {
+            match fs::read(&temp_filepath) {
                 Ok(bytes) => {
                     let icon_filepath = Paths::icons_path(&icon_filename_text);
                     debug!("icon_filepath: {}", icon_filepath.display());
@@ -357,7 +343,7 @@ impl AddGroupWindow {
         let icon_filepath = Paths::icons_path(icon_filename);
 
         if icon_filepath.is_file() {
-            match std::fs::remove_file(&icon_filepath) {
+            match fs::remove_file(&icon_filepath) {
                 Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
                 Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
             }

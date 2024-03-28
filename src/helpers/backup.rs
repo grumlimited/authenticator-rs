@@ -2,7 +2,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use glib::Sender;
 use rusqlite::Connection;
 
 use crate::exporting::AccountsImportExportResult;
@@ -12,17 +11,25 @@ use crate::model::AccountGroup;
 pub struct Backup;
 
 impl Backup {
-    pub async fn save_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>, all_secrets: Vec<(String, String)>, tx: Sender<AccountsImportExportResult>) {
-        let connection = connection.lock().unwrap();
+    pub async fn save_accounts(
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+        all_secrets: Vec<(String, String)>,
+        tx: async_channel::Sender<AccountsImportExportResult>,
+    ) {
+        let group_accounts = {
+            let connection = connection.lock().unwrap();
 
-        let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
+            let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
+            Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
 
-        Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
+            group_accounts
+        };
 
         let path = path.as_path();
         match Self::serialise_accounts(group_accounts, path) {
-            Ok(()) => tx.send(Ok(())).expect("Could not send message"),
-            Err(e) => tx.send(Err(e)).expect("Could not send message"),
+            Ok(()) => tx.send(Ok(())).await.expect("Could not send message"),
+            Err(e) => tx.send(Err(e)).await.expect("Could not send message"),
         }
     }
 
@@ -41,13 +48,12 @@ impl Backup {
         })
     }
 
-    pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: Sender<AccountsImportExportResult>) {
+    pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: async_channel::Sender<AccountsImportExportResult>) {
         let db = Self::restore_accounts(path, connection.clone()).await;
 
-        let connection = connection.lock().unwrap();
-        match db.and_then(|_| Paths::update_keyring_secrets(&connection)) {
-            Ok(_) => tx.send(Ok(())).expect("Could not send message"),
-            Err(e) => tx.send(Err(e)).expect("Could not send message"),
+        match db.and_then(|_| Paths::update_keyring_secrets(connection)) {
+            Ok(_) => tx.send(Ok(())).await.expect("Could not send message"),
+            Err(e) => tx.send(Err(e)).await.expect("Could not send message"),
         }
     }
 

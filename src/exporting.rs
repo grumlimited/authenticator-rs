@@ -14,7 +14,7 @@ use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 
 pub type AccountsImportExportResult = Result<(), RepositoryError>;
-type PopupButtonClosure = Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
+type PopupButtonClosure = Box<dyn Fn(&[gtk::glib::Value]) -> Option<gtk::glib::Value>>;
 
 pub trait Exporting {
     fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
@@ -48,36 +48,21 @@ impl Exporting for MainWindow {
 
             match dialog.run() {
                 gtk::ResponseType::Accept => {
+                    dialog.close();
+
                     let path = dialog.filename().unwrap();
 
-                    let (tx, rx) = glib::MainContext::channel::<AccountsImportExportResult>(glib::Priority::DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
+                    let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
 
-                    // sensitivity is restored in refresh_accounts()
-                    gui.accounts_window.accounts_container.set_sensitive(false);
+                    glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                        rx.recv().await.unwrap() // discard
+                    }));
 
-                    rx.attach(
-                        None,
-                        clone!(@strong connection, @strong gui  => move |result| {
-                            match result {
-                                Ok(_) => gui.accounts_window.refresh_accounts(&gui, connection.clone()),
-                                Err(e) => {
-                                    gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                                    gui.switch_to(Display::Errors);
-                                }
-                            }
 
-                            glib::ControlFlow::Continue
-                        }),
-                    );
-
-                    gui.pool.spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |_, connection, tx_done| async move {
-                        let all_secrets = Keyring::all_secrets().unwrap();
-                        Backup::save_accounts(path, connection.clone(), all_secrets, tx).await;
-                        tx_done.send(true).expect("boom!");
-                    })(None, connection, tx_done));
-
-                    dialog.close();
+                    let all_secrets = Keyring::all_secrets().unwrap();
+                     glib::spawn_future_local(clone!(@strong path, @strong gui => async move {
+                        Backup::save_accounts(path, connection.clone(), all_secrets, tx).await
+                    }));
                 }
                 _ => dialog.close(),
             }
@@ -85,7 +70,7 @@ impl Exporting for MainWindow {
     }
 
     fn import_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)> {
-        Box::new(clone!(@strong self as gui  => move |_b: &gtk::Button| {
+        Box::new(clone!(@strong self as gui  => move |_b: &Button| {
             popover.set_visible(false);
 
             let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
@@ -110,26 +95,24 @@ impl Exporting for MainWindow {
 
                     let path = dialog.filename().unwrap();
 
-                    let (tx, rx)= glib::MainContext::channel::<AccountsImportExportResult>(glib::Priority::DEFAULT);
-                    let (tx_done, rx_done) = glib::MainContext::channel::<bool>(glib::Priority::DEFAULT);
+                    let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
 
-                    // sensitivity is restored in refresh_accounts()
-                    gui.accounts_window.accounts_container.set_sensitive(false);
-                    gui.pool.spawn_ok(gui.accounts_window.flip_accounts_container(rx_done, |_, connection, tx_done| async move {
-                            Backup::restore_account_and_signal_back(path, connection, tx).await;
-                            tx_done.send(true).expect("boom!");
-                    })(None, connection.clone(), tx_done));
-
-                    rx.attach(None, clone!(@strong gui, @strong connection => move |result| {
+                    glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
+                        let result = rx.recv().await.unwrap();
                         match result {
-                            Ok(_) => gui.accounts_window.refresh_accounts(&gui, connection.clone()),
+                            Ok(_) => {
+                                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                                gui.accounts_window.accounts_container.set_sensitive(true);
+                            },
                             Err(e) => {
                                 gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
                                 gui.switch_to(Display::Errors);
                             }
                         }
+                    }));
 
-                        glib::ControlFlow::Continue
+                    glib::spawn_future_local(clone!(@strong connection, @strong path, @strong tx => async move {
+                        Backup::restore_account_and_signal_back(path, connection, tx).await
                     }));
                 }
                 _ => dialog.close(),
@@ -137,8 +120,8 @@ impl Exporting for MainWindow {
         }))
     }
 
-    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
-        Box::new(move |_param: &[glib::Value]| {
+    fn popup_close(popup: gtk::Window) -> PopupButtonClosure {
+        Box::new(move |_param: &[gtk::glib::Value]| {
             popup.hide();
             None
         })

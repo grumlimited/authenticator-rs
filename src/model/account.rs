@@ -110,13 +110,13 @@ impl Account {
             let context = style_context.clone();
             w.connect_enter_notify_event(move |_, _| {
                 context.add_class("account_row_hover");
-                glib::Propagation::Stop
+                gtk::glib::Propagation::Stop
             });
 
             let context = style_context.clone();
             w.connect_leave_notify_event(move |_, _| {
                 context.remove_class("account_row_hover");
-                glib::Propagation::Stop
+                gtk::glib::Propagation::Stop
             });
         }
 
