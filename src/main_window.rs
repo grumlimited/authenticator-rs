@@ -190,7 +190,7 @@ impl MainWindow {
         let add_group = self.add_group.clone();
         self.window.connect_delete_event(move |_, _| {
             add_group.reset(); // to ensure temp files deletion
-            glib::Propagation::Proceed
+            gtk::glib::Propagation::Proceed
         });
 
         self.bind_account_filter_events(connection.clone());

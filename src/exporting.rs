@@ -14,7 +14,7 @@ use crate::main_window::MainWindow;
 use crate::NAMESPACE_PREFIX;
 
 pub type AccountsImportExportResult = Result<(), RepositoryError>;
-type PopupButtonClosure = Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>>;
+type PopupButtonClosure = Box<dyn Fn(&[gtk::glib::Value]) -> Option<gtk::glib::Value>>;
 
 pub trait Exporting {
     fn export_accounts(&self, popover: PopoverMenu, connection: Arc<Mutex<Connection>>) -> Box<dyn Fn(&Button)>;
@@ -131,8 +131,8 @@ impl Exporting for MainWindow {
         }))
     }
 
-    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[glib::Value]) -> Option<glib::Value>> {
-        Box::new(move |_param: &[glib::Value]| {
+    fn popup_close(popup: gtk::Window) -> Box<dyn Fn(&[gtk::glib::Value]) -> Option<gtk::glib::Value>> {
+        Box::new(move |_param: &[gtk::glib::Value]| {
             popup.hide();
             None
         })

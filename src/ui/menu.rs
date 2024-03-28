@@ -95,7 +95,7 @@ impl Menus for MainWindow {
 
             gui.accounts_window.refresh_accounts(&gui, connection.clone());
 
-            glib::Propagation::Proceed
+            gtk::glib::Propagation::Proceed
         }));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
@@ -176,7 +176,7 @@ impl Menus for MainWindow {
             .no_accounts_plus_sign
             .connect_button_press_event(clone!(@strong action_menu => move |_, _| {
                 action_menu.clicked();
-                glib::Propagation::Stop
+                gtk::glib::Propagation::Stop
             }));
 
         add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, self, None));

@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 
 use glib::clone;
-use glib::prelude::*;
 use gtk::prelude::*;
 use gtk_macros::*;
 use log::error;

@@ -22,9 +22,9 @@ futures-executor = "0"
 gdk = "0.18"
 gdk-pixbuf = "0.18"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.18"
+gio = "0.19.3"
 gtk-macros = "0.3"
-glib-macros = "0.18"
+glib-macros = "0.19.3"
 image = "0"
 log = "0"
 log4rs = "1"
@@ -50,7 +50,7 @@ version = "0.18"
 features = ["v3_24_30"]
 
 [dependencies.glib]
-version = "0.18"
+version = "0.19.3"
 
 [dev-dependencies]
 async-std = {version = "1", features = [] }
