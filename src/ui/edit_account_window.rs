@@ -184,7 +184,7 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = async_channel::unbounded::<(bool, String)>();
+        let (tx, rx) = async_channel::bounded::<(bool, String)>(1);
 
         glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
             let (ok, qr_code) = rx.recv().await.unwrap();
