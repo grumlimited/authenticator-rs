@@ -207,8 +207,9 @@ impl AddGroupWindow {
 
                 let (tx, rx) = async_channel::bounded::<AccountsRefreshResult>(1);
 
-                glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap())
+                glib::spawn_future_local(clone!(@strong add_group, @strong gui, @strong connection => async move {
+                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap());
+                    add_group.reset();
                 }));
 
                 let filter = gui.accounts_window.get_filter_value();
@@ -216,8 +217,6 @@ impl AddGroupWindow {
 
                 gui.pool.spawn_ok(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
                 gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
-
-                add_group.reset();
 
                 gui.switch_to(Display::Accounts);
             }
@@ -296,7 +295,7 @@ impl AddGroupWindow {
             temp_filepath.push(std::env::temp_dir());
             temp_filepath.push(&icon_filename_text);
 
-            match std::fs::read(&temp_filepath) {
+            match fs::read(&temp_filepath) {
                 Ok(bytes) => {
                     let icon_filepath = Paths::icons_path(&icon_filename_text);
                     debug!("icon_filepath: {}", icon_filepath.display());
@@ -344,7 +343,7 @@ impl AddGroupWindow {
         let icon_filepath = Paths::icons_path(icon_filename);
 
         if icon_filepath.is_file() {
-            match std::fs::remove_file(&icon_filepath) {
+            match fs::remove_file(&icon_filepath) {
                 Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
                 Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
             }
