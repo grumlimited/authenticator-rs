@@ -10,9 +10,10 @@ use regex::Regex;
 use rqrr::PreparedImage;
 use rusqlite::Connection;
 
-use crate::helpers::QrCode;
+use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
+use crate::helpers::{QrCode, QrCodeResult};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
@@ -146,13 +147,13 @@ impl EditAccountWindow {
 
         // select 1st entry to avoid blank selection choice
         if group_id.is_none() {
-            let first_entry = groups.get(0).map(|e| format!("{}", e.id));
+            let first_entry = groups.first().map(|e| format!("{}", e.id));
             let first_entry = first_entry.as_deref();
             self.input_group.set_active_id(first_entry);
         }
     }
 
-    async fn process_qr_code(path: String, tx: async_channel::Sender<(bool, String)>) {
+    async fn process_qr_code(path: String, tx: async_channel::Sender<QrCodeResult>) {
         let _ = match image::open(&path).map(|v| v.to_luma8()) {
             Ok(img) => {
                 let mut luma = PreparedImage::prepare(img);
@@ -160,20 +161,20 @@ impl EditAccountWindow {
 
                 if grids.len() != 1 {
                     warn!("No grids found in {}", path);
-                    tx.send((false, "Invalid QR code".to_owned())).await
+                    tx.send(Invalid("Invalid QR code".to_owned())).await
                 } else {
                     match grids[0].decode() {
-                        Ok((_, content)) => tx.send((true, content)).await,
+                        Ok((_, content)) => tx.send(Valid(QrCode::new(content))).await,
                         Err(e) => {
                             warn!("{}", e);
-                            tx.send((false, "Invalid QR code".to_owned())).await
+                            tx.send(Invalid("Invalid QR code".to_owned())).await
                         }
                     }
                 }
             }
             Err(e) => {
                 warn!("{}", e);
-                tx.send((false, "Invalid QR code".to_owned())).await
+                tx.send(Invalid("Invalid QR code".to_owned())).await
             }
         };
     }
@@ -184,19 +185,22 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = async_channel::bounded::<(bool, String)>(1);
+        let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
 
         glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
-            let (ok, qr_code) = rx.recv().await.unwrap();
+            let qr_code_result = rx.recv().await.unwrap();
             let buffer = input_secret.buffer().unwrap();
 
             w.reset_errors();
             save_button.set_sensitive(true);
 
-            if ok {
-              buffer.set_text(QrCode::extract(qr_code.as_str()));
-            } else {
-              buffer.set_text(&gettext(qr_code));
+            match qr_code_result  {
+                Valid(qr_code) => {
+                    buffer.set_text(qr_code.extract());
+                }
+                Invalid(qr_code) => {
+                    buffer.set_text(&gettext(qr_code));
+                }
             }
 
             w.validate()

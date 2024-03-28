@@ -79,7 +79,7 @@ impl Keyring {
         let search_items = collection.search_items(attributes)?;
 
         search_items
-            .get(0)
+            .first()
             .map(|i| i.get_secret())
             .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|_| Error::NoResult)))
             .map(|r| r.map(Some))
@@ -97,7 +97,7 @@ impl Keyring {
 
         let search_items = collection.search_items(attributes)?;
 
-        match search_items.get(0) {
+        match search_items.first() {
             Some(i) => i.delete(),
             None => Err(Error::NoResult),
         }

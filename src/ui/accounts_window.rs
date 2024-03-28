@@ -288,7 +288,7 @@ impl AccountsWindow {
 
                 glib::spawn_future_local(
                     clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => async move {
-                        while let Ok(_) = rx.recv().await {
+                        while (rx.recv().await).is_ok() {
                             copy_button.set_image(Some(&edit_copy_img));
                         }
                     }),

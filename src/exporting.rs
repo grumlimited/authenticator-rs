@@ -49,7 +49,7 @@ impl Exporting for MainWindow {
             match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.close();
-                    
+
                     let path = dialog.filename().unwrap();
 
                     let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
@@ -110,7 +110,7 @@ impl Exporting for MainWindow {
                             }
                         }
                     }));
-                    
+
                     glib::spawn_future_local(clone!(@strong connection, @strong path, @strong tx => async move {
                         Backup::restore_account_and_signal_back(path, connection, tx).await
                     }));
