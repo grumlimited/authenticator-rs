@@ -20,11 +20,11 @@ directories = "5"
 futures = {version = "0", features = ["thread-pool"]}
 futures-executor = "0"
 gdk = "0.18"
-gdk-pixbuf = "0.18"
+gdk-pixbuf = "0.19"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.19.3"
+gio = "0.19"
 gtk-macros = "0.3"
-glib-macros = "0.19.3"
+glib-macros = "0.19"
 image = "0"
 log = "0"
 log4rs = "1"
@@ -47,10 +47,10 @@ uuid = { version = "1", features = ["v4"] }
 
 [dependencies.gtk]
 version = "0.18"
-features = ["v3_24_30"]
+features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.19.3"
+version = "0.19"
 
 [dev-dependencies]
 async-std = {version = "1", features = [] }

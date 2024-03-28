@@ -106,7 +106,7 @@ impl AccountGroup {
         delete_button.set_sensitive(self.entries.is_empty());
 
         // This would normally be defined within account_group.ui.
-        // However doing so produces annoying (yet seemingly harmless) warnings:
+        // However, doing so produces annoying (yet seemingly harmless) warnings:
         // Gtk-WARNING **: 20:26:01.739: Child name 'main' not found in GtkStack
         popover.add(&buttons_container);
 

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use curl::easy::Easy;
-use gdk_pixbuf::Pixbuf;
+use gtk::gdk_pixbuf::Pixbuf;
 use log::debug;
 use regex::Regex;
 use scraper::*;
