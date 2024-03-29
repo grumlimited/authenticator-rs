@@ -93,15 +93,6 @@
     <property name="icon-name">object-select-symbolic</property>
     <property name="use-fallback">True</property>
   </object>
-  <object class="GtkFileFilter" id="yaml_filter">
-    <mime-types>
-      <mime-type>text/yaml</mime-type>
-    </mime-types>
-    <patterns>
-      <pattern>*.yaml</pattern>
-      <pattern>*.yml</pattern>
-    </patterns>
-  </object>
   <object class="GtkFileFilter" id="import_filter">
      <mime-types>
        <mime-type>text/yaml</mime-type>
