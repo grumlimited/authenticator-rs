@@ -156,18 +156,18 @@ impl AddGroupWindow {
         }));
 
         glib::spawn_future_local(clone!(@strong self as add_group => async move {
-            let account_group_icon = rx.recv().await.unwrap();
-
-            add_group.icon_reload.set_sensitive(true);
-            add_group.save_button.set_sensitive(true);
-
-            match account_group_icon {
-                Ok(account_group_icon) => Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
-                Err(e) => {
+            match rx.recv().await {
+                Ok(Ok(account_group_icon)) =>
+                    Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
+                Ok(Err(e)) => {
                     add_group.icon_error.set_label(format!("{}", e).as_str());
                     add_group.icon_error.set_visible(true);
                 }
+                Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
             }
+
+            add_group.icon_reload.set_sensitive(true);
+            add_group.save_button.set_sensitive(true);
         }));
 
         {

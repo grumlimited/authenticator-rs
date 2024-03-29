@@ -5,7 +5,7 @@ use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
-use log::{debug, error};
+use log::{debug, error, warn};
 use regex::Regex;
 use rusqlite::Connection;
 
@@ -161,20 +161,20 @@ impl EditAccountWindow {
         let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
 
         glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
-            let qr_code_result = rx.recv().await.unwrap();
-            let buffer = input_secret.buffer().unwrap();
+            match rx.recv().await {
+                Ok(Valid(qr_code)) => {
+                    let buffer = input_secret.buffer().unwrap();
+                    buffer.set_text(qr_code.extract());
+                }
+                Ok(Invalid(qr_code)) => {
+                    let buffer = input_secret.buffer().unwrap();
+                    buffer.set_text(&gettext(qr_code));
+                }
+                Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
+            }
 
             w.reset_errors();
             save_button.set_sensitive(true);
-
-            match qr_code_result  {
-                Valid(qr_code) => {
-                    buffer.set_text(qr_code.extract());
-                }
-                Invalid(qr_code) => {
-                    buffer.set_text(&gettext(qr_code));
-                }
-            }
 
             w.validate()
         }));

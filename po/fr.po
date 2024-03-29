@@ -169,3 +169,9 @@ msgstr "Réduire"
 
 msgid "Expand"
 msgstr "Étendre"
+
+msgid "New group"
+msgstr "Nouveau groupe"
+
+msgid "Edit group"
+msgstr "Modifier le groupe"

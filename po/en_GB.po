@@ -169,3 +169,9 @@ msgstr "Collapse"
 
 msgid "Expand"
 msgstr "Expand"
+
+msgid "New group"
+msgstr "New group"
+
+msgid "Edit group"
+msgstr "Edit group"
