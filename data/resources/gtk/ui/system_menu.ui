@@ -28,6 +28,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="can-focus">False</property>
+                <property name="tooltip-text" translatable="yes">import_button_yaml_tootlip</property>
                 <property name="halign">start</property>
                 <property name="label" translatable="yes">Import YAML</property>
               </object>
@@ -53,6 +54,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="can-focus">False</property>
+                <property name="tooltip-text" translatable="yes">import_button_gauth_tootlip</property>
                 <property name="halign">start</property>
                 <property name="label" translatable="yes">Import GAuth</property>
               </object>
@@ -80,6 +82,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="tooltip-text" translatable="yes">export_button_yaml_tootlip</property>
                 <property name="halign">start</property>
                 <property name="label" translatable="yes">Export YAML</property>
               </object>

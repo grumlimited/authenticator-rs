@@ -98,11 +98,20 @@ msgstr "URL de l'icône"
 msgid "Import YAML"
 msgstr "Importer YAML"
 
+msgid "import_button_yaml_tootlip"
+msgstr "Importer des comptes depuis un fichier YAML"
+
 msgid "Import GAuth"
 msgstr "Importer GAuth"
 
+msgid "import_button_gauth_tootlip"
+msgstr "Importer des comptes depuis l'application Google Authenticator"
+
 msgid "Export YAML"
 msgstr "Exporter YAML"
+
+msgid "export_button_yaml_tootlip"
+msgstr "Exportez vos comptes vers un fichier YAML"
 
 msgid "keyring_locked"
 msgstr "Gnome keyring est verrouillé."
