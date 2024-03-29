@@ -4,8 +4,6 @@ AUTHENTICATOR-RS
 
 Authenticator-rs is a TOTP-MFA application written in Rust and GTK3.
 
-This application is very much a work in progress.
-
 It is initially inspired by [authenticator](https://gitlab.gnome.org/World/Authenticator), which sadly sort of 
 [broke](https://aur.archlinux.org/packages/authenticator/) for me 
 in the latest versions of python shipped with [Arch Linux](https://www.archlinux.org/).
@@ -14,6 +12,25 @@ It is by no means as feature-rich as its python relative, more like a diamond in
 but definitely in the rough...
 
 ## Features
+
+### Importing and exporting - including google authenticator exports
+
+- Using `yaml` format:
+
+    ---
+        - name: group name
+          url: bbc.co.uk
+          entries:
+            - label: Account 1
+              secret: secret code
+
+    [<img src="./data/screenshots/screenshot5.png" width="400" />](./data/screenshots/screenshot5.png)
+
+- Using `google authenticator` format:
+
+    Google Authenticator exports in the shape of a `qrcode` image can be imported directly. `authenticator-rs` will import these files by choosing the
+    `Import GAuth` option from the top menu.
+
 
 ### Dark themes friendly
 
@@ -24,19 +41,6 @@ but definitely in the rough...
 [<img src="./data/screenshots/screenshot3.png" width="400" />](./data/screenshots/screenshot3.png)
 [<img src="./data/screenshots/screenshot4.png" width="400" />](./data/screenshots/screenshot4.png)
 
-
-### Importing and exporting
-
-Using `yaml` format
-
-    ---
-    - name: group name
-      url: bbc.co.uk
-      entries:
-        - label: Account 1
-          secret: secret code
-
-[<img src="./data/screenshots/screenshot5.png" width="400" />](./data/screenshots/screenshot5.png)
 
 ## License
 
