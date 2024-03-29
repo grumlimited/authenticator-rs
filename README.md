@@ -17,16 +17,13 @@ but definitely in the rough...
 
 ### Dark themes friendly
 
-![authenticator-rs](./data/screenshots/screenshot1.png "Main view")
-![authenticator-rs](./data/screenshots/screenshot2.png "Main view")
+[<img src="./data/screenshots/screenshot1.png" width="250" />](screenshot1)
+[<img src="./data/screenshots/screenshot2.png" width="250" />](screenshot2)
 
-### Group editing
+### Group and account editing
+[<img src="./data/screenshots/screenshot3.png" width="250" />](screenshot3)
+[<img src="./data/screenshots/screenshot4.png" width="250" />](screenshot4)
 
-![authenticator-rs](./data/screenshots/screenshot3.png "Group editing")
-
-### Account editing
-
-![authenticator-rs](./data/screenshots/screenshot4.png "Account editing")
 
 ### Importing and exporting
 
