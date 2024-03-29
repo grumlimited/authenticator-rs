@@ -52,21 +52,21 @@ jobs:
 
           mkdir -p ~/.cargo/release
 
-      - name: Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
+#      - name: Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          profile: minimal
+#          toolchain: ${{ matrix.rust }}
+#          override: true
+#          components: rustfmt, clippy
 
       - name: Create Debian package
         env:
           DESTDIR: '~/authenticator-rs-deb'
         run: |
           mkdir -p $DESTDIR
-          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
-          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
+#          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
+          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make install-gresource
 
       - name: Upload Debian release
         uses: softprops/action-gh-release@v1
