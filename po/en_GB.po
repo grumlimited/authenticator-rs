@@ -95,8 +95,14 @@ msgstr "Icon"
 msgid "Icon URL"
 msgstr "Icon URL"
 
-msgid "Import accounts"
-msgstr "Import accounts"
+msgid "Import YAML"
+msgstr "Import YAML"
+
+msgid "Import GAuth"
+msgstr "Import GAuth"
+
+msgid "Export YAML"
+msgstr "Export YAML"
 
 msgid "keyring_locked"
 msgstr "Gnome keyring is locked."
