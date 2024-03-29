@@ -17,12 +17,12 @@ but definitely in the rough...
 
 ### Dark themes friendly
 
-[<img src="./data/screenshots/screenshot1.png" width="300" />](./data/screenshots/screenshot1.png)
-[<img src="./data/screenshots/screenshot2.png" width="300" />](./data/screenshots/screenshot2.png)
+[<img src="./data/screenshots/screenshot1.png" width="400" />](./data/screenshots/screenshot1.png)
+[<img src="./data/screenshots/screenshot2.png" width="400" />](./data/screenshots/screenshot2.png)
 
 ### Group and account editing
-[<img src="./data/screenshots/screenshot3.png" width="300" />](./data/screenshots/screenshot3.png)
-[<img src="./data/screenshots/screenshot4.png" width="300" />](./data/screenshots/screenshot4.png)
+[<img src="./data/screenshots/screenshot3.png" width="400" />](./data/screenshots/screenshot3.png)
+[<img src="./data/screenshots/screenshot4.png" width="400" />](./data/screenshots/screenshot4.png)
 
 
 ### Importing and exporting
