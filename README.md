@@ -36,7 +36,7 @@ Using `yaml` format
         - label: Account 1
           secret: secret code
 
-![authenticator-rs](./data/screenshots/screenshot5.png "Importing")
+[<img src="./data/screenshots/screenshot5.png" width="400" />](./data/screenshots/screenshot5.png)
 
 ## License
 
