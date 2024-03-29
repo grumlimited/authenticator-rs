@@ -1,9 +1,10 @@
+use gettextrs::gettext;
 use std::sync::{Arc, Mutex};
 
 use gio::prelude::*;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Button, MenuButton};
+use gtk::{Builder, Button, MenuButton, PopoverMenu};
 use gtk_macros::get_widget;
 use rusqlite::Connection;
 
@@ -37,8 +38,8 @@ impl Menus for MainWindow {
     }
 
     fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> Button {
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
-        get_widget!(builder, gtk::Button, search_button);
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
+        get_widget!(builder, Button, search_button);
 
         search_button.connect_clicked(clone!(@strong self as gui, @strong self.accounts_window.filter as filter => move |_| {
             if WidgetExt::is_visible(&filter) {
@@ -73,12 +74,12 @@ impl Menus for MainWindow {
     }
 
     fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
-        get_widget!(builder, gtk::PopoverMenu, popover);
+        get_widget!(builder, PopoverMenu, popover);
         get_widget!(builder, Button, about_button);
         get_widget!(builder, Button, export_button);
-        get_widget!(builder, Button, import_button);
+        get_widget!(builder, Button, import_button_yaml);
         get_widget!(builder, Button, import_button_ga);
 
         let dark_mode_slider: gtk::Switch = {
@@ -101,7 +102,8 @@ impl Menus for MainWindow {
         }));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
-        import_button.connect_clicked(self.import_accounts(ImportType::Internal, popover.clone(), connection.clone()));
+
+        import_button_yaml.connect_clicked(self.import_accounts(ImportType::Internal, popover.clone(), connection.clone()));
         import_button_ga.connect_clicked(self.import_accounts(ImportType::GoogleAuthenticator, popover.clone(), connection));
 
         let system_menu: MenuButton = builder.object("system_menu").unwrap();
@@ -110,7 +112,7 @@ impl Menus for MainWindow {
             popover.show_all();
         }));
 
-        let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title("About").build();
+        let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
 
