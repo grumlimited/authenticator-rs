@@ -76,7 +76,8 @@ install-gresource: gresource
 	# Install LOCALE files
 	rm -fr builddir/
 	meson setup builddir --prefix=$(PREFIX)
-	meson install -C builddir --destdir=$(DESTDIR)
+	#meson install -C builddir --destdir=$(DESTDIR)
+	meson install -C builddir --destdir=/home/runner/authenticator-rs-deb
 
 	echo XXX
 	pwd
