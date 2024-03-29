@@ -25,7 +25,6 @@ const NAMESPACE: &str = "uk.co.grumlimited.authenticator-rs";
 const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 
 const GETTEXT_PACKAGE: &str = "authenticator-rs";
-const LOCALEDIR: &str = "/usr/share/locale";
 
 fn main() {
     match Paths::check_configuration_dir() {
@@ -54,8 +53,8 @@ fn main() {
 
         // Prepare i18n
         setlocale(LocaleCategory::LcAll, "");
-        bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR).unwrap();
         textdomain(GETTEXT_PACKAGE).unwrap();
+        bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").unwrap();
 
         configure_logging();
 

@@ -2,11 +2,14 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use glib_macros::clone;
+use log::warn;
 use rusqlite::Connection;
 
-use crate::exporting::AccountsImportExportResult;
-use crate::helpers::{Database, Keyring, Paths, RepositoryError, SecretType};
-use crate::model::AccountGroup;
+use crate::exporting::{AccountsImportExportResult, ImportType};
+use crate::helpers::RepositoryError::GAuthQrCodeError;
+use crate::helpers::{Database, Keyring, Paths, QrCode, QrCodeResult, RepositoryError, SecretType};
+use crate::model::{Account, AccountGroup};
 
 pub struct Backup;
 
@@ -48,8 +51,16 @@ impl Backup {
         })
     }
 
-    pub async fn restore_account_and_signal_back(path: PathBuf, connection: Arc<Mutex<Connection>>, tx: async_channel::Sender<AccountsImportExportResult>) {
-        let db = Self::restore_accounts(path, connection.clone()).await;
+    pub async fn restore_account_and_signal_back(
+        import_type: ImportType,
+        path: PathBuf,
+        connection: Arc<Mutex<Connection>>,
+        tx: async_channel::Sender<AccountsImportExportResult>,
+    ) {
+        let db = match import_type {
+            ImportType::Internal => Self::restore_accounts(path, connection.clone()).await,
+            ImportType::GoogleAuthenticator => Self::restore_gauth_accounts(path, connection.clone()).await,
+        };
 
         match db.and_then(|_| Paths::update_keyring_secrets(connection)) {
             Ok(_) => tx.send(Ok(())).await.expect("Could not send message"),
@@ -71,6 +82,43 @@ impl Backup {
             .try_for_each(|account_groups| Database::save_group_and_accounts(&connection, account_groups))?;
 
         Ok(())
+    }
+
+    async fn restore_gauth_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
+        use google_authenticator_converter::process_data;
+
+        let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
+
+        glib::spawn_future_local(clone!(@strong tx  => async move {
+            QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx).await
+        }));
+
+        match rx.recv().await.unwrap() {
+            QrCodeResult::Valid(qr_code) => {
+                let accounts = process_data(qr_code.qr_code_payload.as_str());
+
+                let entries = accounts
+                    .unwrap()
+                    .iter()
+                    .map(|account| {
+                        let secret = account.secret.clone();
+                        let secret_type = SecretType::LOCAL;
+                        Account::new(0, 0, &account.name, &secret, secret_type)
+                    })
+                    .collect();
+
+                let mut account_groups = AccountGroup::new(0, "GAuth", None, None, false, entries);
+
+                let connection = connection.lock().unwrap();
+                Database::save_group_and_accounts(&connection, &mut account_groups)?;
+
+                Ok(())
+            }
+            QrCodeResult::Invalid(e) => {
+                warn!("Invalid GAuth QR code: {}", e);
+                Err(GAuthQrCodeError(format!("Invalid GAuth code: {}", e)))
+            }
+        }
     }
 
     fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, RepositoryError> {

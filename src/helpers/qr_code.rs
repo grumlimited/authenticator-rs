@@ -1,12 +1,15 @@
+use crate::helpers::QrCodeResult::{Invalid, Valid};
+use log::warn;
 use regex::Regex;
+use rqrr::PreparedImage;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum QrCodeResult {
     Valid(QrCode),
     Invalid(String),
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub struct QrCode {
     pub qr_code_payload: String,
 }
@@ -24,6 +27,32 @@ impl QrCode {
             .and_then(|cap| cap.get(1).map(|secret| secret.as_str()));
 
         secret.unwrap_or(self.qr_code_payload.as_str())
+    }
+
+    pub async fn process_qr_code(path: String, tx: async_channel::Sender<QrCodeResult>) {
+        let _ = match image::open(&path).map(|v| v.to_luma8()) {
+            Ok(img) => {
+                let mut luma = PreparedImage::prepare(img);
+                let grids = luma.detect_grids();
+
+                if grids.len() != 1 {
+                    warn!("No grids found in {}", path);
+                    tx.send(Invalid("Invalid QR code".to_owned())).await
+                } else {
+                    match grids[0].decode() {
+                        Ok((_, content)) => tx.send(Valid(QrCode::new(content))).await,
+                        Err(e) => {
+                            warn!("{}", e);
+                            tx.send(Invalid("Invalid QR code".to_owned())).await
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("{}", e);
+                tx.send(Invalid("Invalid QR code".to_owned())).await
+            }
+        };
     }
 }
 

@@ -25,6 +25,7 @@ gettext-rs = {version = "0", features = ["gettext-system"]}
 gio = "0.19"
 gtk-macros = "0.3"
 glib-macros = "0.19"
+google_authenticator_converter = "0.2.0"
 image = "0"
 log = "0"
 log4rs = "1"
