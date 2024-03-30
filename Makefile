@@ -81,7 +81,7 @@ install-gresource: gresource
 	meson install -C builddir --destdir=$(PWD)$(DESTDIR)
 
 	echo XXX
-	pwd
+	printenv|sort
 	echo XXX
 	ls
 	echo XXX
