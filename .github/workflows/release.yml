@@ -54,7 +54,7 @@ jobs:
 
       - name: Create Debian package
         env:
-          DESTDIR: '~/authenticator-rs-deb'
+          DESTDIR: '/tmp/authenticator-rs-deb'
         run: |
           mkdir -p $DESTDIR
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make install-gresource
