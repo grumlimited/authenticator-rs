@@ -3,7 +3,7 @@ on:
     types:
       - created
 
-name: Continuous integration
+name: Release
 
 env:
   DEB_PKG_NAME: authenticator-rs-${{ github.event.release.tag_name }}-x86_64.deb
@@ -62,7 +62,7 @@ jobs:
 
       - name: Create Debian package
         env:
-          DESTDIR: '/tmp/authenticator-rs-deb' # keep path absolute - meson has issues with relative paths
+          DESTDIR: '/tmp/authenticator-rs-deb' # keep path absolute - meson has issues with relative paths on CI
         run: |
           mkdir -p $DESTDIR
           RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
