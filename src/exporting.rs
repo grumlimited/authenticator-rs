@@ -39,9 +39,9 @@ impl Exporting for MainWindow {
             get_widget!(builder, gtk::FileChooserDialog, dialog);
             get_widget!(builder, gtk::Window, error_popup);
             get_widget!(builder, gtk::Label, error_popup_body);
-            get_widget!(builder, gtk::FileFilter, yaml_filter);
+            get_widget!(builder, gtk::FileFilter, import_filter);
 
-            dialog.set_filter(&yaml_filter);
+            dialog.set_filter(&import_filter);
 
             dialog.set_do_overwrite_confirmation(true);
             error_popup_body.set_label(&gettext("Could not export accounts!"));
