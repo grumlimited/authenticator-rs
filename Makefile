@@ -45,42 +45,37 @@ install-po: # dev only - run with sudo
 	msgfmt po/en_GB.po -o $(sharedir)/locale/en_GB/LC_MESSAGES/authenticator-rs.mo
 
 install-gresource: gresource
-	pwd
 	# Install gResource
 	mkdir -p $(sharedir)/uk.co.grumlimited.authenticator-rs/
 	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gresource $(sharedir)/uk.co.grumlimited.authenticator-rs/uk.co.grumlimited.authenticator-rs.gresource
 
-#	# Install icons
-#	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
-#	$(INSTALL_DATA) data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
-#	mkdir -p $(sharedir)/icons/hicolor/64x64/apps/
-#	$(INSTALL_DATA) data/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
-#	mkdir -p $(sharedir)/icons/hicolor/128x128/apps/
-#	$(INSTALL_DATA) data/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
-#
-#	# Force icon cache refresh
-#	touch $(sharedir)/icons/hicolor
-#
-#	# Install application metadata
-#	mkdir -p $(sharedir)/metainfo/
-#	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.appdata.xml $(sharedir)/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml
-#
-#	# Install desktop file
-#	mkdir -p $(sharedir)/applications/
-#	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.desktop $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
-#
-#	# Install gschema file
-#	mkdir -p $(sharedir)/glib-2.0/schemas/
-#	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml $(sharedir)/glib-2.0/schemas/
+	# Install icons
+	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
+	$(INSTALL_DATA) data/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg $(sharedir)/icons/hicolor/scalable/apps/uk.co.grumlimited.authenticator-rs.svg
+	mkdir -p $(sharedir)/icons/hicolor/64x64/apps/
+	$(INSTALL_DATA) data/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.64.png $(sharedir)/icons/hicolor/64x64/apps/uk.co.grumlimited.authenticator-rs.png
+	mkdir -p $(sharedir)/icons/hicolor/128x128/apps/
+	$(INSTALL_DATA) data/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.128.png $(sharedir)/icons/hicolor/128x128/apps/uk.co.grumlimited.authenticator-rs.png
+
+	# Force icon cache refresh
+	touch $(sharedir)/icons/hicolor
+
+	# Install application metadata
+	mkdir -p $(sharedir)/metainfo/
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.appdata.xml $(sharedir)/metainfo/uk.co.grumlimited.authenticator-rs.appdata.xml
+
+	# Install desktop file
+	mkdir -p $(sharedir)/applications/
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.desktop $(sharedir)/applications/uk.co.grumlimited.authenticator-rs.desktop
+
+	# Install gschema file
+	mkdir -p $(sharedir)/glib-2.0/schemas/
+	$(INSTALL_DATA) data/uk.co.grumlimited.authenticator-rs.gschema.xml $(sharedir)/glib-2.0/schemas/
 
 	# Install LOCALE files
 	rm -fr builddir/
 	meson setup builddir --prefix=$(PREFIX)
 	meson install -C builddir --destdir=$(DESTDIR)
-
-	echo XXX
-	find $(DESTDIR)
-
 
 # Install onto the system
 install : release install-gresource
