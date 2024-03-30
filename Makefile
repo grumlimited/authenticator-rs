@@ -8,8 +8,6 @@ INSTALL_PROGRAM=$(INSTALL)
 # Run to install application data, with differing permissions
 INSTALL_DATA=$(INSTALL) -m 644
 
-PWD = $(shell pwd)
-
 # Directories into which to install the various files
 bindir=$(DESTDIR)$(PREFIX)/bin
 sharedir=$(DESTDIR)$(PREFIX)/share
@@ -78,7 +76,7 @@ install-gresource: gresource
 	# Install LOCALE files
 	rm -fr builddir/
 	meson setup builddir --prefix=$(PREFIX)
-	meson install -C builddir --destdir=$(PWD)$(DESTDIR)
+	meson install -C builddir --destdir=$(DESTDIR)
 
 	echo XXX
 	find $(DESTDIR)
