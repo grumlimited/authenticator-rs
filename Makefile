@@ -80,12 +80,12 @@ install-gresource: gresource
 	meson setup builddir --prefix=$(PREFIX)
 	meson install -C builddir --destdir=$(PWD)$(DESTDIR)
 
-#	echo XXX
-#	pwd
-#	echo XXX
-#	ls
-#	echo XXX
-#	find $(DESTDIR)
+	echo XXX
+	pwd
+	echo XXX
+	ls
+	echo XXX
+	find $(DESTDIR)
 
 
 # Install onto the system
