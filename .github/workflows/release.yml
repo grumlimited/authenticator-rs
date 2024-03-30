@@ -52,12 +52,21 @@ jobs:
 
           mkdir -p ~/.cargo/release
 
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+
       - name: Create Debian package
         env:
           DESTDIR: '/tmp/authenticator-rs-deb' # keep path absolute - meson has issues with relative paths
         run: |
           mkdir -p $DESTDIR
-          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make install-gresource
+          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make release-version
+          RELEASE_VERSION=${{ github.event.release.tag_name }} DESTDIR=$DESTDIR make debian-pkg
 
       - name: Upload Debian release
         uses: softprops/action-gh-release@v1
@@ -66,3 +75,66 @@ jobs:
           files: |
             ${{ env.DEB_PKG_NAME }}
             ${{ env.DEB_PKG_NAME }}.md5sum
+
+  centos:
+    runs-on: ubuntu-latest
+    needs: [ci]
+
+    steps:
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sudo make alien
+
+      - name: Create CentOS 8 package
+        run: |
+          wget https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O ${DEB_PKG_NAME}
+          
+          alien -r -k --scripts --target=x86_64 ${DEB_PKG_NAME}
+          md5sum ${RPM_PKG_NAME} >> ${RPM_PKG_NAME}.md5sum
+
+      - name: Upload CentOS 8 release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            ${{ env.RPM_PKG_NAME }}
+            ${{ env.RPM_PKG_NAME }}.md5sum
+
+
+  arch:
+    runs-on: ubuntu-latest
+    needs: [ci]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare arch package metadata
+        run: |
+          wget -q https://github.com/grumlimited/authenticator-rs/releases/download/${{ github.event.release.tag_name }}/${DEB_PKG_NAME} -O build-aux/arch/authenticator-rs-bin/${DEB_PKG_NAME}
+
+          MD5_SUM=$(md5sum build-aux/arch/authenticator-rs-bin/${DEB_PKG_NAME}  | awk '{print $1}')
+          awk -v q="'" -v MD5_SUM=$MD5_SUM -i inplace 'BEGINFILE{print "md5sums=(" q MD5_SUM q ")"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
+          awk -i inplace 'BEGINFILE{print "pkgver=${{ github.event.release.tag_name }}"}{print}' build-aux/arch/authenticator-rs-bin/PKGBUILD
+
+      - name: Validate PKGBUILD
+        id: validate-pkgbuild
+        uses: 2m/arch-pkgbuild-builder@v1.16
+        with:
+          debug: true
+          target: pkgbuild
+          pkgname: build-aux/arch/authenticator-rs-bin/
+
+      - name: Create arch package checksum file
+        run: |
+          sudo chown -R $USER .
+          md5sum build-aux/arch/authenticator-rs-bin/${ARCH_PKG_NAME} >> build-aux/arch/authenticator-rs-bin/${ARCH_PKG_NAME}.md5sum
+
+      - name: Upload Arch Linux release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            build-aux/arch/authenticator-rs-bin/${{ env.ARCH_PKG_NAME }}
+            build-aux/arch/authenticator-rs-bin/${{ env.ARCH_PKG_NAME }}.md5sum
