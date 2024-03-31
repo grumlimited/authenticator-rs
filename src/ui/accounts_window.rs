@@ -452,7 +452,7 @@ async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu,
     let mut n = 0;
 
     // also exits loop if popover is not visible anymore
-    // to avoid re-opening popup with ongoing countdown 
+    // to avoid re-opening popup with ongoing countdown
     while n <= max_wait && popover.is_visible() {
         let remaining_seconds = max_wait - n;
 
