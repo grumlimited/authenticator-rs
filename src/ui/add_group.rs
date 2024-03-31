@@ -5,7 +5,6 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use futures::executor::ThreadPool;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, IconSize};
@@ -101,7 +100,7 @@ impl AddGroupWindow {
         style_context.remove_class("error");
     }
 
-    fn url_input_action(&self, state: RefCell<State>, pool: ThreadPool) {
+    fn url_input_action(&self, state: RefCell<State>) {
         let url_input = self.url_input.clone();
         let icon_reload = self.icon_reload.clone();
         let icon_delete = self.icon_delete.clone();
@@ -151,7 +150,7 @@ impl AddGroupWindow {
                 add_group.icon_reload.set_sensitive(false);
                 add_group.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-                pool.spawn_ok(fut);
+                glib::spawn_future(fut);
             }
         }));
 
@@ -189,7 +188,7 @@ impl AddGroupWindow {
     }
 
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        self.url_input_action(gui.state.clone(), gui.pool.clone());
+        self.url_input_action(gui.state.clone());
 
         self.cancel_button
             .connect_clicked(clone!(@strong gui, @strong connection, @strong self as add_group => move |_| {
@@ -215,8 +214,8 @@ impl AddGroupWindow {
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
-                gui.pool.spawn_ok(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
-                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+                glib::spawn_future(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
+                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
 
                 gui.switch_to(Display::Accounts);
             }

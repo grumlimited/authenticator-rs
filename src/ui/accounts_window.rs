@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
+use std::time;
 
 use chrono::prelude::*;
 use chrono::Local;
@@ -62,7 +62,7 @@ impl AccountsWindow {
 
         Keyring::remove(account_id).unwrap();
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection, filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection, filter));
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
@@ -84,7 +84,7 @@ impl AccountsWindow {
             }
         }
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -96,7 +96,7 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     /**
@@ -199,7 +199,7 @@ impl AccountsWindow {
             Database::update_group(&connection, &group).unwrap();
         }
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -288,18 +288,18 @@ impl AccountsWindow {
 
                 glib::spawn_future_local(
                     clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => async move {
-                        while (rx.recv().await).is_ok() {
+                        while rx.recv().await.is_ok() {
                             copy_button.set_image(Some(&edit_copy_img));
                         }
                     }),
                 );
 
-                account_widget.copy_button.connect_clicked(
-                    clone!(@strong tx, @strong gui.pool as pool, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
+                account_widget
+                    .copy_button
+                    .connect_clicked(clone!(@strong tx, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
                         button.set_image(Some(&dialog_ok_img));
-                        pool.spawn_ok(times_up(tx.clone(), 2000));
-                    }),
-                );
+                        glib::spawn_future(times_up(tx.clone(), 2000));
+                    }));
 
                 account_widget.edit_button.connect_clicked(clone!(@strong builder => move |_| {
                     let builder = builder.clone();
@@ -368,7 +368,7 @@ impl AccountsWindow {
                 );
 
                 account_widget.delete_button.connect_clicked(clone!(
-                @strong gui.pool as pool,
+                @strong account_widget.popover as popover,
                 @strong account_widget.confirm_button as confirm_button,
                 @strong account_widget.confirm_button_label as confirm_button_label,
                 @strong account_widget.delete_button as delete_button => move |_| {
@@ -377,7 +377,7 @@ impl AccountsWindow {
 
                     let (tx, rx) = async_channel::bounded::<u8>(1);
 
-                    glib::spawn_future_local(clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label => async move {
+                    glib::spawn_future_local(clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label, @strong popover => async move {
                         while let Ok(second) = rx.recv().await {
                             if second == 0u8 {
                                 confirm_button.hide();
@@ -388,7 +388,7 @@ impl AccountsWindow {
                         }
                     }));
 
-                    pool.spawn_ok(update_button(tx, 5));
+                    glib::spawn_future_local(update_button(tx, popover.clone(), 5));
                 }));
             }
         }
@@ -447,15 +447,30 @@ impl AccountsWindow {
     }
 }
 
-async fn update_button(tx: async_channel::Sender<u8>, seconds: u8) {
-    let max_wait = 5_u8;
-    for n in 0..=seconds {
+#[allow(unused_assignments)]
+async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
+    let mut n = 0;
+
+    // also exits loop if popover is not visible anymore
+    // to avoid re-opening popup with ongoing countdown
+    while n <= max_wait && popover.is_visible() {
         let remaining_seconds = max_wait - n;
+
         match tx.send(remaining_seconds).await {
-            Ok(_) => thread::sleep(time::Duration::from_secs(1)),
-            Err(e) => warn!("{:?}", e),
+            Ok(_) => {
+                tx.send(remaining_seconds).await.unwrap();
+                n += 1;
+                glib::timeout_future_seconds(1).await;
+            }
+            Err(e) => {
+                warn!("Could not send data to channel: {:?}", e);
+                n = max_wait; // exiting loop
+                break;
+            }
         }
     }
+
+    tx.send(0).await.unwrap_or(warn!("Could not send data to channel"));
 }
 
 /**
@@ -463,7 +478,7 @@ async fn update_button(tx: async_channel::Sender<u8>, seconds: u8) {
  * gets its default image restored.
  */
 async fn times_up(tx: async_channel::Sender<bool>, wait_ms: u64) {
-    thread::sleep(time::Duration::from_millis(wait_ms));
+    glib::timeout_future_seconds(time::Duration::from_millis(wait_ms).as_secs() as u32).await;
     tx.send(true).await.expect("Couldn't send data to channel");
 }
 

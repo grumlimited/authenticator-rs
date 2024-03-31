@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
 
-use futures::executor::ThreadPool;
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
@@ -152,7 +151,7 @@ impl EditAccountWindow {
         }
     }
 
-    fn qrcode_action(&self, pool: ThreadPool) {
+    fn qrcode_action(&self) {
         let qr_button = self.qr_button.clone();
         let dialog = self.image_dialog.clone();
         let input_secret = self.input_secret.clone();
@@ -191,7 +190,7 @@ impl EditAccountWindow {
 
                     save_button.set_sensitive(false);
                     dialog.hide();
-                    pool.spawn_ok(QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+                    glib::spawn_future(QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx));
                 }
                 _ => dialog.hide(),
             }
@@ -199,7 +198,7 @@ impl EditAccountWindow {
     }
 
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        self.qrcode_action(gui.pool.clone());
+        self.qrcode_action();
 
         let edit_account = self.clone();
 
@@ -240,8 +239,8 @@ impl EditAccountWindow {
 
                 let account_id = account_id.buffer().text();
 
-                gui.pool.spawn_ok(Self::create_account(account_id, name, secret, group_id, connection.clone()));
-                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+                glib::spawn_future(Self::create_account(account_id, name, secret, group_id, connection.clone()));
+                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
 
                 edit_account.reset();
 

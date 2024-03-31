@@ -18,7 +18,6 @@ chrono = "0"
 curl = "0"
 directories = "5"
 futures = {version = "0", features = ["thread-pool"]}
-futures-executor = "0"
 gdk = "0.18"
 gdk-pixbuf = "0.19"
 gettext-rs = {version = "0", features = ["gettext-system"]}

@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use futures_executor::ThreadPool;
 use gettextrs::*;
 use gio::prelude::SettingsExt;
 use glib::clone;
@@ -27,7 +26,6 @@ pub struct MainWindow {
     pub add_group: AddGroupWindow,
     pub no_accounts: NoAccountsWindow,
     pub errors: ErrorsWindow,
-    pub pool: ThreadPool,
     pub state: RefCell<State>,
 }
 
@@ -110,7 +108,6 @@ impl MainWindow {
             no_accounts,
             errors,
             add_group: AddGroupWindow::new(&builder),
-            pool: futures_executor::ThreadPool::new().expect("Failed to build pool"),
             state: RefCell::new(State::default()),
         }
     }
@@ -227,7 +224,7 @@ impl MainWindow {
 
             let filter = self.accounts_window.filter.clone();
             glib::spawn_future_local(async move {
-                while (rx.recv().await).is_ok() {
+                while rx.recv().await.is_ok() {
                     filter.set_text("");
                 }
             });
