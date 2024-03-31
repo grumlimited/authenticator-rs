@@ -32,10 +32,8 @@ fn main() {
         Err(e) => panic!("{:?}", e),
     }
 
-    let resource = {
-        gio::Resource::load(format!("data/{}.gresource", NAMESPACE))
-            .unwrap_or_else(|_| gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap())
-    };
+    let resource = gio::Resource::load(format!("data/{}.gresource", NAMESPACE))
+        .unwrap_or_else(|_| gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap());
 
     gio::functions::resources_register(&resource);
 
@@ -91,8 +89,7 @@ fn main() {
  * And in the most convoluted possible way, feeds it to Log4rs.
  */
 fn configure_logging() {
-    let log4rs_yaml =
-        gio::functions::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
+    let log4rs_yaml = gio::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
     let log4rs_yaml = log4rs_yaml.to_vec();
     let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
 
