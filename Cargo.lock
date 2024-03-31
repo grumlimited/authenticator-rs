@@ -366,7 +366,6 @@ dependencies = [
  "curl",
  "directories",
  "futures",
- "futures-executor",
  "gdk",
  "gdk-pixbuf 0.19.2",
  "gettext-rs",

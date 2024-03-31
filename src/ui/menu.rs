@@ -53,7 +53,7 @@ impl Menus for MainWindow {
                     gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())
                 }));
 
-                gui.pool.spawn_ok(AccountsWindow::load_account_groups(tx, connection.clone(), None));
+                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), None));
 
             } else {
                 filter.show();

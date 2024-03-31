@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
+use std::time;
 
 use chrono::prelude::*;
 use chrono::Local;
@@ -62,7 +62,7 @@ impl AccountsWindow {
 
         Keyring::remove(account_id).unwrap();
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection, filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection, filter));
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
@@ -84,7 +84,7 @@ impl AccountsWindow {
             }
         }
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -96,7 +96,7 @@ impl AccountsWindow {
 
         let filter = self.get_filter_value();
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     /**
@@ -199,7 +199,7 @@ impl AccountsWindow {
             Database::update_group(&connection, &group).unwrap();
         }
 
-        gui.pool.spawn_ok(Self::load_account_groups(tx, connection.clone(), filter));
+        glib::spawn_future(Self::load_account_groups(tx, connection.clone(), filter));
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -294,12 +294,12 @@ impl AccountsWindow {
                     }),
                 );
 
-                account_widget.copy_button.connect_clicked(
-                    clone!(@strong tx, @strong gui.pool as pool, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
+                account_widget
+                    .copy_button
+                    .connect_clicked(clone!(@strong tx, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
                         button.set_image(Some(&dialog_ok_img));
-                        pool.spawn_ok(times_up(tx.clone(), 2000));
-                    }),
-                );
+                        glib::spawn_future(times_up(tx.clone(), 2000));
+                    }));
 
                 account_widget.edit_button.connect_clicked(clone!(@strong builder => move |_| {
                     let builder = builder.clone();
@@ -368,7 +368,6 @@ impl AccountsWindow {
                 );
 
                 account_widget.delete_button.connect_clicked(clone!(
-                @strong gui.pool as pool,
                 @strong account_widget.confirm_button as confirm_button,
                 @strong account_widget.confirm_button_label as confirm_button_label,
                 @strong account_widget.delete_button as delete_button => move |_| {
@@ -388,7 +387,7 @@ impl AccountsWindow {
                         }
                     }));
 
-                    pool.spawn_ok(update_button(tx, 5));
+                    glib::spawn_future(update_button(tx, 5));
                 }));
             }
         }
@@ -449,10 +448,11 @@ impl AccountsWindow {
 
 async fn update_button(tx: async_channel::Sender<u8>, seconds: u8) {
     let max_wait = 5_u8;
+
     for n in 0..=seconds {
         let remaining_seconds = max_wait - n;
         match tx.send(remaining_seconds).await {
-            Ok(_) => thread::sleep(time::Duration::from_secs(1)),
+            Ok(_) => glib::timeout_future_seconds(1).await,
             Err(e) => warn!("{:?}", e),
         }
     }
@@ -463,7 +463,7 @@ async fn update_button(tx: async_channel::Sender<u8>, seconds: u8) {
  * gets its default image restored.
  */
 async fn times_up(tx: async_channel::Sender<bool>, wait_ms: u64) {
-    thread::sleep(time::Duration::from_millis(wait_ms));
+    glib::timeout_future_seconds(time::Duration::from_millis(wait_ms).as_secs() as u32).await;
     tx.send(true).await.expect("Couldn't send data to channel");
 }
 
