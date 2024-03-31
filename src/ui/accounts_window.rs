@@ -288,7 +288,7 @@ impl AccountsWindow {
 
                 glib::spawn_future_local(
                     clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => async move {
-                        while (rx.recv().await).is_ok() {
+                        while rx.recv().await.is_ok() {
                             copy_button.set_image(Some(&edit_copy_img));
                         }
                     }),
@@ -368,6 +368,7 @@ impl AccountsWindow {
                 );
 
                 account_widget.delete_button.connect_clicked(clone!(
+                @strong account_widget.popover as popover,
                 @strong account_widget.confirm_button as confirm_button,
                 @strong account_widget.confirm_button_label as confirm_button_label,
                 @strong account_widget.delete_button as delete_button => move |_| {
@@ -376,7 +377,7 @@ impl AccountsWindow {
 
                     let (tx, rx) = async_channel::bounded::<u8>(1);
 
-                    glib::spawn_future_local(clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label => async move {
+                    glib::spawn_future_local(clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label, @strong popover => async move {
                         while let Ok(second) = rx.recv().await {
                             if second == 0u8 {
                                 confirm_button.hide();
@@ -387,7 +388,7 @@ impl AccountsWindow {
                         }
                     }));
 
-                    glib::spawn_future(update_button(tx, 5));
+                    glib::spawn_future_local(update_button(tx, popover.clone(), 5));
                 }));
             }
         }
@@ -446,16 +447,30 @@ impl AccountsWindow {
     }
 }
 
-async fn update_button(tx: async_channel::Sender<u8>, seconds: u8) {
-    let max_wait = 5_u8;
+#[allow(unused_assignments)]
+async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
+    let mut n = 0;
 
-    for n in 0..=seconds {
+    // also exits loop if popover is not visible anymore
+    // to avoid re-opening popup with ongoing countdown 
+    while n <= max_wait && popover.is_visible() {
         let remaining_seconds = max_wait - n;
+
         match tx.send(remaining_seconds).await {
-            Ok(_) => glib::timeout_future_seconds(1).await,
-            Err(e) => warn!("{:?}", e),
+            Ok(_) => {
+                tx.send(remaining_seconds).await.unwrap();
+                n += 1;
+                glib::timeout_future_seconds(1).await;
+            }
+            Err(e) => {
+                warn!("Could not send data to channel: {:?}", e);
+                n = max_wait; // exiting loop
+                break;
+            }
         }
     }
+
+    tx.send(0).await.unwrap_or(warn!("Could not send data to channel"));
 }
 
 /**

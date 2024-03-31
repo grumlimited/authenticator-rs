@@ -224,7 +224,7 @@ impl MainWindow {
 
             let filter = self.accounts_window.filter.clone();
             glib::spawn_future_local(async move {
-                while (rx.recv().await).is_ok() {
+                while rx.recv().await.is_ok() {
                     filter.set_text("");
                 }
             });
