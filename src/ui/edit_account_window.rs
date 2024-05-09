@@ -225,21 +225,15 @@ impl EditAccountWindow {
                     }
                 };
 
-                let (tx, rx) = async_channel::bounded(1);
-
-                 glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection)(rx.recv().await.unwrap())
-                }));
-
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
                 let account_id = account_id.buffer().text();
 
-
-                glib::spawn_future(clone!(@strong connection => async move {
+                glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
                     Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                    AccountsWindow::load_account_groups(tx, connection, filter).await;
+                    let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
                 }));
 
                 edit_account.reset();

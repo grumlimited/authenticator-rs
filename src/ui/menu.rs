@@ -46,14 +46,10 @@ impl Menus for MainWindow {
                 filter.hide();
                 filter.set_text("");
 
-                let (tx, rx) = async_channel::bounded(1);
-
-                glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    let _ = rx.recv().await.unwrap();
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())
+                glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    let results = AccountsWindow::load_account_groups(connection.clone(), None).await;
+                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
                 }));
-
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), None));
 
             } else {
                 filter.show();

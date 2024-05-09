@@ -14,7 +14,6 @@ use rusqlite::Connection;
 use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
-use crate::ui::accounts_window::AccountsRefreshResult;
 use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
@@ -204,18 +203,15 @@ impl AddGroupWindow {
                 let group_id = add_group.group_id.label();
                 let group_id = group_id.as_str().to_owned();
 
-                let (tx, rx) = async_channel::bounded::<AccountsRefreshResult>(1);
-
-                glib::spawn_future_local(clone!(@strong add_group, @strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap());
-                    add_group.reset();
-                }));
-
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
                 glib::spawn_future(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+
+                 glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+                }));
 
                 gui.switch_to(Display::Accounts);
             }
