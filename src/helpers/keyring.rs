@@ -107,25 +107,23 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
-        let mut attributes = HashMap::new();
-        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
-
+        let attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
         let results = collection.search_items(attributes)?;
 
         let secrets = results
             .iter()
-            .map(|v| {
-                let secret = v
+            .map(|item| {
+                let secret = item
                     .get_secret()
                     .map_err(RepositoryError::KeyringError)
                     .and_then(|v| String::from_utf8(v).map_err(RepositoryError::KeyringDecodingError))
                     .ok();
 
-                let account_id = match v.get_attributes() {
+                let account_id = match item.get_attributes() {
                     Ok(attributes) => attributes
                         .into_iter()
-                        .filter(|t| t.0 == ACCOUNT_ID_KEY)
-                        .map(|t| t.1)
+                        .filter(|(key, _)| key == ACCOUNT_ID_KEY)
+                        .map(|(_, account_id)| account_id)
                         .collect::<Vec<String>>()
                         .first()
                         .cloned(),
@@ -134,9 +132,8 @@ impl Keyring {
 
                 (account_id, secret)
             })
-            .filter(|v| v.0.is_some())
-            .filter(|v| v.1.is_some())
-            .map(|v| (v.0.unwrap(), v.1.unwrap()))
+            .filter(|(account_id, secret)| account_id.is_some() && secret.is_some())
+            .map(|(account_id, secret)| (account_id.unwrap(), secret.unwrap()))
             .collect::<Vec<(String, String)>>();
 
         Ok(secrets)
@@ -180,7 +177,7 @@ impl Keyring {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
         match all_secrets.iter().find(|v| v.0 == format!("{}", account.id)) {
-            Some(secret) => account.secret = secret.1.clone(),
+            Some(secret) => account.secret.clone_from(&secret.1),
             None => {
                 warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
                 Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;
