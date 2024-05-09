@@ -90,10 +90,9 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
-        let mut attributes = HashMap::new();
+        let mut attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
         let str_account_id = format!("{}", account_id);
         attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
-        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
 
         let search_items = collection.search_items(attributes)?;
 
@@ -153,7 +152,7 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         group_accounts
             .iter_mut()
-            .try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets, connection))
+            .try_for_each(|account_group| Self::group_account_secret(&ss, account_group, all_secrets, connection))
     }
 
     fn group_account_secret(
@@ -176,8 +175,8 @@ impl Keyring {
     ) -> std::result::Result<(), RepositoryError> {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
-        match all_secrets.iter().find(|v| v.0 == format!("{}", account.id)) {
-            Some(secret) => account.secret.clone_from(&secret.1),
+        match all_secrets.iter().find(|(account_id, _)| *account_id == format!("{}", account.id)) {
+            Some((_, secret)) => account.secret.clone_from(secret),
             None => {
                 warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
                 Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;
