@@ -228,7 +228,7 @@ impl EditAccountWindow {
                 let (tx, rx) = async_channel::bounded(1);
 
                  glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap())
+                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection)(rx.recv().await.unwrap())
                 }));
 
                 let filter = gui.accounts_window.get_filter_value();
@@ -236,8 +236,11 @@ impl EditAccountWindow {
 
                 let account_id = account_id.buffer().text();
 
-                glib::spawn_future(Self::create_account(account_id, name, secret, group_id, connection.clone()));
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+
+                glib::spawn_future(clone!(@strong connection => async move {
+                    Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                    AccountsWindow::load_account_groups(tx, connection, filter).await;
+                }));
 
                 edit_account.reset();
 
