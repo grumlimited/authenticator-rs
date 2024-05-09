@@ -1,8 +1,8 @@
+use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use glib_macros::clone;
 use log::warn;
 use rusqlite::Connection;
 
@@ -37,7 +37,7 @@ impl Backup {
     }
 
     pub fn serialise_accounts(account_groups: Vec<AccountGroup>, out: &Path) -> Result<(), RepositoryError> {
-        let file = std::fs::File::create(out).map_err(RepositoryError::IoError);
+        let file = File::create(out).map_err(RepositoryError::IoError);
 
         let yaml = serde_yaml::to_string(&account_groups).map_err(RepositoryError::SerialisationError);
 
@@ -87,13 +87,9 @@ impl Backup {
     async fn restore_gauth_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
         use google_authenticator_converter::process_data;
 
-        let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
+        let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
 
-        glib::spawn_future_local(clone!(@strong tx  => async move {
-            QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx).await
-        }));
-
-        match rx.recv().await.unwrap() {
+        match result {
             QrCodeResult::Valid(qr_code) => {
                 let accounts = process_data(qr_code.qr_code_payload.as_str());
 
@@ -122,7 +118,7 @@ impl Backup {
     }
 
     fn deserialise_accounts(out: &Path) -> Result<Vec<AccountGroup>, RepositoryError> {
-        let file = std::fs::File::open(out).map_err(RepositoryError::IoError);
+        let file = File::open(out).map_err(RepositoryError::IoError);
 
         file.and_then(|file| serde_yaml::from_reader(file).map_err(RepositoryError::SerialisationError))
     }

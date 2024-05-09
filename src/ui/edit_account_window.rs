@@ -4,14 +4,14 @@ use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
-use log::{debug, error, warn};
+use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
 
+use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
-use crate::helpers::{QrCode, QrCodeResult};
 use crate::main_window::{Display, MainWindow};
 use crate::model::{Account, AccountGroup};
 use crate::ui::{AccountsWindow, ValidationError};
@@ -157,29 +157,7 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
-
-        glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
-            match rx.recv().await {
-                Ok(Valid(qr_code)) => {
-                    let buffer = input_secret.buffer().unwrap();
-                    buffer.set_text(qr_code.extract());
-                }
-                Ok(Invalid(qr_code)) => {
-                    let buffer = input_secret.buffer().unwrap();
-                    buffer.set_text(&gettext(qr_code));
-                }
-                Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
-            }
-
-            w.reset_errors();
-            save_button.set_sensitive(true);
-
-            w.validate()
-        }));
-
-        qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret => move |_| {
-            let tx = tx.clone();
+        qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret, @strong self as w => move |_| {
             match dialog.run() {
                 gtk::ResponseType::Accept => {
                     let path = dialog.filename().unwrap();
@@ -190,7 +168,26 @@ impl EditAccountWindow {
 
                     save_button.set_sensitive(false);
                     dialog.hide();
-                    glib::spawn_future(QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+
+                    glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong w => async move {
+                        let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
+
+                        match result {
+                            Valid(qr_code) => {
+                                let buffer = input_secret.buffer().unwrap();
+                                buffer.set_text(qr_code.extract());
+                            }
+                            Invalid(qr_code) => {
+                                let buffer = input_secret.buffer().unwrap();
+                                buffer.set_text(&gettext(qr_code));
+                            }
+                        };
+
+                        w.reset_errors();
+                        save_button.set_sensitive(true);
+
+                        w.validate()
+                    }));
                 }
                 _ => dialog.hide(),
             }

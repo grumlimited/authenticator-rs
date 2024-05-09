@@ -29,30 +29,27 @@ impl QrCode {
         secret.unwrap_or(self.qr_code_payload.as_str())
     }
 
-    pub async fn process_qr_code(path: String, tx: async_channel::Sender<QrCodeResult>) {
-        let _ = match image::open(&path).map(|v| v.to_luma8()) {
+    pub async fn process_qr_code(path: String) -> QrCodeResult {
+        match image::open(&path).map(|v| v.to_luma8()) {
             Ok(img) => {
                 let mut luma = PreparedImage::prepare(img);
                 let grids = luma.detect_grids();
 
                 if grids.len() != 1 {
                     warn!("No grids found in {}", path);
-                    tx.send(Invalid("Invalid QR code".to_owned())).await
+                    Invalid("Invalid QR code".to_owned())
                 } else {
                     match grids[0].decode() {
-                        Ok((_, content)) => tx.send(Valid(QrCode::new(content))).await,
+                        Ok((_, content)) => Valid(QrCode::new(content)),
                         Err(e) => {
                             warn!("{}", e);
-                            tx.send(Invalid("Invalid QR code".to_owned())).await
+                            Invalid("Invalid QR code".to_owned())
                         }
                     }
                 }
             }
-            Err(e) => {
-                warn!("{}", e);
-                tx.send(Invalid("Invalid QR code".to_owned())).await
-            }
-        };
+            Err(_) => Invalid("Invalid QR code".to_owned()),
+        }
     }
 }
 
