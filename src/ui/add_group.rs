@@ -206,7 +206,7 @@ impl AddGroupWindow {
                 let filter = gui.accounts_window.get_filter_value();
 
                  glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-                    Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
+                    Self::create_group(&group_id, &group_name, icon_filename, url_input, connection.clone()).await;
                     let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
                     gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
                 }));
@@ -216,7 +216,7 @@ impl AddGroupWindow {
         }));
     }
 
-    async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
+    async fn create_group(group_id: &str, group_name: &str, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
         let connection = connection.lock().unwrap();
 
         match group_id.parse() {
@@ -224,7 +224,7 @@ impl AddGroupWindow {
                 debug!("updating existing group id {:?}", group_id);
                 let mut group = Database::get_group(&connection, group_id).unwrap();
 
-                group.name = group_name;
+                group_name.clone_into(&mut group.name);
                 group.icon = icon_filename;
                 group.url = url_input;
 
@@ -234,7 +234,7 @@ impl AddGroupWindow {
             }
             Err(_) => {
                 debug!("creating new group");
-                let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), false, vec![]);
+                let mut group = AccountGroup::new(0, group_name, icon_filename.as_deref(), url_input.as_deref(), false, vec![]);
 
                 Database::save_group(&connection, &mut group).unwrap();
 
