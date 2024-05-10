@@ -30,8 +30,6 @@ impl Keyring {
     }
 
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
-        let _ = Self::remove(account_id);
-
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
@@ -43,7 +41,7 @@ impl Keyring {
             format!("{} TOTP ({})", APPLICATION, label).as_str(),
             attributes,
             secret.as_bytes(),
-            false,
+            true,
             "text/plain",
         )?;
 
@@ -54,15 +52,7 @@ impl Keyring {
 
     pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
         let ss = SecretService::connect(EncryptionType::Dh)?;
-
-        let result = match Self::secret(account_id) {
-            Ok(Some(_)) => {
-                Self::remove(account_id)?;
-                Self::store(&ss, label, account_id, secret)
-            }
-            Ok(None) => Self::store(&ss, label, account_id, secret),
-            Err(e) => Err(e),
-        };
+        let result = Self::store(&ss, label, account_id, secret);
 
         result.map_err(RepositoryError::KeyringError)
     }
