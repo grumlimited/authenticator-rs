@@ -336,10 +336,9 @@ impl AccountsWindow {
 
             for account_widget in account_widgets.iter() {
                 let account_id = account_widget.account_id;
-                let connection = connection.clone();
 
                 account_widget.confirm_button.connect_clicked(
-                    clone!(@strong gui.accounts_window as accounts_window, @strong account_widget.popover as popover, @strong gui => move |_| {
+                    clone!(@strong gui.accounts_window as accounts_window, @strong account_widget.popover as popover, @strong gui, @strong connection => move |_| {
                         accounts_window.delete_account_reload(&gui, account_id, connection.clone());
                         popover.hide();
                     }),
