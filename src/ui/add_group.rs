@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fs;
-use std::fs::File;
+use std::fs::{remove_file, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -272,7 +272,7 @@ impl AddGroupWindow {
             temp_filepath.push(&icon_filename_text);
 
             if temp_filepath.is_file() {
-                match std::fs::remove_file(&temp_filepath) {
+                match remove_file(&temp_filepath) {
                     Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
                     Err(e) => warn!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
                 };
@@ -336,7 +336,7 @@ impl AddGroupWindow {
         let icon_filepath = Paths::icons_path(icon_filename);
 
         if icon_filepath.is_file() {
-            match fs::remove_file(&icon_filepath) {
+            match remove_file(&icon_filepath) {
                 Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
                 Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
             }
