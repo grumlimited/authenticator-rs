@@ -216,7 +216,7 @@ impl AccountsWindow {
                     debug!("Loading group {:?}", group);
 
                     let add_group = AddGroupWindow::new(&builder);
-                    add_group.edit_account_buttons_actions(&gui, connection.clone());
+                    add_group.edit_group_buttons_actions(&gui, connection.clone());
 
                     add_group.add_group_container_add.set_visible(false);
                     add_group.add_group_container_edit.set_visible(true);

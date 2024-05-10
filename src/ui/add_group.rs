@@ -186,7 +186,7 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_group_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.url_input_action(gui.state.clone());
 
         self.cancel_button
@@ -204,11 +204,9 @@ impl AddGroupWindow {
                 let group_id = group_id.as_str().to_owned();
 
                 let filter = gui.accounts_window.get_filter_value();
-                let connection = connection.clone();
-
-                glib::spawn_future(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
 
                  glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()).await;
                     let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
                     gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
                 }));
