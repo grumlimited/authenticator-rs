@@ -122,18 +122,18 @@ impl Menus for MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
-        get_widget!(builder, gtk::PopoverMenu, popover);
-        get_widget!(builder, gtk::Button, add_account_button);
-        get_widget!(builder, gtk::Button, add_group_button);
-        get_widget!(builder, gtk::MenuButton, action_menu);
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
+        get_widget!(builder, PopoverMenu, popover);
+        get_widget!(builder, Button, add_account_button);
+        get_widget!(builder, Button, add_group_button);
+        get_widget!(builder, MenuButton, action_menu);
 
         let gui = self.clone();
         let widgets = self.accounts_window.widgets.clone();
         let state = self.state.clone();
 
         add_group_button.connect_clicked(clone!(@strong popover, @strong gui, @strong connection => move |_| {
-            let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+            let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
             let add_group = AddGroupWindow::new(&builder);
             add_group.add_group_container_add.set_visible(true);

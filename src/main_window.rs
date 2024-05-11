@@ -248,7 +248,7 @@ impl MainWindow {
             });
 
             let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                glib::spawn_future_local(clone!(@strong tx  => async move {
+                glib::spawn_future(clone!(@strong tx  => async move {
                     tx.send(true).await
                 }));
                 None

@@ -229,7 +229,7 @@ impl EditAccountWindow {
 
                 let account_id = account_id.buffer().text();
 
-                glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                glib::spawn_future(clone!(@strong connection, @strong gui => async move {
                     Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
                     gui.tx_events.send(Action::RefreshAccounts{filter}).await
                 }));

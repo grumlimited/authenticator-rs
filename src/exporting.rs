@@ -64,13 +64,13 @@ impl Exporting for MainWindow {
 
                     let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
 
-                    glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    glib::spawn_future(clone!(@strong connection, @strong gui => async move {
                         rx.recv().await.unwrap() // discard
                     }));
 
 
                     let all_secrets = Keyring::all_secrets().unwrap();
-                     glib::spawn_future_local(clone!(@strong path, @strong gui => async move {
+                     glib::spawn_future(clone!(@strong path, @strong gui => async move {
                         Backup::save_accounts(path, connection.clone(), all_secrets, tx).await
                     }));
                 }
@@ -127,7 +127,7 @@ impl Exporting for MainWindow {
                         }
                     }));
 
-                    glib::spawn_future_local(clone!(@strong connection, @strong path, @strong import_type, @strong tx => async move {
+                    glib::spawn_future(clone!(@strong connection, @strong path, @strong import_type, @strong tx => async move {
                         Backup::restore_account_and_signal_back(import_type, path, connection, tx).await
                     }));
                 }

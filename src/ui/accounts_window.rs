@@ -73,10 +73,9 @@ impl AccountsWindow {
 
     pub fn refresh_accounts(&self, gui: &MainWindow) {
         let filter = self.get_filter_value();
+        let tx_events = gui.tx_events.clone();
 
-        glib::spawn_future_local(clone!(@strong gui => async move {
-            gui.tx_events.send(Action::RefreshAccounts{filter}).await
-        }));
+        glib::spawn_future(async move { tx_events.send(Action::RefreshAccounts { filter }).await });
     }
 
     /**
