@@ -4,17 +4,17 @@ use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, EntryIconPosition, StateFlags};
-use log::{debug, error, warn};
+use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
 
+use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
-use crate::helpers::{QrCode, QrCodeResult};
-use crate::main_window::{Display, MainWindow};
+use crate::main_window::{Action, Display, MainWindow};
 use crate::model::{Account, AccountGroup};
-use crate::ui::{AccountsWindow, ValidationError};
+use crate::ui::ValidationError;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -157,29 +157,7 @@ impl EditAccountWindow {
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
 
-        let (tx, rx) = async_channel::bounded::<QrCodeResult>(1);
-
-        glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong self as w, @strong rx  => async move {
-            match rx.recv().await {
-                Ok(Valid(qr_code)) => {
-                    let buffer = input_secret.buffer().unwrap();
-                    buffer.set_text(qr_code.extract());
-                }
-                Ok(Invalid(qr_code)) => {
-                    let buffer = input_secret.buffer().unwrap();
-                    buffer.set_text(&gettext(qr_code));
-                }
-                Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
-            }
-
-            w.reset_errors();
-            save_button.set_sensitive(true);
-
-            w.validate()
-        }));
-
-        qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret => move |_| {
-            let tx = tx.clone();
+        qr_button.connect_clicked(clone!(@strong save_button, @strong input_secret, @strong self as w => move |_| {
             match dialog.run() {
                 gtk::ResponseType::Accept => {
                     let path = dialog.filename().unwrap();
@@ -190,7 +168,26 @@ impl EditAccountWindow {
 
                     save_button.set_sensitive(false);
                     dialog.hide();
-                    glib::spawn_future(QrCode::process_qr_code(path.to_str().unwrap().to_owned(), tx));
+
+                    glib::spawn_future_local(clone!(@strong save_button, @strong input_secret, @strong w => async move {
+                        let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
+
+                        match result {
+                            Valid(qr_code) => {
+                                let buffer = input_secret.buffer().unwrap();
+                                buffer.set_text(qr_code.extract());
+                            }
+                            Invalid(qr_code) => {
+                                let buffer = input_secret.buffer().unwrap();
+                                buffer.set_text(&gettext(qr_code));
+                            }
+                        };
+
+                        w.reset_errors();
+                        save_button.set_sensitive(true);
+
+                        w.validate()
+                    }));
                 }
                 _ => dialog.hide(),
             }
@@ -205,18 +202,17 @@ impl EditAccountWindow {
         self.cancel_button
             .connect_clicked(clone!(@strong edit_account, @strong connection, @strong gui => move |_| {
                 edit_account.reset();
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui);
             }));
 
         self.save_button.connect_clicked(clone!(@strong edit_account, @strong gui => move |_| {
             edit_account.reset_errors();
 
             if let Ok(()) = edit_account.validate() {
-                let edit_account_window = edit_account.clone();
-                let name = edit_account_window.input_name.clone();
-                let secret = edit_account_window.input_secret.clone();
-                let account_id = edit_account_window.input_account_id.clone();
-                let group = edit_account_window.input_group;
+                let name = edit_account.input_name.clone();
+                let secret = edit_account.input_secret.clone();
+                let account_id = edit_account.input_account_id.clone();
+                let group = edit_account.input_group.clone();
                 let name: String = name.buffer().text();
                 let group_id: u32 = group.active_id().unwrap().as_str().to_owned().parse().unwrap();
                 let secret: String = {
@@ -228,19 +224,15 @@ impl EditAccountWindow {
                     }
                 };
 
-                let (tx, rx) = async_channel::bounded(1);
-
-                 glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap())
-                }));
-
                 let filter = gui.accounts_window.get_filter_value();
                 let connection = connection.clone();
 
                 let account_id = account_id.buffer().text();
 
-                glib::spawn_future(Self::create_account(account_id, name, secret, group_id, connection.clone()));
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+                glib::spawn_future(clone!(@strong connection, @strong gui => async move {
+                    Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                    gui.tx_events.send(Action::RefreshAccounts{filter}).await
+                }));
 
                 edit_account.reset();
 

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fs;
-use std::fs::File;
+use std::fs::{remove_file, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -14,7 +14,6 @@ use rusqlite::Connection;
 use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
 use crate::main_window::{Display, MainWindow, State};
 use crate::model::AccountGroup;
-use crate::ui::accounts_window::AccountsRefreshResult;
 use crate::ui::{AccountsWindow, ValidationError};
 
 #[derive(Clone, Debug)]
@@ -187,13 +186,13 @@ impl AddGroupWindow {
         }
     }
 
-    pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn edit_group_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.url_input_action(gui.state.clone());
 
         self.cancel_button
             .connect_clicked(clone!(@strong gui, @strong connection, @strong self as add_group => move |_| {
                 add_group.reset();
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui);
             }));
 
         self.save_button.connect_clicked(clone!(@strong gui, @strong self as add_group => move |_| {
@@ -204,18 +203,13 @@ impl AddGroupWindow {
                 let group_id = add_group.group_id.label();
                 let group_id = group_id.as_str().to_owned();
 
-                let (tx, rx) = async_channel::bounded::<AccountsRefreshResult>(1);
-
-                glib::spawn_future_local(clone!(@strong add_group, @strong gui, @strong connection => async move {
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())(rx.recv().await.unwrap());
-                    add_group.reset();
-                }));
-
                 let filter = gui.accounts_window.get_filter_value();
-                let connection = connection.clone();
 
-                glib::spawn_future(Self::create_group(group_id.to_string(), group_name, icon_filename, url_input, connection.clone()));
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), filter));
+                 glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    Self::create_group(group_id, group_name, icon_filename, url_input, connection.clone()).await;
+                    let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+                }));
 
                 gui.switch_to(Display::Accounts);
             }
@@ -230,7 +224,7 @@ impl AddGroupWindow {
                 debug!("updating existing group id {:?}", group_id);
                 let mut group = Database::get_group(&connection, group_id).unwrap();
 
-                group.name = group_name;
+                group_name.clone_into(&mut group.name);
                 group.icon = icon_filename;
                 group.url = url_input;
 
@@ -278,7 +272,7 @@ impl AddGroupWindow {
             temp_filepath.push(&icon_filename_text);
 
             if temp_filepath.is_file() {
-                match std::fs::remove_file(&temp_filepath) {
+                match remove_file(&temp_filepath) {
                     Ok(_) => debug!("removed temp file: {}", temp_filepath.display()),
                     Err(e) => warn!("could not delete temp file {}: {:?}", temp_filepath.display(), e),
                 };
@@ -342,7 +336,7 @@ impl AddGroupWindow {
         let icon_filepath = Paths::icons_path(icon_filename);
 
         if icon_filepath.is_file() {
-            match fs::remove_file(&icon_filepath) {
+            match remove_file(&icon_filepath) {
                 Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
                 Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
             }

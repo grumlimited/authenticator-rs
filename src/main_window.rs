@@ -1,3 +1,4 @@
+use async_channel::{Receiver, Sender};
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
@@ -17,6 +18,10 @@ use crate::ui::menu::*;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
+pub enum Action {
+    RefreshAccounts { filter: Option<String> },
+}
+
 #[derive(Clone, Debug)]
 pub struct MainWindow {
     pub window: gtk::ApplicationWindow,
@@ -27,6 +32,7 @@ pub struct MainWindow {
     pub no_accounts: NoAccountsWindow,
     pub errors: ErrorsWindow,
     pub state: RefCell<State>,
+    pub tx_events: Sender<Action>,
 }
 
 #[derive(Clone, Debug)]
@@ -60,7 +66,7 @@ impl Default for State {
 }
 
 impl MainWindow {
-    pub fn new() -> MainWindow {
+    pub fn new(tx_events: Sender<Action>) -> MainWindow {
         // Initialize the UI from the Glade XML.
         let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
@@ -109,6 +115,7 @@ impl MainWindow {
             errors,
             add_group: AddGroupWindow::new(&builder),
             state: RefCell::new(State::default()),
+            tx_events,
         }
     }
 
@@ -179,7 +186,7 @@ impl MainWindow {
         }
     }
 
-    pub fn set_application(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>) {
+    pub fn set_application(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>, rx_events: Receiver<Action>) {
         self.window.set_application(Some(application));
 
         self.build_menus(connection.clone());
@@ -190,14 +197,14 @@ impl MainWindow {
             gtk::glib::Propagation::Proceed
         });
 
-        self.bind_account_filter_events(connection.clone());
+        self.bind_account_filter_events();
 
         self.start_progress_bar();
 
         match Keyring::ensure_unlocked() {
             Ok(()) => {
                 info!("Keyring is available");
-                self.accounts_window.refresh_accounts(self, connection);
+                self.accounts_window.refresh_accounts(self);
             }
             Err(e) => {
                 error!("{}", format!("Keyring is {:?}", e));
@@ -206,15 +213,26 @@ impl MainWindow {
             }
         }
 
+        glib::spawn_future_local(clone!(@strong  connection, @strong self as gui => async move {
+            while let Ok(action) = rx_events.recv().await {
+                match action {
+                    Action::RefreshAccounts{filter} => {
+                        let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                        gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection.clone()).await;
+                    }
+                }
+            }
+        }));
+
         self.window.show();
     }
 
-    pub fn bind_account_filter_events(&mut self, connection: Arc<Mutex<Connection>>) {
+    pub fn bind_account_filter_events(&mut self) {
         {
             //First bind user input event to refreshing account list
             let gui = self.clone();
             self.accounts_window.filter.connect_changed(move |_| {
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui);
             });
         }
 
@@ -230,7 +248,7 @@ impl MainWindow {
             });
 
             let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                glib::spawn_future_local(clone!(@strong tx  => async move {
+                glib::spawn_future(clone!(@strong tx  => async move {
                     tx.send(true).await
                 }));
                 None

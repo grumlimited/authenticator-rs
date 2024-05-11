@@ -30,8 +30,6 @@ impl Keyring {
     }
 
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
-        let _ = Self::remove(account_id);
-
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::new();
@@ -43,7 +41,7 @@ impl Keyring {
             format!("{} TOTP ({})", APPLICATION, label).as_str(),
             attributes,
             secret.as_bytes(),
-            false,
+            true,
             "text/plain",
         )?;
 
@@ -54,15 +52,7 @@ impl Keyring {
 
     pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
         let ss = SecretService::connect(EncryptionType::Dh)?;
-
-        let result = match Self::secret(account_id) {
-            Ok(Some(_)) => {
-                Self::remove(account_id)?;
-                Self::store(&ss, label, account_id, secret)
-            }
-            Ok(None) => Self::store(&ss, label, account_id, secret),
-            Err(e) => Err(e),
-        };
+        let result = Self::store(&ss, label, account_id, secret);
 
         result.map_err(RepositoryError::KeyringError)
     }
@@ -90,10 +80,9 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
-        let mut attributes = HashMap::new();
+        let mut attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
         let str_account_id = format!("{}", account_id);
         attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
-        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
 
         let search_items = collection.search_items(attributes)?;
 
@@ -107,25 +96,23 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         let collection = ss.get_default_collection()?;
 
-        let mut attributes = HashMap::new();
-        attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
-
+        let attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
         let results = collection.search_items(attributes)?;
 
         let secrets = results
             .iter()
-            .map(|v| {
-                let secret = v
+            .map(|item| {
+                let secret = item
                     .get_secret()
                     .map_err(RepositoryError::KeyringError)
                     .and_then(|v| String::from_utf8(v).map_err(RepositoryError::KeyringDecodingError))
                     .ok();
 
-                let account_id = match v.get_attributes() {
+                let account_id = match item.get_attributes() {
                     Ok(attributes) => attributes
                         .into_iter()
-                        .filter(|t| t.0 == ACCOUNT_ID_KEY)
-                        .map(|t| t.1)
+                        .filter(|(key, _)| key == ACCOUNT_ID_KEY)
+                        .map(|(_, account_id)| account_id)
                         .collect::<Vec<String>>()
                         .first()
                         .cloned(),
@@ -134,9 +121,8 @@ impl Keyring {
 
                 (account_id, secret)
             })
-            .filter(|v| v.0.is_some())
-            .filter(|v| v.1.is_some())
-            .map(|v| (v.0.unwrap(), v.1.unwrap()))
+            .filter(|(account_id, secret)| account_id.is_some() && secret.is_some())
+            .map(|(account_id, secret)| (account_id.unwrap(), secret.unwrap()))
             .collect::<Vec<(String, String)>>();
 
         Ok(secrets)
@@ -156,7 +142,7 @@ impl Keyring {
         let ss = SecretService::connect(EncryptionType::Dh)?;
         group_accounts
             .iter_mut()
-            .try_for_each(|g| Self::group_account_secret(&ss, g, all_secrets, connection))
+            .try_for_each(|account_group| Self::group_account_secret(&ss, account_group, all_secrets, connection))
     }
 
     fn group_account_secret(
@@ -179,8 +165,8 @@ impl Keyring {
     ) -> std::result::Result<(), RepositoryError> {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
-        match all_secrets.iter().find(|v| v.0 == format!("{}", account.id)) {
-            Some(secret) => account.secret = secret.1.clone(),
+        match all_secrets.iter().find(|(account_id, _)| *account_id == format!("{}", account.id)) {
+            Some((_, secret)) => account.secret.clone_from(secret),
             None => {
                 warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
                 Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;

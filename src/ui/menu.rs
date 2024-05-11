@@ -46,14 +46,10 @@ impl Menus for MainWindow {
                 filter.hide();
                 filter.set_text("");
 
-                let (tx, rx) = async_channel::bounded(1);
-
-                glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
-                    let _ = rx.recv().await.unwrap();
-                    gui.accounts_window.replace_accounts_and_widgets(gui.clone(), connection.clone())
+                glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
+                    let results = AccountsWindow::load_account_groups(connection.clone(), None).await;
+                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
                 }));
-
-                glib::spawn_future(AccountsWindow::load_account_groups(tx, connection.clone(), None));
 
             } else {
                 filter.show();
@@ -96,7 +92,7 @@ impl Menus for MainWindow {
             // switch first then redraw - to take into account state change
             gui.switch_to(Display::Accounts);
 
-            gui.accounts_window.refresh_accounts(&gui, connection.clone());
+            gui.accounts_window.refresh_accounts(&gui);
 
             gtk::glib::Propagation::Proceed
         }));
@@ -126,23 +122,23 @@ impl Menus for MainWindow {
     }
 
     fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
-        get_widget!(builder, gtk::PopoverMenu, popover);
-        get_widget!(builder, gtk::Button, add_account_button);
-        get_widget!(builder, gtk::Button, add_group_button);
-        get_widget!(builder, gtk::MenuButton, action_menu);
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
+        get_widget!(builder, PopoverMenu, popover);
+        get_widget!(builder, Button, add_account_button);
+        get_widget!(builder, Button, add_group_button);
+        get_widget!(builder, MenuButton, action_menu);
 
         let gui = self.clone();
         let widgets = self.accounts_window.widgets.clone();
         let state = self.state.clone();
 
         add_group_button.connect_clicked(clone!(@strong popover, @strong gui, @strong connection => move |_| {
-            let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+            let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
             let add_group = AddGroupWindow::new(&builder);
             add_group.add_group_container_add.set_visible(true);
             add_group.add_group_container_edit.set_visible(false);
-            add_group.edit_account_buttons_actions(&gui, connection.clone());
+            add_group.edit_group_buttons_actions(&gui, connection.clone());
 
             gui.add_group.replace_with(&add_group);
 

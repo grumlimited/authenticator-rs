@@ -62,7 +62,8 @@ impl Paths {
             .for_each(|ref mut account| {
                 info!("Adding {} to keyring", account.label);
                 Keyring::upsert(account.label.as_str(), account.id, account.secret.as_str()).unwrap();
-                account.secret = "".to_owned();
+                "".clone_into(&mut account.secret);
+
                 account.secret_type = SecretType::KEYRING;
                 Database::update_account(&connection, account).unwrap();
             });
