@@ -209,11 +209,10 @@ impl EditAccountWindow {
             edit_account.reset_errors();
 
             if let Ok(()) = edit_account.validate() {
-                let edit_account_window = edit_account.clone();
-                let name = edit_account_window.input_name.clone();
-                let secret = edit_account_window.input_secret.clone();
-                let account_id = edit_account_window.input_account_id.clone();
-                let group = edit_account_window.input_group;
+                let name = edit_account.input_name.clone();
+                let secret = edit_account.input_secret.clone();
+                let account_id = edit_account.input_account_id.clone();
+                let group = edit_account.input_group.clone();
                 let name: String = name.buffer().text();
                 let group_id: u32 = group.active_id().unwrap().as_str().to_owned().parse().unwrap();
                 let secret: String = {

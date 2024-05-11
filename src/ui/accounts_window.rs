@@ -138,20 +138,12 @@ impl AccountsWindow {
      * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
      */
     pub async fn load_account_groups(connection: Arc<Mutex<Connection>>, filter: Option<String>) -> AccountsRefreshResult {
-        let has_groups = async {
-            let connection = connection.lock().unwrap();
-            Database::has_groups(&connection)
-        }
-        .await;
+        let connection = connection.lock().unwrap();
+        let has_groups = Database::has_groups(&connection);
 
-        let accounts = async {
-            let connection = connection.lock().unwrap();
-            Database::load_account_groups(&connection, filter.as_deref())
-        }
-        .await;
+        let account_groups = Database::load_account_groups(&connection, filter.as_deref());
 
-        let accounts: Result<Vec<AccountGroup>, RepositoryError> = accounts.and_then(|account_groups| {
-            let connection = connection.lock().unwrap();
+        let accounts: Result<Vec<AccountGroup>, RepositoryError> = account_groups.and_then(|account_groups| {
             let mut account_groups = account_groups;
             Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
         });
