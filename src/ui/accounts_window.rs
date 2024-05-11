@@ -12,7 +12,7 @@ use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
-use crate::main_window::{Display, MainWindow};
+use crate::main_window::{Action, Display, MainWindow};
 use crate::model::{AccountGroup, AccountGroupWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
 use crate::NAMESPACE_PREFIX;
@@ -54,7 +54,7 @@ impl AccountsWindow {
 
         Keyring::remove(account_id).unwrap();
 
-        self.refresh_accounts(gui, connection);
+        self.refresh_accounts(gui);
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
@@ -68,15 +68,14 @@ impl AccountsWindow {
             }
         }
 
-        self.refresh_accounts(gui, connection);
+        self.refresh_accounts(gui);
     }
 
-    pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+    pub fn refresh_accounts(&self, gui: &MainWindow) {
         let filter = self.get_filter_value();
 
-        glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+        glib::spawn_future_local(clone!(@strong gui => async move {
+            gui.tx_events.send(Action::RefreshAccounts{filter}).await
         }));
     }
 
@@ -154,7 +153,7 @@ impl AccountsWindow {
             Database::update_group(&connection, &group).unwrap();
         }
 
-        self.refresh_accounts(gui, connection);
+        self.refresh_accounts(gui);
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {

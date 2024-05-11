@@ -12,9 +12,9 @@ use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
-use crate::main_window::{Display, MainWindow};
+use crate::main_window::{Action, Display, MainWindow};
 use crate::model::{Account, AccountGroup};
-use crate::ui::{AccountsWindow, ValidationError};
+use crate::ui::ValidationError;
 
 #[derive(Clone, Debug)]
 pub struct EditAccountWindow {
@@ -202,7 +202,7 @@ impl EditAccountWindow {
         self.cancel_button
             .connect_clicked(clone!(@strong edit_account, @strong connection, @strong gui => move |_| {
                 edit_account.reset();
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui);
             }));
 
         self.save_button.connect_clicked(clone!(@strong edit_account, @strong gui => move |_| {
@@ -231,8 +231,7 @@ impl EditAccountWindow {
 
                 glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
                     Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                    let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+                    gui.tx_events.send(Action::RefreshAccounts{filter}).await
                 }));
 
                 edit_account.reset();

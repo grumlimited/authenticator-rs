@@ -192,7 +192,7 @@ impl AddGroupWindow {
         self.cancel_button
             .connect_clicked(clone!(@strong gui, @strong connection, @strong self as add_group => move |_| {
                 add_group.reset();
-                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                gui.accounts_window.refresh_accounts(&gui);
             }));
 
         self.save_button.connect_clicked(clone!(@strong gui, @strong self as add_group => move |_| {

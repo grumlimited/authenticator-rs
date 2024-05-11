@@ -92,7 +92,7 @@ impl Menus for MainWindow {
             // switch first then redraw - to take into account state change
             gui.switch_to(Display::Accounts);
 
-            gui.accounts_window.refresh_accounts(&gui, connection.clone());
+            gui.accounts_window.refresh_accounts(&gui);
 
             gtk::glib::Propagation::Proceed
         }));

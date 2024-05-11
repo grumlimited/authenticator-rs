@@ -117,7 +117,7 @@ impl Exporting for MainWindow {
                     glib::spawn_future_local(clone!(@strong gui, @strong connection => async move {
                         match rx.recv().await.unwrap() {
                             Ok(_) => {
-                                gui.accounts_window.refresh_accounts(&gui, connection.clone());
+                                gui.accounts_window.refresh_accounts(&gui);
                                 gui.accounts_window.accounts_container.set_sensitive(true);
                             },
                             Err(e) => {
