@@ -4,7 +4,7 @@ use std::string::ToString;
 
 use log::{info, warn};
 use rusqlite::types::ToSqlOutput;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Row, ToSql};
+use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Params, Row, Statement, ToSql};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use strum_macros::EnumString;
@@ -214,41 +214,34 @@ impl Database {
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Option<Account>> {
-        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
-
-        stmt.query_row(params![account_id], |row| {
-            let group_id: u32 = row.get_unwrap(1);
-            let label: String = row.get_unwrap(2);
-            let secret: String = row.get_unwrap(3);
-            let id = row.get_unwrap(0);
-
-            let secret_type = Database::extract_secret_type(row, 4);
-
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
-
-            Ok(account)
-        })
-        .optional()
-        .map_err(RepositoryError::SqlError)
+        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
+        Self::_get_account(stmt, params![account_id])
     }
 
     pub fn get_account_by_name(connection: &Connection, name: &str) -> Result<Option<Account>> {
-        let mut stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
+        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
+        Self::_get_account(stmt, params![name])
+    }
 
-        stmt.query_row(params![name], |row| {
-            let group_id: u32 = row.get_unwrap(1);
-            let label: String = row.get_unwrap(2);
-            let secret: String = row.get_unwrap(3);
-            let id = row.get_unwrap(0);
+    fn _get_account<T>(mut statement: Statement, params: T) -> Result<Option<Account>>
+    where
+        T: Params,
+    {
+        statement
+            .query_row(params, |row| {
+                let group_id: u32 = row.get_unwrap(1);
+                let label: String = row.get_unwrap(2);
+                let secret: String = row.get_unwrap(3);
+                let id = row.get_unwrap(0);
 
-            let secret_type = Database::extract_secret_type(row, 4);
+                let secret_type = Database::extract_secret_type(row, 4);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
 
-            Ok(account)
-        })
-        .optional()
-        .map_err(RepositoryError::SqlError)
+                Ok(account)
+            })
+            .optional()
+            .map_err(RepositoryError::SqlError)
     }
 
     fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
