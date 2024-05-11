@@ -223,10 +223,7 @@ impl Database {
         Self::_get_account(stmt, params![name])
     }
 
-    fn _get_account<T>(mut statement: Statement, params: T) -> Result<Option<Account>>
-    where
-        T: Params,
-    {
+    fn _get_account<T: Params>(mut statement: Statement, params: T) -> Result<Option<Account>> {
         statement
             .query_row(params, |row| {
                 let group_id: u32 = row.get_unwrap(1);
