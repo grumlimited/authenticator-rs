@@ -47,8 +47,6 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let filter = self.get_filter_value();
-
         {
             let connection = connection.lock().unwrap();
             Database::delete_account(&connection, account_id).unwrap();
@@ -56,15 +54,10 @@ impl AccountsWindow {
 
         Keyring::remove(account_id).unwrap();
 
-        glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
-        }));
+        self.refresh_accounts(gui, connection);
     }
 
     fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let filter = self.get_filter_value();
-
         {
             let connection = connection.lock().unwrap();
             let group = Database::get_group(&connection, group_id).unwrap();
@@ -75,10 +68,7 @@ impl AccountsWindow {
             }
         }
 
-        glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
-        }));
+        self.refresh_accounts(gui, connection);
     }
 
     pub fn refresh_accounts(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -154,8 +144,6 @@ impl AccountsWindow {
     fn toggle_group_collapse(&self, gui: &MainWindow, group_id: u32, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) {
         popover.hide();
 
-        let filter = gui.accounts_window.get_filter_value();
-
         {
             debug!("Collapsing/expanding group {:?}", group_id);
 
@@ -166,10 +154,7 @@ impl AccountsWindow {
             Database::update_group(&connection, &group).unwrap();
         }
 
-        glib::spawn_future_local(clone!(@strong connection, @strong gui, @strong filter => async move {
-            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
-        }));
+        self.refresh_accounts(gui, connection);
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
