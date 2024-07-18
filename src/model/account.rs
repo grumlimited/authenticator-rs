@@ -26,9 +26,7 @@ pub struct Account {
 #[derive(Debug, Clone)]
 pub struct AccountWidget {
     pub account_id: u32,
-    pub group_id: u32,
-    pub grid: gtk::Grid,
-    pub eventgrid: gtk::EventBox,
+    pub event_grid: gtk::EventBox,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub confirm_button: gtk::Button,
@@ -88,13 +86,21 @@ impl Account {
 
         account_name.set_label(self.label.as_str());
 
-        menu.connect_clicked(clone!(@strong edit_button, @strong delete_button, @strong confirm_button => move |_| {
-            edit_button.show();
+        menu.connect_clicked(clone!(
+            #[strong]
+            edit_button,
+            #[strong]
+            delete_button,
+            #[strong]
+            confirm_button,
+            move |_| {
+                edit_button.show();
 
-            if !confirm_button.is_visible() {
-                delete_button.show();
+                if !confirm_button.is_visible() {
+                    delete_button.show();
+                }
             }
-        }));
+        ));
 
         if is_first {
             let context = account_frame.style_context();
@@ -125,16 +131,18 @@ impl Account {
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);
 
-        copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
-            let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-            clipboard.set_text(totp_label.label().as_str());
-        }));
+        copy_button.connect_clicked(clone!(
+            #[strong]
+            totp_label,
+            move |_| {
+                let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+                clipboard.set_text(totp_label.label().as_str());
+            }
+        ));
 
         let mut widget = AccountWidget {
-            eventgrid,
+            event_grid: eventgrid,
             account_id: self.id,
-            group_id: self.group_id,
-            grid,
             edit_button,
             delete_button,
             copy_button,

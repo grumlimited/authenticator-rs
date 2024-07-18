@@ -110,12 +110,22 @@ impl AddGroupWindow {
 
         let (tx, rx) = async_channel::bounded::<anyhow::Result<AccountGroupIcon>>(1);
 
-        url_input.connect_activate(clone!(@strong icon_reload => move |_| {
-            icon_reload.clicked();
-        }));
+        url_input.connect_activate(clone!(
+            #[strong]
+            icon_reload,
+            move |_| {
+                icon_reload.clicked();
+            }
+        ));
 
-        image_button.connect_clicked(
-            clone!(@strong icon_filename, @strong image_input, @strong state => move |_| match dialog.run() {
+        image_button.connect_clicked(clone!(
+            #[strong]
+            icon_filename,
+            #[strong]
+            image_input,
+            #[strong]
+            state,
+            move |_| match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.hide();
 
@@ -132,41 +142,50 @@ impl AddGroupWindow {
                     }
                 }
                 _ => dialog.hide(),
-            }),
-        );
-
-        icon_reload.connect_clicked(clone!(@strong self as add_group => move |_| {
-            let url: String = add_group.url_input.buffer().text();
-
-            add_group.icon_error.set_label("");
-            add_group.icon_error.set_visible(false);
-
-            if !url.is_empty() {
-                let tx = tx.clone();
-                let fut = IconParser::html_notify(tx, url);
-
-                add_group.save_button.set_sensitive(false);
-                add_group.icon_reload.set_sensitive(false);
-                add_group.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
-
-                glib::spawn_future(fut);
             }
-        }));
+        ));
 
-        glib::spawn_future_local(clone!(@strong self as add_group => async move {
-            match rx.recv().await {
-                Ok(Ok(account_group_icon)) =>
-                    Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice()),
-                Ok(Err(e)) => {
-                    add_group.icon_error.set_label(format!("{}", e).as_str());
-                    add_group.icon_error.set_visible(true);
+        icon_reload.connect_clicked(clone!(
+            #[strong(rename_to = add_group)]
+            self,
+            move |_| {
+                let url: String = add_group.url_input.buffer().text();
+
+                add_group.icon_error.set_label("");
+                add_group.icon_error.set_visible(false);
+
+                if !url.is_empty() {
+                    let tx = tx.clone();
+                    let fut = IconParser::html_notify(tx, url);
+
+                    add_group.save_button.set_sensitive(false);
+                    add_group.icon_reload.set_sensitive(false);
+                    add_group.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+
+                    glib::spawn_future(fut);
                 }
-                Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
             }
+        ));
 
-            add_group.icon_reload.set_sensitive(true);
-            add_group.save_button.set_sensitive(true);
-        }));
+        glib::spawn_future_local(clone!(
+            #[strong(rename_to = add_group)]
+            self,
+            async move {
+                match rx.recv().await {
+                    Ok(Ok(account_group_icon)) => {
+                        Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice())
+                    }
+                    Ok(Err(e)) => {
+                        add_group.icon_error.set_label(format!("{}", e).as_str());
+                        add_group.icon_error.set_visible(true);
+                    }
+                    Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
+                }
+
+                add_group.icon_reload.set_sensitive(true);
+                add_group.save_button.set_sensitive(true);
+            }
+        ));
 
         {
             let add_group = self.clone();
@@ -189,31 +208,48 @@ impl AddGroupWindow {
     pub fn edit_group_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.url_input_action(gui.state.clone());
 
-        self.cancel_button
-            .connect_clicked(clone!(@strong gui, @strong connection, @strong self as add_group => move |_| {
+        self.cancel_button.connect_clicked(clone!(
+            #[strong]
+            gui,
+            #[strong(rename_to = add_group)]
+            self,
+            move |_| {
                 add_group.reset();
                 gui.accounts_window.refresh_accounts(&gui);
-            }));
-
-        self.save_button.connect_clicked(clone!(@strong gui, @strong self as add_group => move |_| {
-            if let Ok(()) = add_group.validate() {
-                let icon_filename = Self::label_text(&add_group.icon_filename);
-                let group_name: String = add_group.input_group.buffer().text();
-                let url_input: Option<String> = Some(add_group.url_input.buffer().text());
-                let group_id = add_group.group_id.label();
-                let group_id = group_id.as_str().to_owned();
-
-                let filter = gui.accounts_window.get_filter_value();
-
-                 glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-                    Self::create_group(group_id, group_name, icon_filename, url_input, connection.clone()).await;
-                    let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
-                }));
-
-                gui.switch_to(Display::Accounts);
             }
-        }));
+        ));
+
+        self.save_button.connect_clicked(clone!(
+            #[strong]
+            gui,
+            #[strong(rename_to = add_group)]
+            self,
+            move |_| {
+                if let Ok(()) = add_group.validate() {
+                    let icon_filename = Self::label_text(&add_group.icon_filename);
+                    let group_name: String = add_group.input_group.buffer().text();
+                    let url_input: Option<String> = Some(add_group.url_input.buffer().text());
+                    let group_id = add_group.group_id.label();
+                    let group_id = group_id.as_str().to_owned();
+
+                    let filter = gui.accounts_window.get_filter_value();
+
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        connection,
+                        #[strong]
+                        gui,
+                        async move {
+                            Self::create_group(group_id, group_name, icon_filename, url_input, connection.clone()).await;
+                            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+                        }
+                    ));
+
+                    gui.switch_to(Display::Accounts);
+                }
+            }
+        ));
     }
 
     async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {

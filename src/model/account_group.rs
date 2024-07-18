@@ -38,9 +38,6 @@ pub struct AccountGroupWidget {
     pub add_account_button: gtk::Button,
     pub collapse_button: gtk::Button,
     pub expand_button: gtk::Button,
-    pub event_box: gtk::EventBox,
-    pub group_label: gtk::Label,
-    pub group_image: gtk::Image,
     pub popover: gtk::PopoverMenu,
     pub account_widgets: RefCell<Vec<AccountWidget>>,
 }
@@ -122,7 +119,7 @@ impl AccountGroup {
             .enumerate()
             .map(|(i, account)| {
                 let widget = account.widget(i == 0, i == self.entries.len() - 1);
-                accounts.add(&widget.eventgrid);
+                accounts.add(&widget.event_grid);
                 widget
             })
             .collect::<Vec<AccountWidget>>();
@@ -132,15 +129,23 @@ impl AccountGroup {
         event_box.connect_local(
             "button-press-event",
             false,
-            clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
-                let account_widgets = account_widgets.borrow();
+            clone!(
+                #[strong]
+                account_widgets,
+                #[strong]
+                delete_button,
+                #[strong]
+                popover,
+                move |_| {
+                    let account_widgets = account_widgets.borrow();
 
-                delete_button.set_sensitive(account_widgets.is_empty());
+                    delete_button.set_sensitive(account_widgets.is_empty());
 
-                popover.show_all();
+                    popover.show_all();
 
-                Some(true.to_value())
-            }),
+                    Some(true.to_value())
+                }
+            ),
         );
 
         AccountGroupWidget {
@@ -151,9 +156,6 @@ impl AccountGroup {
             add_account_button,
             collapse_button,
             expand_button,
-            event_box,
-            group_label,
-            group_image,
             popover,
             account_widgets,
         }

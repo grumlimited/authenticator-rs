@@ -41,25 +41,36 @@ impl Menus for MainWindow {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
         get_widget!(builder, Button, search_button);
 
-        search_button.connect_clicked(clone!(@strong self as gui, @strong self.accounts_window.filter as filter => move |_| {
-            if WidgetExt::is_visible(&filter) {
-                filter.hide();
-                filter.set_text("");
+        search_button.connect_clicked(clone!(
+            #[strong(rename_to = gui)]
+            self,
+            #[strong(rename_to = filter)]
+            self.accounts_window.filter,
+            move |_| {
+                if WidgetExt::is_visible(&filter) {
+                    filter.hide();
+                    filter.set_text("");
 
-                glib::spawn_future_local(clone!(@strong connection, @strong gui => async move {
-                    let results = AccountsWindow::load_account_groups(connection.clone(), None).await;
-                    gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
-                }));
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        connection,
+                        #[strong(rename_to = gui)]
+                        gui,
+                        async move {
+                            let results = AccountsWindow::load_account_groups(connection.clone(), None).await;
+                            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection).await;
+                        }
+                    ));
+                } else {
+                    filter.show();
+                    filter.grab_focus()
+                }
 
-            } else {
-                filter.show();
-                filter.grab_focus()
+                gio::Settings::new(NAMESPACE)
+                    .set_boolean("search-visible", WidgetExt::is_visible(&filter))
+                    .expect("Could not find setting search-visible");
             }
-
-            gio::Settings::new(NAMESPACE)
-                .set_boolean("search-visible", WidgetExt::is_visible(&filter))
-                .expect("Could not find setting search-visible");
-        }));
+        ));
 
         if gio::Settings::new(NAMESPACE).boolean("search-visible") {
             let filter = self.accounts_window.filter.clone();
@@ -85,17 +96,21 @@ impl Menus for MainWindow {
             switch
         };
 
-        dark_mode_slider.connect_state_set(clone!(@strong connection, @strong self as gui => move |_, state| {
-            let g_settings = gio::Settings::new(NAMESPACE);
-            g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
+        dark_mode_slider.connect_state_set(clone!(
+            #[strong(rename_to = gui)]
+            self,
+            move |_, state| {
+                let g_settings = gio::Settings::new(NAMESPACE);
+                g_settings.set_boolean("dark-theme", state).expect("Could not find setting dark-theme");
 
-            // switch first then redraw - to take into account state change
-            gui.switch_to(Display::Accounts);
+                // switch first then redraw - to take into account state change
+                gui.switch_to(Display::Accounts);
 
-            gui.accounts_window.refresh_accounts(&gui);
+                gui.accounts_window.refresh_accounts(&gui);
 
-            gtk::glib::Propagation::Proceed
-        }));
+                gtk::glib::Propagation::Proceed
+            }
+        ));
 
         export_button.connect_clicked(self.export_accounts(popover.clone(), connection.clone()));
 
@@ -104,19 +119,27 @@ impl Menus for MainWindow {
 
         let system_menu: MenuButton = builder.object("system_menu").unwrap();
 
-        system_menu.connect_clicked(clone!(@strong popover => move |_| {
-            popover.show_all();
-        }));
+        system_menu.connect_clicked(clone!(
+            #[strong]
+            popover,
+            move |_| {
+                popover.show_all();
+            }
+        ));
 
         let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
 
         self.about_popup.set_titlebar(Some(&titlebar));
 
-        about_button.connect_clicked(clone!(@strong self.about_popup as popup => move |_| {
-            popover.set_visible(false);
-            popup.set_visible(true);
-            popup.show_all();
-        }));
+        about_button.connect_clicked(clone!(
+            #[strong(rename_to = popup)]
+            self.about_popup,
+            move |_| {
+                popover.set_visible(false);
+                popup.set_visible(true);
+                popup.show_all();
+            }
+        ));
 
         system_menu
     }
@@ -132,50 +155,70 @@ impl Menus for MainWindow {
         let widgets = self.accounts_window.widgets.clone();
         let state = self.state.clone();
 
-        add_group_button.connect_clicked(clone!(@strong popover, @strong gui, @strong connection => move |_| {
-            let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        add_group_button.connect_clicked(clone!(
+            #[strong]
+            popover,
+            #[strong]
+            gui,
+            #[strong]
+            connection,
+            move |_| {
+                let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
-            let add_group = AddGroupWindow::new(&builder);
-            add_group.add_group_container_add.set_visible(true);
-            add_group.add_group_container_edit.set_visible(false);
-            add_group.edit_group_buttons_actions(&gui, connection.clone());
+                let add_group = AddGroupWindow::new(&builder);
+                add_group.add_group_container_add.set_visible(true);
+                add_group.add_group_container_edit.set_visible(false);
+                add_group.edit_group_buttons_actions(&gui, connection.clone());
 
-            gui.add_group.replace_with(&add_group);
+                gui.add_group.replace_with(&add_group);
 
-            popover.hide();
-            add_group.reset();
+                popover.hide();
+                add_group.reset();
 
-            gui.switch_to(Display::AddGroup);
-        }));
+                gui.switch_to(Display::AddGroup);
+            }
+        ));
 
-        action_menu.connect_clicked(clone!(@strong popover, @strong state, @strong add_account_button, @strong widgets => move |_| {
-            let widgets = widgets.lock().unwrap();
+        action_menu.connect_clicked(clone!(
+            #[strong]
+            popover,
+            #[strong]
+            state,
+            #[strong]
+            add_account_button,
+            #[strong]
+            widgets,
+            move |_| {
+                let widgets = widgets.lock().unwrap();
 
-            /*
-             * Both add group and account buttons are available only if on
-             * main accounts display. This is to avoid having to clean temp files
-             * (ie. group icons) if switching half-way editing/adding a group.
-             *
-             * Todo: consider hiding the action menu altogether.
-             */
+                /*
+                 * Both add group and account buttons are available only if on
+                 * main accounts display. This is to avoid having to clean temp files
+                 * (ie. group icons) if switching half-way editing/adding a group.
+                 *
+                 * Todo: consider hiding the action menu altogether.
+                 */
 
-            let state = state.borrow();
-            let display = state.display.clone();
-            // can't add account if no groups
-            add_account_button.set_sensitive(!widgets.is_empty() && display == Display::Accounts);
+                let state = state.borrow();
+                let display = state.display.clone();
+                // can't add account if no groups
+                add_account_button.set_sensitive(!widgets.is_empty() && display == Display::Accounts);
 
-            add_group_button.set_sensitive(display == Display::Accounts || display == Display::NoAccounts);
+                add_group_button.set_sensitive(display == Display::Accounts || display == Display::NoAccounts);
 
-            popover.show_all();
-        }));
+                popover.show_all();
+            }
+        ));
 
         // creates a shortcut on the "+" image to action menu when no account page is displayed
-        self.no_accounts
-            .no_accounts_plus_sign
-            .connect_button_press_event(clone!(@strong action_menu => move |_, _| {
+        self.no_accounts.no_accounts_plus_sign.connect_button_press_event(clone!(
+            #[strong]
+            action_menu,
+            move |_, _| {
                 action_menu.clicked();
                 gtk::glib::Propagation::Stop
-            }));
+            }
+        ));
 
         add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, self, None));
 

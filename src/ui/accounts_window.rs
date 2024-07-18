@@ -166,24 +166,50 @@ impl AccountsWindow {
                 .add_account_button
                 .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, gui, Some(group_id)));
 
-            group_widgets.delete_button.connect_clicked(clone!(@strong connection, @strong gui => move |_| {
-                gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
-            }));
+            group_widgets.delete_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong]
+                gui,
+                move |_| {
+                    gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
+                }
+            ));
 
-            group_widgets
-                .collapse_button
-                .connect_clicked(clone!(@strong connection, @strong group_widgets.popover as popover, @strong gui => move |_| {
-                     gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
-                }));
+            group_widgets.collapse_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong(rename_to = popover)]
+                group_widgets.popover,
+                #[strong]
+                gui,
+                move |_| {
+                    gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
+                }
+            ));
 
-            group_widgets
-                .expand_button
-                .connect_clicked(clone!(@strong connection, @strong group_widgets.popover as popover, @strong gui => move |_| {
-                     gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
-                }));
+            group_widgets.expand_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong(rename_to = popover)]
+                group_widgets.popover,
+                #[strong]
+                gui,
+                move |_| {
+                    gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
+                }
+            ));
 
-            group_widgets.edit_button.connect_clicked(
-                clone!(@strong connection, @strong gui, @strong group_widgets.popover as popover, @strong builder => move |_| {
+            group_widgets.edit_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong]
+                gui,
+                #[strong(rename_to = popover)]
+                group_widgets.popover,
+                #[strong]
+                builder,
+                move |_| {
                     let group = {
                         let connection = connection.lock().unwrap();
                         Database::get_group(&connection, group_id).unwrap()
@@ -217,8 +243,8 @@ impl AccountsWindow {
 
                     popover.hide();
                     gui.switch_to(Display::EditGroup);
-                }),
-            );
+                }
+            ));
         }
     }
 
@@ -239,65 +265,77 @@ impl AccountsWindow {
 
                 let (tx, rx) = async_channel::bounded::<bool>(1);
 
-                glib::spawn_future_local(
-                    clone!(@strong account_widget.copy_button as copy_button, @strong account_widget.edit_copy_img as edit_copy_img => async move {
+                glib::spawn_future_local(clone!(
+                    #[strong(rename_to = copy_button)]
+                    account_widget.copy_button,
+                    #[strong(rename_to = edit_copy_img)]
+                    account_widget.edit_copy_img,
+                    async move {
                         while rx.recv().await.is_ok() {
                             copy_button.set_image(Some(&edit_copy_img));
                         }
-                    }),
-                );
+                    }
+                ));
 
-                account_widget
-                    .copy_button
-                    .connect_clicked(clone!(@strong tx, @strong  account_widget.dialog_ok_img as dialog_ok_img => move |button| {
+                account_widget.copy_button.connect_clicked(clone!(
+                    #[strong]
+                    tx,
+                    #[strong(rename_to = dialog_ok_img)]
+                    account_widget.dialog_ok_img,
+                    move |button| {
                         button.set_image(Some(&dialog_ok_img));
                         glib::spawn_future(times_up(tx.clone(), 2000));
-                    }));
-
-                account_widget.edit_button.connect_clicked(clone!(@strong builder => move |_| {
-                    let builder = builder.clone();
-                    let edit_account = EditAccountWindow::new(&builder);
-
-                    gui.edit_account.replace_with(&edit_account);
-
-                    edit_account.edit_account_buttons_actions(&gui, connection.clone());
-
-                    let connection = connection.lock().unwrap();
-                    let groups = Database::load_account_groups(&connection, None).unwrap();
-                    let account = Database::get_account(&connection, id).unwrap();
-
-                    match account {
-                        Some(account) => {
-                            edit_account.input_group.remove_all(); //re-added and refreshed just below
-
-                            edit_account.set_group_dropdown(Some(account.group_id), &groups);
-
-                            let account_id = account.id.to_string();
-                            edit_account.input_account_id.set_text(account_id.as_str());
-                            edit_account.input_name.set_text(account.label.as_str());
-
-                            edit_account.add_accounts_container_add.set_visible(false);
-                            edit_account.add_accounts_container_edit.set_visible(true);
-
-                            edit_account.add_accounts_container_edit.set_text(account.label.as_str());
-
-                            popover.hide();
-
-                            match Keyring::secret(account.id) {
-                                Ok(secret) => {
-                                    let buffer = edit_account.input_secret.buffer().unwrap();
-                                    buffer.set_text(secret.unwrap_or_default().as_str());
-                                    gui.switch_to(Display::EditAccount);
-                                },
-                                Err(e) => {
-                                    gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                                    gui.switch_to(Display::Errors);
-                                }
-                            };
-                        },
-                        None => panic!("Account {} not found", id)
                     }
-                }));
+                ));
+
+                account_widget.edit_button.connect_clicked(clone!(
+                    #[strong]
+                    builder,
+                    move |_| {
+                        let builder = builder.clone();
+                        let edit_account = EditAccountWindow::new(&builder);
+
+                        gui.edit_account.replace_with(&edit_account);
+
+                        edit_account.edit_account_buttons_actions(&gui, connection.clone());
+
+                        let connection = connection.lock().unwrap();
+                        let groups = Database::load_account_groups(&connection, None).unwrap();
+                        let account = Database::get_account(&connection, id).unwrap();
+
+                        match account {
+                            Some(account) => {
+                                edit_account.input_group.remove_all(); //re-added and refreshed just below
+
+                                edit_account.set_group_dropdown(Some(account.group_id), &groups);
+
+                                let account_id = account.id.to_string();
+                                edit_account.input_account_id.set_text(account_id.as_str());
+                                edit_account.input_name.set_text(account.label.as_str());
+
+                                edit_account.add_accounts_container_add.set_visible(false);
+                                edit_account.add_accounts_container_edit.set_visible(true);
+
+                                edit_account.add_accounts_container_edit.set_text(account.label.as_str());
+
+                                popover.hide();
+
+                                match Keyring::secret(account.id) {
+                                    Ok(secret) => {
+                                        let buffer = edit_account.input_secret.buffer().unwrap();
+                                        buffer.set_text(secret.unwrap_or_default().as_str());
+                                        gui.switch_to(Display::EditAccount);
+                                    }
+                                    Err(e) => {
+                                        gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                                        gui.switch_to(Display::Errors);
+                                    }
+                                };
+                            }
+                            None => panic!("Account {} not found", id),
+                        }
+                    }
+                ));
             }
         }
     }
@@ -312,36 +350,58 @@ impl AccountsWindow {
             for account_widget in account_widgets.iter() {
                 let account_id = account_widget.account_id;
 
-                account_widget.confirm_button.connect_clicked(
-                    clone!(@strong gui.accounts_window as accounts_window, @strong account_widget.popover as popover, @strong gui, @strong connection => move |_| {
+                account_widget.confirm_button.connect_clicked(clone!(
+                    #[strong(rename_to = accounts_window)]
+                    gui.accounts_window,
+                    #[strong(rename_to = popover)]
+                    account_widget.popover,
+                    #[strong]
+                    gui,
+                    #[strong]
+                    connection,
+                    move |_| {
                         accounts_window.delete_account_reload(&gui, account_id, connection.clone());
                         popover.hide();
-                    }),
-                );
+                    }
+                ));
 
                 account_widget.delete_button.connect_clicked(clone!(
-                @strong account_widget.popover as popover,
-                @strong account_widget.confirm_button as confirm_button,
-                @strong account_widget.confirm_button_label as confirm_button_label,
-                @strong account_widget.delete_button as delete_button => move |_| {
-                    confirm_button.show();
-                    delete_button.hide();
+                    #[strong(rename_to = popover)]
+                    account_widget.popover,
+                    #[strong(rename_to = confirm_button)]
+                    account_widget.confirm_button,
+                    #[strong(rename_to = confirm_button_label)]
+                    account_widget.confirm_button_label,
+                    #[strong(rename_to = delete_button)]
+                    account_widget.delete_button,
+                    move |_| {
+                        confirm_button.show();
+                        delete_button.hide();
 
-                    let (tx, rx) = async_channel::bounded::<u8>(1);
+                        let (tx, rx) = async_channel::bounded::<u8>(1);
 
-                    glib::spawn_future_local(clone!(@strong confirm_button, @strong delete_button, @strong confirm_button_label, @strong popover => async move {
-                        while let Ok(second) = rx.recv().await {
-                            if second == 0u8 {
-                                confirm_button.hide();
-                                delete_button.show();
-                            } else {
-                                confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
+                        glib::spawn_future_local(clone!(
+                            #[strong]
+                            confirm_button,
+                            #[strong]
+                            delete_button,
+                            #[strong]
+                            confirm_button_label,
+                            async move {
+                                while let Ok(second) = rx.recv().await {
+                                    if second == 0u8 {
+                                        confirm_button.hide();
+                                        delete_button.show();
+                                    } else {
+                                        confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
+                                    }
+                                }
                             }
-                        }
-                    }));
+                        ));
 
-                    glib::spawn_future_local(update_button(tx, popover.clone(), 5));
-                }));
+                        glib::spawn_future_local(update_button(tx, popover.clone(), 5));
+                    }
+                ));
             }
         }
     }
@@ -365,27 +425,33 @@ impl AccountsWindow {
         main_window: &MainWindow,
         group_id: Option<u32>,
     ) -> Box<dyn Fn(&gtk::Button)> {
-        Box::new(clone!(@strong main_window, @strong popover => move |_: &gtk::Button| {
-            debug!("Loading for group_id {:?}", group_id);
+        Box::new(clone!(
+            #[strong]
+            main_window,
+            #[strong]
+            popover,
+            move |_: &gtk::Button| {
+                debug!("Loading for group_id {:?}", group_id);
 
-            let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
-            let groups = {
-                let connection = connection.lock().unwrap();
-                Database::load_account_groups(&connection, None).unwrap()
-            };
+                let groups = {
+                    let connection = connection.lock().unwrap();
+                    Database::load_account_groups(&connection, None).unwrap()
+                };
 
-            let edit_account = EditAccountWindow::new(&builder);
-            edit_account.add_accounts_container_edit.set_visible(false);
-            edit_account.add_accounts_container_add.set_visible(true);
-            edit_account.edit_account_buttons_actions(&main_window, connection.clone());
-            edit_account.set_group_dropdown(group_id, &groups);
+                let edit_account = EditAccountWindow::new(&builder);
+                edit_account.add_accounts_container_edit.set_visible(false);
+                edit_account.add_accounts_container_add.set_visible(true);
+                edit_account.edit_account_buttons_actions(&main_window, connection.clone());
+                edit_account.set_group_dropdown(group_id, &groups);
 
-            main_window.edit_account.replace_with(&edit_account);
+                main_window.edit_account.replace_with(&edit_account);
 
-            popover.hide();
-            main_window.switch_to(Display::AddAccount);
-        }))
+                popover.hide();
+                main_window.switch_to(Display::AddAccount);
+            }
+        ))
     }
 
     pub fn get_filter_value(&self) -> Option<String> {

@@ -38,7 +38,6 @@ pub struct MainWindow {
 #[derive(Clone, Debug)]
 pub struct State {
     pub dark_mode: bool,
-    pub searchbar_visible: bool,
     pub display: Display,
 }
 
@@ -59,7 +58,6 @@ impl Default for State {
 
         State {
             dark_mode: g_settings.boolean("dark-theme"),
-            searchbar_visible: g_settings.boolean("search-visible"),
             display: Display::Accounts,
         }
     }
@@ -81,30 +79,40 @@ impl MainWindow {
         get_widget!(builder, gtk::Button, add_group_save);
         get_widget!(builder, gtk::Button, edit_account_save);
 
-        builder.connect_signals(clone!(@strong about_popup  => move |_, handler_name| {
-            match handler_name {
-                // handler_name as defined in the glade file
-                "about_popup_close" => {
-                    Box::new(clone!( @strong about_popup => move |_| {
-                        about_popup.hide();
-                        None
-                    }))
+        builder.connect_signals(clone!(
+            #[strong]
+            about_popup,
+            move |_, handler_name| {
+                match handler_name {
+                    // handler_name as defined in the glade file
+                    "about_popup_close" => Box::new(clone!(
+                        #[strong]
+                        about_popup,
+                        move |_| {
+                            about_popup.hide();
+                            None
+                        }
+                    )),
+                    "save_group" => Box::new(clone!(
+                        #[strong]
+                        add_group_save,
+                        move |_| {
+                            add_group_save.clicked();
+                            None
+                        }
+                    )),
+                    "save_account" => Box::new(clone!(
+                        #[strong]
+                        edit_account_save,
+                        move |_| {
+                            edit_account_save.clicked();
+                            None
+                        }
+                    )),
+                    _ => Box::new(|_| None),
                 }
-                "save_group" => {
-                    Box::new(clone!( @strong add_group_save => move |_| {
-                        add_group_save.clicked();
-                        None
-                    }))
-                }
-                "save_account" => {
-                    Box::new(clone!( @strong edit_account_save => move |_| {
-                        edit_account_save.clicked();
-                        None
-                    }))
-                }
-                _ => Box::new(|_| None),
             }
-        }));
+        ));
 
         MainWindow {
             window: main_window,
@@ -213,16 +221,22 @@ impl MainWindow {
             }
         }
 
-        glib::spawn_future_local(clone!(@strong  connection, @strong self as gui => async move {
-            while let Ok(action) = rx_events.recv().await {
-                match action {
-                    Action::RefreshAccounts{filter} => {
-                        let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
-                        gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection.clone()).await;
+        glib::spawn_future_local(clone!(
+            #[strong]
+            connection,
+            #[strong(rename_to = gui)]
+            self,
+            async move {
+                while let Ok(action) = rx_events.recv().await {
+                    match action {
+                        Action::RefreshAccounts { filter } => {
+                            let results = AccountsWindow::load_account_groups(connection.clone(), filter).await;
+                            gui.accounts_window.replace_accounts_and_widgets(results, gui.clone(), connection.clone()).await;
+                        }
                     }
                 }
             }
-        }));
+        ));
 
         self.window.show();
     }
@@ -248,9 +262,11 @@ impl MainWindow {
             });
 
             let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                glib::spawn_future(clone!(@strong tx  => async move {
-                    tx.send(true).await
-                }));
+                glib::spawn_future(clone!(
+                    #[strong]
+                    tx,
+                    async move { tx.send(true).await }
+                ));
                 None
             });
         }
