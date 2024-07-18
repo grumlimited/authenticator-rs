@@ -86,13 +86,21 @@ impl Account {
 
         account_name.set_label(self.label.as_str());
 
-        menu.connect_clicked(clone!(@strong edit_button, @strong delete_button, @strong confirm_button => move |_| {
-            edit_button.show();
+        menu.connect_clicked(clone!(
+            #[strong]
+            edit_button,
+            #[strong]
+            delete_button,
+            #[strong]
+            confirm_button,
+            move |_| {
+                edit_button.show();
 
-            if !confirm_button.is_visible() {
-                delete_button.show();
+                if !confirm_button.is_visible() {
+                    delete_button.show();
+                }
             }
-        }));
+        ));
 
         if is_first {
             let context = account_frame.style_context();
@@ -123,10 +131,14 @@ impl Account {
         add_hovering_class(&context, &copy_button);
         add_hovering_class(&context, &menu);
 
-        copy_button.connect_clicked(clone!(@strong totp_label => move |_| {
-            let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-            clipboard.set_text(totp_label.label().as_str());
-        }));
+        copy_button.connect_clicked(clone!(
+            #[strong]
+            totp_label,
+            move |_| {
+                let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+                clipboard.set_text(totp_label.label().as_str());
+            }
+        ));
 
         let mut widget = AccountWidget {
             event_grid: eventgrid,

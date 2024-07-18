@@ -129,15 +129,23 @@ impl AccountGroup {
         event_box.connect_local(
             "button-press-event",
             false,
-            clone!(@strong account_widgets, @strong delete_button, @strong popover => move |_| {
-                let account_widgets = account_widgets.borrow();
+            clone!(
+                #[strong]
+                account_widgets,
+                #[strong]
+                delete_button,
+                #[strong]
+                popover,
+                move |_| {
+                    let account_widgets = account_widgets.borrow();
 
-                delete_button.set_sensitive(account_widgets.is_empty());
+                    delete_button.set_sensitive(account_widgets.is_empty());
 
-                popover.show_all();
+                    popover.show_all();
 
-                Some(true.to_value())
-            }),
+                    Some(true.to_value())
+                }
+            ),
         );
 
         AccountGroupWidget {
