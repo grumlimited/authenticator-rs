@@ -38,7 +38,6 @@ pub struct MainWindow {
 #[derive(Clone, Debug)]
 pub struct State {
     pub dark_mode: bool,
-    pub searchbar_visible: bool,
     pub display: Display,
 }
 
@@ -59,7 +58,6 @@ impl Default for State {
 
         State {
             dark_mode: g_settings.boolean("dark-theme"),
-            searchbar_visible: g_settings.boolean("search-visible"),
             display: Display::Accounts,
         }
     }

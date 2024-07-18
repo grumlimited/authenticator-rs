@@ -26,9 +26,7 @@ pub struct Account {
 #[derive(Debug, Clone)]
 pub struct AccountWidget {
     pub account_id: u32,
-    pub group_id: u32,
-    pub grid: gtk::Grid,
-    pub eventgrid: gtk::EventBox,
+    pub event_grid: gtk::EventBox,
     pub edit_button: gtk::Button,
     pub delete_button: gtk::Button,
     pub confirm_button: gtk::Button,
@@ -131,10 +129,8 @@ impl Account {
         }));
 
         let mut widget = AccountWidget {
-            eventgrid,
+            event_grid: eventgrid,
             account_id: self.id,
-            group_id: self.group_id,
-            grid,
             edit_button,
             delete_button,
             copy_button,
