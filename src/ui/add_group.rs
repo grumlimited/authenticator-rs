@@ -69,7 +69,7 @@ impl AddGroupWindow {
         let name = self.input_group.clone();
 
         if name.buffer().text().is_empty() {
-            name.set_icon_from_icon_name(EntryIconPosition::Primary, Some("gtk-dialog-error"));
+            name.set_primary_icon_name(Some("dialog-error"));
             name.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
@@ -94,7 +94,7 @@ impl AddGroupWindow {
         self.icon_delete.set_sensitive(true);
         self.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
-        self.input_group.set_icon_from_icon_name(EntryIconPosition::Primary, None);
+        self.input_group.set_primary_icon_name(None);
         let style_context = self.input_group.style_context();
         style_context.remove_class("error");
     }

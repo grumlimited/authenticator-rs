@@ -26,8 +26,6 @@ pub struct EditAccountWindow {
     pub cancel_button: gtk::Button,
     pub qr_button: gtk::Button,
     pub save_button: gtk::Button,
-    pub add_accounts_container_edit: gtk::Label,
-    pub add_accounts_container_add: gtk::Label,
     pub image_dialog: gtk::FileChooserDialog,
     pub input_secret_frame: gtk::Frame,
 }
@@ -41,8 +39,6 @@ impl EditAccountWindow {
             input_secret: builder.object("edit_account_input_secret").unwrap(),
             input_account_id: builder.object("edit_account_input_account_id").unwrap(),
             cancel_button: builder.object("edit_account_cancel").unwrap(),
-            add_accounts_container_edit: builder.object("add_accounts_container_edit").unwrap(),
-            add_accounts_container_add: builder.object("add_accounts_container_add").unwrap(),
             save_button: builder.object("edit_account_save").unwrap(),
             qr_button: builder.object("qrcode_button").unwrap(),
             image_dialog: builder.object("file_chooser_dialog").unwrap(),
@@ -67,7 +63,7 @@ impl EditAccountWindow {
         let mut result: Result<(), ValidationError> = Ok(());
 
         if name.buffer().text().is_empty() {
-            name.set_icon_from_icon_name(EntryIconPosition::Primary, Some("gtk-dialog-error"));
+            name.set_primary_icon_name(Some("dialog-error"));
             let style_context = name.style_context();
             style_context.add_class("error");
             result = Err(ValidationError::FieldError("name".to_owned()));
@@ -106,7 +102,7 @@ impl EditAccountWindow {
         let group = self.input_group.clone();
         let input_secret_frame = self.input_secret_frame.clone();
 
-        name.set_icon_from_icon_name(EntryIconPosition::Primary, None);
+        name.set_primary_icon_name(None);
         let style_context = name.style_context();
         style_context.remove_class("error");
 

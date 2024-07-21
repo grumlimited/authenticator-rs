@@ -313,11 +313,6 @@ impl AccountsWindow {
                                 edit_account.input_account_id.set_text(account_id.as_str());
                                 edit_account.input_name.set_text(account.label.as_str());
 
-                                edit_account.add_accounts_container_add.set_visible(false);
-                                edit_account.add_accounts_container_edit.set_visible(true);
-
-                                edit_account.add_accounts_container_edit.set_text(account.label.as_str());
-
                                 popover.hide();
 
                                 match Keyring::secret(account.id) {
@@ -441,8 +436,6 @@ impl AccountsWindow {
                 };
 
                 let edit_account = EditAccountWindow::new(&builder);
-                edit_account.add_accounts_container_edit.set_visible(false);
-                edit_account.add_accounts_container_add.set_visible(true);
                 edit_account.edit_account_buttons_actions(&main_window, connection.clone());
                 edit_account.set_group_dropdown(group_id, &groups);
 

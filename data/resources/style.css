@@ -50,8 +50,27 @@
     font-family: monospace;
 }
 
+.edit_account_input_name {
+    border-radius: 0px;
+    font-size: 120%;
+    font-weight: bold;
+    /*
+    * text input have some left padding for icon placement. For just text,
+    * we don't want any.
+    */
+    padding-left: 0px;
+}
+
+.edit_account_input_name.error {
+    /**
+    * However , upon error, an icon is shown. Then, we need some padding, so the
+    * icon does not lean on the border.
+     */
+    padding-left: 3px;
+}
+
 .edit_account_input_secret_frame {
-    border-style:solid;
+    border-style: solid;
     border-radius: 5px;
     border-width: 1px;
     border-color: @borders;
@@ -82,5 +101,4 @@
 .error_display_title {
     font-size: 250%;
     font-weight: bold;
-
 }
