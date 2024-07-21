@@ -277,11 +277,11 @@ impl MainWindow {
         let widgets = self.accounts_window.widgets.clone();
 
         let tick = move || {
-            let seconds = chrono::Local::now().second() as u8;
+            let seconds = Local::now().second() as u8;
 
             AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
-            let mut widgets = widgets.lock().unwrap();
             if seconds == 0 || seconds == 30 {
+                let mut widgets = widgets.lock().unwrap();
                 widgets.iter_mut().for_each(|group| group.update());
             }
 
