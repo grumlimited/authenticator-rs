@@ -104,8 +104,6 @@ impl AddGroupWindow {
         let icon_filename = self.icon_filename.clone();
         let image_input = self.image_input.clone();
 
-        let (tx, rx) = async_channel::bounded::<anyhow::Result<AccountGroupIcon>>(1);
-
         url_input.connect_activate(clone!(
             #[strong]
             icon_reload,
@@ -144,14 +142,17 @@ impl AddGroupWindow {
         icon_reload.connect_clicked(clone!(
             #[strong(rename_to = add_group)]
             self,
+            #[strong]
+            state,
             move |_| {
-                let url: String = add_group.url_input.buffer().text();
+                let (tx, rx) = async_channel::bounded::<anyhow::Result<AccountGroupIcon>>(1);
+
+                let url = add_group.url_input.buffer().text();
 
                 add_group.icon_error.set_label("");
                 add_group.icon_error.set_visible(false);
 
                 if !url.is_empty() {
-                    let tx = tx.clone();
                     let fut = IconParser::html_notify(tx, url);
 
                     add_group.save_button.set_sensitive(false);
@@ -160,26 +161,28 @@ impl AddGroupWindow {
 
                     glib::spawn_future(fut);
                 }
-            }
-        ));
 
-        glib::spawn_future_local(clone!(
-            #[strong(rename_to = add_group)]
-            self,
-            async move {
-                match rx.recv().await {
-                    Ok(Ok(account_group_icon)) => {
-                        Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice())
-                    }
-                    Ok(Err(e)) => {
-                        add_group.icon_error.set_label(format!("{}", e).as_str());
-                        add_group.icon_error.set_visible(true);
-                    }
-                    Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
-                }
+                glib::spawn_future_local(clone!(
+                    #[strong]
+                    add_group,
+                    #[strong]
+                    state,
+                    async move {
+                        match rx.recv().await {
+                            Ok(Ok(account_group_icon)) => {
+                                Self::write_tmp_icon(&state, &add_group.icon_filename, &add_group.image_input, account_group_icon.content.as_slice())
+                            }
+                            Ok(Err(e)) => {
+                                add_group.icon_error.set_label(format!("{}", e).as_str());
+                                add_group.icon_error.set_visible(true);
+                            }
+                            Err(e) => warn!("Channel is closed. Application terminated?: {:?}", e),
+                        }
 
-                add_group.icon_reload.set_sensitive(true);
-                add_group.save_button.set_sensitive(true);
+                        add_group.icon_reload.set_sensitive(true);
+                        add_group.save_button.set_sensitive(true);
+                    }
+                ));
             }
         ));
 
