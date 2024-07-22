@@ -5,6 +5,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use gettextrs::gettext;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
@@ -77,7 +78,7 @@ impl AddGroupWindow {
             let group_id = group_id.parse().map(Some).unwrap_or(None);
 
             if existing_group.is_some() && existing_group != group_id {
-                self.icon_error.set_label("Group name already exists");
+                self.icon_error.set_label(&gettext("Group name already exists"));
                 self.icon_error.set_visible(true);
                 return Err(ValidationError::FieldError("name".to_owned()));
             }

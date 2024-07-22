@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use gettextrs::*;
+use gettextrs::gettext;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, StateFlags};
@@ -83,7 +83,7 @@ impl EditAccountWindow {
 
             if existing_account.is_some() && existing_account != account_id {
                 highlight_name_error(&name);
-                self.icon_error.set_label("Account name already exists");
+                self.icon_error.set_label(&gettext("Account name already exists"));
                 self.icon_error.set_visible(true);
                 result = Err(ValidationError::FieldError("name".to_owned()));
             }
@@ -224,8 +224,12 @@ impl EditAccountWindow {
                                     }
                                     Invalid(qr_code) => {
                                         let buffer = input_secret.buffer().unwrap();
+
+                                        w.icon_error.set_label(&gettext(qr_code));
+                                        w.icon_error.set_visible(true);
+
                                         style_context.add_class("error");
-                                        buffer.set_text(&gettext(qr_code));
+                                        buffer.set_text("");
                                     }
                                 };
                             }

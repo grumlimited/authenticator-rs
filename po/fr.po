@@ -181,3 +181,9 @@ msgstr "Nom du groupe"
 
 msgid "Name of account"
 msgstr "Nom du compte"
+
+msgid "Group name already exists"
+msgstr "Un groupe existe avec ce nom"
+
+msgid "Account name already exists"
+msgstr "Un compte existe avec ce nom"
