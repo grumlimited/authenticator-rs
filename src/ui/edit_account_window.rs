@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Builder, EntryIconPosition, StateFlags};
+use gtk::{Builder, StateFlags};
 use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;

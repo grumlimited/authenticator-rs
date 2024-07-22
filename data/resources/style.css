@@ -50,7 +50,7 @@
     font-family: monospace;
 }
 
-.edit_account_input_name {
+.edit_account_input_name, .add_group_input_name {
     border-radius: 0px;
     font-size: 120%;
     font-weight: bold;
@@ -61,7 +61,7 @@
     padding-left: 0px;
 }
 
-.edit_account_input_name.error {
+.edit_account_input_name.error, .add_group_input_name.error {
     /**
     * However , upon error, an icon is shown. Then, we need some padding, so the
     * icon does not lean on the border.

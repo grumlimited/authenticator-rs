@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Builder, EntryIconPosition, IconSize};
+use gtk::{Builder, IconSize};
 use log::{debug, warn};
 use rusqlite::Connection;
 
@@ -31,8 +31,6 @@ pub struct AddGroupWindow {
     pub group_id: gtk::Label,
     pub image_button: gtk::Button,
     pub image_dialog: gtk::FileChooserDialog,
-    pub add_group_container_add: gtk::Label,
-    pub add_group_container_edit: gtk::Label,
 }
 
 impl AddGroupWindow {
@@ -51,8 +49,6 @@ impl AddGroupWindow {
             group_id: builder.object("add_group_input_group_id").unwrap(),
             image_button: builder.object("add_group_image_button").unwrap(),
             image_dialog: builder.object("file_chooser_dialog").unwrap(),
-            add_group_container_add: builder.object("add_group_container_add").unwrap(),
-            add_group_container_edit: builder.object("add_group_container_edit").unwrap(),
         }
     }
 

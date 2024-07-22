@@ -219,11 +219,6 @@ impl AccountsWindow {
                     let add_group = AddGroupWindow::new(&builder);
                     add_group.edit_group_buttons_actions(&gui, connection.clone());
 
-                    add_group.add_group_container_add.set_visible(false);
-                    add_group.add_group_container_edit.set_visible(true);
-
-                    add_group.add_group_container_edit.set_text(group.name.as_str());
-
                     gui.add_group.replace_with(&add_group);
 
                     add_group.input_group.set_text(group.name.as_str());

@@ -175,3 +175,9 @@ msgstr "New group"
 
 msgid "Edit group"
 msgstr "Edit group"
+
+msgid "Name of group"
+msgstr "Name of group"
+
+msgid "Name of account"
+msgstr "Name of account"
