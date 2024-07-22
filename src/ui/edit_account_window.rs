@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Builder, Entry, StateFlags};
+use gtk::{Builder, StateFlags};
 use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
@@ -28,6 +28,7 @@ pub struct EditAccountWindow {
     pub save_button: gtk::Button,
     pub image_dialog: gtk::FileChooserDialog,
     pub input_secret_frame: gtk::Frame,
+    pub icon_error: gtk::Label,
 }
 
 impl EditAccountWindow {
@@ -43,6 +44,7 @@ impl EditAccountWindow {
             qr_button: builder.object("qrcode_button").unwrap(),
             image_dialog: builder.object("file_chooser_dialog").unwrap(),
             input_secret_frame: builder.object("edit_account_input_secret_frame").unwrap(),
+            icon_error: builder.object("edit_account_icon_error").unwrap(),
         }
     }
 
@@ -62,7 +64,7 @@ impl EditAccountWindow {
 
         let mut result: Result<(), ValidationError> = Ok(());
 
-        fn highlight_name_error(name: &Entry) {
+        fn highlight_name_error(name: &gtk::Entry) {
             name.set_primary_icon_name(Some("dialog-error"));
             let style_context = name.style_context();
             style_context.add_class("error");
@@ -81,6 +83,8 @@ impl EditAccountWindow {
 
             if existing_account.is_some() && existing_account != account_id {
                 highlight_name_error(&name);
+                self.icon_error.set_label("Account name already exists");
+                self.icon_error.set_visible(true);
                 result = Err(ValidationError::FieldError("name".to_owned()));
             }
         }
@@ -94,16 +98,19 @@ impl EditAccountWindow {
 
         if secret_value.is_empty() {
             let style_context = input_secret_frame.style_context();
-            style_context.set_state(StateFlags::INCONSISTENT);
+            style_context.add_class("error");
             result = Err(ValidationError::FieldError("secret".to_owned()));
         } else {
             let stripped = Self::strip_secret(&secret_value);
+            let style_context = input_secret_frame.style_context();
+
             match Account::generate_time_based_password(stripped.as_str()) {
+                Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
                 Ok(_) => buffer.set_text(&stripped),
                 Err(error_key) => {
                     error!("{}", error_key.error());
-                    let style_context = input_secret_frame.style_context();
-                    style_context.set_state(StateFlags::INCONSISTENT);
+
+                    style_context.add_class("error");
                     result = Err(ValidationError::FieldError("secret".to_owned()));
                 }
             }
@@ -117,6 +124,8 @@ impl EditAccountWindow {
         let secret = self.input_secret.clone();
         let group = self.input_group.clone();
         let input_secret_frame = self.input_secret_frame.clone();
+
+        self.icon_error.set_label("");
 
         name.set_primary_icon_name(None);
         let style_context = name.style_context();
@@ -168,12 +177,15 @@ impl EditAccountWindow {
         let dialog = self.image_dialog.clone();
         let input_secret = self.input_secret.clone();
         let save_button = self.save_button.clone();
+        let input_secret_frame = self.input_secret_frame.clone();
 
         qr_button.connect_clicked(clone!(
             #[strong]
             save_button,
             #[strong]
             input_secret,
+            #[strong]
+            input_secret_frame,
             #[strong(rename_to = w)]
             self,
             move |_| {
@@ -194,23 +206,28 @@ impl EditAccountWindow {
                             #[strong]
                             input_secret,
                             #[strong]
+                            input_secret_frame,
+                            #[strong]
                             w,
                             async move {
                                 let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
 
+                                save_button.set_sensitive(true);
+                                let style_context = input_secret_frame.style_context();
+
                                 match result {
                                     Valid(qr_code) => {
+                                        w.reset_errors();
                                         let buffer = input_secret.buffer().unwrap();
+                                        style_context.remove_class("error");
                                         buffer.set_text(qr_code.extract());
                                     }
                                     Invalid(qr_code) => {
                                         let buffer = input_secret.buffer().unwrap();
+                                        style_context.add_class("error");
                                         buffer.set_text(&gettext(qr_code));
                                     }
                                 };
-
-                                w.reset_errors();
-                                save_button.set_sensitive(true);
                             }
                         ));
                     }

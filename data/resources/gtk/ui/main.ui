@@ -226,14 +226,13 @@
                   <object class="GtkFrame">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="margin-right">5</property>
                     <property name="margin-start">5</property>
                     <property name="margin-end">5</property>
                     <property name="margin-bottom">5</property>
                     <property name="label-xalign">0</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <!-- n-columns=2 n-rows=6 -->
+                      <!-- n-columns=2 n-rows=7 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -245,7 +244,6 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="margin-left">5</property>
                             <property name="margin-start">5</property>
                             <property name="margin-top">20</property>
                             <property name="label" translatable="yes">Group</property>
@@ -266,7 +264,7 @@
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
-                            <property name="top-attach">4</property>
+                            <property name="top-attach">5</property>
                           </packing>
                         </child>
                         <child>
@@ -275,7 +273,6 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="tooltip-text" translatable="yes">Group</property>
-                            <property name="margin-right">5</property>
                             <property name="margin-end">5</property>
                             <property name="margin-top">20</property>
                             <property name="hexpand">True</property>
@@ -291,7 +288,6 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="valign">start</property>
-                            <property name="margin-left">5</property>
                             <property name="margin-start">5</property>
                             <property name="label" translatable="yes">Secret</property>
                             <property name="xalign">0</property>
@@ -339,9 +335,8 @@
                                   <object class="GtkLabel">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="margin-left">5</property>
                                     <property name="margin-start">5</property>
-                                    <property name="margin-bottom">20</property>
+                                    <property name="margin-bottom">10</property>
                                     <property name="label" translatable="yes">use QR code</property>
                                     <property name="use-underline">True</property>
                                   </object>
@@ -363,7 +358,6 @@
                                 <property name="height-request">140</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="margin-right">5</property>
                                 <property name="margin-end">5</property>
                                 <property name="label-xalign">0</property>
                                 <property name="shadow-type">none</property>
@@ -373,8 +367,6 @@
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="tooltip-text" translatable="yes">Secret</property>
-                                    <property name="margin-left">10</property>
-                                    <property name="margin-right">5</property>
                                     <property name="margin-start">10</property>
                                     <property name="margin-end">5</property>
                                     <property name="margin-top">5</property>
@@ -412,9 +404,7 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">end</property>
-                            <property name="margin-right">5</property>
                             <property name="margin-end">5</property>
-                            <property name="margin-top">30</property>
                             <property name="margin-bottom">20</property>
                             <property name="column-spacing">5</property>
                             <child>
@@ -452,8 +442,28 @@
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
-                            <property name="top-attach">5</property>
+                            <property name="top-attach">6</property>
                           </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="edit_account_icon_error">
+                            <property name="name">edit_account_icon_error</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="margin-end">5</property>
+                            <property name="hexpand">True</property>
+                            <property name="wrap">True</property>
+                            <property name="max-width-chars">23</property>
+                            <property name="track-visited-links">False</property>
+                            <property name="xalign">0</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
