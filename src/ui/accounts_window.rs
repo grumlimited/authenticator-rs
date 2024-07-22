@@ -219,11 +219,6 @@ impl AccountsWindow {
                     let add_group = AddGroupWindow::new(&builder);
                     add_group.edit_group_buttons_actions(&gui, connection.clone());
 
-                    add_group.add_group_container_add.set_visible(false);
-                    add_group.add_group_container_edit.set_visible(true);
-
-                    add_group.add_group_container_edit.set_text(group.name.as_str());
-
                     gui.add_group.replace_with(&add_group);
 
                     add_group.input_group.set_text(group.name.as_str());
@@ -312,11 +307,6 @@ impl AccountsWindow {
                                 let account_id = account.id.to_string();
                                 edit_account.input_account_id.set_text(account_id.as_str());
                                 edit_account.input_name.set_text(account.label.as_str());
-
-                                edit_account.add_accounts_container_add.set_visible(false);
-                                edit_account.add_accounts_container_edit.set_visible(true);
-
-                                edit_account.add_accounts_container_edit.set_text(account.label.as_str());
 
                                 popover.hide();
 
@@ -441,8 +431,6 @@ impl AccountsWindow {
                 };
 
                 let edit_account = EditAccountWindow::new(&builder);
-                edit_account.add_accounts_container_edit.set_visible(false);
-                edit_account.add_accounts_container_add.set_visible(true);
                 edit_account.edit_account_buttons_actions(&main_window, connection.clone());
                 edit_account.set_group_dropdown(group_id, &groups);
 
