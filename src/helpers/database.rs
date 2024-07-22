@@ -139,6 +139,22 @@ impl Database {
         }
     }
 
+    pub fn group_exists(connection: &Connection, name: &str) -> Result<Option<u32>> {
+        let mut stmt = connection.prepare("SELECT id FROM groups WHERE name = :name")?;
+
+        stmt.query_row(
+            named_params! {
+            ":name": name
+            },
+            |row| {
+                let group_id: u32 = row.get_unwrap(0);
+                Ok(group_id)
+            },
+        )
+        .optional()
+        .map_err(RepositoryError::SqlError)
+    }
+
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE id = :group_id")?;
 
@@ -475,6 +491,22 @@ mod tests {
 
         let result = Database::has_groups(&connection).unwrap();
         assert!(result);
+    }
+
+    #[test]
+    fn group_exists() {
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        runner::run(&mut connection).unwrap();
+
+        let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
+        Database::save_group(&connection, &mut group).unwrap();
+
+        let result = Database::group_exists(&connection, "bbb").unwrap();
+        assert!(result.is_some());
+
+        let result = Database::group_exists(&connection, "non_existent").unwrap();
+        assert!(result.is_none());
     }
 
     #[test]
