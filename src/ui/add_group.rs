@@ -61,7 +61,7 @@ impl AddGroupWindow {
         });
     }
 
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self, connection: Arc<Mutex<Connection>>) -> Result<(), ValidationError> {
         let name = self.input_group.clone();
 
         if name.buffer().text().is_empty() {
@@ -69,6 +69,19 @@ impl AddGroupWindow {
             name.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
+            let connection = connection.lock().unwrap();
+            let existing_group = Database::group_exists(&connection, name.buffer().text().as_str());
+            let existing_group = existing_group.unwrap_or(None);
+
+            let group_id = self.group_id.label().as_str().to_owned();
+            let group_id = group_id.parse().map(Some).unwrap_or(None);
+
+            if existing_group.is_some() && existing_group != group_id {
+                self.icon_error.set_label("Group name already exists");
+                self.icon_error.set_visible(true);
+                return Err(ValidationError::FieldError("name".to_owned()));
+            }
+
             Ok(())
         }
     }
@@ -224,7 +237,7 @@ impl AddGroupWindow {
             #[strong(rename_to = add_group)]
             self,
             move |_| {
-                if let Ok(()) = add_group.validate() {
+                if let Ok(()) = add_group.validate(connection.clone()) {
                     let icon_filename = Self::label_text(&add_group.icon_filename);
                     let group_name: String = add_group.input_group.buffer().text();
                     let url_input: Option<String> = Some(add_group.url_input.buffer().text());
