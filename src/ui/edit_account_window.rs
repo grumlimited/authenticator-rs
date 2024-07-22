@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Builder, StateFlags};
+use gtk::{Builder, Entry, StateFlags};
 use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
@@ -55,18 +55,34 @@ impl EditAccountWindow {
         });
     }
 
-    fn validate(&self) -> Result<(), ValidationError> {
+    fn validate(&self, connection: Arc<Mutex<Connection>>) -> Result<(), ValidationError> {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
         let input_secret_frame = self.input_secret_frame.clone();
 
         let mut result: Result<(), ValidationError> = Ok(());
 
-        if name.buffer().text().is_empty() {
+        fn highlight_name_error(name: &Entry) {
             name.set_primary_icon_name(Some("dialog-error"));
             let style_context = name.style_context();
             style_context.add_class("error");
+        }
+
+        if name.buffer().text().is_empty() {
+            highlight_name_error(&name);
             result = Err(ValidationError::FieldError("name".to_owned()));
+        } else {
+            let connection = connection.lock().unwrap();
+            let existing_account = Database::account_exists(&connection, name.buffer().text().as_str());
+            let existing_account = existing_account.unwrap_or(None);
+
+            let account_id = self.input_account_id.buffer().text();
+            let account_id = account_id.parse().map(Some).unwrap_or(None);
+
+            if existing_account.is_some() && existing_account != account_id {
+                highlight_name_error(&name);
+                result = Err(ValidationError::FieldError("name".to_owned()));
+            }
         }
 
         let buffer = secret.buffer().unwrap();
@@ -195,8 +211,6 @@ impl EditAccountWindow {
 
                                 w.reset_errors();
                                 save_button.set_sensitive(true);
-
-                                w.validate()
                             }
                         ));
                     }
@@ -230,7 +244,7 @@ impl EditAccountWindow {
             move |_| {
                 edit_account.reset_errors();
 
-                if let Ok(()) = edit_account.validate() {
+                if let Ok(()) = edit_account.validate(connection.clone()) {
                     let name = edit_account.input_name.clone();
                     let secret = edit_account.input_secret.clone();
                     let account_id = edit_account.input_account_id.clone();
