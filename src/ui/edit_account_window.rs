@@ -74,8 +74,11 @@ impl EditAccountWindow {
             highlight_name_error(&name);
             result = Err(ValidationError::FieldError("name".to_owned()));
         } else {
+            let group = self.input_group.clone();
+            let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
+
             let connection = connection.lock().unwrap();
-            let existing_account = Database::account_exists(&connection, name.buffer().text().as_str());
+            let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id);
             let existing_account = existing_account.unwrap_or(None);
 
             let account_id = self.input_account_id.buffer().text();
@@ -271,7 +274,7 @@ impl EditAccountWindow {
                     let account_id = edit_account.input_account_id.clone();
                     let group = edit_account.input_group.clone();
                     let name: String = name.buffer().text();
-                    let group_id: u32 = group.active_id().unwrap().as_str().to_owned().parse().unwrap();
+                    let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
                     let secret: String = {
                         let buffer = secret.buffer().unwrap();
                         let (start, end) = buffer.bounds();

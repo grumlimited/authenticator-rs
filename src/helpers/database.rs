@@ -155,12 +155,13 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
-    pub fn account_exists(connection: &Connection, name: &str) -> Result<Option<u32>> {
-        let mut stmt = connection.prepare("SELECT id FROM accounts WHERE label = :label")?;
+    pub fn account_exists(connection: &Connection, name: &str, group_id: u32) -> Result<Option<u32>> {
+        let mut stmt = connection.prepare("SELECT id FROM accounts WHERE label = :label AND group_id = :group_id")?;
 
         stmt.query_row(
             named_params! {
-            ":label": name
+            ":label": name,
+            ":group_id": group_id,
             },
             |row| {
                 let account_id: u32 = row.get_unwrap(0);
@@ -531,13 +532,13 @@ mod tests {
 
         runner::run(&mut connection).unwrap();
 
-        let mut account = Account::new(0, 0, "label", "secret", LOCAL);
+        let mut account = Account::new(0, 1, "label", "secret", LOCAL);
         let _ = Database::save_account(&connection, &mut account);
 
-        let result = Database::account_exists(&connection, "label").unwrap();
+        let result = Database::account_exists(&connection, "label", 1).unwrap();
         assert!(result.is_some());
 
-        let result = Database::account_exists(&connection, "non_existent").unwrap();
+        let result = Database::account_exists(&connection, "non_existent", 1).unwrap();
         assert!(result.is_none());
     }
 
