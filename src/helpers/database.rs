@@ -155,6 +155,23 @@ impl Database {
         .map_err(RepositoryError::SqlError)
     }
 
+    pub fn account_exists(connection: &Connection, name: &str, group_id: u32) -> Result<Option<u32>> {
+        let mut stmt = connection.prepare("SELECT id FROM accounts WHERE label = :label AND group_id = :group_id")?;
+
+        stmt.query_row(
+            named_params! {
+            ":label": name,
+            ":group_id": group_id,
+            },
+            |row| {
+                let account_id: u32 = row.get_unwrap(0);
+                Ok(account_id)
+            },
+        )
+        .optional()
+        .map_err(RepositoryError::SqlError)
+    }
+
     pub fn get_group(connection: &Connection, group_id: u32) -> Result<AccountGroup> {
         let mut stmt = connection.prepare("SELECT id, name, icon, url, collapsed FROM groups WHERE id = :group_id")?;
 
@@ -506,6 +523,22 @@ mod tests {
         assert!(result.is_some());
 
         let result = Database::group_exists(&connection, "non_existent").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn account_exists() {
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        runner::run(&mut connection).unwrap();
+
+        let mut account = Account::new(0, 1, "label", "secret", LOCAL);
+        let _ = Database::save_account(&connection, &mut account);
+
+        let result = Database::account_exists(&connection, "label", 1).unwrap();
+        assert!(result.is_some());
+
+        let result = Database::account_exists(&connection, "non_existent", 1).unwrap();
         assert!(result.is_none());
     }
 
