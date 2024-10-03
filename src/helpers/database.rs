@@ -1,11 +1,10 @@
-use std::fmt::Debug;
-use std::str::FromStr;
-use std::string::ToString;
-
 use log::{info, warn};
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Params, Row, Statement, ToSql};
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::str::FromStr;
+use std::string::ToString;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
@@ -225,12 +224,10 @@ impl Database {
 
         let mut stmt = connection.prepare("SELECT last_insert_rowid()")?;
 
-        stmt.query_row([], |row| row.get(0))
-            .map(|id| {
-                account.id = id;
-                id
-            })
-            .map_err(RepositoryError::SqlError)
+        let result = stmt.query_row([], |row| row.get(0)).map_err(RepositoryError::SqlError);
+        result.iter().for_each(|id| account.id = *id);
+
+        result
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
