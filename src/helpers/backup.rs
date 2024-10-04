@@ -73,12 +73,12 @@ impl Backup {
 
         let connection = connection.lock().unwrap();
 
+        accounts.iter_mut().for_each(|group| {
+            group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
+        });
+
         accounts
             .iter_mut()
-            .map(|group| {
-                group.entries.iter_mut().for_each(|account| account.secret_type = SecretType::LOCAL);
-                group
-            })
             .try_for_each(|account_groups| Database::save_group_and_accounts(&connection, account_groups))?;
 
         Ok(())
