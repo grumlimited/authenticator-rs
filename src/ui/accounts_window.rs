@@ -131,7 +131,7 @@ impl AccountsWindow {
 
         let account_groups = Database::load_account_groups(&connection, filter.as_deref());
 
-        let accounts: Result<Vec<AccountGroup>, RepositoryError> = account_groups.and_then(|account_groups| {
+        let accounts = account_groups.and_then(|account_groups| {
             let mut account_groups = account_groups;
             Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
         });
@@ -142,22 +142,20 @@ impl AccountsWindow {
     fn toggle_group_collapse(&self, gui: &MainWindow, group_id: u32, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) {
         popover.hide();
 
-        {
-            debug!("Collapsing/expanding group {:?}", group_id);
+        debug!("Collapsing/expanding group {:?}", group_id);
 
-            let connection = connection.lock().unwrap();
-            let mut group = Database::get_group(&connection, group_id).unwrap();
+        let connection = connection.lock().unwrap();
+        let mut group = Database::get_group(&connection, group_id).unwrap();
 
-            group.collapsed = !group.collapsed;
-            Database::update_group(&connection, &group).unwrap();
-        }
+        group.collapsed = !group.collapsed;
+        Database::update_group(&connection, &group).unwrap();
 
         self.refresh_accounts(gui);
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = self.widgets.lock().unwrap();
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widgets in widgets_list.iter() {
             let group_id = group_widgets.id;
@@ -245,7 +243,7 @@ impl AccountsWindow {
 
     fn edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = self.widgets.lock().unwrap();
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widget in widgets_list.iter() {
             let account_widgets = group_widget.account_widgets.clone();
@@ -423,7 +421,7 @@ impl AccountsWindow {
             move |_: &gtk::Button| {
                 debug!("Loading for group_id {:?}", group_id);
 
-                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
                 let groups = {
                     let connection = connection.lock().unwrap();
@@ -453,7 +451,6 @@ impl AccountsWindow {
     }
 }
 
-#[allow(unused_assignments)]
 async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
     let mut n = 0;
 
@@ -464,19 +461,15 @@ async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu,
 
         match tx.send(remaining_seconds).await {
             Ok(_) => {
-                tx.send(remaining_seconds).await.unwrap();
                 n += 1;
                 glib::timeout_future_seconds(1).await;
             }
             Err(e) => {
                 warn!("Could not send data to channel: {:?}", e);
-                n = max_wait; // exiting loop
                 break;
             }
         }
     }
-
-    tx.send(0).await.unwrap_or(warn!("Could not send data to channel"));
 }
 
 /**
