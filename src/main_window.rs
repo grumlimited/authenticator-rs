@@ -7,6 +7,7 @@ use gettextrs::*;
 use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
+use gtk::{ApplicationWindow, Builder, Window};
 use gtk_macros::*;
 use log::error;
 use log::info;
@@ -66,11 +67,11 @@ impl Default for State {
 impl MainWindow {
     pub fn new(tx_events: Sender<Action>) -> MainWindow {
         // Initialize the UI from the Glade XML.
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
-        get_widget!(builder, gtk::ApplicationWindow, main_window);
-        get_widget!(builder, gtk::Window, about_popup);
+        get_widget!(builder, ApplicationWindow, main_window);
+        get_widget!(builder, Window, about_popup);
 
         let no_accounts = NoAccountsWindow::new(builder.clone());
         let accounts_window = AccountsWindow::new(builder.clone());
