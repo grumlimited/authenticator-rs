@@ -47,10 +47,8 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        {
-            let connection = connection.lock().unwrap();
-            Database::delete_account(&connection, account_id).unwrap();
-        }
+        let connection = connection.lock().unwrap();
+        Database::delete_account(&connection, account_id).unwrap();
 
         Keyring::remove(account_id).unwrap();
 
@@ -82,7 +80,7 @@ impl AccountsWindow {
      * Returns a function which takes a Vec<AccountGroup> to then return glib::Continue.
      * It is meant to be used with rx.attach(...).
      *
-     * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
+     * Various utility functions, e.g. delete_group_reload(), spawn threads doing some heavier lifting (i.e. db/file/etc manipulation) and
      * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
      */
     pub async fn replace_accounts_and_widgets(&self, accounts_refresh_result: AccountsRefreshResult, gui: MainWindow, connection: Arc<Mutex<Connection>>) {

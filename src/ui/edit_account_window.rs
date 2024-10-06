@@ -247,32 +247,26 @@ impl EditAccountWindow {
     pub fn edit_account_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         self.qrcode_action();
 
-        let edit_account = self.clone();
-
         self.cancel_button.connect_clicked(clone!(
-            #[strong]
-            edit_account,
             #[strong]
             gui,
             move |_| {
-                edit_account.reset();
+                gui.edit_account.reset();
                 gui.accounts_window.refresh_accounts(&gui);
             }
         ));
 
         self.save_button.connect_clicked(clone!(
             #[strong]
-            edit_account,
-            #[strong]
             gui,
             move |_| {
-                edit_account.reset_errors();
+                gui.edit_account.reset_errors();
 
-                if let Ok(()) = edit_account.validate(connection.clone()) {
-                    let name = edit_account.input_name.clone();
-                    let secret = edit_account.input_secret.clone();
-                    let account_id = edit_account.input_account_id.clone();
-                    let group = edit_account.input_group.clone();
+                if let Ok(()) = gui.edit_account.validate(connection.clone()) {
+                    let name = gui.edit_account.input_name.clone();
+                    let secret = gui.edit_account.input_secret.clone();
+                    let account_id = gui.edit_account.input_account_id.clone();
+                    let group = gui.edit_account.input_group.clone();
                     let name: String = name.buffer().text();
                     let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
                     let secret: String = {
@@ -285,7 +279,6 @@ impl EditAccountWindow {
                     };
 
                     let filter = gui.accounts_window.get_filter_value();
-                    let connection = connection.clone();
 
                     let account_id = account_id.buffer().text();
 
@@ -300,7 +293,7 @@ impl EditAccountWindow {
                         }
                     ));
 
-                    edit_account.reset();
+                    gui.edit_account.reset();
 
                     gui.switch_to(Display::Accounts);
                 }

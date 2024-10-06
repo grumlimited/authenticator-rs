@@ -63,15 +63,13 @@ impl AddGroupWindow {
     }
 
     fn validate(&self, connection: Arc<Mutex<Connection>>) -> Result<(), ValidationError> {
-        let name = self.input_group.clone();
-
-        if name.buffer().text().is_empty() {
-            name.set_primary_icon_name(Some("dialog-error"));
-            name.style_context().add_class("error");
+        if self.input_group.buffer().text().is_empty() {
+            self.input_group.set_primary_icon_name(Some("dialog-error"));
+            self.input_group.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
             let connection = connection.lock().unwrap();
-            let existing_group = Database::group_exists(&connection, name.buffer().text().as_str());
+            let existing_group = Database::group_exists(&connection, self.input_group.buffer().text().as_str());
             let existing_group = existing_group.unwrap_or(None);
 
             let group_id = self.group_id.label().as_str().to_owned();
@@ -105,8 +103,7 @@ impl AddGroupWindow {
         self.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
 
         self.input_group.set_primary_icon_name(None);
-        let style_context = self.input_group.style_context();
-        style_context.remove_class("error");
+        self.input_group.style_context().remove_class("error");
     }
 
     fn url_input_action(&self, state: RefCell<State>) {
@@ -201,20 +198,20 @@ impl AddGroupWindow {
         ));
 
         {
-            let add_group = self.clone();
-            icon_delete.connect_clicked(move |_| {
-                let image_input = add_group.image_input.clone();
-                let icon_error = add_group.icon_error.clone();
+            icon_delete.connect_clicked(clone!(
+                #[strong(rename_to = add_group)]
+                self,
+                move |_| {
+                    add_group.url_input.set_text("");
 
-                add_group.url_input.set_text("");
+                    add_group.icon_filename.set_label("");
 
-                add_group.icon_filename.set_label("");
+                    add_group.icon_error.set_label("");
+                    add_group.icon_error.set_visible(false);
 
-                icon_error.set_label("");
-                icon_error.set_visible(false);
-
-                image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
-            });
+                    add_group.image_input.set_from_icon_name(Some("content-loading-symbolic"), IconSize::Button);
+                }
+            ));
         }
     }
 
