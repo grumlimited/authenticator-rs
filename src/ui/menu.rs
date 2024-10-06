@@ -16,11 +16,11 @@ use crate::{NAMESPACE, NAMESPACE_PREFIX};
 pub trait Menus {
     fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
 
-    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
+    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
 
-    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
 }
 
 impl Menus for MainWindow {
@@ -37,7 +37,7 @@ impl Menus for MainWindow {
         titlebar.show_all();
     }
 
-    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> Button {
+    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> Button {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
         get_widget!(builder, Button, search_button);
 
@@ -80,7 +80,7 @@ impl Menus for MainWindow {
         search_button
     }
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
+    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
         get_widget!(builder, PopoverMenu, popover);
@@ -144,7 +144,7 @@ impl Menus for MainWindow {
         system_menu
     }
 
-    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
+    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
         get_widget!(builder, PopoverMenu, popover);
         get_widget!(builder, Button, add_account_button);
