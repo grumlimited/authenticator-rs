@@ -16,11 +16,11 @@ use crate::{NAMESPACE, NAMESPACE_PREFIX};
 pub trait Menus {
     fn build_menus(&self, connection: Arc<Mutex<Connection>>);
 
-    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
+    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> Button;
 
-    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton;
 
-    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton;
 }
 
 impl Menus for MainWindow {
