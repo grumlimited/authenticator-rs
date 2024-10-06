@@ -14,7 +14,7 @@ use crate::ui::{AccountsWindow, AddGroupWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
 pub trait Menus {
-    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
+    fn build_menus(&self, connection: Arc<Mutex<Connection>>);
 
     fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
 
@@ -24,7 +24,7 @@ pub trait Menus {
 }
 
 impl Menus for MainWindow {
-    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
+    fn build_menus(&self, connection: Arc<Mutex<Connection>>) {
         let titlebar = gtk::HeaderBar::builder().show_close_button(true).build();
 
         titlebar.pack_start(&self.build_action_menu(connection.clone()));
@@ -127,9 +127,9 @@ impl Menus for MainWindow {
             }
         ));
 
-        let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
+        let title_bar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
 
-        self.about_popup.set_titlebar(Some(&titlebar));
+        self.about_popup.set_titlebar(Some(&title_bar));
 
         about_button.connect_clicked(clone!(
             #[strong(rename_to = popup)]
