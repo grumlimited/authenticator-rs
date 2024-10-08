@@ -261,7 +261,7 @@ impl Database {
                 let secret: String = row.get_unwrap(3);
                 let id = row.get_unwrap(0);
 
-                let secret_type = Database::extract_secret_type(row, 4);
+                let secret_type = Self::extract_secret_type(row, 4);
 
                 let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
 

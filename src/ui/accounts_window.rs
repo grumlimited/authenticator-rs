@@ -47,10 +47,8 @@ impl AccountsWindow {
     }
 
     fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        {
-            let connection = connection.lock().unwrap();
-            Database::delete_account(&connection, account_id).unwrap();
-        }
+        let connection = connection.lock().unwrap();
+        Database::delete_account(&connection, account_id).unwrap();
 
         Keyring::remove(account_id).unwrap();
 
@@ -82,7 +80,7 @@ impl AccountsWindow {
      * Returns a function which takes a Vec<AccountGroup> to then return glib::Continue.
      * It is meant to be used with rx.attach(...).
      *
-     * Various utility functions, eg. delete_group_reload(), spawn threads doing some heavier lifting (ie. db/file/etc manipulation) and
+     * Various utility functions, e.g. delete_group_reload(), spawn threads doing some heavier lifting (i.e. db/file/etc manipulation) and
      * upon completion will trigger (via rx.attach(...)) replace_accounts_and_widgets() to reload all accounts.
      */
     pub async fn replace_accounts_and_widgets(&self, accounts_refresh_result: AccountsRefreshResult, gui: MainWindow, connection: Arc<Mutex<Connection>>) {
@@ -131,7 +129,7 @@ impl AccountsWindow {
 
         let account_groups = Database::load_account_groups(&connection, filter.as_deref());
 
-        let accounts: Result<Vec<AccountGroup>, RepositoryError> = account_groups.and_then(|account_groups| {
+        let accounts = account_groups.and_then(|account_groups| {
             let mut account_groups = account_groups;
             Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
         });
@@ -139,25 +137,9 @@ impl AccountsWindow {
         has_groups.and_then(|has_groups| accounts.map(|account_groups| (account_groups, has_groups)))
     }
 
-    fn toggle_group_collapse(&self, gui: &MainWindow, group_id: u32, popover: gtk::PopoverMenu, connection: Arc<Mutex<Connection>>) {
-        popover.hide();
-
-        {
-            debug!("Collapsing/expanding group {:?}", group_id);
-
-            let connection = connection.lock().unwrap();
-            let mut group = Database::get_group(&connection, group_id).unwrap();
-
-            group.collapsed = !group.collapsed;
-            Database::update_group(&connection, &group).unwrap();
-        }
-
-        self.refresh_accounts(gui);
-    }
-
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = self.widgets.lock().unwrap();
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widgets in widgets_list.iter() {
             let group_id = group_widgets.id;
@@ -176,29 +158,13 @@ impl AccountsWindow {
                 }
             ));
 
-            group_widgets.collapse_button.connect_clicked(clone!(
-                #[strong]
-                connection,
-                #[strong(rename_to = popover)]
-                group_widgets.popover,
-                #[strong]
-                gui,
-                move |_| {
-                    gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
-                }
-            ));
+            group_widgets
+                .collapse_button
+                .connect_clicked(self.toggle_group_collapse(connection.clone(), gui, &group_widgets.popover, group_id));
 
-            group_widgets.expand_button.connect_clicked(clone!(
-                #[strong]
-                connection,
-                #[strong(rename_to = popover)]
-                group_widgets.popover,
-                #[strong]
-                gui,
-                move |_| {
-                    gui.accounts_window.toggle_group_collapse(&gui, group_id, popover.clone(), connection.clone());
-                }
-            ));
+            group_widgets
+                .expand_button
+                .connect_clicked(self.toggle_group_collapse(connection.clone(), gui, &group_widgets.popover, group_id));
 
             group_widgets.edit_button.connect_clicked(clone!(
                 #[strong]
@@ -245,7 +211,7 @@ impl AccountsWindow {
 
     fn edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
         let widgets_list = self.widgets.lock().unwrap();
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widget in widgets_list.iter() {
             let account_widgets = group_widget.account_widgets.clone();
@@ -408,14 +374,42 @@ impl AccountsWindow {
         1_f64 - ((seconds % 30) as f64 / 30_f64)
     }
 
+    pub fn toggle_group_collapse(
+        &self,
+        connection: Arc<Mutex<Connection>>,
+        main_window: &MainWindow,
+        popover: &gtk::PopoverMenu,
+        group_id: u32,
+    ) -> impl Fn(&gtk::Button) {
+        clone!(
+            #[strong]
+            main_window,
+            #[strong]
+            popover,
+            move |_: &gtk::Button| {
+                popover.hide();
+
+                debug!("Collapsing/expanding group {:?}", group_id);
+
+                let connection = connection.lock().unwrap();
+                let mut group = Database::get_group(&connection, group_id).unwrap();
+
+                group.collapsed = !group.collapsed;
+                Database::update_group(&connection, &group).unwrap();
+
+                main_window.accounts_window.refresh_accounts(&main_window);
+            }
+        )
+    }
+
     pub fn display_add_account_form(
         &self,
         connection: Arc<Mutex<Connection>>,
         popover: &gtk::PopoverMenu,
         main_window: &MainWindow,
         group_id: Option<u32>,
-    ) -> Box<dyn Fn(&gtk::Button)> {
-        Box::new(clone!(
+    ) -> impl Fn(&gtk::Button) {
+        clone!(
             #[strong]
             main_window,
             #[strong]
@@ -423,7 +417,7 @@ impl AccountsWindow {
             move |_: &gtk::Button| {
                 debug!("Loading for group_id {:?}", group_id);
 
-                let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
                 let groups = {
                     let connection = connection.lock().unwrap();
@@ -439,7 +433,7 @@ impl AccountsWindow {
                 popover.hide();
                 main_window.switch_to(Display::AddAccount);
             }
-        ))
+        )
     }
 
     pub fn get_filter_value(&self) -> Option<String> {
@@ -453,7 +447,6 @@ impl AccountsWindow {
     }
 }
 
-#[allow(unused_assignments)]
 async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
     let mut n = 0;
 
@@ -464,19 +457,15 @@ async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu,
 
         match tx.send(remaining_seconds).await {
             Ok(_) => {
-                tx.send(remaining_seconds).await.unwrap();
                 n += 1;
                 glib::timeout_future_seconds(1).await;
             }
             Err(e) => {
                 warn!("Could not send data to channel: {:?}", e);
-                n = max_wait; // exiting loop
                 break;
             }
         }
     }
-
-    tx.send(0).await.unwrap_or(warn!("Could not send data to channel"));
 }
 
 /**

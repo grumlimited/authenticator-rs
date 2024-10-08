@@ -14,47 +14,45 @@ use crate::ui::{AccountsWindow, AddGroupWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
 
 pub trait Menus {
-    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>);
+    fn build_menus(&self, connection: Arc<Mutex<Connection>>);
 
-    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::Button;
+    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> Button;
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton;
 
-    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> gtk::MenuButton;
+    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton;
 }
 
 impl Menus for MainWindow {
-    fn build_menus(&mut self, connection: Arc<Mutex<Connection>>) {
-        let titlebar = gtk::HeaderBar::builder().show_close_button(true).build();
+    fn build_menus(&self, connection: Arc<Mutex<Connection>>) {
+        let title_bar = gtk::HeaderBar::builder().show_close_button(true).build();
 
-        titlebar.pack_start(&self.build_action_menu(connection.clone()));
+        title_bar.pack_start(&self.build_action_menu(connection.clone()));
 
-        titlebar.pack_start(&self.build_search_button(connection.clone()));
+        title_bar.pack_start(&self.build_search_button(connection.clone()));
 
-        titlebar.pack_end(&self.build_system_menu(connection));
-        self.window.set_titlebar(Some(&titlebar));
+        title_bar.pack_end(&self.build_system_menu(connection));
+        self.window.set_titlebar(Some(&title_bar));
 
-        titlebar.show_all();
+        title_bar.show_all();
     }
 
-    fn build_search_button(&mut self, connection: Arc<Mutex<Connection>>) -> Button {
+    fn build_search_button(&self, connection: Arc<Mutex<Connection>>) -> Button {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
         get_widget!(builder, Button, search_button);
 
         search_button.connect_clicked(clone!(
             #[strong(rename_to = gui)]
             self,
-            #[strong(rename_to = filter)]
-            self.accounts_window.filter,
             move |_| {
-                if WidgetExt::is_visible(&filter) {
-                    filter.hide();
-                    filter.set_text("");
+                if WidgetExt::is_visible(&gui.accounts_window.filter) {
+                    gui.accounts_window.filter.hide();
+                    gui.accounts_window.filter.set_text("");
 
                     glib::spawn_future_local(clone!(
                         #[strong]
                         connection,
-                        #[strong(rename_to = gui)]
+                        #[strong]
                         gui,
                         async move {
                             let results = AccountsWindow::load_account_groups(connection.clone(), None).await;
@@ -62,25 +60,24 @@ impl Menus for MainWindow {
                         }
                     ));
                 } else {
-                    filter.show();
-                    filter.grab_focus()
+                    gui.accounts_window.filter.show();
+                    gui.accounts_window.filter.grab_focus()
                 }
 
                 gio::Settings::new(NAMESPACE)
-                    .set_boolean("search-visible", WidgetExt::is_visible(&filter))
+                    .set_boolean("search-visible", WidgetExt::is_visible(&gui.accounts_window.filter))
                     .expect("Could not find setting search-visible");
             }
         ));
 
         if gio::Settings::new(NAMESPACE).boolean("search-visible") {
-            let filter = self.accounts_window.filter.clone();
-            filter.show()
+            self.accounts_window.filter.show()
         }
 
         search_button
     }
 
-    fn build_system_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
+    fn build_system_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "system_menu.ui").as_str());
 
         get_widget!(builder, PopoverMenu, popover);
@@ -88,6 +85,7 @@ impl Menus for MainWindow {
         get_widget!(builder, Button, export_button);
         get_widget!(builder, Button, import_button_yaml);
         get_widget!(builder, Button, import_button_ga);
+        get_widget!(builder, MenuButton, system_menu);
 
         let dark_mode_slider: gtk::Switch = {
             let switch: gtk::Switch = builder.object("dark_mode_slider").unwrap();
@@ -105,7 +103,6 @@ impl Menus for MainWindow {
 
                 // switch first then redraw - to take into account state change
                 gui.switch_to(Display::Accounts);
-
                 gui.accounts_window.refresh_accounts(&gui);
 
                 gtk::glib::Propagation::Proceed
@@ -117,8 +114,6 @@ impl Menus for MainWindow {
         import_button_yaml.connect_clicked(self.import_accounts(ImportType::Internal, popover.clone(), connection.clone()));
         import_button_ga.connect_clicked(self.import_accounts(ImportType::GoogleAuthenticator, popover.clone(), connection));
 
-        let system_menu: MenuButton = builder.object("system_menu").unwrap();
-
         system_menu.connect_clicked(clone!(
             #[strong]
             popover,
@@ -127,9 +122,9 @@ impl Menus for MainWindow {
             }
         ));
 
-        let titlebar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
+        let title_bar = gtk::HeaderBar::builder().decoration_layout(":").title(gettext("About")).build();
 
-        self.about_popup.set_titlebar(Some(&titlebar));
+        self.about_popup.set_titlebar(Some(&title_bar));
 
         about_button.connect_clicked(clone!(
             #[strong(rename_to = popup)]
@@ -144,22 +139,18 @@ impl Menus for MainWindow {
         system_menu
     }
 
-    fn build_action_menu(&mut self, connection: Arc<Mutex<Connection>>) -> MenuButton {
+    fn build_action_menu(&self, connection: Arc<Mutex<Connection>>) -> MenuButton {
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "action_menu.ui").as_str());
         get_widget!(builder, PopoverMenu, popover);
         get_widget!(builder, Button, add_account_button);
         get_widget!(builder, Button, add_group_button);
         get_widget!(builder, MenuButton, action_menu);
 
-        let gui = self.clone();
-        let widgets = self.accounts_window.widgets.clone();
-        let state = self.state.clone();
-
         add_group_button.connect_clicked(clone!(
             #[strong]
             popover,
-            #[strong]
-            gui,
+            #[strong(rename_to = gui)]
+            self,
             #[strong]
             connection,
             move |_| {
@@ -180,12 +171,12 @@ impl Menus for MainWindow {
         action_menu.connect_clicked(clone!(
             #[strong]
             popover,
-            #[strong]
-            state,
+            #[strong(rename_to = state)]
+            self.state,
             #[strong]
             add_account_button,
-            #[strong]
-            widgets,
+            #[strong(rename_to = widgets)]
+            self.accounts_window.widgets,
             move |_| {
                 let widgets = widgets.lock().unwrap();
 

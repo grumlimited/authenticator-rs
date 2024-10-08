@@ -73,7 +73,7 @@ fn main() {
     application.connect_activate(move |app| {
         let (tx_events, rx_events) = async_channel::bounded::<Action>(1);
 
-        let mut gui = MainWindow::new(tx_events);
+        let gui = MainWindow::new(tx_events);
 
         let connection = Database::create_connection().unwrap();
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));

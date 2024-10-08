@@ -7,13 +7,13 @@ use gettextrs::*;
 use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
+use gtk::{ApplicationWindow, Builder, Window};
 use gtk_macros::*;
 use log::error;
 use log::info;
 use rusqlite::Connection;
 
 use crate::helpers::Keyring;
-use crate::main_window::Display::Errors;
 use crate::ui::menu::*;
 use crate::ui::{AccountsWindow, AddGroupWindow, EditAccountWindow, ErrorsWindow, NoAccountsWindow};
 use crate::{NAMESPACE, NAMESPACE_PREFIX};
@@ -24,8 +24,8 @@ pub enum Action {
 
 #[derive(Clone, Debug)]
 pub struct MainWindow {
-    pub window: gtk::ApplicationWindow,
-    pub about_popup: gtk::Window,
+    pub window: ApplicationWindow,
+    pub about_popup: Window,
     pub edit_account: EditAccountWindow,
     pub accounts_window: AccountsWindow,
     pub add_group: AddGroupWindow,
@@ -66,11 +66,11 @@ impl Default for State {
 impl MainWindow {
     pub fn new(tx_events: Sender<Action>) -> MainWindow {
         // Initialize the UI from the Glade XML.
-        let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+        let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         // Get handles for the various controls we need to use.
-        get_widget!(builder, gtk::ApplicationWindow, main_window);
-        get_widget!(builder, gtk::Window, about_popup);
+        get_widget!(builder, ApplicationWindow, main_window);
+        get_widget!(builder, Window, about_popup);
 
         let no_accounts = NoAccountsWindow::new(builder.clone());
         let accounts_window = AccountsWindow::new(builder.clone());
@@ -134,67 +134,39 @@ impl MainWindow {
         let g_settings = gio::Settings::new(NAMESPACE);
         state.dark_mode = g_settings.boolean("dark-theme");
 
+        // hide all - temporarily
+        self.accounts_window.container.set_visible(false);
+        self.errors.container.set_visible(false);
+        self.add_group.container.set_visible(false);
+        self.edit_account.container.set_visible(false);
+        self.no_accounts.container.set_visible(false);
+
         match state.display {
             Display::Accounts => {
                 self.accounts_window.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.add_group.container.set_visible(false);
-                self.edit_account.container.set_visible(false);
-                self.no_accounts.container.set_visible(false);
             }
             Display::EditAccount => {
                 self.edit_account.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.add_group.container.set_visible(false);
-                self.no_accounts.container.set_visible(false);
             }
             Display::AddAccount => {
                 self.edit_account.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.add_group.container.set_visible(false);
-                self.no_accounts.container.set_visible(false);
             }
             Display::AddGroup => {
                 self.add_group.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.edit_account.container.set_visible(false);
-                self.no_accounts.container.set_visible(false);
             }
             Display::EditGroup => {
                 self.add_group.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.edit_account.container.set_visible(false);
-                self.no_accounts.container.set_visible(false);
             }
             Display::NoAccounts => {
                 self.no_accounts.container.set_visible(true);
-
-                self.errors.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.add_group.container.set_visible(false);
-                self.edit_account.container.set_visible(false);
             }
             Display::Errors => {
                 self.errors.container.set_visible(true);
-
-                self.no_accounts.container.set_visible(false);
-                self.accounts_window.container.set_visible(false);
-                self.add_group.container.set_visible(false);
-                self.edit_account.container.set_visible(false);
             }
         }
     }
 
-    pub fn set_application(&mut self, application: &gtk::Application, connection: Arc<Mutex<Connection>>, rx_events: Receiver<Action>) {
+    pub fn set_application(&self, application: &gtk::Application, connection: Arc<Mutex<Connection>>, rx_events: Receiver<Action>) {
         self.window.set_application(Some(application));
 
         self.build_menus(connection.clone());
@@ -217,7 +189,7 @@ impl MainWindow {
             Err(e) => {
                 error!("{}", format!("Keyring is {:?}", e));
                 self.errors.error_display_message.set_text(&gettext("keyring_locked"));
-                self.switch_to(Errors);
+                self.switch_to(Display::Errors);
             }
         }
 
@@ -241,52 +213,55 @@ impl MainWindow {
         self.window.show();
     }
 
-    pub fn bind_account_filter_events(&mut self) {
-        {
-            //First bind user input event to refreshing account list
-            let gui = self.clone();
-            self.accounts_window.filter.connect_changed(move |_| {
+    pub fn bind_account_filter_events(&self) {
+        //First bind user input event to refreshing account list
+        self.accounts_window.filter.connect_changed(clone!(
+            #[strong(rename_to = gui)]
+            self,
+            move |_| {
                 gui.accounts_window.refresh_accounts(&gui);
-            });
-        }
+            }
+        ));
 
-        {
-            //then bind "x" icon to empty the filter input.
-            let (tx, rx) = async_channel::bounded::<bool>(1);
+        //then bind "x" icon to empty the filter input.
+        let (tx, rx) = async_channel::bounded::<bool>(1);
 
-            let filter = self.accounts_window.filter.clone();
-            glib::spawn_future_local(async move {
+        glib::spawn_future_local(clone!(
+            #[strong(rename_to = filter)]
+            self.accounts_window.filter,
+            async move {
                 while rx.recv().await.is_ok() {
                     filter.set_text("");
                 }
-            });
+            }
+        ));
 
-            let _ = self.accounts_window.filter.connect("icon-press", true, move |_| {
-                glib::spawn_future(clone!(
-                    #[strong]
-                    tx,
-                    async move { tx.send(true).await }
-                ));
-                None
-            });
-        }
+        self.accounts_window.filter.connect("icon-press", true, move |_| {
+            glib::spawn_future(clone!(
+                #[strong]
+                tx,
+                async move { tx.send(true).await }
+            ));
+            None
+        });
     }
 
-    pub fn start_progress_bar(&mut self) {
-        let progress_bar = self.accounts_window.progress_bar.clone();
-        let widgets = self.accounts_window.widgets.clone();
+    pub fn start_progress_bar(&self) {
+        let tick = clone!(
+            #[strong(rename_to = gui)]
+            self,
+            move || {
+                let seconds = Local::now().second() as u8;
 
-        let tick = move || {
-            let seconds = Local::now().second() as u8;
+                AccountsWindow::progress_bar_fraction_for(&gui.accounts_window.progress_bar, seconds as u32);
+                if seconds == 0 || seconds == 30 {
+                    let mut widgets = gui.accounts_window.widgets.lock().unwrap();
+                    widgets.iter_mut().for_each(|group| group.update());
+                }
 
-            AccountsWindow::progress_bar_fraction_for(&progress_bar, seconds as u32);
-            if seconds == 0 || seconds == 30 {
-                let mut widgets = widgets.lock().unwrap();
-                widgets.iter_mut().for_each(|group| group.update());
+                glib::ControlFlow::Continue
             }
-
-            glib::ControlFlow::Continue
-        };
+        );
 
         glib::timeout_add_seconds_local(1, tick);
     }
