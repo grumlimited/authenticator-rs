@@ -42,6 +42,7 @@ impl AccountsWindow {
             accounts_container,
             filter: account_filter,
             progress_bar,
+            #[allow(clippy::arc_with_non_send_sync)]
             widgets: Arc::new(Mutex::new(vec![])),
         }
     }
