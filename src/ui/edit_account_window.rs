@@ -285,8 +285,6 @@ impl EditAccountWindow {
                     };
 
                     let filter = gui.accounts_window.get_filter_value();
-                    let connection = connection.clone();
-
                     let account_id = account_id.buffer().text();
 
                     glib::spawn_future(clone!(
