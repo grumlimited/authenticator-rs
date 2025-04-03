@@ -187,7 +187,7 @@ impl MainWindow {
                 self.accounts_window.refresh_accounts(self);
             }
             Err(e) => {
-                error!("{}", format!("Keyring is {:?}", e));
+                error!("Keyring is {:?}", e);
                 self.errors.error_display_message.set_text(&gettext("keyring_locked"));
                 self.switch_to(Display::Errors);
             }
