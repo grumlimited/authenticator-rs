@@ -134,36 +134,16 @@ impl MainWindow {
         let g_settings = gio::Settings::new(NAMESPACE);
         state.dark_mode = g_settings.boolean("dark-theme");
 
-        // hide all - temporarily
-        self.accounts_window.container.set_visible(false);
-        self.errors.container.set_visible(false);
-        self.add_group.container.set_visible(false);
-        self.edit_account.container.set_visible(false);
-        self.no_accounts.container.set_visible(false);
-
-        match state.display {
-            Display::Accounts => {
-                self.accounts_window.container.set_visible(true);
-            }
-            Display::EditAccount => {
-                self.edit_account.container.set_visible(true);
-            }
-            Display::AddAccount => {
-                self.edit_account.container.set_visible(true);
-            }
-            Display::AddGroup => {
-                self.add_group.container.set_visible(true);
-            }
-            Display::EditGroup => {
-                self.add_group.container.set_visible(true);
-            }
-            Display::NoAccounts => {
-                self.no_accounts.container.set_visible(true);
-            }
-            Display::Errors => {
-                self.errors.container.set_visible(true);
-            }
-        }
+        self.accounts_window.container.set_visible(state.display == Display::Accounts);
+        self.edit_account.container.set_visible(state.display == Display::EditAccount);
+        self.edit_account
+            .container
+            .set_visible(state.display == Display::EditAccount || state.display == Display::AddAccount);
+        self.add_group
+            .container
+            .set_visible(state.display == Display::AddGroup || state.display == Display::EditGroup);
+        self.no_accounts.container.set_visible(state.display == Display::NoAccounts);
+        self.errors.container.set_visible(state.display == Display::Errors);
     }
 
     pub fn set_application(&self, application: &gtk::Application, connection: Arc<Mutex<Connection>>, rx_events: Receiver<Action>) {
