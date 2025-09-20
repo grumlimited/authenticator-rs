@@ -1,10 +1,10 @@
+use base32::Alphabet;
 use gettextrs::*;
 use glib::clone;
 use gtk::prelude::*;
 use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use totp_rs::Secret;
 
 use model::account_errors::TotpError;
 
@@ -165,7 +165,11 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let secret = Secret::Encoded(Account::pad(key)).to_bytes()?;
+        let secret = match base32::decode(Alphabet::Rfc4648 { padding: true }, &Account::pad(&key.to_ascii_uppercase())) {
+            Some(s) => s,
+            None => return Err(TotpError::InvalidKey(key.to_string())),
+        };
+
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
 
         totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
@@ -190,7 +194,9 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
+    use crate::model::account_errors::TotpError;
     use crate::model::Account;
+    use base32::Alphabet;
 
     #[test]
     fn pad() {
@@ -201,5 +207,14 @@ mod tests {
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
             Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")
         );
+    }
+
+    #[test]
+    fn generate_current() {
+        let key = Account::pad("477IUDDXCZSMY44U");
+        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &key).unwrap();
+
+        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret).unwrap();
+        let _ = totp_sha1.generate_current().map_err(TotpError::SystemTimeError).unwrap();
     }
 }

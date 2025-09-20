@@ -14,14 +14,14 @@ anyhow = "1"
 async-channel = "2.2"
 chrono = "0"
 curl = "0"
-directories = "5"
+directories = "6.0.0"
 gdk = "0.18"
-gdk-pixbuf = "0.20.0"
+gdk-pixbuf = "0.21.2"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.20.0"
+gio = "0.21.2"
 gtk-macros = "0.3"
 google_authenticator_converter = "0.2.0"
-image = "0.24.9"
+image = "0.25.8"
 log = "0"
 log4rs = "1"
 refinery = { version = "0", features = ["rusqlite"]}
@@ -29,22 +29,23 @@ regex = "1"
 rqrr = "0"
 rusqlite = "0"
 scraper = "0"
-secret-service = { version = "4", features = ["rt-tokio-crypto-rust"] }
+secret-service = { version = "5.1.0", features = ["rt-tokio-crypto-rust"] }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0"
 strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
-thiserror = "1"
-totp-rs = "5"
+thiserror = "2.0.16"
+totp-rs = "5.7.0"
 uuid = { version = "1", features = ["v4"] }
+base32 = "0.5.1"
 
 [dependencies.gtk]
 version = "0.18"
 features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.20.0"
+version = "0.21.2"
 
 [dev-dependencies]
 async-std = {version = "1", features = [] }
