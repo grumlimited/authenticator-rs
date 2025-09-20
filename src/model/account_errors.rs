@@ -14,6 +14,8 @@ pub enum TotpError {
     TotpUrlError(TotpUrlError),
     #[error("{0}")]
     SystemTimeError(SystemTimeError),
+    #[error("Invalid Key: {0}")]
+    InvalidKey(String),
 }
 
 impl TotpError {

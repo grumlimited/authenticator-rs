@@ -165,7 +165,11 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &Account::pad(&key.to_ascii_uppercase())).unwrap();
+        let secret = match base32::decode(Alphabet::Rfc4648 { padding: true }, &Account::pad(&key.to_ascii_uppercase())) {
+            Some(s) => s,
+            None => return Err(TotpError::InvalidKey(key.to_string())),
+        };
+
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
 
         totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
