@@ -46,51 +46,56 @@ fn main() {
 
     let application = gtk::Application::new(Some(NAMESPACE), Default::default());
 
-    application.connect_startup(move |_| {
-        let provider = gtk::CssProvider::new();
-        provider.load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
-
-        gtk::StyleContext::add_provider_for_screen(
-            &gdk::Screen::default().expect("Error initializing gtk css provider."),
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
-
-        // Prepare i18n
-        setlocale(LocaleCategory::LcAll, "");
-        if textdomain(GETTEXT_PACKAGE).is_err() {
-            log::warn!("Failed to set textdomain");
+    let connection = match Database::create_connection() {
+        Ok(c) => c,
+        Err(e) => {
+            log::error!("Failed to create database connection: {:?}", e);
+            exit(1);
         }
-        if bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").is_err() {
-            log::warn!("Failed to bind textdomain codeset to UTF-8");
-        }
+    };
 
-        // Configure logging; do not panic on failure, just log.
-        if let Err(e) = configure_logging() {
-            log::error!("Logging configuration failed: {:?}", e);
-        }
+    let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        // SQL migrations
-        let mut connection = match Database::create_connection() {
-            Ok(c) => c,
-            Err(e) => {
-                log::error!("Failed to create database connection: {:?}", e);
-                exit(1);
+    application.connect_startup({
+        let connection = Arc::clone(&connection);
+        move |_| {
+            let provider = gtk::CssProvider::new();
+            provider.load_from_resource(format!("{}/{}", NAMESPACE_PREFIX, "style.css").as_str());
+
+            gtk::StyleContext::add_provider_for_screen(
+                &gdk::Screen::default().expect("Error initializing gtk css provider."),
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+
+            // Prepare i18n
+            setlocale(LocaleCategory::LcAll, "");
+            if textdomain(GETTEXT_PACKAGE).is_err() {
+                log::warn!("Failed to set textdomain");
             }
-        };
+            if bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").is_err() {
+                log::warn!("Failed to bind textdomain codeset to UTF-8");
+            }
 
-        if let Err(e) = runner::run(&mut connection) {
-            log::error!("Migrations failed: {:?}", e);
-            exit(1);
-        } else {
-            info!("Migrations done running");
-        }
+            // Configure logging; do not panic on failure, just log.
+            if let Err(e) = configure_logging() {
+                log::error!("Logging configuration failed: {:?}", e);
+            }
 
-        if let Err(e) = Paths::update_keyring_secrets(Arc::new(Mutex::new(connection))) {
-            log::error!("Failed to update keyring secrets: {:?}", e);
-            exit(1);
-        } else {
-            info!("Added local accounts to keyring");
+            // SQL migrations
+            if let Err(e) = runner::run(connection.clone()) {
+                log::error!("Migrations failed: {:?}", e);
+                exit(1);
+            } else {
+                info!("Migrations done running");
+            }
+
+            if let Err(e) = Paths::update_keyring_secrets(connection.clone()) {
+                log::error!("Failed to update keyring secrets: {:?}", e);
+                exit(1);
+            } else {
+                info!("Added local accounts to keyring");
+            }
         }
     });
 
@@ -99,15 +104,7 @@ fn main() {
 
         let gui = MainWindow::new(tx_events);
 
-        let connection = match Database::create_connection() {
-            Ok(conn) => conn,
-            Err(e) => {
-                log::error!("Failed to create database connection on activate: {:?}", e);
-                return;
-            }
-        };
-        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
-
+        let connection = Arc::clone(&connection);
         gui.set_application(app, connection, rx_events);
 
         info!("Authenticator RS initialised");
