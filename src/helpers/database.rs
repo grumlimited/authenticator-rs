@@ -345,7 +345,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
         let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -378,7 +378,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -406,7 +406,7 @@ mod tests {
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, false, vec![]);
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -430,7 +430,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -464,7 +464,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -498,7 +498,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
@@ -517,7 +517,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -536,7 +536,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -555,7 +555,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut account = Account::new(0, 1, "label", "secret", LOCAL);
         let _ = Database::save_account(&connection, &mut account);
@@ -574,7 +574,7 @@ mod tests {
 
         runner::run(connection.clone()).unwrap();
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let account1 = Account::new(0, 0, "label", "secret", LOCAL);
         let account2 = Account::new(0, 0, "label2", "secret2", LOCAL);
