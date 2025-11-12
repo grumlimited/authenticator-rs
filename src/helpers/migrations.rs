@@ -12,7 +12,7 @@ pub mod runner {
 
     #[allow(clippy::result_large_err)]
     pub fn run(connection: Arc<Mutex<Connection>>) -> Result<Report, Error> {
-        let mut connection = connection.lock().unwrap();
+        let mut connection = connection.lock().expect("Could not get a connection lock to run migrations");
         let connection = connection.deref_mut();
         crate::helpers::refinery::migrations::runner().run(connection)
     }
