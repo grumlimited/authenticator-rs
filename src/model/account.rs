@@ -42,7 +42,11 @@ pub struct AccountWidget {
 impl AccountWidget {
     pub fn update(&mut self) {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
-            Ok(totp) => self.totp_label.set_label(totp.as_str()),
+            Ok(totp) => {
+                self.totp_label.set_label(totp.as_str());
+                let context = self.totp_label.style_context();
+                context.remove_class("error");
+            }
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
                 self.totp_label.set_label(&gettext(error_key.error()));
@@ -161,34 +165,29 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
+        let key = key.trim();
         if key.is_empty() {
             return Err(TotpError::Empty);
         }
 
-        let secret = match base32::decode(Alphabet::Rfc4648 { padding: true }, &Account::pad(&key.to_ascii_uppercase())) {
-            Some(s) => s,
-            None => return Err(TotpError::InvalidKey(key.to_string())),
-        };
+        let padded = Account::pad(&key.to_ascii_uppercase());
+
+        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &padded).ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
-
         totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
     }
 
     /*
      * Pads key with = up to 32 characters long.
-     * In turns this produces 128-byte long secrets for totp.
-     * Note: this 128-byte long requirement has been added with totp 3.0.
+     * This produces a predictable padding using repeated `=` characters.
      */
     fn pad(key: &str) -> String {
-        match key {
-            _ if key.len() < 32 => {
-                let pad = 32 - key.len();
-                let s = format!("{:=^1$}", "=", pad);
-                format!("{}{}", key, s)
-            }
-            _ => key.to_string(),
+        if key.len() >= 32 {
+            return key.to_string();
         }
+        let pad = 32 - key.len();
+        format!("{}{}", key, "=".repeat(pad))
     }
 }
 
