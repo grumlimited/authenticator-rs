@@ -66,7 +66,10 @@ impl Backup {
     async fn restore_accounts(path: PathBuf, connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
         let mut account_groups = Self::deserialise_accounts(path.as_path())?;
 
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().unwrap_or_else(|poisoned| {
+            warn!("Database connection mutex was poisoned. Recovering.");
+            poisoned.into_inner()
+        });
 
         // Mark incoming secrets as LOCAL so they will be migrated to keyring later.
         account_groups

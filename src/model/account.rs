@@ -190,7 +190,7 @@ impl Account {
             return key;
         }
         let pad = 32 - key.len();
-        key.to_mut().push_str(&"=".repeat(pad).to_string());
+        key.to_mut().push_str(&"=".repeat(pad));
         key
     }
 }
