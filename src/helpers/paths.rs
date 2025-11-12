@@ -1,6 +1,5 @@
 use log::{debug, error, info, warn};
 use rusqlite::Connection;
-use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -62,9 +61,10 @@ impl Paths {
     }
 
     pub fn update_keyring_secrets(connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
-        let connection = connection
-            .lock()
-            .map_err(|_poisoned| RepositoryError::IoError(io::Error::other("database connection mutex was poisoned")))?;
+        let connection = connection.lock().unwrap_or_else(|poisoned| {
+            warn!("Database connection mutex was poisoned. Recovering.");
+            poisoned.into_inner()
+        });
 
         let accounts = Database::load_account_groups(&connection, None)?;
 

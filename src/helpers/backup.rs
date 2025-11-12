@@ -22,7 +22,10 @@ impl Backup {
         tx: async_channel::Sender<AccountsImportExportResult>,
     ) {
         let group_accounts = {
-            let connection = connection.lock().unwrap();
+            let connection = connection.lock().unwrap_or_else(|poisoned| {
+                warn!("Database connection mutex was poisoned. Recovering.");
+                poisoned.into_inner()
+            });
 
             let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
             Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
@@ -82,7 +85,7 @@ impl Backup {
 
         let path_str = path
             .to_str()
-            .ok_or_else(|| RepositoryError::IoError(io::Error::new(io::ErrorKind::InvalidInput, "invalid unicode in path")))?;
+            .ok_or_else(|| RepositoryError::IoError(io::Error::new(io::ErrorKind::InvalidInput, "Failed to convert path to string: invalid unicode")))?;
 
         let qr_result = QrCode::process_qr_code(path_str.to_owned()).await;
 
