@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use base32::Alphabet;
 use gettextrs::*;
 use glib::clone;
@@ -6,6 +5,7 @@ use gtk::prelude::*;
 use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 use model::account_errors::TotpError;
 
@@ -190,23 +190,26 @@ impl Account {
             return key;
         }
         let pad = 32 - key.len();
-        key.to_mut().push_str(&format!("{}", "=".repeat(pad)));
+        key.to_mut().push_str(&"=".repeat(pad).to_string());
         key
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use crate::model::account_errors::TotpError;
     use crate::model::Account;
     use base32::Alphabet;
+    use std::borrow::Cow;
 
     #[test]
     fn pad() {
         assert_eq!("AXXETN6MTQO3TJNA================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNA")));
         assert_eq!("AXXETN6MTQO3TJN=================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJN")));
-        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")));
+        assert_eq!(
+            "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
+            Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"))
+        );
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
             Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"))
