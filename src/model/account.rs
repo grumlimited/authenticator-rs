@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use base32::Alphabet;
 use gettextrs::*;
 use glib::clone;
@@ -170,7 +171,9 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let padded = Account::pad(&key.to_ascii_uppercase());
+        let cow: Cow<str> = Cow::Borrowed(&key.to_ascii_uppercase());
+
+        let padded = Account::pad(cow);
 
         let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &padded).ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
@@ -182,35 +185,37 @@ impl Account {
      * Pads key with = up to 32 characters long.
      * This produces a predictable padding using repeated `=` characters.
      */
-    fn pad(key: &str) -> String {
+    fn pad(mut key: Cow<str>) -> Cow<str> {
         if key.len() >= 32 {
-            return key.to_string();
+            return key;
         }
         let pad = 32 - key.len();
-        format!("{}{}", key, "=".repeat(pad))
+        key.to_mut().push_str(&format!("{}", "=".repeat(pad)));
+        key
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
     use crate::model::account_errors::TotpError;
     use crate::model::Account;
     use base32::Alphabet;
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad("AXXETN6MTQO3TJNA"));
-        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad("AXXETN6MTQO3TJN"));
-        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"));
+        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNA")));
+        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJN")));
+        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")));
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
-            Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")
+            Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"))
         );
     }
 
     #[test]
     fn generate_current() {
-        let key = Account::pad("477IUDDXCZSMY44U");
+        let key = Account::pad(Cow::Borrowed("477IUDDXCZSMY44U"));
         let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &key).unwrap();
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret).unwrap();
