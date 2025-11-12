@@ -49,7 +49,7 @@ fn main() {
     let connection = match Database::create_connection() {
         Ok(c) => c,
         Err(e) => {
-            log::error!("Failed to create database connection: {:?}", e);
+            eprintln!("Failed to create database connection: {:?}", e);
             exit(1);
         }
     };
