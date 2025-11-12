@@ -1,6 +1,7 @@
-use anyhow::Result;
-use log::{debug, info};
+use log::{debug, error, info, warn};
 use rusqlite::Connection;
+use std::io;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
@@ -8,51 +9,63 @@ use crate::helpers::{Database, Keyring, RepositoryError, SecretType};
 pub struct Paths;
 
 impl Paths {
-    pub fn db_path() -> std::path::PathBuf {
+    pub fn db_path() -> PathBuf {
         let mut path = Self::path();
         path.push("authenticator.db");
-
         path
     }
 
     pub fn icons_path(filename: &str) -> std::path::PathBuf {
         let mut path = Self::path();
         path.push("icons");
-        path.push(filename);
+
+        if !filename.is_empty() {
+            path.push(filename);
+        }
 
         path
     }
 
-    pub fn path() -> std::path::PathBuf {
-        if let Some(project_dirs) = directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs") {
-            project_dirs.data_dir().into()
-        } else {
-            std::env::current_dir().unwrap_or_default()
+    pub fn path() -> PathBuf {
+        match directories::ProjectDirs::from("uk.co", "grumlimited", "authenticator-rs") {
+            Some(project_dirs) => project_dirs.data_dir().into(),
+            None => match std::env::current_dir() {
+                Ok(dir) => {
+                    warn!("Could not determine platform config dir; falling back to current directory {}", dir.display());
+                    dir
+                }
+                Err(e) => {
+                    error!("Could not determine project dir or current directory: {:?}", e);
+                    // fall back to a relative path to avoid panic
+                    PathBuf::from(".")
+                }
+            },
         }
     }
 
     pub fn check_configuration_dir() -> Result<(), RepositoryError> {
-        let path = Paths::path();
+        let base = Self::path();
 
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
+        if !base.exists() {
+            debug!("Creating directory {}", base.display());
         }
 
-        std::fs::create_dir_all(path).map(|_| ())?;
+        std::fs::create_dir_all(&base)?;
 
-        let path = Paths::icons_path("");
-
-        if !path.exists() {
-            debug!("Creating directory {}", path.display());
+        let icons_dir = Self::icons_path("");
+        if !icons_dir.exists() {
+            debug!("Creating icons directory {}", icons_dir.display());
         }
-
-        std::fs::create_dir_all(path).map(|_| ())?;
+        std::fs::create_dir_all(&icons_dir)?;
 
         Ok(())
     }
 
     pub fn update_keyring_secrets(connection: Arc<Mutex<Connection>>) -> Result<(), RepositoryError> {
-        let connection = connection.lock().unwrap();
+        let connection = connection
+            .lock()
+            .map_err(|_poisoned| RepositoryError::IoError(io::Error::other("database connection mutex was poisoned")))?;
+
         let accounts = Database::load_account_groups(&connection, None)?;
 
         accounts
