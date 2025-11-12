@@ -19,6 +19,8 @@ impl QrCode {
         QrCode { qr_code_payload }
     }
 
+    /// Extract the `secret` parameter from the payload if present,
+    /// otherwise return the full payload unchanged.
     pub fn extract(&self) -> &str {
         let re = Regex::new(r".*secret=(.*?)(&.*)?$").unwrap();
 
@@ -29,26 +31,40 @@ impl QrCode {
         secret.unwrap_or(self.qr_code_payload.as_str())
     }
 
+    /// Process an image file at `path` and attempt to decode a QR code.
+    /// Returns `Valid(QrCode)` on success or `Invalid(String)` with a
+    /// descriptive message on failure.
     pub async fn process_qr_code(path: String) -> QrCodeResult {
-        match image::open(&path).map(|v| v.to_luma8()) {
+        match image::open(&path) {
             Ok(img) => {
-                let mut luma = PreparedImage::prepare(img);
-                let grids = luma.detect_grids();
+                let luma_img = img.to_luma8();
+                let mut prepared = PreparedImage::prepare(luma_img);
+                let grids = prepared.detect_grids();
 
-                if grids.len() != 1 {
-                    warn!("No grids found in {}", path);
-                    Invalid("Invalid QR code".to_owned())
-                } else {
-                    match grids[0].decode() {
-                        Ok((_, content)) => Valid(QrCode::new(content)),
-                        Err(e) => {
-                            warn!("{}", e);
-                            Invalid("Invalid QR code".to_owned())
+                match grids.len() {
+                    0 => {
+                        warn!("No QR grids found in {}", path);
+                        Invalid(format!("No QR codes found in {}", path))
+                    }
+                    n => {
+                        if n > 1 {
+                            warn!("Multiple QR grids found in {}, attempting first", path);
+                        }
+
+                        match grids[0].decode() {
+                            Ok((_, content)) => Valid(QrCode::new(content)),
+                            Err(e) => {
+                                warn!("Failed to decode QR from {}: {}", path, e);
+                                Invalid(format!("Failed to decode QR code: {}", e))
+                            }
                         }
                     }
                 }
             }
-            Err(_) => Invalid("Invalid QR code".to_owned()),
+            Err(e) => {
+                warn!("Failed to open image {}: {}", path, e);
+                Invalid(format!("Failed to open image: {}", e))
+            }
         }
     }
 }
