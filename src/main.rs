@@ -1,7 +1,5 @@
-extern crate gio;
-extern crate glib;
-extern crate gtk;
-
+use std::error::Error;
+use std::process::exit;
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
@@ -15,10 +13,9 @@ use main_window::MainWindow;
 use crate::helpers::{runner, Database, Paths};
 use crate::main_window::Action;
 
-mod main_window;
-
 mod exporting;
 mod helpers;
+mod main_window;
 mod model;
 mod ui;
 
@@ -28,13 +25,22 @@ const NAMESPACE_PREFIX: &str = "/uk/co/grumlimited/authenticator-rs";
 const GETTEXT_PACKAGE: &str = "authenticator-rs";
 
 fn main() {
-    match Paths::check_configuration_dir() {
-        Ok(()) => info!("Reading configuration from {}", Paths::path().display()),
-        Err(e) => panic!("{:?}", e),
+    if let Err(e) = Paths::check_configuration_dir() {
+        eprintln!("Failed to check configuration dir: {:?}", e);
+        exit(1);
+    } else {
+        info!("Reading configuration from {}", Paths::path().display());
     }
 
-    let resource = gio::Resource::load(format!("data/{}.gresource", NAMESPACE))
-        .unwrap_or_else(|_| gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)).unwrap());
+    let resource = gio::Resource::load(format!("data/{}.gresource", NAMESPACE)).unwrap_or_else(|_| {
+        match gio::Resource::load(format!("/usr/share/{}/{}.gresource", NAMESPACE, NAMESPACE)) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Failed to load resources: {:?}", e);
+                exit(1);
+            }
+        }
+    });
 
     gio::functions::resources_register(&resource);
 
@@ -52,21 +58,39 @@ fn main() {
 
         // Prepare i18n
         setlocale(LocaleCategory::LcAll, "");
-        textdomain(GETTEXT_PACKAGE).unwrap();
-        bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").unwrap();
-
-        configure_logging();
-
-        // SQL migrations
-        let mut connection = Database::create_connection().unwrap();
-        match runner::run(&mut connection) {
-            Ok(_) => info!("Migrations done running"),
-            Err(e) => panic!("{:?}", e),
+        if textdomain(GETTEXT_PACKAGE).is_err() {
+            log::warn!("Failed to set textdomain");
+        }
+        if bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").is_err() {
+            log::warn!("Failed to bind textdomain codeset to UTF-8");
         }
 
-        match Paths::update_keyring_secrets(Arc::new(Mutex::new(connection))) {
-            Ok(()) => info!("Added local accounts to keyring"),
-            Err(e) => panic!("{:?}", e),
+        // Configure logging; do not panic on failure, just log.
+        if let Err(e) = configure_logging() {
+            log::error!("Logging configuration failed: {:?}", e);
+        }
+
+        // SQL migrations
+        let mut connection = match Database::create_connection() {
+            Ok(c) => c,
+            Err(e) => {
+                log::error!("Failed to create database connection: {:?}", e);
+                exit(1);
+            }
+        };
+
+        if let Err(e) = runner::run(&mut connection) {
+            log::error!("Migrations failed: {:?}", e);
+            exit(1);
+        } else {
+            info!("Migrations done running");
+        }
+
+        if let Err(e) = Paths::update_keyring_secrets(Arc::new(Mutex::new(connection))) {
+            log::error!("Failed to update keyring secrets: {:?}", e);
+            exit(1);
+        } else {
+            info!("Added local accounts to keyring");
         }
     });
 
@@ -75,7 +99,13 @@ fn main() {
 
         let gui = MainWindow::new(tx_events);
 
-        let connection = Database::create_connection().unwrap();
+        let connection = match Database::create_connection() {
+            Ok(conn) => conn,
+            Err(e) => {
+                log::error!("Failed to create database connection on activate: {:?}", e);
+                return;
+            }
+        };
         let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
         gui.set_application(app, connection, rx_events);
@@ -88,20 +118,17 @@ fn main() {
 }
 
 /**
- * Loads log4rs yaml config from gResource.
- * And in the most convoluted possible way, feeds it to Log4rs.
+ * Loads log4rs yaml config from gResource and initializes log4rs.
+ * Returns an error instead of panicking so caller can decide how to proceed.
  */
-fn configure_logging() {
-    let log4rs_yaml = gio::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE).unwrap();
-    let log4rs_yaml = log4rs_yaml.to_vec();
-    let log4rs_yaml = String::from_utf8(log4rs_yaml).unwrap();
+fn configure_logging() -> Result<(), Box<dyn Error>> {
+    let data = gio::resources_lookup_data(format!("{}/{}", NAMESPACE_PREFIX, "log4rs.yaml").as_str(), gio::ResourceLookupFlags::NONE)
+        .map_err(|e| format!("Could not lookup log4rs.yaml in resources: {:?}", e))?;
+    let yaml = String::from_utf8(data.to_vec())?;
 
-    // log4rs-0.12.0/src/file.rs#592
-    let config = serde_yaml::from_str::<RawConfig>(log4rs_yaml.as_str()).unwrap();
-    let (appenders, _) = config.appenders_lossy(&Deserializers::default());
-
-    // log4rs-0.12.0/src/priv_file.rs#deserialize(config: &RawConfig, deserializers: &Deserializers)#186
-    let config = Config::builder().appenders(appenders).loggers(config.loggers()).build(config.root()).unwrap();
-
-    log4rs::init_config(config).unwrap();
+    let raw: RawConfig = serde_yaml::from_str(&yaml)?;
+    let (appenders, _) = raw.appenders_lossy(&Deserializers::default());
+    let config = Config::builder().appenders(appenders).loggers(raw.loggers()).build(raw.root())?;
+    log4rs::init_config(config)?;
+    Ok(())
 }
