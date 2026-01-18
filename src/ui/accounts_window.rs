@@ -253,7 +253,7 @@ impl AccountsWindow {
             for account_widget in account_widgets.iter() {
                 let connection = connection.clone();
                 copy_totp_token_handler(account_widget);
-                edit_account_widget_handler(account_widget, &builder, &gui, connection.clone());
+                edit_account_widget_handler(account_widget, &builder, gui, connection.clone());
             }
         }
 
@@ -266,43 +266,78 @@ impl AccountsWindow {
                 #[strong]
                 account_widget,
                 move |_| {
-                    let builder = builder.clone();
-                    let edit_account = EditAccountWindow::new(&builder);
+                    let (tx, rx) = async_channel::bounded::<Account>(1);
 
-                    gui.edit_account.replace_with(&edit_account);
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        connection,
+                        #[strong]
+                        gui,
+                        async move {
+                            let account = {
+                                let connection = connection.lock().unwrap();
+                                Database::get_account(&connection, account_widget.account_id)
+                            };
 
-                    edit_account.edit_account_buttons_actions(&gui, connection.clone());
-
-                    let connection = connection.lock().unwrap();
-                    let groups = Database::load_account_groups(&connection, None).unwrap();
-                    let account = Database::get_account(&connection, account_widget.account_id).unwrap();
-
-                    match account {
-                        Some(account) => {
-                            edit_account.input_group.remove_all(); //re-added and refreshed just below
-
-                            edit_account.set_group_dropdown(Some(account.group_id), &groups);
-
-                            let account_id = account.id.to_string();
-                            edit_account.input_account_id.set_text(account_id.as_str());
-                            edit_account.input_name.set_text(account.label.as_str());
-
-                            account_widget.popover.hide();
-
-                            match Keyring::secret(account.id) {
-                                Ok(secret) => {
-                                    let buffer = edit_account.input_secret.buffer().unwrap();
-                                    buffer.set_text(secret.unwrap_or_default().as_str());
-                                    gui.switch_to(Display::EditAccount);
+                            match account {
+                                Ok(Some(account)) => {
+                                    let _ = tx.send(account).await;
+                                }
+                                Ok(None) => {
+                                    gui.errors
+                                        .error_display_message
+                                        .set_text(format!("Group {} not found", account_widget.account_id).as_str());
+                                    gui.switch_to(Display::Errors);
                                 }
                                 Err(e) => {
                                     gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
                                     gui.switch_to(Display::Errors);
                                 }
-                            };
+                            }
                         }
-                        None => panic!("Account {} not found", account_widget.account_id),
-                    }
+                    ));
+
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        builder,
+                        #[strong]
+                        connection,
+                        #[strong]
+                        gui,
+                        #[strong]
+                        account_widget,
+                        async move {
+                            if let Ok(account) = rx.recv().await {
+                                let edit_account = EditAccountWindow::new(&builder);
+                                gui.edit_account.replace_with(&edit_account);
+                                edit_account.edit_account_buttons_actions(&gui, connection.clone());
+
+                                let connection = connection.lock().unwrap();
+                                let groups = Database::load_account_groups(&connection, None).unwrap();
+
+                                edit_account.input_group.remove_all(); //re-added and refreshed just below
+                                edit_account.set_group_dropdown(Some(account.group_id), &groups);
+
+                                let account_id = account.id.to_string();
+                                edit_account.input_account_id.set_text(account_id.as_str());
+                                edit_account.input_name.set_text(account.label.as_str());
+
+                                account_widget.popover.hide();
+
+                                match Keyring::secret(account.id) {
+                                    Ok(secret) => {
+                                        let buffer = edit_account.input_secret.buffer().unwrap();
+                                        buffer.set_text(secret.unwrap_or_default().as_str());
+                                        gui.switch_to(Display::EditAccount);
+                                    }
+                                    Err(e) => {
+                                        gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                                        gui.switch_to(Display::Errors);
+                                    }
+                                };
+                            }
+                        }
+                    ));
                 }
             ));
         }
