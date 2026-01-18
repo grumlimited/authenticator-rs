@@ -72,24 +72,30 @@ impl EditAccountWindow {
 
         if name.buffer().text().is_empty() {
             highlight_name_error(&name);
+            return Err(ValidationError::FieldErrorBlank("name".to_owned()));
+        }
+
+        let group = self.input_group.clone();
+
+        let group_id: Result<u32, ValidationError> = group
+            .active_id()
+            .ok_or(ValidationError::FieldError("group id".to_owned()))?
+            .as_str()
+            .parse::<u32>()
+            .map_err(|c| c.into());
+
+        let connection = connection.lock().unwrap();
+        let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id?);
+        let existing_account = existing_account.unwrap_or(None);
+
+        let account_id = self.input_account_id.buffer().text();
+        let account_id = account_id.parse().map(Some).unwrap_or(None);
+
+        if existing_account.is_some() && existing_account != account_id {
+            highlight_name_error(&name);
+            self.icon_error.set_label(&gettext("Account name already exists"));
+            self.icon_error.set_visible(true);
             result = Err(ValidationError::FieldError("name".to_owned()));
-        } else {
-            let group = self.input_group.clone();
-            let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
-
-            let connection = connection.lock().unwrap();
-            let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id);
-            let existing_account = existing_account.unwrap_or(None);
-
-            let account_id = self.input_account_id.buffer().text();
-            let account_id = account_id.parse().map(Some).unwrap_or(None);
-
-            if existing_account.is_some() && existing_account != account_id {
-                highlight_name_error(&name);
-                self.icon_error.set_label(&gettext("Account name already exists"));
-                self.icon_error.set_visible(true);
-                result = Err(ValidationError::FieldError("name".to_owned()));
-            }
         }
 
         let buffer = secret.buffer().unwrap();

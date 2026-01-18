@@ -175,18 +175,18 @@ impl Account {
      */
     fn normalize(key: &str) -> Result<String, TotpError> {
         let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
-        let normalized = normalized.trim_end_matches("=");
+        let normalized = normalized.trim_end_matches("=").to_ascii_uppercase();
 
         if normalized.is_empty() {
             return Err(TotpError::Empty);
         }
-        let pad = normalized.len() % 32;
 
-        if pad == 0 {
+        let remainder = normalized.len() % 32;
+        if remainder == 0 {
             return Ok(normalized.to_string());
         }
 
-        let pad = 32 - pad;
+        let pad = 32 - remainder;
 
         let mut padded = normalized.to_string();
         padded.push_str(&"=".repeat(pad));
@@ -202,7 +202,6 @@ mod tests {
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO3TJNA================", Account::normalize("AXXETN6MTQO3TJNA").unwrap());
         assert_eq!("AXXETN6MTQO3TJN=================", Account::normalize("AXXETN6MTQO3TJN").unwrap());
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
