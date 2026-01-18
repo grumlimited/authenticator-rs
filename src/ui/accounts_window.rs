@@ -1,6 +1,9 @@
-use std::sync::{Arc, Mutex};
-use std::time;
-
+use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
+use crate::main_window::{Action, Display, MainWindow};
+use crate::model::{Account, AccountGroup, AccountGroupWidget, AccountWidget};
+use crate::ui::{AddGroupWindow, EditAccountWindow};
+use crate::NAMESPACE_PREFIX;
+use async_channel::Sender;
 use chrono::prelude::*;
 use chrono::Local;
 use gettextrs::*;
@@ -10,12 +13,8 @@ use gtk::Builder;
 use gtk_macros::*;
 use log::{debug, error, warn};
 use rusqlite::Connection;
-
-use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
-use crate::main_window::{Action, Display, MainWindow};
-use crate::model::{AccountGroup, AccountGroupWidget};
-use crate::ui::{AddGroupWindow, EditAccountWindow};
-use crate::NAMESPACE_PREFIX;
+use std::sync::{Arc, Mutex};
+use std::time;
 
 pub type AccountsRefreshResult = Result<(Vec<AccountGroup>, bool), RepositoryError>;
 
@@ -47,16 +46,18 @@ impl AccountsWindow {
         }
     }
 
-    fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
-        let connection = connection.lock().unwrap();
-        Database::delete_account(&connection, account_id).unwrap();
+    async fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
+        {
+            let connection = connection.lock().unwrap();
+            Database::delete_account(&connection, account_id).unwrap();
+        }
 
         Keyring::remove(account_id).unwrap();
 
         self.refresh_accounts(gui);
     }
 
-    fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
+    async fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
         {
             let connection = connection.lock().unwrap();
             let group = Database::get_group(&connection, group_id).unwrap();
@@ -155,7 +156,15 @@ impl AccountsWindow {
                 #[strong]
                 gui,
                 move |_| {
-                    gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone());
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        gui,
+                        #[strong]
+                        connection,
+                        async move {
+                            gui.accounts_window.delete_group_reload(&gui, group_id, connection.clone()).await;
+                        }
+                    ));
                 }
             ));
 
@@ -177,34 +186,57 @@ impl AccountsWindow {
                 #[strong]
                 builder,
                 move |_| {
-                    let group = {
-                        let connection = connection.lock().unwrap();
-                        Database::get_group(&connection, group_id).unwrap()
-                    };
-                    debug!("Loading group {:?}", group);
+                    let (tx, rx) = async_channel::bounded::<AccountGroup>(1);
 
-                    let add_group = AddGroupWindow::new(&builder);
-                    add_group.edit_group_buttons_actions(&gui, connection.clone());
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        connection,
+                        async move {
+                            let group = {
+                                let connection = connection.lock().unwrap();
+                                Database::get_group(&connection, group_id).unwrap()
+                            };
+                            debug!("Loading group {:?}", group);
+                            let _ = tx.send(group).await;
+                        }
+                    ));
 
-                    gui.add_group.replace_with(&add_group);
+                    glib::spawn_future_local(clone!(
+                        #[strong]
+                        connection,
+                        #[strong]
+                        gui,
+                        #[strong]
+                        builder,
+                        #[strong]
+                        popover,
+                        async move {
+                            if let Ok(group) = rx.recv().await {
+                                let add_group = AddGroupWindow::new(&builder);
+                                add_group.edit_group_buttons_actions(&gui, connection.clone());
 
-                    add_group.input_group.set_text(group.name.as_str());
-                    add_group.url_input.set_text(group.url.unwrap_or_default().as_str());
-                    add_group.group_id.set_label(format!("{}", group.id).as_str());
+                                gui.add_group.replace_with(&add_group);
 
-                    if let Some(image) = &group.icon {
-                        add_group.icon_filename.set_label(image.as_str());
+                                add_group.input_group.set_text(group.name.as_str());
+                                add_group.url_input.set_text(group.url.unwrap_or_default().as_str());
+                                add_group.group_id.set_label(format!("{}", group.id).as_str());
 
-                        let dir = Paths::icons_path(image);
-                        let state = gui.state.borrow();
-                        match IconParser::load_icon(&dir, state.dark_mode) {
-                            Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),
-                            Err(_) => error!("Could not load image {}", dir.display()),
-                        };
-                    }
+                                if let Some(image) = &group.icon {
+                                    add_group.icon_filename.set_label(image.as_str());
 
-                    popover.hide();
-                    gui.switch_to(Display::EditGroup);
+                                    let dir = Paths::icons_path(image);
+                                    let state = gui.state.borrow();
+                                    match IconParser::load_icon(&dir, state.dark_mode) {
+                                        Ok(pixbuf) => add_group.image_input.set_from_pixbuf(Some(&pixbuf)),
+                                        Err(_) => error!("Could not load image {}", dir.display()),
+                                    };
+                                }
+
+                                popover.hide();
+                                gui.switch_to(Display::EditGroup);
+                            }
+                        }
+                    ));
                 }
             ));
         }
@@ -308,17 +340,39 @@ impl AccountsWindow {
                 let account_id = account_widget.account_id;
 
                 account_widget.confirm_button.connect_clicked(clone!(
-                    #[strong(rename_to = accounts_window)]
-                    gui.accounts_window,
                     #[strong(rename_to = popover)]
                     account_widget.popover,
                     #[strong]
                     gui,
                     #[strong]
                     connection,
+                    #[strong]
+                    popover,
                     move |_| {
-                        accounts_window.delete_account_reload(&gui, account_id, connection.clone());
-                        popover.hide();
+                        let (tx, rx) = async_channel::bounded::<()>(1);
+
+                        glib::spawn_future_local(clone!(
+                            #[strong]
+                            popover,
+                            async move {
+                                if rx.recv().await.is_ok() {
+                                    popover.hide();
+                                }
+                            }
+                        ));
+
+                        glib::spawn_future_local(clone!(
+                            #[strong(rename_to = accounts_window)]
+                            gui.accounts_window,
+                            #[strong]
+                            gui,
+                            #[strong]
+                            connection,
+                            async move {
+                                accounts_window.delete_account_reload(&gui, account_id, connection).await;
+                                let _ = tx.send(()).await;
+                            }
+                        ));
                     }
                 ));
 
@@ -448,7 +502,7 @@ impl AccountsWindow {
     }
 }
 
-async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
+async fn update_button(tx: Sender<u8>, popover: gtk::PopoverMenu, max_wait: u8) {
     let mut n = 0;
 
     // also exits loop if popover is not visible anymore
@@ -473,7 +527,7 @@ async fn update_button(tx: async_channel::Sender<u8>, popover: gtk::PopoverMenu,
  * Sleeps for some time then messages end of wait, so that copy button
  * gets its default image restored.
  */
-async fn times_up(tx: async_channel::Sender<bool>, wait_ms: u64) {
+async fn times_up(tx: Sender<bool>, wait_ms: u64) {
     glib::timeout_future_seconds(time::Duration::from_millis(wait_ms).as_secs() as u32).await;
     tx.send(true).await.expect("Couldn't send data to channel");
 }
