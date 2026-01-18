@@ -194,7 +194,7 @@ impl MainWindow {
     }
 
     pub fn bind_account_filter_events(&self) {
-        //First bind user input event to refreshing account list
+        //First, bind user input event to refreshing the account list
         self.accounts_window.filter.connect_changed(clone!(
             #[strong(rename_to = gui)]
             self,
