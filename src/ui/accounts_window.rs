@@ -251,58 +251,60 @@ impl AccountsWindow {
             let account_widgets = account_widgets.borrow();
 
             for account_widget in account_widgets.iter() {
-                let id = account_widget.account_id;
-                let popover = account_widget.popover.clone();
                 let connection = connection.clone();
-
-                let gui = gui.clone();
-
                 copy_totp_token_handler(account_widget);
-
-                account_widget.edit_button.connect_clicked(clone!(
-                    #[strong]
-                    builder,
-                    move |_| {
-                        let builder = builder.clone();
-                        let edit_account = EditAccountWindow::new(&builder);
-
-                        gui.edit_account.replace_with(&edit_account);
-
-                        edit_account.edit_account_buttons_actions(&gui, connection.clone());
-
-                        let connection = connection.lock().unwrap();
-                        let groups = Database::load_account_groups(&connection, None).unwrap();
-                        let account = Database::get_account(&connection, id).unwrap();
-
-                        match account {
-                            Some(account) => {
-                                edit_account.input_group.remove_all(); //re-added and refreshed just below
-
-                                edit_account.set_group_dropdown(Some(account.group_id), &groups);
-
-                                let account_id = account.id.to_string();
-                                edit_account.input_account_id.set_text(account_id.as_str());
-                                edit_account.input_name.set_text(account.label.as_str());
-
-                                popover.hide();
-
-                                match Keyring::secret(account.id) {
-                                    Ok(secret) => {
-                                        let buffer = edit_account.input_secret.buffer().unwrap();
-                                        buffer.set_text(secret.unwrap_or_default().as_str());
-                                        gui.switch_to(Display::EditAccount);
-                                    }
-                                    Err(e) => {
-                                        gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
-                                        gui.switch_to(Display::Errors);
-                                    }
-                                };
-                            }
-                            None => panic!("Account {} not found", id),
-                        }
-                    }
-                ));
+                edit_account_widget_handler(account_widget, &builder, &gui, connection.clone());
             }
+        }
+
+        fn edit_account_widget_handler(account_widget: &AccountWidget, builder: &Builder, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
+            account_widget.edit_button.connect_clicked(clone!(
+                #[strong]
+                builder,
+                #[strong]
+                gui,
+                #[strong]
+                account_widget,
+                move |_| {
+                    let builder = builder.clone();
+                    let edit_account = EditAccountWindow::new(&builder);
+
+                    gui.edit_account.replace_with(&edit_account);
+
+                    edit_account.edit_account_buttons_actions(&gui, connection.clone());
+
+                    let connection = connection.lock().unwrap();
+                    let groups = Database::load_account_groups(&connection, None).unwrap();
+                    let account = Database::get_account(&connection, account_widget.account_id).unwrap();
+
+                    match account {
+                        Some(account) => {
+                            edit_account.input_group.remove_all(); //re-added and refreshed just below
+
+                            edit_account.set_group_dropdown(Some(account.group_id), &groups);
+
+                            let account_id = account.id.to_string();
+                            edit_account.input_account_id.set_text(account_id.as_str());
+                            edit_account.input_name.set_text(account.label.as_str());
+
+                            account_widget.popover.hide();
+
+                            match Keyring::secret(account.id) {
+                                Ok(secret) => {
+                                    let buffer = edit_account.input_secret.buffer().unwrap();
+                                    buffer.set_text(secret.unwrap_or_default().as_str());
+                                    gui.switch_to(Display::EditAccount);
+                                }
+                                Err(e) => {
+                                    gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                                    gui.switch_to(Display::Errors);
+                                }
+                            };
+                        }
+                        None => panic!("Account {} not found", account_widget.account_id),
+                    }
+                }
+            ));
         }
 
         fn copy_totp_token_handler(account_widget: &AccountWidget) {
