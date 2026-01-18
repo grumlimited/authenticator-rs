@@ -201,7 +201,7 @@ impl Database {
     }
 
     pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        match Self::get_account_by_name(connection, account.label.as_str()).unwrap() {
+        match Self::get_account_by_name(connection, account.label.as_str())? {
             Some(a) => {
                 account.id = a.id;
                 account.secret_type = LOCAL; // so that keyring get updated too
@@ -285,13 +285,13 @@ impl Database {
     }
 
     pub fn delete_group(connection: &Connection, group_id: u32) -> Result<usize> {
-        let mut stmt = connection.prepare("DELETE FROM groups WHERE id = ?1").unwrap();
+        let mut stmt = connection.prepare("DELETE FROM groups WHERE id = ?1")?;
 
         stmt.execute(params![group_id]).map_err(RepositoryError::SqlError)
     }
 
     pub fn delete_account(connection: &Connection, account_id: u32) -> Result<usize> {
-        let mut stmt = connection.prepare("DELETE FROM accounts WHERE id = ?1").unwrap();
+        let mut stmt = connection.prepare("DELETE FROM accounts WHERE id = ?1")?;
 
         stmt.execute(params![account_id]).map_err(RepositoryError::SqlError)
     }
@@ -301,19 +301,21 @@ impl Database {
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
-        stmt.query_map(params![group_id, label_filter], |row| {
-            let id: u32 = row.get_unwrap(0);
-            let label: String = row.get_unwrap(1);
+        let results = stmt
+            .query_map(params![group_id, label_filter], |row| {
+                let id: u32 = row.get_unwrap(0);
+                let label: String = row.get_unwrap(1);
 
-            let secret_type = Self::extract_secret_type(row, 3);
+                let secret_type = Self::extract_secret_type(row, 3);
 
-            let secret: String = row.get_unwrap(2);
+                let secret: String = row.get_unwrap(2);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?);
-            Ok(account)
-        })
-        .map(|rows| rows.map(|row| row.unwrap()).collect())
-        .map_err(RepositoryError::SqlError)
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?);
+                Ok(account)
+            })?
+            .collect::<rusqlite::Result<Vec<Account>>>();
+
+        results.map_err(RepositoryError::SqlError)
     }
 }
 
