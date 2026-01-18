@@ -161,14 +161,9 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        if key.is_empty() {
-            return Err(TotpError::Empty);
-        }
+        let padded = Account::normalize(key)?;
 
-        let secret = match base32::decode(Alphabet::Rfc4648 { padding: true }, &Account::pad(&key.to_ascii_uppercase())) {
-            Some(s) => s,
-            None => return Err(TotpError::InvalidKey(key.to_string())),
-        };
+        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &padded).ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
 
@@ -176,19 +171,26 @@ impl Account {
     }
 
     /*
-     * Pads key with = up to 32 characters long.
-     * In turns this produces 128-byte long secrets for totp.
-     * Note: this 128-byte long requirement has been added with totp 3.0.
+     * Pads key with = until key is a multiple of 32.
      */
-    fn pad(key: &str) -> String {
-        match key {
-            _ if key.len() < 32 => {
-                let pad = 32 - key.len();
-                let s = format!("{:=^1$}", "=", pad);
-                format!("{}{}", key, s)
-            }
-            _ => key.to_string(),
+    fn normalize(key: &str) -> Result<String, TotpError> {
+        let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        let normalized = normalized.trim_end_matches("=");
+
+        if normalized.is_empty() {
+            return Err(TotpError::Empty);
         }
+        let pad = normalized.len() % 32;
+
+        if pad == 0 {
+            return Ok(normalized.to_string());
+        }
+
+        let pad = 32 - pad;
+
+        let mut padded = normalized.to_string();
+        padded.push_str(&"=".repeat(pad));
+        Ok(padded)
     }
 }
 
@@ -200,18 +202,21 @@ mod tests {
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad("AXXETN6MTQO3TJNA"));
-        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad("AXXETN6MTQO3TJN"));
-        assert_eq!("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA", Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"));
+        assert_eq!("AXXETN6MTQO3TJNA================", Account::normalize("AXXETN6MTQO3TJNA").unwrap());
+        assert_eq!("AXXETN6MTQO3TJN=================", Account::normalize("AXXETN6MTQO3TJN").unwrap());
+        assert_eq!(
+            "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
+            Account::normalize("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA").unwrap()
+        );
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
-            Account::pad("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA")
+            Account::normalize("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA").unwrap()
         );
     }
 
     #[test]
     fn generate_current() {
-        let key = Account::pad("477IUDDXCZSMY44U");
+        let key = Account::normalize("477IUDDXCZSMY44U").unwrap();
         let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &key).unwrap();
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret).unwrap();
