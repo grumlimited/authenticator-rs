@@ -1,4 +1,4 @@
-use log::{info, warn};
+use log::{debug, warn};
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Params, Row, Statement, ToSql};
 use serde::{Deserialize, Serialize};
@@ -66,7 +66,7 @@ impl Database {
     }
 
     pub fn update_group(connection: &Connection, group: &AccountGroup) -> Result<()> {
-        info!("Updating group {}", group.name);
+        debug!("Updating group {}", group.name);
         connection
             .execute(
                 "UPDATE groups SET name = ?2, icon = ?3, url = ?4, collapsed = ?5 WHERE id = ?1",
@@ -77,7 +77,7 @@ impl Database {
     }
 
     pub fn save_group(connection: &Connection, group: &mut AccountGroup) -> Result<()> {
-        info!("Adding group {}", group.name);
+        debug!("Adding group {}", group.name);
 
         connection.execute(
             "INSERT INTO groups (name, icon, url, collapsed) VALUES (?1, ?2, ?3, ?4)",
@@ -212,7 +212,7 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        info!("Adding account {}", account.label);
+        debug!("Adding account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
@@ -231,7 +231,7 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        info!("Updating account [{}:{}]", account.label, account.id);
+        debug!("Updating account [{}:{}]", account.label, account.id);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
 
         connection
