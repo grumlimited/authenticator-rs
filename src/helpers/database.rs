@@ -24,7 +24,7 @@ pub enum SecretType {
     KEYRING,
 }
 
-type Result<T> = rusqlite::Result<T, RepositoryError>;
+type Result<T> = core::result::Result<T, RepositoryError>;
 
 impl Database {
     pub fn has_groups(connection: &Connection) -> Result<bool> {
