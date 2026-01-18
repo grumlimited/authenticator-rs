@@ -257,30 +257,7 @@ impl AccountsWindow {
 
                 let gui = gui.clone();
 
-                let (tx, rx) = async_channel::bounded::<bool>(1);
-
-                glib::spawn_future_local(clone!(
-                    #[strong(rename_to = copy_button)]
-                    account_widget.copy_button,
-                    #[strong(rename_to = edit_copy_img)]
-                    account_widget.edit_copy_img,
-                    async move {
-                        while rx.recv().await.is_ok() {
-                            copy_button.set_image(Some(&edit_copy_img));
-                        }
-                    }
-                ));
-
-                account_widget.copy_button.connect_clicked(clone!(
-                    #[strong]
-                    tx,
-                    #[strong(rename_to = dialog_ok_img)]
-                    account_widget.dialog_ok_img,
-                    move |button| {
-                        button.set_image(Some(&dialog_ok_img));
-                        glib::spawn_future(times_up(tx.clone(), 2000));
-                    }
-                ));
+                copy_totp_token_handler(account_widget);
 
                 account_widget.edit_button.connect_clicked(clone!(
                     #[strong]
@@ -326,6 +303,33 @@ impl AccountsWindow {
                     }
                 ));
             }
+        }
+
+        fn copy_totp_token_handler(account_widget: &AccountWidget) {
+            let (tx, rx) = async_channel::bounded::<bool>(1);
+
+            glib::spawn_future_local(clone!(
+                #[strong(rename_to = copy_button)]
+                account_widget.copy_button,
+                #[strong(rename_to = edit_copy_img)]
+                account_widget.edit_copy_img,
+                async move {
+                    while rx.recv().await.is_ok() {
+                        copy_button.set_image(Some(&edit_copy_img));
+                    }
+                }
+            ));
+
+            account_widget.copy_button.connect_clicked(clone!(
+                #[strong]
+                tx,
+                #[strong(rename_to = dialog_ok_img)]
+                account_widget.dialog_ok_img,
+                move |button| {
+                    button.set_image(Some(&dialog_ok_img));
+                    glib::spawn_future(times_up(tx.clone(), 2000));
+                }
+            ));
         }
     }
 
