@@ -263,7 +263,7 @@ impl Database {
 
                 let secret_type = Self::extract_secret_type(row, 4);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?);
 
                 Ok(account)
             })
@@ -271,16 +271,16 @@ impl Database {
             .map_err(RepositoryError::SqlError)
     }
 
-    fn extract_secret_type(row: &Row, idx: usize) -> SecretType {
+    fn extract_secret_type(row: &Row, idx: usize) -> rusqlite::Result<SecretType, rusqlite::Error> {
         match row.get::<usize, String>(idx) {
             Ok(v) => match SecretType::from_str(v.as_str()) {
-                Ok(secret_type) => secret_type,
+                Ok(secret_type) => Ok(secret_type),
                 Err(_) => {
                     warn!("Invalid secret type [{}]", v);
-                    LOCAL
+                    Ok(LOCAL)
                 }
             },
-            Err(e) => panic!("Index {} is invalid. [{:?}]", idx, e),
+            Err(e) => Err(e),
         }
     }
 
@@ -309,7 +309,7 @@ impl Database {
 
             let secret: String = row.get_unwrap(2);
 
-            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type);
+            let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?);
             Ok(account)
         })
         .map(|rows| rows.map(|row| row.unwrap()).collect())
