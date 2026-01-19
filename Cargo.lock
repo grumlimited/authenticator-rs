@@ -285,6 +285,7 @@ dependencies = [
  "image",
  "log",
  "log4rs",
+ "percent-encoding",
  "refinery",
  "regex",
  "rqrr",
@@ -298,6 +299,7 @@ dependencies = [
  "tempfile-fast",
  "thiserror 2.0.17",
  "totp-rs",
+ "url",
  "uuid",
 ]
 

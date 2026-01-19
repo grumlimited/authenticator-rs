@@ -216,7 +216,11 @@ impl EditAccountWindow {
                                 #[strong]
                                 w,
                                 async move {
-                                    let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
+                                    let result = if let Some(path_str) = path.to_str() {
+                                        QrCode::process_qr_code(path_str.to_owned()).await
+                                    } else {
+                                        Invalid(gettext("Invalid file path").to_string())
+                                    };
 
                                     save_button.set_sensitive(true);
                                     let style_context = input_secret_frame.style_context();
@@ -226,7 +230,7 @@ impl EditAccountWindow {
                                             w.reset_errors();
                                             let buffer = input_secret.buffer().unwrap();
                                             style_context.remove_class("error");
-                                            buffer.set_text(qr_code.extract());
+                                            buffer.set_text(qr_code.extract().as_str());
                                         }
                                         Invalid(qr_code) => {
                                             let buffer = input_secret.buffer().unwrap();
