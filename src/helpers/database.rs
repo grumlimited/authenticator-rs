@@ -253,11 +253,6 @@ impl Database {
         Self::_get_account(stmt, params![account_id])
     }
 
-    pub fn get_account_by_name(connection: &Connection, name: &str) -> Result<Option<Account>> {
-        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
-        Self::_get_account(stmt, params![name])
-    }
-
     fn _get_account<T: Params>(mut statement: Statement, params: T) -> Result<Option<Account>> {
         statement
             .query_row(params, |row| {
