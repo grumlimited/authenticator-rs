@@ -333,6 +333,46 @@ impl ToSql for SecretType {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn get_account_by_label_and_group_should_not_conflict_across_groups() {
+        use super::Database;
+        use crate::helpers::runner;
+        use crate::helpers::SecretType::LOCAL;
+        use crate::model::Account;
+        use rusqlite::Connection;
+
+        let connection = Connection::open_in_memory().unwrap();
+        let connection = std::sync::Arc::new(std::sync::Mutex::new(connection));
+
+        // run migrations
+        runner::run(connection.clone()).unwrap();
+
+        // acquire lock for DB operations in tests
+        let conn = connection.lock().expect("Failed to acquire database lock");
+
+        // create two groups
+        let mut group1 = crate::model::AccountGroup::new(0, "group1", None, None, false, vec![]);
+        let mut group2 = crate::model::AccountGroup::new(0, "group2", None, None, false, vec![]);
+
+        Database::save_group(&conn, &mut group1).unwrap();
+        Database::save_group(&conn, &mut group2).unwrap();
+
+        // create account with same label in both groups
+        let mut acct1 = Account::new(0, group1.id, "same_label", "secret1", LOCAL);
+        let mut acct2 = Account::new(0, group2.id, "same_label", "secret2", LOCAL);
+
+        Database::save_account(&conn, &mut acct1).unwrap();
+        Database::save_account(&conn, &mut acct2).unwrap();
+
+        // ensure both exist and have different ids
+        let a1 = Database::get_account_by_label_and_group(&conn, "same_label", group1.id).unwrap().unwrap();
+        let a2 = Database::get_account_by_label_and_group(&conn, "same_label", group2.id).unwrap().unwrap();
+
+        assert_ne!(a1.id, a2.id);
+        assert_eq!(a1.group_id, group1.id);
+        assert_eq!(a2.group_id, group2.id);
+    }
+
     use rusqlite::Connection;
     use std::sync::{Arc, Mutex};
 
