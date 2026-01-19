@@ -201,7 +201,7 @@ impl Database {
     }
 
     pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        match Self::get_account_by_name(connection, account.label.as_str())? {
+        match Self::get_account_by_label_and_group(connection, account.label.as_str(), account.group_id)? {
             Some(a) => {
                 account.id = a.id;
                 account.secret_type = LOCAL; // so that keyring get updated too
@@ -209,6 +209,11 @@ impl Database {
             }
             None => Self::save_account(connection, account),
         }
+    }
+
+    pub fn get_account_by_label_and_group(connection: &Connection, name: &str, group_id: u32) -> Result<Option<Account>> {
+        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1 AND group_id = ?2")?;
+        Self::_get_account(stmt, params![name, group_id])
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
@@ -246,11 +251,6 @@ impl Database {
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Option<Account>> {
         let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE id = ?1")?;
         Self::_get_account(stmt, params![account_id])
-    }
-
-    pub fn get_account_by_name(connection: &Connection, name: &str) -> Result<Option<Account>> {
-        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1")?;
-        Self::_get_account(stmt, params![name])
     }
 
     fn _get_account<T: Params>(mut statement: Statement, params: T) -> Result<Option<Account>> {
@@ -336,6 +336,40 @@ mod tests {
     use crate::model::{Account, AccountGroup};
 
     use super::Database;
+
+    #[test]
+    fn get_account_by_label_and_group_should_not_conflict_across_groups() {
+        let connection = Connection::open_in_memory().unwrap();
+        let connection = std::sync::Arc::new(std::sync::Mutex::new(connection));
+
+        // run migrations
+        runner::run(connection.clone()).unwrap();
+
+        // acquire lock for DB operations in tests
+        let conn = connection.lock().expect("Failed to acquire database lock");
+
+        // create two groups
+        let mut group1 = crate::model::AccountGroup::new(0, "group1", None, None, false, vec![]);
+        let mut group2 = crate::model::AccountGroup::new(0, "group2", None, None, false, vec![]);
+
+        Database::save_group(&conn, &mut group1).unwrap();
+        Database::save_group(&conn, &mut group2).unwrap();
+
+        // create an account with the same label in both groups
+        let mut acct1 = Account::new(0, group1.id, "same_label", "secret1", LOCAL);
+        let mut acct2 = Account::new(0, group2.id, "same_label", "secret2", LOCAL);
+
+        Database::save_account(&conn, &mut acct1).unwrap();
+        Database::save_account(&conn, &mut acct2).unwrap();
+
+        // ensure both exist and have different ids
+        let a1 = Database::get_account_by_label_and_group(&conn, "same_label", group1.id).unwrap().unwrap();
+        let a2 = Database::get_account_by_label_and_group(&conn, "same_label", group2.id).unwrap().unwrap();
+
+        assert_ne!(a1.id, a2.id);
+        assert_eq!(a1.group_id, group1.id);
+        assert_eq!(a2.group_id, group2.id);
+    }
 
     #[test]
     fn create_new_account_and_new_group() {
