@@ -62,8 +62,6 @@ impl EditAccountWindow {
         let secret = self.input_secret.clone();
         let input_secret_frame = self.input_secret_frame.clone();
 
-        let mut result: Result<(), ValidationError> = Ok(());
-
         fn highlight_name_error(name: &gtk::Entry) {
             name.set_primary_icon_name(Some("dialog-error"));
             let style_context = name.style_context();
@@ -72,24 +70,30 @@ impl EditAccountWindow {
 
         if name.buffer().text().is_empty() {
             highlight_name_error(&name);
-            result = Err(ValidationError::FieldError("name".to_owned()));
-        } else {
-            let group = self.input_group.clone();
-            let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
+            return Err(ValidationError::FieldErrorBlank("name".to_owned()));
+        }
 
-            let connection = connection.lock().unwrap();
-            let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id);
-            let existing_account = existing_account.unwrap_or(None);
+        let group = self.input_group.clone();
 
-            let account_id = self.input_account_id.buffer().text();
-            let account_id = account_id.parse().map(Some).unwrap_or(None);
+        let group_id: Result<u32, ValidationError> = group
+            .active_id()
+            .ok_or(ValidationError::FieldError("group id".to_owned()))?
+            .as_str()
+            .parse::<u32>()
+            .map_err(|c| c.into());
 
-            if existing_account.is_some() && existing_account != account_id {
-                highlight_name_error(&name);
-                self.icon_error.set_label(&gettext("Account name already exists"));
-                self.icon_error.set_visible(true);
-                result = Err(ValidationError::FieldError("name".to_owned()));
-            }
+        let connection = connection.lock().unwrap();
+        let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id?);
+        let existing_account = existing_account.unwrap_or(None);
+
+        let account_id = self.input_account_id.buffer().text();
+        let account_id = account_id.parse().map(Some).unwrap_or(None);
+
+        if existing_account.is_some() && existing_account != account_id {
+            highlight_name_error(&name);
+            self.icon_error.set_label(&gettext("Account name already exists"));
+            self.icon_error.set_visible(true);
+            return Err(ValidationError::FieldError("name".to_owned()));
         }
 
         let buffer = secret.buffer().unwrap();
@@ -102,24 +106,23 @@ impl EditAccountWindow {
         if secret_value.is_empty() {
             let style_context = input_secret_frame.style_context();
             style_context.add_class("error");
-            result = Err(ValidationError::FieldError("secret".to_owned()));
-        } else {
-            let stripped = Self::strip_secret(&secret_value);
-            let style_context = input_secret_frame.style_context();
+            return Err(ValidationError::FieldError("secret".to_owned()));
+        }
+        let stripped = Self::strip_secret(&secret_value);
+        let style_context = input_secret_frame.style_context();
 
-            match Account::generate_time_based_password(stripped.as_str()) {
-                Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
-                Ok(_) => buffer.set_text(&stripped),
-                Err(error_key) => {
-                    error!("{}", error_key.error());
+        match Account::generate_time_based_password(stripped.as_str()) {
+            Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
+            Ok(_) => buffer.set_text(&stripped),
+            Err(error_key) => {
+                error!("{}", error_key.error());
 
-                    style_context.add_class("error");
-                    result = Err(ValidationError::FieldError("secret".to_owned()));
-                }
+                style_context.add_class("error");
+                return Err(ValidationError::FieldError("secret".to_owned()));
             }
         }
 
-        result
+        Ok(())
     }
 
     pub fn reset_errors(&self) {
@@ -148,8 +151,9 @@ impl EditAccountWindow {
         self.input_name.set_text("");
         self.input_account_id.set_text("");
 
-        let buffer = self.input_secret.buffer().unwrap();
-        buffer.set_text("");
+        if let Some(buffer) = self.input_secret.buffer() {
+            buffer.set_text("");
+        }
 
         self.reset_errors();
     }
@@ -158,18 +162,17 @@ impl EditAccountWindow {
         self.input_group.remove_all();
 
         groups.iter().for_each(|group| {
-            let string = format!("{}", group.id);
-            let entry_id = Some(string.as_str());
-            self.input_group.append(entry_id, group.name.as_str());
+            let entry_id = Some(group.id.to_string());
+            self.input_group.append(entry_id.as_deref(), group.name.as_str());
 
             if group.id == group_id.unwrap_or(0) {
-                self.input_group.set_active_id(entry_id);
+                self.input_group.set_active_id(entry_id.as_deref());
             }
         });
 
         // select 1st entry to avoid blank selection choice
         if group_id.is_none() {
-            let first_entry = groups.first().map(|e| format!("{}", e.id));
+            let first_entry = groups.first().map(|e| e.id.to_string());
             let first_entry = first_entry.as_deref();
             self.input_group.set_active_id(first_entry);
         }
@@ -194,49 +197,52 @@ impl EditAccountWindow {
             move |_| {
                 match dialog.run() {
                     gtk::ResponseType::Accept => {
-                        let path = dialog.filename().unwrap();
-                        debug!("path: {}", path.display());
+                        if let Some(path) = dialog.filename() {
+                            debug!("path: {}", path.display());
 
-                        let buffer = input_secret.buffer().unwrap();
-                        buffer.set_text(&gettext("Processing QR code"));
+                            let buffer = input_secret.buffer().unwrap();
+                            buffer.set_text(&gettext("Processing QR code"));
 
-                        save_button.set_sensitive(false);
-                        dialog.hide();
+                            save_button.set_sensitive(false);
+                            dialog.hide();
 
-                        glib::spawn_future_local(clone!(
-                            #[strong]
-                            save_button,
-                            #[strong]
-                            input_secret,
-                            #[strong]
-                            input_secret_frame,
-                            #[strong]
-                            w,
-                            async move {
-                                let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
+                            glib::spawn_future_local(clone!(
+                                #[strong]
+                                save_button,
+                                #[strong]
+                                input_secret,
+                                #[strong]
+                                input_secret_frame,
+                                #[strong]
+                                w,
+                                async move {
+                                    let result = QrCode::process_qr_code(path.to_str().unwrap().to_owned()).await;
 
-                                save_button.set_sensitive(true);
-                                let style_context = input_secret_frame.style_context();
+                                    save_button.set_sensitive(true);
+                                    let style_context = input_secret_frame.style_context();
 
-                                match result {
-                                    Valid(qr_code) => {
-                                        w.reset_errors();
-                                        let buffer = input_secret.buffer().unwrap();
-                                        style_context.remove_class("error");
-                                        buffer.set_text(qr_code.extract());
-                                    }
-                                    Invalid(qr_code) => {
-                                        let buffer = input_secret.buffer().unwrap();
+                                    match result {
+                                        Valid(qr_code) => {
+                                            w.reset_errors();
+                                            let buffer = input_secret.buffer().unwrap();
+                                            style_context.remove_class("error");
+                                            buffer.set_text(qr_code.extract());
+                                        }
+                                        Invalid(qr_code) => {
+                                            let buffer = input_secret.buffer().unwrap();
 
-                                        w.icon_error.set_label(&gettext(qr_code));
-                                        w.icon_error.set_visible(true);
+                                            w.icon_error.set_label(&gettext(qr_code));
+                                            w.icon_error.set_visible(true);
 
-                                        style_context.add_class("error");
-                                        buffer.set_text("");
-                                    }
-                                };
-                            }
-                        ));
+                                            style_context.add_class("error");
+                                            buffer.set_text("");
+                                        }
+                                    };
+                                }
+                            ));
+                        } else {
+                            panic!("No filename in dialog");
+                        }
                     }
                     _ => dialog.hide(),
                 }

@@ -5,7 +5,6 @@ use gtk::prelude::*;
 use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 
 use model::account_errors::TotpError;
 
@@ -43,11 +42,7 @@ pub struct AccountWidget {
 impl AccountWidget {
     pub fn update(&mut self) {
         match Account::generate_time_based_password(self.totp_secret.as_str()) {
-            Ok(totp) => {
-                self.totp_label.set_label(totp.as_str());
-                let context = self.totp_label.style_context();
-                context.remove_class("error");
-            }
+            Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
                 self.totp_label.set_label(&gettext(error_key.error()));
@@ -166,32 +161,36 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        let key = key.trim();
-        if key.is_empty() {
-            return Err(TotpError::Empty);
-        }
-
-        let cow: Cow<str> = Cow::Borrowed(&key.to_ascii_uppercase());
-
-        let padded = Account::pad(cow);
+        let padded = Account::normalize(key)?;
 
         let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &padded).ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
+
         totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
     }
 
     /*
-     * Pads key with = up to 32 characters long.
-     * This produces a predictable padding using repeated `=` characters.
+     * Pads key with = until key is a multiple of 32.
      */
-    fn pad(mut key: Cow<str>) -> Cow<str> {
-        if key.len() >= 32 {
-            return key;
+    fn normalize(key: &str) -> Result<String, TotpError> {
+        let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        let normalized = normalized.trim_end_matches("=").to_ascii_uppercase();
+
+        if normalized.is_empty() {
+            return Err(TotpError::Empty);
         }
-        let pad = 32 - key.len();
-        key.to_mut().push_str(&"=".repeat(pad));
-        key
+
+        let remainder = normalized.len() % 32;
+        if remainder == 0 {
+            return Ok(normalized.to_string());
+        }
+
+        let pad = 32 - remainder;
+
+        let mut padded = normalized.to_string();
+        padded.push_str(&"=".repeat(pad));
+        Ok(padded)
     }
 }
 
@@ -200,25 +199,23 @@ mod tests {
     use crate::model::account_errors::TotpError;
     use crate::model::Account;
     use base32::Alphabet;
-    use std::borrow::Cow;
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO3TJNA================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNA")));
-        assert_eq!("AXXETN6MTQO3TJN=================", Account::pad(Cow::Borrowed("AXXETN6MTQO3TJN")));
+        assert_eq!("AXXETN6MTQO3TJN=================", Account::normalize("AXXETN6MTQO3TJN").unwrap());
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
-            Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"))
+            Account::normalize("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA").unwrap()
         );
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
-            Account::pad(Cow::Borrowed("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA"))
+            Account::normalize("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNAAXXETN6MTQO3TJNA").unwrap()
         );
     }
 
     #[test]
     fn generate_current() {
-        let key = Account::pad(Cow::Borrowed("477IUDDXCZSMY44U"));
+        let key = Account::normalize("477IUDDXCZSMY44U").unwrap();
         let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &key).unwrap();
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret).unwrap();
