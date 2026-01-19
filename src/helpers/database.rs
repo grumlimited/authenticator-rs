@@ -201,7 +201,7 @@ impl Database {
     }
 
     pub fn upsert_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        match Self::get_account_by_name(connection, account.label.as_str())? {
+        match Self::get_account_by_label_and_group(connection, account.label.as_str(), account.group_id)? {
             Some(a) => {
                 account.id = a.id;
                 account.secret_type = LOCAL; // so that keyring get updated too
@@ -209,6 +209,11 @@ impl Database {
             }
             None => Self::save_account(connection, account),
         }
+    }
+
+    pub fn get_account_by_label_and_group(connection: &Connection, name: &str, group_id: u32) -> Result<Option<Account>> {
+        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type FROM accounts WHERE label = ?1 AND group_id = ?2")?;
+        Self::_get_account(stmt, params![name, group_id])
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
