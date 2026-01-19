@@ -10,7 +10,7 @@ pub enum TotpError {
     Empty,
     #[error("{0:?}")]
     SecretParseError(SecretParseError),
-    #[error("{0:?}")]
+    #[error("")]
     TotpUrlError(TotpUrlError),
     #[error("{0}")]
     SystemTimeError(SystemTimeError),
