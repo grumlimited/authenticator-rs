@@ -1,7 +1,8 @@
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use log::warn;
-use regex::Regex;
+use percent_encoding::percent_decode_str;
 use rqrr::PreparedImage;
+use url::Url;
 
 #[derive(PartialEq, Debug)]
 pub enum QrCodeResult {
@@ -21,14 +22,31 @@ impl QrCode {
 
     /// Extract the `secret` parameter from the payload if present,
     /// otherwise return the full payload unchanged.
-    pub fn extract(&self) -> &str {
-        let re = Regex::new(r".*secret=(.*?)(&.*)?$").unwrap();
+    pub fn extract(&self) -> String {
+        // Try to parse as a URL and extract the 'secret' query parameter (handles percent-encoding)
+        if let Ok(url) = Url::parse(self.qr_code_payload.as_str()) {
+            for (k, v) in url.query_pairs() {
+                if k.eq_ignore_ascii_case("secret") {
+                    // percent-decode the value and return it as owned String
+                    let decoded = percent_decode_str(&v).decode_utf8_lossy().into_owned();
+                    return decoded;
+                }
+            }
+        } else {
+            // Not a valid URL, fall back to query-like parsing
+            if let Some(idx) = self.qr_code_payload.find("secret=") {
+                let after = &self.qr_code_payload[idx + "secret=".len()..];
+                // secret may be terminated by & or end of string
+                let end = after.find('&').unwrap_or(after.len());
+                let candidate = &after[..end];
+                // percent-decode candidate into an owned String and return
+                let decoded = percent_decode_str(candidate).decode_utf8_lossy().into_owned();
+                return decoded;
+            }
+        }
 
-        let secret = re
-            .captures(self.qr_code_payload.as_str())
-            .and_then(|cap| cap.get(1).map(|secret| secret.as_str()));
-
-        secret.unwrap_or(self.qr_code_payload.as_str())
+        // Default: return the full payload as owned String
+        self.qr_code_payload.clone()
     }
 
     /// Process an image file at `path` and attempt to decode a QR code.
@@ -111,6 +129,31 @@ mod tests {
         let qr_code = QrCode::new(qr_code_payload.to_string());
         let result = qr_code.extract();
         assert_eq!("ABCD", result);
+    }
+
+    #[test]
+    fn extract_percent_encoded_secret_in_otpauth_uri() {
+        let qr_code_payload = "otpauth://totp/Example:alice?secret=ABC%2BDEF&issuer=Example";
+        let qr_code = QrCode::new(qr_code_payload.to_string());
+        let result = qr_code.extract();
+        assert_eq!("ABC+DEF", result);
+    }
+
+    #[test]
+    fn extract_first_of_multiple_secret_params() {
+        let qr_code_payload = "otpauth://totp/Example:alice?issuer=Ex&secret=FIRST&foo=bar&secret=SECOND";
+        let qr_code = QrCode::new(qr_code_payload.to_string());
+        let result = qr_code.extract();
+        assert_eq!("FIRST", result);
+    }
+
+    #[test]
+    fn extract_percent_encoded_secret_in_plain_query() {
+        let qr_code_payload = "foo=bar&secret=XYZ%252B123&baz=1"; // note double-encoding scenario
+        let qr_code = QrCode::new(qr_code_payload.to_string());
+        let result = qr_code.extract();
+        // percent-decode of "XYZ%252B123" -> "XYZ%2B123" (decode once), we expect that decoding path returns the single-decode result
+        assert_eq!("XYZ%2B123", result);
     }
 
     #[test]
