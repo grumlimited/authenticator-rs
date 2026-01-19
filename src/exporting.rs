@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use gettextrs::*;
@@ -5,6 +6,7 @@ use glib::clone;
 use gtk::prelude::*;
 use gtk::{Button, PopoverMenu};
 use gtk_macros::*;
+use log::error;
 use rusqlite::Connection;
 
 use crate::helpers::Backup;
@@ -57,8 +59,6 @@ impl Exporting for MainWindow {
 
             dialog.show();
 
-            let connection = connection.clone();
-
             match dialog.run() {
                 gtk::ResponseType::Accept => {
                     dialog.close();
@@ -75,7 +75,9 @@ impl Exporting for MainWindow {
                     glib::spawn_future(clone!(
                         #[strong]
                         path,
-                        async move { Backup::save_accounts(path, connection.clone(), all_secrets, tx).await }
+                        #[strong]
+                        connection,
+                        async move { Backup::save_accounts(path, connection, all_secrets, tx).await }
                     ));
                 }
                 _ => dialog.close(),
@@ -88,7 +90,7 @@ impl Exporting for MainWindow {
             #[strong(rename_to = gui)]
             self,
             move |_b: &Button| {
-                popover.set_visible(false);
+                popover.hide();
 
                 let builder = gtk::Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "error_popup.ui").as_str());
 
@@ -121,21 +123,36 @@ impl Exporting for MainWindow {
                     gtk::ResponseType::Accept => {
                         dialog.close();
 
-                        let path = dialog.filename().unwrap();
+                        let path: Option<PathBuf> = dialog.filename();
+                        let path = match path {
+                            Some(p) => p,
+                            None => {
+                                error!("Import cancelled: no filename chosen");
+                                error_popup_body.set_label(&gettext("No filename chosen for import"));
+                                error_popup.show();
+                                return;
+                            }
+                        };
 
                         let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
 
                         glib::spawn_future_local(clone!(
-                            #[strong]
+                            #[strong(rename_to = gui)]
                             gui,
                             async move {
-                                match rx.recv().await.unwrap() {
-                                    Ok(_) => {
+                                match rx.recv().await {
+                                    Ok(Ok(_)) => {
                                         gui.accounts_window.refresh_accounts(&gui);
                                         gui.accounts_window.accounts_container.set_sensitive(true);
                                     }
-                                    Err(e) => {
+                                    Ok(Err(e)) => {
+                                        error!("Import failed: {:?}", e);
                                         gui.errors.error_display_message.set_text(format!("{:?}", e).as_str());
+                                        gui.switch_to(Display::Errors);
+                                    }
+                                    Err(_) => {
+                                        error!("Import task channel closed unexpectedly");
+                                        gui.errors.error_display_message.set_text(&gettext("internal_error"));
                                         gui.switch_to(Display::Errors);
                                     }
                                 }

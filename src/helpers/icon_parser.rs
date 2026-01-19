@@ -7,12 +7,11 @@ use gtk::gdk_pixbuf::Pixbuf;
 use log::debug;
 use regex::Regex;
 use scraper::*;
-use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub struct IconParser {}
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum IconError {
     #[error("Could not find icon in html")]
     ParsingError,
@@ -39,7 +38,7 @@ impl IconParser {
                 extension: Some(extension),
             }),
             _ => {
-                let html = String::from_utf8_lossy(data.as_slice()).into_owned();
+                let html = String::from_utf8_lossy(&data).into_owned();
                 Self::icon(url, html.as_str()).await
             }
         }
@@ -49,13 +48,13 @@ impl IconParser {
         let icon_url = {
             let document = Html::parse_document(html);
 
-            let selector_1 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).unwrap();
-            let selector_2 = Selector::parse(r#"link[rel="shortcut icon"]"#).unwrap();
-            let selector_3 = Selector::parse(r#"link[rel="icon"]"#).unwrap();
+            let selector_1 = Selector::parse(r#"link[rel="apple-touch-icon"]"#).ok();
+            let selector_2 = Selector::parse(r#"link[rel="shortcut icon"]"#).ok();
+            let selector_3 = Selector::parse(r#"link[rel="icon"]"#).ok();
 
-            let option_1 = document.select(&selector_1).next();
-            let option_2 = document.select(&selector_2).next();
-            let option_3 = document.select(&selector_3).next();
+            let option_1 = selector_1.and_then(|s| document.select(&s).next());
+            let option_2 = selector_2.and_then(|s| document.select(&s).next());
+            let option_3 = selector_3.and_then(|s| document.select(&s).next());
 
             let choice = option_1.or(option_2).or(option_3);
 

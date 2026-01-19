@@ -327,6 +327,7 @@ impl ToSql for SecretType {
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
+    use std::sync::{Arc, Mutex};
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
@@ -336,12 +337,15 @@ mod tests {
 
     #[test]
     fn create_new_account_and_new_group() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
         let mut account = Account::new(0, 0, "label", "secret", LOCAL);
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -367,11 +371,14 @@ mod tests {
 
     #[test]
     fn test_update_group() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -392,11 +399,14 @@ mod tests {
 
     #[test]
     fn create_new_account_with_existing_group() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "existing_group2", None, None, false, vec![]);
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         Database::save_group(&connection, &mut group).unwrap();
 
@@ -415,9 +425,12 @@ mod tests {
 
     #[test]
     fn load_account_groups() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -446,9 +459,12 @@ mod tests {
 
     #[test]
     fn save_group_ordering() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -477,9 +493,12 @@ mod tests {
 
     #[test]
     fn delete_account() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut account = Account::new(0, 0, "label", "secret", LOCAL);
 
@@ -493,9 +512,12 @@ mod tests {
 
     #[test]
     fn has_groups() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -509,9 +531,12 @@ mod tests {
 
     #[test]
     fn group_exists() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
@@ -525,9 +550,12 @@ mod tests {
 
     #[test]
     fn account_exists() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let mut account = Account::new(0, 1, "label", "secret", LOCAL);
         let _ = Database::save_account(&connection, &mut account);
@@ -541,9 +569,12 @@ mod tests {
 
     #[test]
     fn save_group_and_accounts() {
-        let mut connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().unwrap();
+        let connection: Arc<Mutex<Connection>> = Arc::new(Mutex::new(connection));
 
-        runner::run(&mut connection).unwrap();
+        runner::run(connection.clone()).unwrap();
+
+        let connection = connection.lock().expect("Failed to acquire database connection lock");
 
         let account1 = Account::new(0, 0, "label", "secret", LOCAL);
         let account2 = Account::new(0, 0, "label2", "secret2", LOCAL);

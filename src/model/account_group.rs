@@ -6,7 +6,6 @@ use gtk_macros::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
-use crate::gtk::prelude::ObjectExt;
 use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};

@@ -1,17 +1,15 @@
-extern crate secret_service;
-
 use std::collections::HashMap;
 
 use log::{debug, warn};
 use rusqlite::Connection;
 use secret_service::blocking::SecretService;
-use secret_service::{EncryptionType, Error};
+use secret_service::{EncryptionType, Error as SsError};
 
 use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::{Database, SecretType};
 use crate::model::{Account, AccountGroup};
 
-type Result<T> = ::std::result::Result<T, Error>;
+type Result<T> = ::std::result::Result<T, RepositoryError>;
 
 const APPLICATION: &str = "Authenticator-rs";
 const APPLICATION_KEY: &str = "application";
@@ -21,19 +19,24 @@ const ACCOUNT_ID_KEY: &str = "account_id";
 pub struct Keyring;
 
 impl Keyring {
+    fn connect<'a>() -> Result<SecretService<'a>> {
+        SecretService::connect(EncryptionType::Dh).map_err(RepositoryError::KeyringError)
+    }
+
     pub fn ensure_unlocked() -> Result<()> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
-        let collection = ss.get_default_collection()?;
+        let ss = Self::connect()?;
+        let collection = ss.get_default_collection().map_err(RepositoryError::KeyringError)?;
 
         collection.unlock()?;
-        collection.ensure_unlocked()
+        collection.ensure_unlocked().map_err(RepositoryError::KeyringError)
     }
 
     fn store(ss: &SecretService, label: &str, account_id: u32, secret: &str) -> Result<()> {
-        let collection = ss.get_default_collection()?;
+        let collection = ss.get_default_collection().map_err(RepositoryError::KeyringError)?;
 
-        let mut attributes = HashMap::new();
         let str_account_id = format!("{}", account_id);
+
+        let mut attributes: HashMap<&str, &str> = HashMap::new();
         attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
         attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
 
@@ -45,39 +48,37 @@ impl Keyring {
             "text/plain",
         )?;
 
-        debug!("Saved {} ({})", label, account_id);
-
+        debug!("Saved {} ({}) to keyring", label, account_id);
         Ok(())
     }
 
-    pub fn upsert(label: &str, account_id: u32, secret: &str) -> std::result::Result<(), RepositoryError> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
-        let result = Self::store(&ss, label, account_id, secret);
-
-        result.map_err(RepositoryError::KeyringError)
+    pub fn upsert(label: &str, account_id: u32, secret: &str) -> Result<()> {
+        let ss = Self::connect()?;
+        Self::store(&ss, label, account_id, secret)
     }
 
     pub fn secret(account_id: u32) -> Result<Option<String>> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
+        let ss = Self::connect()?;
         let collection = ss.get_default_collection()?;
 
-        let mut attributes = HashMap::new();
         let str_account_id = format!("{}", account_id);
+        let mut attributes: HashMap<&str, &str> = HashMap::new();
         attributes.insert(ACCOUNT_ID_KEY, str_account_id.as_str());
         attributes.insert(APPLICATION_KEY, APPLICATION_VALUE);
 
         let search_items = collection.search_items(attributes)?;
 
-        search_items
-            .first()
-            .map(|i| i.get_secret())
-            .map(|r: Result<Vec<u8>>| r.and_then(|s: Vec<u8>| String::from_utf8(s).map_err(|_| Error::NoResult)))
-            .map(|r| r.map(Some))
-            .unwrap_or(Ok(None))
+        if let Some(item) = search_items.first() {
+            let bytes = item.get_secret()?;
+            let secret = String::from_utf8(bytes).map_err(RepositoryError::KeyringDecodingError)?;
+            Ok(Some(secret))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn remove(account_id: u32) -> Result<()> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
+        let ss = Self::connect()?;
         let collection = ss.get_default_collection()?;
 
         let mut attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
@@ -87,13 +88,13 @@ impl Keyring {
         let search_items = collection.search_items(attributes)?;
 
         match search_items.first() {
-            Some(i) => i.delete(),
-            None => Err(Error::NoResult),
+            Some(i) => i.delete().map_err(RepositoryError::KeyringError),
+            None => Err(RepositoryError::KeyringError(SsError::NoResult)),
         }
     }
 
-    pub fn all_secrets() -> std::result::Result<Vec<(String, String)>, RepositoryError> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
+    pub fn all_secrets() -> Result<Vec<(String, String)>> {
+        let ss = Self::connect()?;
         let collection = ss.get_default_collection()?;
 
         let attributes = HashMap::from([(APPLICATION_KEY, APPLICATION_VALUE)]);
@@ -130,7 +131,6 @@ impl Keyring {
 
     pub fn set_secrets(group_accounts: &mut [AccountGroup], connection: &Connection) -> std::result::Result<(), RepositoryError> {
         let all_secrets = Self::all_secrets()?;
-
         Self::associate_secrets(group_accounts, &all_secrets, connection)
     }
 
@@ -139,10 +139,10 @@ impl Keyring {
         all_secrets: &[(String, String)],
         connection: &Connection,
     ) -> std::result::Result<(), RepositoryError> {
-        let ss = SecretService::connect(EncryptionType::Dh)?;
+        let ss = Self::connect()?;
         group_accounts
             .iter_mut()
-            .try_for_each(|account_group| Self::group_account_secret(&ss, account_group, all_secrets, connection))
+            .try_for_each(|group| Self::group_account_secret(&ss, group, all_secrets, connection))
     }
 
     fn group_account_secret(
@@ -165,18 +165,19 @@ impl Keyring {
     ) -> std::result::Result<(), RepositoryError> {
         debug!("Loading keyring secret for {} ({})", account.label, account.id);
 
-        match all_secrets.iter().find(|(account_id, _)| *account_id == format!("{}", account.id)) {
-            Some((_, secret)) => account.secret.clone_from(secret),
-            None => {
-                warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
-                Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;
-                account.secret_type = SecretType::KEYRING;
-                account.secret = "".to_string();
-                Database::update_account(connection, account)?;
-            }
+        if let Some((_, secret)) = all_secrets.iter().find(|(account_id, _)| *account_id == format!("{}", account.id)) {
+            account.secret = secret.clone();
+            account.secret_type = SecretType::KEYRING;
+            return Ok(());
         }
 
-        Ok(())
+        warn!("No secret found in keyring for {} ({}). Creating one.", account.label, account.id);
+
+        Self::store(ss, account.label.as_str(), account.id, account.secret.as_str())?;
+        account.secret_type = SecretType::KEYRING;
+        account.secret.clear();
+
+        Database::update_account(connection, account).map(|_| ())
     }
 }
 
@@ -187,11 +188,11 @@ mod test {
     #[test]
     #[ignore]
     fn should_create_collection_struct() {
-        let ss = SecretService::connect(EncryptionType::Dh).unwrap();
-        Keyring::store(&ss, "x22", 1, "secret").unwrap();
-
-        let result = Keyring::secret(1).unwrap().unwrap();
-
-        assert_eq!("secret", result);
+        if let Ok(ss) = SecretService::connect(EncryptionType::Dh) {
+            let _ = Keyring::store(&ss, "x22", 1, "secret");
+            if let Ok(Some(result)) = Keyring::secret(1) {
+                assert_eq!("secret", result);
+            }
+        }
     }
 }

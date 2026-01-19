@@ -9,8 +9,7 @@ use glib::clone;
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, Builder, Window};
 use gtk_macros::*;
-use log::error;
-use log::info;
+use log::{error, info};
 use rusqlite::Connection;
 
 use crate::helpers::Keyring;
@@ -127,6 +126,17 @@ impl MainWindow {
         }
     }
 
+    fn update_visibility(&self, state: &State) {
+        let is_edit_or_add = state.display == Display::EditAccount || state.display == Display::AddAccount;
+        self.accounts_window.container.set_visible(state.display == Display::Accounts);
+        self.edit_account.container.set_visible(is_edit_or_add);
+        self.add_group
+            .container
+            .set_visible(state.display == Display::AddGroup || state.display == Display::EditGroup);
+        self.no_accounts.container.set_visible(state.display == Display::NoAccounts);
+        self.errors.container.set_visible(state.display == Display::Errors);
+    }
+
     pub fn switch_to(&self, display: Display) {
         let mut state = self.state.borrow_mut();
         state.display = display;
@@ -134,16 +144,7 @@ impl MainWindow {
         let g_settings = gio::Settings::new(NAMESPACE);
         state.dark_mode = g_settings.boolean("dark-theme");
 
-        self.accounts_window.container.set_visible(state.display == Display::Accounts);
-        self.edit_account.container.set_visible(state.display == Display::EditAccount);
-        self.edit_account
-            .container
-            .set_visible(state.display == Display::EditAccount || state.display == Display::AddAccount);
-        self.add_group
-            .container
-            .set_visible(state.display == Display::AddGroup || state.display == Display::EditGroup);
-        self.no_accounts.container.set_visible(state.display == Display::NoAccounts);
-        self.errors.container.set_visible(state.display == Display::Errors);
+        self.update_visibility(&state);
     }
 
     pub fn set_application(&self, application: &gtk::Application, connection: Arc<Mutex<Connection>>, rx_events: Receiver<Action>) {
@@ -167,7 +168,7 @@ impl MainWindow {
                 self.accounts_window.refresh_accounts(self);
             }
             Err(e) => {
-                error!("Keyring is {:?}", e);
+                error!("Keyring error: {:?}", e);
                 self.errors.error_display_message.set_text(&gettext("keyring_locked"));
                 self.switch_to(Display::Errors);
             }
@@ -194,7 +195,7 @@ impl MainWindow {
     }
 
     pub fn bind_account_filter_events(&self) {
-        //First bind user input event to refreshing account list
+        // First bind user input event to refreshing account list
         self.accounts_window.filter.connect_changed(clone!(
             #[strong(rename_to = gui)]
             self,
@@ -203,7 +204,7 @@ impl MainWindow {
             }
         ));
 
-        //then bind "x" icon to empty the filter input.
+        // then bind "x" icon to empty the filter input.
         let (tx, rx) = async_channel::bounded::<bool>(1);
 
         glib::spawn_future_local(clone!(
@@ -220,7 +221,9 @@ impl MainWindow {
             glib::spawn_future(clone!(
                 #[strong]
                 tx,
-                async move { tx.send(true).await }
+                async move {
+                    let _ = tx.send(true).await;
+                }
             ));
             None
         });
@@ -234,9 +237,13 @@ impl MainWindow {
                 let seconds = Local::now().second() as u8;
 
                 AccountsWindow::progress_bar_fraction_for(&gui.accounts_window.progress_bar, seconds as u32);
-                if seconds == 0 || seconds == 30 {
-                    let mut widgets = gui.accounts_window.widgets.lock().unwrap();
-                    widgets.iter_mut().for_each(|group| group.update());
+
+                // Update TOTP widgets on 0 and 30 seconds (every 30s)
+                if seconds.is_multiple_of(30) {
+                    match gui.accounts_window.widgets.lock() {
+                        Ok(mut widgets) => widgets.iter_mut().for_each(|group| group.update()),
+                        Err(_) => error!("Failed to lock account widgets mutex (poisoned)"),
+                    }
                 }
 
                 glib::ControlFlow::Continue
