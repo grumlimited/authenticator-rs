@@ -216,8 +216,8 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::Account;
     use crate::helpers::QrCode;
+    use crate::model::Account;
 
     #[test]
     fn pad() {
