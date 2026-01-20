@@ -300,7 +300,7 @@ impl AccountsWindow {
                     glib::spawn_future_local(clone!(
                         #[strong]
                         builder,
-                        #[strong]
+                        #[weak]
                         connection,
                         #[strong]
                         gui,
@@ -511,23 +511,45 @@ impl AccountsWindow {
             #[strong]
             popover,
             move |_: &gtk::Button| {
-                debug!("Loading for group_id {:?}", group_id);
+                let (tx, rx) = async_channel::bounded::<Vec<AccountGroup>>(1);
 
-                let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
+                glib::spawn_future_local(clone!(
+                    #[strong]
+                    connection,
+                    async move {
+                        debug!("Loading for group_id {:?}", group_id);
 
-                let groups = {
-                    let connection = connection.lock().unwrap();
-                    Database::load_account_groups(&connection, None).unwrap()
-                };
+                        let groups = {
+                            let connection = connection.lock().unwrap();
+                            Database::load_account_groups(&connection, None).unwrap()
+                        };
 
-                let edit_account = EditAccountWindow::new(&builder);
-                edit_account.edit_account_buttons_actions(&main_window, connection.clone());
-                edit_account.set_group_dropdown(group_id, &groups);
+                        tx.send(groups).await.expect("Could not sent groups");
+                    }
+                ));
 
-                main_window.edit_account.replace_with(&edit_account);
+                glib::spawn_future_local(clone!(
+                    #[strong]
+                    main_window,
+                    #[strong]
+                    popover,
+                    #[strong]
+                    connection,
+                    async move {
+                        if let Ok(groups) = rx.recv().await {
+                            let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
-                popover.hide();
-                main_window.switch_to(Display::AddAccount);
+                            let edit_account = EditAccountWindow::new(&builder);
+                            edit_account.edit_account_buttons_actions(&main_window, connection.clone());
+                            edit_account.set_group_dropdown(group_id, &groups);
+
+                            main_window.edit_account.replace_with(&edit_account);
+
+                            popover.hide();
+                            main_window.switch_to(Display::AddAccount);
+                        }
+                    }
+                ));
             }
         )
     }

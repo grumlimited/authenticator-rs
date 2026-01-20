@@ -57,7 +57,7 @@ impl EditAccountWindow {
         });
     }
 
-    fn validate(&self, connection: Arc<Mutex<Connection>>) -> Result<(), ValidationError> {
+    async fn validate(&self, connection: Arc<Mutex<Connection>>) -> Result<(), ValidationError> {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
         let input_secret_frame = self.input_secret_frame.clone();
@@ -275,43 +275,64 @@ impl EditAccountWindow {
             edit_account,
             #[strong]
             gui,
+            #[strong]
+            connection,
             move |_| {
                 edit_account.reset_errors();
 
-                if let Ok(()) = edit_account.validate(connection.clone()) {
-                    let name = edit_account.input_name.clone();
-                    let secret = edit_account.input_secret.clone();
-                    let account_id = edit_account.input_account_id.clone();
-                    let group = edit_account.input_group.clone();
-                    let name: String = name.buffer().text();
-                    let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
-                    let secret: String = {
-                        let buffer = secret.buffer().unwrap();
-                        let (start, end) = buffer.bounds();
-                        match buffer.slice(&start, &end, true) {
-                            Some(secret_value) => secret_value.to_string(),
-                            None => "".to_owned(),
+                let (tx, rx) = async_channel::bounded::<()>(1);
+
+                glib::spawn_future_local(clone!(
+                    #[strong]
+                    edit_account,
+                    #[strong]
+                    connection,
+                    async move {
+                        if let Ok(()) = edit_account.validate(connection).await {
+                            tx.send(()).await.expect("Could not send unit value.")
                         }
-                    };
+                    }
+                ));
 
-                    let filter = gui.accounts_window.get_filter_value();
-                    let account_id = account_id.buffer().text();
+                glib::spawn_future_local(clone!(
+                    #[strong]
+                    edit_account,
+                    #[strong]
+                    connection,
+                    #[strong]
+                    gui,
+                    async move {
+                        if rx.recv().await.is_ok() {
+                            let name = edit_account.input_name.clone();
+                            let secret = edit_account.input_secret.clone();
+                            let account_id = edit_account.input_account_id.clone();
+                            let group = edit_account.input_group.clone();
+                            let name: String = name.buffer().text();
+                            let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
+                            let secret: String = {
+                                let buffer = secret.buffer().unwrap();
+                                let (start, end) = buffer.bounds();
+                                match buffer.slice(&start, &end, true) {
+                                    Some(secret_value) => secret_value.to_string(),
+                                    None => "".to_owned(),
+                                }
+                            };
 
-                    glib::spawn_future(clone!(
-                        #[strong]
-                        connection,
-                        #[strong]
-                        gui,
-                        async move {
+                            let filter = gui.accounts_window.get_filter_value();
+                            let account_id = account_id.buffer().text();
+
                             Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
-                            gui.tx_events.send(Action::RefreshAccounts { filter }).await
-                        }
-                    ));
+                            gui.tx_events
+                                .send(Action::RefreshAccounts { filter })
+                                .await
+                                .expect("Could not send RefreshAccounts");
 
-                    edit_account.reset();
+                            edit_account.reset();
 
-                    gui.switch_to(Display::Accounts);
-                }
+                            gui.switch_to(Display::Accounts);
+                        };
+                    }
+                ));
             }
         ));
     }
