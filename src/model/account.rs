@@ -161,9 +161,37 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        let padded = Account::normalize(key)?;
+        let normalized = Account::normalize(key)?;
 
-        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &padded).ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
+        // helper that tries base32 decode with/without a padding flag
+        let try_decode = |s: &str| base32::decode(Alphabet::Rfc4648 { padding: true }, s).or_else(|| base32::decode(Alphabet::Rfc4648 { padding: false }, s));
+
+        // First, try padding to the 8-character base32 block size (RFC4648), then decode
+        let rem8 = normalized.len() % 8;
+        let pad8 = if rem8 == 0 { 0 } else { 8 - rem8 };
+        let s8 = if pad8 == 0 {
+            normalized.clone()
+        } else {
+            format!("{}{}", normalized, "=".repeat(pad8))
+        };
+
+        let mut secret = try_decode(&s8).or_else(|| try_decode(&normalized));
+
+        // If the decoded secret is shorter than 20 bytes, try padding to 32 characters
+        // (32*5 = 160 bits = 20 bytes) as a compatibility fallback for legacy keys.
+        if secret.as_ref().map(|v| v.len()).unwrap_or(0) < 20 {
+            let rem32 = normalized.len() % 32;
+            let pad32 = if rem32 == 0 { 0 } else { 32 - rem32 };
+            let s32 = if pad32 == 0 {
+                normalized.clone()
+            } else {
+                format!("{}{}", normalized, "=".repeat(pad32))
+            };
+
+            secret = try_decode(&s32).or_else(|| try_decode(&normalized));
+        }
+
+        let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
         let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
 
@@ -171,9 +199,10 @@ impl Account {
     }
 
     /*
-     * Pads key with = until key is a multiple of 32.
+     * normalized is uppercase, no padding
      */
     fn normalize(key: &str) -> Result<String, TotpError> {
+        // Remove whitespace, strip any existing '=', and uppercase for canonical form
         let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
         let normalized = normalized.trim_end_matches("=").to_ascii_uppercase();
 
@@ -181,28 +210,17 @@ impl Account {
             return Err(TotpError::Empty);
         }
 
-        let remainder = normalized.len() % 32;
-        if remainder == 0 {
-            return Ok(normalized.to_string());
-        }
-
-        let pad = 32 - remainder;
-
-        let mut padded = normalized.to_string();
-        padded.push_str(&"=".repeat(pad));
-        Ok(padded)
+        Ok(normalized)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::model::account_errors::TotpError;
     use crate::model::Account;
-    use base32::Alphabet;
 
     #[test]
     fn pad() {
-        assert_eq!("AXXETN6MTQO3TJN=================", Account::normalize("AXXETN6MTQO3TJN").unwrap());
+        assert_eq!("AXXETN6MTQO3TJN", Account::normalize("AXXETN6MTQO3TJN").unwrap());
         assert_eq!(
             "AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA",
             Account::normalize("AXXETN6MTQO3TJNAAXXETN6MTQO3TJNA").unwrap()
@@ -214,11 +232,17 @@ mod tests {
     }
 
     #[test]
-    fn generate_current() {
-        let key = Account::normalize("477IUDDXCZSMY44U").unwrap();
-        let secret = base32::decode(Alphabet::Rfc4648 { padding: true }, &key).unwrap();
+    fn legacy_short_key() {
+        // legacy short key that earlier code padded to 32 for compatibility
+        let totp = Account::generate_time_based_password("AXXETN6MTQO3TJN").unwrap();
+        assert_eq!(totp.len(), 6);
+    }
 
-        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret).unwrap();
-        let _ = totp_sha1.generate_current().map_err(TotpError::SystemTimeError).unwrap();
+    #[test]
+    fn modern_regular_key() {
+        // full-length 32-character base32 secret (decodes to 20 bytes)
+        let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"; // repeated example to reach 32 chars
+        let totp = Account::generate_time_based_password(key).unwrap();
+        assert_eq!(totp.len(), 6);
     }
 }
