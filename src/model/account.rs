@@ -217,6 +217,7 @@ impl Account {
 #[cfg(test)]
 mod tests {
     use crate::model::Account;
+    use crate::helpers::QrCode;
 
     #[test]
     fn pad() {
@@ -243,6 +244,32 @@ mod tests {
         // full-length 32-character base32 secret (decodes to 20 bytes)
         let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"; // repeated example to reach 32 chars
         let totp = Account::generate_time_based_password(key).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn mixed_case_key() {
+        // mixed case should be normalized to uppercase
+        let key = "jBsWy3DPeHpK3pXpjBsWy3DPeHpK3pXp";
+        let totp = Account::generate_time_based_password(key).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn whitespace_in_key() {
+        // whitespace should be ignored
+        let key = " JBSWY3DPEH PK3PXP JBSWY3DPEH PK3PXP \n";
+        let totp = Account::generate_time_based_password(key).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn qr_percent_encoded_secret_integration() {
+        // QrCode::extract will percent-decode; ensure generate_time_based_password accepts the result
+        let qr_code_payload = "otpauth://totp/Example:alice?secret=JBSWY3DPEHPK3PXP%3D&issuer=Example";
+        let qr_code = QrCode::new(qr_code_payload.to_string());
+        let extracted = qr_code.extract(); // should return with '=' at end
+        let totp = Account::generate_time_based_password(&extracted).unwrap();
         assert_eq!(totp.len(), 6);
     }
 }
