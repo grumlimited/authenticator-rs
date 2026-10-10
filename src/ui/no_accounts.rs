@@ -11,7 +11,9 @@ impl NoAccountsWindow {
     pub fn new(builder: Builder) -> NoAccountsWindow {
         NoAccountsWindow {
             container: builder.object("no_accounts").expect("Missing 'no_accounts' container in UI file"),
-            no_accounts_plus_sign: builder.object("no_accounts_plus_sign").expect("Missing 'no_accounts_plus_sign' event box in UI file"),
+            no_accounts_plus_sign: builder
+                .object("no_accounts_plus_sign")
+                .expect("Missing 'no_accounts_plus_sign' event box in UI file"),
         }
     }
 }
