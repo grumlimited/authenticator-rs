@@ -131,11 +131,11 @@ impl EditAccountWindow {
         let stripped = Self::strip_secret(&secret_value);
         let style_context = input_secret_frame.style_context();
 
-        match Account::generate_time_based_password(stripped.as_str()) {
+        match Account::validate_secret(stripped.as_str()) {
             Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
             Ok(_) => buffer.set_text(&stripped),
             Err(error_key) => {
-                error!("{}", error_key.error());
+                error!("{}", error_key);
 
                 style_context.add_class("error");
                 return Err(ValidationError::FieldError("secret".to_owned()));
