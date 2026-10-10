@@ -34,17 +34,17 @@ pub struct EditAccountWindow {
 impl EditAccountWindow {
     pub fn new(builder: &Builder) -> EditAccountWindow {
         EditAccountWindow {
-            container: builder.object("edit_account").unwrap(),
-            input_group: builder.object("edit_account_input_group").unwrap(),
-            input_name: builder.object("edit_account_input_name").unwrap(),
-            input_secret: builder.object("edit_account_input_secret").unwrap(),
-            input_account_id: builder.object("edit_account_input_account_id").unwrap(),
-            cancel_button: builder.object("edit_account_cancel").unwrap(),
-            save_button: builder.object("edit_account_save").unwrap(),
-            qr_button: builder.object("qrcode_button").unwrap(),
-            image_dialog: builder.object("file_chooser_dialog").unwrap(),
-            input_secret_frame: builder.object("edit_account_input_secret_frame").unwrap(),
-            icon_error: builder.object("edit_account_icon_error").unwrap(),
+            container: builder.object("edit_account").expect("Missing 'edit_account' container in UI file"),
+            input_group: builder.object("edit_account_input_group").expect("Missing 'edit_account_input_group' combo box in UI file"),
+            input_name: builder.object("edit_account_input_name").expect("Missing 'edit_account_input_name' entry in UI file"),
+            input_secret: builder.object("edit_account_input_secret").expect("Missing 'edit_account_input_secret' text view in UI file"),
+            input_account_id: builder.object("edit_account_input_account_id").expect("Missing 'edit_account_input_account_id' entry in UI file"),
+            cancel_button: builder.object("edit_account_cancel").expect("Missing 'edit_account_cancel' button in UI file"),
+            save_button: builder.object("edit_account_save").expect("Missing 'edit_account_save' button in UI file"),
+            qr_button: builder.object("qrcode_button").expect("Missing 'qrcode_button' button in UI file"),
+            image_dialog: builder.object("file_chooser_dialog").expect("Missing 'file_chooser_dialog' in UI file"),
+            input_secret_frame: builder.object("edit_account_input_secret_frame").expect("Missing 'edit_account_input_secret_frame' frame in UI file"),
+            icon_error: builder.object("edit_account_icon_error").expect("Missing 'edit_account_icon_error' label in UI file"),
         }
     }
 
