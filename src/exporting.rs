@@ -69,17 +69,14 @@ impl Exporting for MainWindow {
 
                     glib::spawn_future(async move {
                         if let Err(e) = rx.recv().await {
-                             error!("Failed to receive result: {:?}", e);
-                         }
+                            error!("Failed to receive result: {:?}", e);
+                        }
                     });
 
-                    let all_secrets = match Keyring::all_secrets() {
-                         Ok(secrets) => secrets,
-                         Err(e) => {
-                             error!("Failed to get all secrets: {:?}", e);
-                             Vec::new()
-                         }
-                     };
+                    let all_secrets = Keyring::all_secrets().unwrap_or_else(|e| {
+                            error!("Failed to get all secrets: {:?}", e);
+                            Vec::new()
+                        });
                     glib::spawn_future(clone!(
                         #[strong]
                         path,
