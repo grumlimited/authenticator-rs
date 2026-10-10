@@ -178,7 +178,7 @@ impl Menus for MainWindow {
             #[strong(rename_to = widgets)]
             self.accounts_window.widgets,
             move |_| {
-                let widgets = widgets.lock().unwrap();
+                let widgets = widgets.lock().expect("Widgets lock poisoned");
 
                 /*
                  * Both add group and account buttons are available only if on

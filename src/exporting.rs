@@ -68,10 +68,18 @@ impl Exporting for MainWindow {
                     let (tx, rx) = async_channel::bounded::<AccountsImportExportResult>(1);
 
                     glib::spawn_future(async move {
-                        rx.recv().await.unwrap() // discard
+                        if let Err(e) = rx.recv().await {
+                             error!("Failed to receive result: {:?}", e);
+                         }
                     });
 
-                    let all_secrets = Keyring::all_secrets().unwrap();
+                    let all_secrets = match Keyring::all_secrets() {
+                         Ok(secrets) => secrets,
+                         Err(e) => {
+                             error!("Failed to get all secrets: {:?}", e);
+                             Vec::new()
+                         }
+                     };
                     glib::spawn_future(clone!(
                         #[strong]
                         path,

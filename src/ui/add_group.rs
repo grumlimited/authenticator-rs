@@ -9,7 +9,7 @@ use gettextrs::gettext;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
-use log::{debug, warn};
+use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
@@ -68,9 +68,14 @@ impl AddGroupWindow {
             self.input_group.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
-            let connection = connection.lock().unwrap();
-            let existing_group = Database::group_exists(&connection, self.input_group.buffer().text().as_str());
-            let existing_group = existing_group.unwrap_or(None);
+            let connection = connection.lock().expect("Database lock poisoned in validate");
+            let existing_group = match Database::group_exists(&connection, self.input_group.buffer().text().as_str()) {
+                Ok(group) => group,
+                Err(e) => {
+                    error!("Failed to check group existence: {:?}", e);
+                    None
+                }
+            };
 
             let group_id = self.group_id.label().as_str().to_owned();
             let group_id = group_id.parse().map(Some).unwrap_or(None);
@@ -263,12 +268,18 @@ impl AddGroupWindow {
     }
 
     async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Database lock poisoned in create_group");
 
         match group_id.parse() {
             Ok(group_id) => {
                 debug!("updating existing group id {:?}", group_id);
-                let mut group = Database::get_group(&connection, group_id).unwrap();
+                let mut group = match Database::get_group(&connection, group_id) {
+                    Ok(group) => group,
+                    Err(e) => {
+                        error!("Failed to get group: {:?}", e);
+                        return;
+                    }
+                };
 
                 group_name.clone_into(&mut group.name);
                 group.icon = icon_filename;
@@ -276,13 +287,19 @@ impl AddGroupWindow {
 
                 Self::write_icon(group.icon.clone());
 
-                Database::update_group(&connection, &group).unwrap();
+                if let Err(e) = Database::update_group(&connection, &group) {
+                    error!("Failed to update group: {:?}", e);
+                    return;
+                }
             }
             Err(_) => {
                 debug!("creating new group");
                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), false, vec![]);
 
-                Database::save_group(&connection, &mut group).unwrap();
+                if let Err(e) = Database::save_group(&connection, &mut group) {
+                    error!("Failed to save group: {:?}", e);
+                    return;
+                }
 
                 //has no icon -> delete icon file if any
                 if group.icon.is_none() {

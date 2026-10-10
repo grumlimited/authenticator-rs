@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use log::warn;
+use log::{error, warn};
 use rusqlite::Connection;
 
 use crate::exporting::{AccountsImportExportResult, ImportType};
@@ -27,8 +27,17 @@ impl Backup {
                 poisoned.into_inner()
             });
 
-            let mut group_accounts = Database::load_account_groups(&connection, None).unwrap();
-            Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection).unwrap();
+            let mut group_accounts = match Database::load_account_groups(&connection, None) {
+                Ok(groups) => groups,
+                Err(e) => {
+                    error!("Failed to load account groups for backup: {:?}", e);
+                    return;
+                }
+            };
+            if let Err(e) = Keyring::associate_secrets(&mut group_accounts, &all_secrets, &connection) {
+                error!("Failed to associate secrets for backup: {:?}", e);
+                return;
+            }
 
             group_accounts
         };
@@ -58,8 +67,16 @@ impl Backup {
         };
 
         match db.and_then(|_| Paths::update_keyring_secrets(connection)) {
-            Ok(_) => tx.send(Ok(())).await.expect("Could not send message"),
-            Err(e) => tx.send(Err(e)).await.expect("Could not send message"),
+            Ok(_) => {
+                if let Err(e) = tx.send(Ok(())).await {
+                    error!("Could not send success message: {:?}", e);
+                }
+            }
+            Err(e) => {
+                if let Err(send_err) = tx.send(Err(e)).await {
+                    error!("Could not send error message: {:?}", send_err);
+                }
+            }
         }
     }
 
@@ -110,7 +127,7 @@ impl Backup {
 
                 let mut account_groups = AccountGroup::new(0, "GAuth", None, None, false, entries);
 
-                let connection = connection.lock().unwrap();
+                let connection = connection.lock().expect("Database lock poisoned in restore_gauth_accounts");
                 Database::save_group_and_accounts(&connection, &mut account_groups)?;
                 Ok(())
             }
