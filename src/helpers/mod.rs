@@ -1,4 +1,3 @@
-mod algorithm_ext;
 mod backup;
 mod database;
 mod icon_parser;
@@ -8,7 +7,6 @@ mod paths;
 mod qr_code;
 mod repository_error;
 
-pub use self::algorithm_ext::*;
 pub use self::backup::*;
 pub use self::database::*;
 pub use self::icon_parser::*;

@@ -9,12 +9,12 @@ use regex::Regex;
 use rusqlite::Connection;
 use totp_rs::Algorithm;
 
-use crate::helpers::AlgorithmExt;
 use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Action, Display, MainWindow};
+use crate::model::TotpAlgorithm;
 use crate::model::{Account, AccountGroup};
 use crate::ui::ValidationError;
 
@@ -198,14 +198,14 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn set_algorithm_dropdown(&self, algorithm: Option<Algorithm>) {
+    pub fn set_algorithm_dropdown(&self, algorithm: Option<TotpAlgorithm>) {
         self.algorithm_dropdown.remove_all();
-        
+
         // Add algorithm options
         self.algorithm_dropdown.append(Some("SHA1"), "SHA1");
         self.algorithm_dropdown.append(Some("SHA256"), "SHA256");
         self.algorithm_dropdown.append(Some("SHA512"), "SHA512");
-        
+
         // Set active algorithm
         if let Some(alg) = algorithm {
             let alg_str = alg.as_str();
@@ -376,12 +376,12 @@ impl EditAccountWindow {
                                 }
                             };
                             let algorithm_str: String = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
-                            let algorithm = Algorithm::parse(&algorithm_str);
+                            let algorithm = TotpAlgorithm::parse(&algorithm_str);
 
                             let filter = gui.accounts_window.get_filter_value();
                             let account_id = account_id.buffer().text();
 
-                            Self::create_account(account_id, name, secret, group_id, connection.clone(), algorithm).await;
+                            Self::create_account(account_id, name, secret, group_id, connection.clone(), algorithm.0).await;
                             gui.tx_events
                                 .send(Action::RefreshAccounts { filter })
                                 .await

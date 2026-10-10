@@ -1,4 +1,5 @@
 use crate::helpers::QrCodeResult::{Invalid, Valid};
+use crate::model::TotpAlgorithm;
 use log::warn;
 use percent_encoding::percent_decode_str;
 use rqrr::PreparedImage;
@@ -22,18 +23,18 @@ impl QrCode {
     }
 
     /// Extract the algorithm from the otpauth URL, defaults to SHA1
-    pub fn extract_algorithm(&self) -> Algorithm {
-        use crate::helpers::AlgorithmExt;
-        
+    pub fn extract_algorithm(&self) -> TotpAlgorithm {
+        use crate::model::TotpAlgorithm;
+
         if let Ok(url) = Url::parse(self.qr_code_payload.as_str()) {
             for (k, v) in url.query_pairs() {
                 if k.eq_ignore_ascii_case("algorithm") {
-                    return Algorithm::parse(&v);
+                    return TotpAlgorithm::parse(&v);
                 }
             }
         }
         // Default to SHA1
-        Algorithm::SHA1
+        TotpAlgorithm(Algorithm::SHA1)
     }
 
     /// Extract the `secret` parameter from the payload if present,

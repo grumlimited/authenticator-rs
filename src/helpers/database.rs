@@ -8,12 +8,10 @@ use std::string::ToString;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
-use crate::helpers::algorithm_ext::AlgorithmExt;
 use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::Paths;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::model::{Account, AccountGroup};
-use totp_rs::Algorithm;
 
 #[derive(Debug, Clone)]
 pub struct Database;
@@ -219,8 +217,6 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        use crate::helpers::AlgorithmExt;
-        
         debug!("Adding account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
         let algorithm_str = account.algorithm.as_str();
@@ -241,8 +237,6 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
-        use crate::helpers::AlgorithmExt;
-        
         debug!("Updating account [{}:{}]", account.label, account.id);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
         let algorithm_str = account.algorithm.as_str();
@@ -262,8 +256,8 @@ impl Database {
     }
 
     fn _get_account<T: Params>(mut statement: Statement, params: T) -> Result<Option<Account>> {
-        use crate::helpers::AlgorithmExt;
-        
+        use crate::model::TotpAlgorithm;
+
         statement
             .query_row(params, |row| {
                 let group_id: u32 = row.get_unwrap(1);
@@ -273,9 +267,9 @@ impl Database {
 
                 let secret_type = Self::extract_secret_type(row, 4);
                 let algorithm_str: String = row.get_unwrap(5);
-                let algorithm = Algorithm::parse(&algorithm_str);
+                let algorithm = TotpAlgorithm::parse(&algorithm_str);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm);
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
 
                 Ok(account)
             })
@@ -309,7 +303,8 @@ impl Database {
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>> {
-        let mut stmt = connection.prepare("SELECT id, label, secret, secret_type, algorithm FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
+        let mut stmt =
+            connection.prepare("SELECT id, label, secret, secret_type, algorithm FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
@@ -318,13 +313,15 @@ impl Database {
                 let id: u32 = row.get_unwrap(0);
                 let label: String = row.get_unwrap(1);
 
+                use crate::model::TotpAlgorithm;
+
                 let secret_type = Self::extract_secret_type(row, 3);
                 let algorithm_str: String = row.get_unwrap(4);
-                let algorithm = Algorithm::parse(&algorithm_str);
+                let algorithm = TotpAlgorithm::parse(&algorithm_str);
 
                 let secret: String = row.get_unwrap(2);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm);
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
                 Ok(account)
             })?
             .collect::<rusqlite::Result<Vec<Account>>>();
@@ -348,7 +345,7 @@ mod tests {
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
-    use crate::model::{Account, AccountGroup};
+    use crate::model::{Account, AccountGroup, TotpAlgorithm};
 
     use super::Database;
 
@@ -501,7 +498,7 @@ mod tests {
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
                 secret_type: LOCAL,
-                algorithm: totp_rs::Algorithm::SHA1,
+                algorithm: TotpAlgorithm(totp_rs::Algorithm::SHA1),
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();

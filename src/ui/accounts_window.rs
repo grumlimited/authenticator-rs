@@ -608,9 +608,11 @@ impl AccountsWindow {
                             let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
                             let edit_account = EditAccountWindow::new(&builder);
+                            use crate::model::TotpAlgorithm;
+
                             edit_account.edit_account_buttons_actions(&main_window, connection.clone());
                             edit_account.set_group_dropdown(group_id, &groups);
-                            edit_account.set_algorithm_dropdown(Some(Algorithm::SHA1)); // Default for new accounts
+                            edit_account.set_algorithm_dropdown(Some(TotpAlgorithm(Algorithm::SHA1))); // Default for new accounts
 
                             main_window.edit_account.replace_with(&edit_account);
 
