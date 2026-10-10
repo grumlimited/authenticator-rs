@@ -48,24 +48,51 @@ impl AccountsWindow {
 
     async fn delete_account_reload(&self, gui: &MainWindow, account_id: u32, connection: Arc<Mutex<Connection>>) {
         {
-            let connection = connection.lock().unwrap();
-            Database::delete_account(&connection, account_id).unwrap();
+            let connection = connection.lock().expect("Database lock poisoned in delete_account_reload");
+            if let Err(e) = Database::delete_account(&connection, account_id) {
+                error!("Failed to delete account: {:?}", e);
+                gui.errors.error_display_message.set_text(&gettext("Failed to delete account"));
+                gui.switch_to(Display::Errors);
+                return;
+            }
         }
 
-        Keyring::remove(account_id).unwrap();
+        if let Err(e) = Keyring::remove(account_id) {
+            error!("Failed to remove from keyring: {:?}", e);
+            gui.errors.error_display_message.set_text(&gettext("Failed to remove from keyring"));
+            gui.switch_to(Display::Errors);
+            return;
+        }
 
         self.refresh_accounts(gui);
     }
 
     async fn delete_group_reload(&self, gui: &MainWindow, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        {
-            let connection = connection.lock().unwrap();
-            let group = Database::get_group(&connection, group_id).unwrap();
-            Database::delete_group(&connection, group_id).expect("Could not delete group");
-
-            if let Some(path) = group.icon {
-                AddGroupWindow::delete_icon_file(&path);
+        let group = {
+            let connection = connection.lock().expect("Database lock poisoned in delete_group_reload");
+            match Database::get_group(&connection, group_id) {
+                Ok(group) => group,
+                Err(e) => {
+                    error!("Failed to get group for deletion: {:?}", e);
+                    gui.errors.error_display_message.set_text(&gettext("Failed to load group"));
+                    gui.switch_to(Display::Errors);
+                    return;
+                }
             }
+        };
+
+        {
+            let connection = connection.lock().expect("Database lock poisoned in delete_group_reload");
+            if let Err(e) = Database::delete_group(&connection, group_id) {
+                error!("Failed to delete group: {:?}", e);
+                gui.errors.error_display_message.set_text(&gettext("Could not delete group"));
+                gui.switch_to(Display::Errors);
+                return;
+            }
+        }
+
+        if let Some(path) = group.icon {
+            AddGroupWindow::delete_icon_file(&path);
         }
 
         self.refresh_accounts(gui);
@@ -90,7 +117,7 @@ impl AccountsWindow {
             Ok((groups, has_groups)) => {
                 {
                     let accounts_container = gui.accounts_window.accounts_container.clone();
-                    let mut m_widgets = gui.accounts_window.widgets.lock().unwrap();
+                    let mut m_widgets = gui.accounts_window.widgets.lock().expect("Widgets lock poisoned");
 
                     // empty list of accounts first
                     accounts_container.foreach(|e| accounts_container.remove(e));
@@ -126,21 +153,28 @@ impl AccountsWindow {
      * Utility function to wrap around asynchronously ConfigManager::load_account_groups.
      */
     pub async fn load_account_groups(connection: Arc<Mutex<Connection>>, filter: Option<String>) -> AccountsRefreshResult {
-        let connection = connection.lock().unwrap();
-        let has_groups = Database::has_groups(&connection);
+        let connection = connection.lock().expect("Database lock poisoned in load_account_groups");
+        let has_groups = Database::has_groups(&connection).map_err(|e| {
+            error!("Failed to check for groups: {:?}", e);
+            e
+        })?;
 
-        let account_groups = Database::load_account_groups(&connection, filter.as_deref());
+        let account_groups = Database::load_account_groups(&connection, filter.as_deref()).map_err(|e| {
+            error!("Failed to load account groups: {:?}", e);
+            e
+        })?;
 
-        let accounts = account_groups.and_then(|account_groups| {
-            let mut account_groups = account_groups;
-            Keyring::set_secrets(&mut account_groups, &connection).map(|_| account_groups)
-        });
+        let mut account_groups = account_groups;
+        Keyring::set_secrets(&mut account_groups, &connection).map_err(|e| {
+            error!("Failed to set secrets from keyring: {:?}", e);
+            e
+        })?;
 
-        has_groups.and_then(|has_groups| accounts.map(|account_groups| (account_groups, has_groups)))
+        Ok((account_groups, has_groups))
     }
 
     fn group_edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = self.widgets.lock().unwrap();
+        let widgets_list = self.widgets.lock().expect("Widgets lock poisoned in group_edit_buttons_actions");
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widgets in widgets_list.iter() {
@@ -193,8 +227,14 @@ impl AccountsWindow {
                         connection,
                         async move {
                             let group = {
-                                let connection = connection.lock().unwrap();
-                                Database::get_group(&connection, group_id).unwrap()
+                                let connection = connection.lock().expect("Database lock poisoned in edit group load");
+                                match Database::get_group(&connection, group_id) {
+                                    Ok(group) => group,
+                                    Err(e) => {
+                                        error!("Failed to load group: {:?}", e);
+                                        return;
+                                    }
+                                }
                             };
                             debug!("Loading group {:?}", group);
                             let _ = tx.send(group).await;
@@ -243,7 +283,7 @@ impl AccountsWindow {
     }
 
     fn edit_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = self.widgets.lock().unwrap();
+        let widgets_list = self.widgets.lock().expect("Widgets lock poisoned in edit_buttons_actions");
         let builder = Builder::from_resource(format!("{}/{}", NAMESPACE_PREFIX, "main.ui").as_str());
 
         for group_widget in widgets_list.iter() {
@@ -275,7 +315,7 @@ impl AccountsWindow {
                         gui,
                         async move {
                             let account = {
-                                let connection = connection.lock().unwrap();
+                                let connection = connection.lock().expect("Database lock poisoned in edit account load");
                                 Database::get_account(&connection, account_widget.account_id)
                             };
 
@@ -312,8 +352,16 @@ impl AccountsWindow {
                                 gui.edit_account.replace_with(&edit_account);
                                 edit_account.edit_account_buttons_actions(&gui, connection.clone());
 
-                                let connection = connection.lock().unwrap();
-                                let groups = Database::load_account_groups(&connection, None).unwrap();
+                                let connection = connection.lock().expect("Database lock poisoned in edit account display");
+                                let groups = match Database::load_account_groups(&connection, None) {
+                                    Ok(groups) => groups,
+                                    Err(e) => {
+                                        error!("Failed to load groups: {:?}", e);
+                                        gui.errors.error_display_message.set_text(&gettext("Failed to load groups"));
+                                        gui.switch_to(Display::Errors);
+                                        return;
+                                    }
+                                };
 
                                 edit_account.input_group.remove_all(); //re-added and refreshed just below
                                 edit_account.set_group_dropdown(Some(account.group_id), &groups);
@@ -371,7 +419,7 @@ impl AccountsWindow {
     }
 
     fn delete_buttons_actions(&self, gui: &MainWindow, connection: Arc<Mutex<Connection>>) {
-        let widgets_list = self.widgets.lock().unwrap();
+        let widgets_list = self.widgets.lock().expect("Widgets lock poisoned in delete_buttons_actions");
 
         for group_widget in widgets_list.iter() {
             let account_widgets = group_widget.account_widgets.clone();
@@ -487,11 +535,24 @@ impl AccountsWindow {
 
                 debug!("Collapsing/expanding group {:?}", group_id);
 
-                let connection = connection.lock().unwrap();
-                let mut group = Database::get_group(&connection, group_id).unwrap();
+                let connection = connection.lock().expect("Database lock poisoned in toggle_group_collapse");
+                let mut group = match Database::get_group(&connection, group_id) {
+                    Ok(group) => group,
+                    Err(e) => {
+                        error!("Failed to get group: {:?}", e);
+                        main_window.errors.error_display_message.set_text(&gettext("Failed to load group"));
+                        main_window.switch_to(Display::Errors);
+                        return;
+                    }
+                };
 
                 group.collapsed = !group.collapsed;
-                Database::update_group(&connection, &group).unwrap();
+                if let Err(e) = Database::update_group(&connection, &group) {
+                    error!("Failed to update group: {:?}", e);
+                    main_window.errors.error_display_message.set_text(&gettext("Failed to update group"));
+                    main_window.switch_to(Display::Errors);
+                    return;
+                }
 
                 main_window.accounts_window.refresh_accounts(&main_window);
             }
@@ -520,11 +581,16 @@ impl AccountsWindow {
                         debug!("Loading for group_id {:?}", group_id);
 
                         let groups = {
-                            let connection = connection.lock().unwrap();
-                            Database::load_account_groups(&connection, None).unwrap()
+                            let connection = connection.lock().expect("Database lock poisoned in display_add_account_form");
+                            Database::load_account_groups(&connection, None).unwrap_or_else(|e| {
+                                error!("Failed to load groups: {:?}", e);
+                                Vec::new()
+                            })
                         };
 
-                        tx.send(groups).await.expect("Could not sent groups");
+                        if let Err(e) = tx.send(groups).await {
+                            error!("Could not send groups: {:?}", e);
+                        }
                     }
                 ));
 

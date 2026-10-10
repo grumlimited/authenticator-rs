@@ -1,0 +1,16 @@
+# ai-jail sandbox configuration
+# https://github.com/akitaonrails/ai-jail
+# Edit freely. Regenerate with: ai-jail --clean --init
+
+command = [
+    "opencode",
+    "--standalone",
+    "--auto",
+    "-c",
+]
+no_gpu = false
+github = true
+network = true
+no_toolchains = false
+ssh = true
+agent_state = true

@@ -9,7 +9,7 @@ use gettextrs::gettext;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{Builder, IconSize};
-use log::{debug, warn};
+use log::{debug, error, warn};
 use rusqlite::Connection;
 
 use crate::helpers::{AccountGroupIcon, Database, IconParser, Paths};
@@ -37,19 +37,27 @@ pub struct AddGroupWindow {
 impl AddGroupWindow {
     pub fn new(builder: &Builder) -> AddGroupWindow {
         AddGroupWindow {
-            container: builder.object("add_group").unwrap(),
-            input_group: builder.object("add_group_input_name").unwrap(),
-            url_input: builder.object("add_group_url_input").unwrap(),
-            cancel_button: builder.object("add_group_cancel").unwrap(),
-            save_button: builder.object("add_group_save").unwrap(),
-            image_input: builder.object("add_group_image_input").unwrap(),
-            icon_filename: builder.object("add_group_icon_filename").unwrap(),
-            icon_reload: builder.object("group_icon_reload").unwrap(),
-            icon_delete: builder.object("group_icon_delete").unwrap(),
-            icon_error: builder.object("add_group_icon_error").unwrap(),
-            group_id: builder.object("add_group_input_group_id").unwrap(),
-            image_button: builder.object("add_group_image_button").unwrap(),
-            image_dialog: builder.object("file_chooser_dialog").unwrap(),
+            container: builder.object("add_group").expect("Missing 'add_group' container in UI file"),
+            input_group: builder.object("add_group_input_name").expect("Missing 'add_group_input_name' entry in UI file"),
+            url_input: builder.object("add_group_url_input").expect("Missing 'add_group_url_input' entry in UI file"),
+            cancel_button: builder.object("add_group_cancel").expect("Missing 'add_group_cancel' button in UI file"),
+            save_button: builder.object("add_group_save").expect("Missing 'add_group_save' button in UI file"),
+            image_input: builder
+                .object("add_group_image_input")
+                .expect("Missing 'add_group_image_input' image in UI file"),
+            icon_filename: builder
+                .object("add_group_icon_filename")
+                .expect("Missing 'add_group_icon_filename' label in UI file"),
+            icon_reload: builder.object("group_icon_reload").expect("Missing 'group_icon_reload' button in UI file"),
+            icon_delete: builder.object("group_icon_delete").expect("Missing 'group_icon_delete' button in UI file"),
+            icon_error: builder.object("add_group_icon_error").expect("Missing 'add_group_icon_error' label in UI file"),
+            group_id: builder
+                .object("add_group_input_group_id")
+                .expect("Missing 'add_group_input_group_id' label in UI file"),
+            image_button: builder
+                .object("add_group_image_button")
+                .expect("Missing 'add_group_image_button' button in UI file"),
+            image_dialog: builder.object("file_chooser_dialog").expect("Missing 'file_chooser_dialog' in UI file"),
         }
     }
 
@@ -68,9 +76,14 @@ impl AddGroupWindow {
             self.input_group.style_context().add_class("error");
             Err(ValidationError::FieldError("name".to_owned()))
         } else {
-            let connection = connection.lock().unwrap();
-            let existing_group = Database::group_exists(&connection, self.input_group.buffer().text().as_str());
-            let existing_group = existing_group.unwrap_or(None);
+            let connection = connection.lock().expect("Database lock poisoned in validate");
+            let existing_group = match Database::group_exists(&connection, self.input_group.buffer().text().as_str()) {
+                Ok(group) => group,
+                Err(e) => {
+                    error!("Failed to check group existence: {:?}", e);
+                    None
+                }
+            };
 
             let group_id = self.group_id.label().as_str().to_owned();
             let group_id = group_id.parse().map(Some).unwrap_or(None);
@@ -263,12 +276,18 @@ impl AddGroupWindow {
     }
 
     async fn create_group(group_id: String, group_name: String, icon_filename: Option<String>, url_input: Option<String>, connection: Arc<Mutex<Connection>>) {
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Database lock poisoned in create_group");
 
         match group_id.parse() {
             Ok(group_id) => {
                 debug!("updating existing group id {:?}", group_id);
-                let mut group = Database::get_group(&connection, group_id).unwrap();
+                let mut group = match Database::get_group(&connection, group_id) {
+                    Ok(group) => group,
+                    Err(e) => {
+                        error!("Failed to get group: {:?}", e);
+                        return;
+                    }
+                };
 
                 group_name.clone_into(&mut group.name);
                 group.icon = icon_filename;
@@ -276,13 +295,18 @@ impl AddGroupWindow {
 
                 Self::write_icon(group.icon.clone());
 
-                Database::update_group(&connection, &group).unwrap();
+                if let Err(e) = Database::update_group(&connection, &group) {
+                    error!("Failed to update group: {:?}", e);
+                }
             }
             Err(_) => {
                 debug!("creating new group");
                 let mut group = AccountGroup::new(0, &group_name, icon_filename.as_deref(), url_input.as_deref(), false, vec![]);
 
-                Database::save_group(&connection, &mut group).unwrap();
+                if let Err(e) = Database::save_group(&connection, &mut group) {
+                    error!("Failed to save group: {:?}", e);
+                    return;
+                }
 
                 //has no icon -> delete icon file if any
                 if group.icon.is_none() {

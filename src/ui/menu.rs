@@ -88,7 +88,7 @@ impl Menus for MainWindow {
         get_widget!(builder, MenuButton, system_menu);
 
         let dark_mode_slider: gtk::Switch = {
-            let switch: gtk::Switch = builder.object("dark_mode_slider").unwrap();
+            let switch: gtk::Switch = builder.object("dark_mode_slider").expect("Missing 'dark_mode_slider' switch in UI file");
             let g_settings = gio::Settings::new(NAMESPACE);
             switch.set_state(g_settings.boolean("dark-theme"));
             switch
@@ -178,7 +178,7 @@ impl Menus for MainWindow {
             #[strong(rename_to = widgets)]
             self.accounts_window.widgets,
             move |_| {
-                let widgets = widgets.lock().unwrap();
+                let widgets = widgets.lock().expect("Widgets lock poisoned");
 
                 /*
                  * Both add group and account buttons are available only if on

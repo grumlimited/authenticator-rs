@@ -34,17 +34,29 @@ pub struct EditAccountWindow {
 impl EditAccountWindow {
     pub fn new(builder: &Builder) -> EditAccountWindow {
         EditAccountWindow {
-            container: builder.object("edit_account").unwrap(),
-            input_group: builder.object("edit_account_input_group").unwrap(),
-            input_name: builder.object("edit_account_input_name").unwrap(),
-            input_secret: builder.object("edit_account_input_secret").unwrap(),
-            input_account_id: builder.object("edit_account_input_account_id").unwrap(),
-            cancel_button: builder.object("edit_account_cancel").unwrap(),
-            save_button: builder.object("edit_account_save").unwrap(),
-            qr_button: builder.object("qrcode_button").unwrap(),
-            image_dialog: builder.object("file_chooser_dialog").unwrap(),
-            input_secret_frame: builder.object("edit_account_input_secret_frame").unwrap(),
-            icon_error: builder.object("edit_account_icon_error").unwrap(),
+            container: builder.object("edit_account").expect("Missing 'edit_account' container in UI file"),
+            input_group: builder
+                .object("edit_account_input_group")
+                .expect("Missing 'edit_account_input_group' combo box in UI file"),
+            input_name: builder
+                .object("edit_account_input_name")
+                .expect("Missing 'edit_account_input_name' entry in UI file"),
+            input_secret: builder
+                .object("edit_account_input_secret")
+                .expect("Missing 'edit_account_input_secret' text view in UI file"),
+            input_account_id: builder
+                .object("edit_account_input_account_id")
+                .expect("Missing 'edit_account_input_account_id' entry in UI file"),
+            cancel_button: builder.object("edit_account_cancel").expect("Missing 'edit_account_cancel' button in UI file"),
+            save_button: builder.object("edit_account_save").expect("Missing 'edit_account_save' button in UI file"),
+            qr_button: builder.object("qrcode_button").expect("Missing 'qrcode_button' button in UI file"),
+            image_dialog: builder.object("file_chooser_dialog").expect("Missing 'file_chooser_dialog' in UI file"),
+            input_secret_frame: builder
+                .object("edit_account_input_secret_frame")
+                .expect("Missing 'edit_account_input_secret_frame' frame in UI file"),
+            icon_error: builder
+                .object("edit_account_icon_error")
+                .expect("Missing 'edit_account_icon_error' label in UI file"),
         }
     }
 
@@ -82,9 +94,11 @@ impl EditAccountWindow {
             .parse::<u32>()
             .map_err(|c| c.into());
 
-        let connection = connection.lock().unwrap();
-        let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id?);
-        let existing_account = existing_account.unwrap_or(None);
+        let connection = connection.lock().expect("Database lock poisoned in validate");
+        let existing_account = Database::account_exists(&connection, name.buffer().text().as_str(), group_id?).unwrap_or_else(|e| {
+            error!("Failed to check account existence: {:?}", e);
+            None
+        });
 
         let account_id = self.input_account_id.buffer().text();
         let account_id = account_id.parse().map(Some).unwrap_or(None);
@@ -96,7 +110,7 @@ impl EditAccountWindow {
             return Err(ValidationError::FieldError("name".to_owned()));
         }
 
-        let buffer = secret.buffer().unwrap();
+        let buffer = secret.buffer().expect("Secret text buffer missing");
         let (start, end) = buffer.bounds();
         let secret_value: String = match buffer.slice(&start, &end, true) {
             Some(secret_value) => secret_value.to_string(),
@@ -200,7 +214,7 @@ impl EditAccountWindow {
                         if let Some(path) = dialog.filename() {
                             debug!("path: {}", path.display());
 
-                            let buffer = input_secret.buffer().unwrap();
+                            let buffer = input_secret.buffer().expect("Secret text buffer missing");
                             buffer.set_text(&gettext("Processing QR code"));
 
                             save_button.set_sensitive(false);
@@ -228,12 +242,12 @@ impl EditAccountWindow {
                                     match result {
                                         Valid(qr_code) => {
                                             w.reset_errors();
-                                            let buffer = input_secret.buffer().unwrap();
+                                            let buffer = input_secret.buffer().expect("Text buffer missing");
                                             style_context.remove_class("error");
                                             buffer.set_text(qr_code.extract().as_str());
                                         }
                                         Invalid(qr_code) => {
-                                            let buffer = input_secret.buffer().unwrap();
+                                            let buffer = input_secret.buffer().expect("Text buffer missing");
 
                                             w.icon_error.set_label(&gettext(qr_code));
                                             w.icon_error.set_visible(true);
@@ -308,9 +322,25 @@ impl EditAccountWindow {
                             let account_id = edit_account.input_account_id.clone();
                             let group = edit_account.input_group.clone();
                             let name: String = name.buffer().text();
-                            let group_id: u32 = group.active_id().unwrap().as_str().parse().unwrap();
+                            let group_id: u32 = match group.active_id() {
+                                Some(id) => match id.as_str().parse::<u32>() {
+                                    Ok(id) => id,
+                                    Err(e) => {
+                                        error!("Failed to parse group id: {:?}", e);
+                                        gui.errors.error_display_message.set_text(&gettext("Invalid group"));
+                                        gui.switch_to(Display::Errors);
+                                        return;
+                                    }
+                                },
+                                None => {
+                                    error!("No group selected");
+                                    gui.errors.error_display_message.set_text(&gettext("No group selected"));
+                                    gui.switch_to(Display::Errors);
+                                    return;
+                                }
+                            };
                             let secret: String = {
-                                let buffer = secret.buffer().unwrap();
+                                let buffer = secret.buffer().expect("Text buffer missing");
                                 let (start, end) = buffer.bounds();
                                 match buffer.slice(&start, &end, true) {
                                     Some(secret_value) => secret_value.to_string(),
@@ -338,7 +368,7 @@ impl EditAccountWindow {
     }
 
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
-        let connection = connection.lock().unwrap();
+        let connection = connection.lock().expect("Database lock poisoned in create_account");
 
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
