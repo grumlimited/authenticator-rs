@@ -154,24 +154,21 @@ impl AccountsWindow {
      */
     pub async fn load_account_groups(connection: Arc<Mutex<Connection>>, filter: Option<String>) -> AccountsRefreshResult {
         let connection = connection.lock().expect("Database lock poisoned in load_account_groups");
-        let has_groups = Database::has_groups(&connection)
-            .map_err(|e| {
-                error!("Failed to check for groups: {:?}", e);
-                e
-            })?;
+        let has_groups = Database::has_groups(&connection).map_err(|e| {
+            error!("Failed to check for groups: {:?}", e);
+            e
+        })?;
 
-        let account_groups = Database::load_account_groups(&connection, filter.as_deref())
-            .map_err(|e| {
-                error!("Failed to load account groups: {:?}", e);
-                e
-            })?;
+        let account_groups = Database::load_account_groups(&connection, filter.as_deref()).map_err(|e| {
+            error!("Failed to load account groups: {:?}", e);
+            e
+        })?;
 
         let mut account_groups = account_groups;
-        Keyring::set_secrets(&mut account_groups, &connection)
-            .map_err(|e| {
-                error!("Failed to set secrets from keyring: {:?}", e);
-                e
-            })?;
+        Keyring::set_secrets(&mut account_groups, &connection).map_err(|e| {
+            error!("Failed to set secrets from keyring: {:?}", e);
+            e
+        })?;
 
         Ok((account_groups, has_groups))
     }
@@ -585,13 +582,10 @@ impl AccountsWindow {
 
                         let groups = {
                             let connection = connection.lock().expect("Database lock poisoned in display_add_account_form");
-                            match Database::load_account_groups(&connection, None) {
-                                Ok(groups) => groups,
-                                Err(e) => {
+                            Database::load_account_groups(&connection, None).unwrap_or_else(|e| {
                                     error!("Failed to load groups: {:?}", e);
                                     Vec::new()
-                                }
-                            }
+                                })
                         };
 
                         if let Err(e) = tx.send(groups).await {
