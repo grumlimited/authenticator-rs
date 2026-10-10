@@ -11,7 +11,9 @@ impl ErrorsWindow {
     pub fn new(builder: Builder) -> ErrorsWindow {
         ErrorsWindow {
             container: builder.object("errors").expect("Missing 'errors' container in UI file"),
-            error_display_message: builder.object("error_display_message").expect("Missing 'error_display_message' text buffer in UI file"),
+            error_display_message: builder
+                .object("error_display_message")
+                .expect("Missing 'error_display_message' text buffer in UI file"),
         }
     }
 }
