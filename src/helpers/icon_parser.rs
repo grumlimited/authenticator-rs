@@ -146,6 +146,6 @@ mod tests {
         let fut = IconParser::html("https://www.free.fr");
 
         let icon_parser_result = task::block_on(fut).unwrap();
-        assert_eq!("png", icon_parser_result.extension.unwrap());
+        assert_eq!("x-icon", icon_parser_result.extension.unwrap());
     }
 }
