@@ -42,13 +42,21 @@ impl AddGroupWindow {
             url_input: builder.object("add_group_url_input").expect("Missing 'add_group_url_input' entry in UI file"),
             cancel_button: builder.object("add_group_cancel").expect("Missing 'add_group_cancel' button in UI file"),
             save_button: builder.object("add_group_save").expect("Missing 'add_group_save' button in UI file"),
-            image_input: builder.object("add_group_image_input").expect("Missing 'add_group_image_input' image in UI file"),
-            icon_filename: builder.object("add_group_icon_filename").expect("Missing 'add_group_icon_filename' label in UI file"),
+            image_input: builder
+                .object("add_group_image_input")
+                .expect("Missing 'add_group_image_input' image in UI file"),
+            icon_filename: builder
+                .object("add_group_icon_filename")
+                .expect("Missing 'add_group_icon_filename' label in UI file"),
             icon_reload: builder.object("group_icon_reload").expect("Missing 'group_icon_reload' button in UI file"),
             icon_delete: builder.object("group_icon_delete").expect("Missing 'group_icon_delete' button in UI file"),
             icon_error: builder.object("add_group_icon_error").expect("Missing 'add_group_icon_error' label in UI file"),
-            group_id: builder.object("add_group_input_group_id").expect("Missing 'add_group_input_group_id' label in UI file"),
-            image_button: builder.object("add_group_image_button").expect("Missing 'add_group_image_button' button in UI file"),
+            group_id: builder
+                .object("add_group_input_group_id")
+                .expect("Missing 'add_group_input_group_id' label in UI file"),
+            image_button: builder
+                .object("add_group_image_button")
+                .expect("Missing 'add_group_image_button' button in UI file"),
             image_dialog: builder.object("file_chooser_dialog").expect("Missing 'file_chooser_dialog' in UI file"),
         }
     }
