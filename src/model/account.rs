@@ -18,6 +18,12 @@ use crate::{model, NAMESPACE_PREFIX};
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct TotpAlgorithm(pub Algorithm);
 
+impl Default for TotpAlgorithm {
+    fn default() -> Self {
+        TotpAlgorithm(Algorithm::SHA1)
+    }
+}
+
 impl TotpAlgorithm {
     /// Parse a TotpAlgorithm from a string
     pub fn parse(s: &str) -> Self {
@@ -114,6 +120,7 @@ pub struct Account {
     pub secret: String,
     #[serde(skip)]
     pub secret_type: SecretType,
+    #[serde(default)]
     pub algorithm: TotpAlgorithm,
 }
 
