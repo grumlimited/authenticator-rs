@@ -7,7 +7,9 @@ use gtk::{Builder, StateFlags};
 use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
+use totp_rs::Algorithm;
 
+use crate::helpers::AlgorithmExt;
 use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
@@ -196,7 +198,7 @@ impl EditAccountWindow {
         }
     }
 
-    pub fn set_algorithm_dropdown(&self, algorithm: Option<&str>) {
+    pub fn set_algorithm_dropdown(&self, algorithm: Option<Algorithm>) {
         self.algorithm_dropdown.remove_all();
         
         // Add algorithm options
@@ -206,7 +208,8 @@ impl EditAccountWindow {
         
         // Set active algorithm
         if let Some(alg) = algorithm {
-            self.algorithm_dropdown.set_active_id(Some(alg));
+            let alg_str = alg.as_str();
+            self.algorithm_dropdown.set_active_id(Some(alg_str));
         } else {
             self.algorithm_dropdown.set_active_id(Some("SHA1")); // Default
         }
@@ -266,7 +269,9 @@ impl EditAccountWindow {
                                             style_context.remove_class("error");
                                             buffer.set_text(qr_code.extract().as_str());
                                             // Set algorithm from QR code
-                                            w.algorithm_dropdown.set_active_id(Some(qr_code.extract_algorithm().as_str()));
+                                            let algorithm = qr_code.extract_algorithm();
+                                            let algorithm_str = algorithm.as_str();
+                                            w.algorithm_dropdown.set_active_id(Some(algorithm_str));
                                         }
                                         Invalid(qr_code) => {
                                             let buffer = input_secret.buffer().expect("Text buffer missing");
@@ -370,7 +375,8 @@ impl EditAccountWindow {
                                     None => "".to_owned(),
                                 }
                             };
-                            let algorithm: String = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
+                            let algorithm_str: String = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
+                            let algorithm = Algorithm::parse(&algorithm_str);
 
                             let filter = gui.accounts_window.get_filter_value();
                             let account_id = account_id.buffer().text();
@@ -391,16 +397,16 @@ impl EditAccountWindow {
         ));
     }
 
-    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, algorithm: String) {
+    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, algorithm: Algorithm) {
         let connection = connection.lock().expect("Database lock poisoned in create_account");
 
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
-                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm.as_str());
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
                 Database::update_account(&connection, &mut account)
             }
             Err(_) => {
-                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm.as_str());
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
                 Database::save_account(&connection, &mut account)
             }
         };

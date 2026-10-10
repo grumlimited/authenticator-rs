@@ -7,6 +7,7 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 
 use model::account_errors::TotpError;
+use totp_rs::Algorithm;
 
 use crate::helpers::SecretType;
 use crate::{model, NAMESPACE_PREFIX};
@@ -21,7 +22,8 @@ pub struct Account {
     pub secret: String,
     #[serde(skip)]
     pub secret_type: SecretType,
-    pub algorithm: String,
+    #[serde(skip)]
+    pub algorithm: Algorithm,
 }
 
 #[derive(Debug, Clone)]
@@ -38,12 +40,12 @@ pub struct AccountWidget {
     pub dialog_ok_img: gtk::Image,
     totp_label: gtk::Label,
     totp_secret: String,
-    totp_algorithm: String,
+    totp_algorithm: Algorithm,
 }
 
 impl AccountWidget {
     pub fn update(&mut self) {
-        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm.as_str()) {
+        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
@@ -56,14 +58,14 @@ impl AccountWidget {
 }
 
 impl Account {
-    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType, algorithm: &str) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType, algorithm: Algorithm) -> Self {
         Account {
             id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
             secret_type,
-            algorithm: algorithm.to_owned(),
+            algorithm,
         }
     }
 
@@ -156,7 +158,7 @@ impl Account {
             popover,
             totp_label,
             totp_secret: self.secret.clone(),
-            totp_algorithm: self.algorithm.clone(),
+            totp_algorithm: self.algorithm,
         };
 
         widget.update();
@@ -165,10 +167,10 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        Account::generate_time_based_password_with_algorithm(key, "SHA1")
+        Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA1)
     }
 
-    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: &str) -> Result<String, TotpError> {
+    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: Algorithm) -> Result<String, TotpError> {
         let normalized = Account::normalize(key)?;
 
         // helper that tries base32 decode with/without a padding flag
@@ -200,14 +202,6 @@ impl Account {
         }
 
         let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
-
-        // Parse algorithm from string
-        let algorithm = match algorithm.to_uppercase().as_str() {
-            "SHA1" => totp_rs::Algorithm::SHA1,
-            "SHA256" => totp_rs::Algorithm::SHA256,
-            "SHA512" => totp_rs::Algorithm::SHA512,
-            _ => totp_rs::Algorithm::SHA1, // Default to SHA1
-        };
 
         let totp = totp_rs::TOTP::new(algorithm, 6, 1, 30, secret)?;
 

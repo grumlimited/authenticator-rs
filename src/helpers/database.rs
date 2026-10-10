@@ -8,10 +8,12 @@ use std::string::ToString;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
+use crate::helpers::algorithm_ext::AlgorithmExt;
 use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::Paths;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
 use crate::model::{Account, AccountGroup};
+use totp_rs::Algorithm;
 
 #[derive(Debug, Clone)]
 pub struct Database;
@@ -217,13 +219,16 @@ impl Database {
     }
 
     pub fn save_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        use crate::helpers::AlgorithmExt;
+        
         debug!("Adding account {}", account.label);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+        let algorithm_str = account.algorithm.as_str();
 
         connection
             .execute(
                 "INSERT INTO accounts (label, group_id, secret, secret_type, algorithm) VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![account.label, account.group_id, secret, account.secret_type, account.algorithm],
+                params![account.label, account.group_id, secret, account.secret_type, algorithm_str],
             )
             .map_err(RepositoryError::SqlError)?;
 
@@ -236,13 +241,16 @@ impl Database {
     }
 
     pub fn update_account(connection: &Connection, account: &mut Account) -> Result<u32> {
+        use crate::helpers::AlgorithmExt;
+        
         debug!("Updating account [{}:{}]", account.label, account.id);
         let secret = if account.secret_type == KEYRING { "" } else { account.secret.as_str() };
+        let algorithm_str = account.algorithm.as_str();
 
         connection
             .execute(
                 "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5, algorithm = ?6 WHERE id = ?1",
-                params![account.id, account.label, secret, account.group_id, account.secret_type, account.algorithm],
+                params![account.id, account.label, secret, account.group_id, account.secret_type, algorithm_str],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
@@ -254,6 +262,8 @@ impl Database {
     }
 
     fn _get_account<T: Params>(mut statement: Statement, params: T) -> Result<Option<Account>> {
+        use crate::helpers::AlgorithmExt;
+        
         statement
             .query_row(params, |row| {
                 let group_id: u32 = row.get_unwrap(1);
@@ -262,9 +272,10 @@ impl Database {
                 let id = row.get_unwrap(0);
 
                 let secret_type = Self::extract_secret_type(row, 4);
-                let algorithm: String = row.get_unwrap(5);
+                let algorithm_str: String = row.get_unwrap(5);
+                let algorithm = Algorithm::parse(&algorithm_str);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.as_str());
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm);
 
                 Ok(account)
             })
@@ -308,11 +319,12 @@ impl Database {
                 let label: String = row.get_unwrap(1);
 
                 let secret_type = Self::extract_secret_type(row, 3);
-                let algorithm: String = row.get_unwrap(4);
+                let algorithm_str: String = row.get_unwrap(4);
+                let algorithm = Algorithm::parse(&algorithm_str);
 
                 let secret: String = row.get_unwrap(2);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.as_str());
+                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm);
                 Ok(account)
             })?
             .collect::<rusqlite::Result<Vec<Account>>>();
@@ -332,6 +344,7 @@ impl ToSql for SecretType {
 mod tests {
     use rusqlite::Connection;
     use std::sync::{Arc, Mutex};
+    use totp_rs::Algorithm;
 
     use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
@@ -358,8 +371,8 @@ mod tests {
         Database::save_group(&conn, &mut group2).unwrap();
 
         // create an account with the same label in both groups
-        let mut acct1 = Account::new(0, group1.id, "same_label", "secret1", LOCAL, "SHA1");
-        let mut acct2 = Account::new(0, group2.id, "same_label", "secret2", LOCAL, "SHA1");
+        let mut acct1 = Account::new(0, group1.id, "same_label", "secret1", LOCAL, Algorithm::SHA1);
+        let mut acct2 = Account::new(0, group2.id, "same_label", "secret2", LOCAL, Algorithm::SHA1);
 
         Database::save_account(&conn, &mut acct1).unwrap();
         Database::save_account(&conn, &mut acct2).unwrap();
@@ -381,7 +394,7 @@ mod tests {
         runner::run(connection.clone()).unwrap();
 
         let mut group = AccountGroup::new(0, "new group", None, None, false, vec![]);
-        let mut account = Account::new(0, 0, "label", "secret", LOCAL, "SHA1");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL, Algorithm::SHA1);
 
         let connection = connection.lock().expect("Failed to acquire database connection lock");
 
@@ -448,7 +461,7 @@ mod tests {
 
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "label", "secret", LOCAL, "SHA1");
+        let mut account = Account::new(0, group.id, "label", "secret", LOCAL, Algorithm::SHA1);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -473,7 +486,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", Some("icon"), Some("url"), false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL, "SHA1");
+        let mut account1 = Account::new(0, group.id, "hhh", "secret3", LOCAL, Algorithm::SHA1);
         Database::save_account(&connection, &mut account1).expect("boom!");
 
         let expected = AccountGroup::new(
@@ -488,7 +501,7 @@ mod tests {
                 label: "hhh".to_owned(),
                 secret: "secret3".to_owned(),
                 secret_type: LOCAL,
-                algorithm: "SHA1".to_owned(),
+                algorithm: totp_rs::Algorithm::SHA1,
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();
@@ -508,14 +521,14 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL, "SHA1");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL, Algorithm::SHA1);
         Database::save_account(&connection, &mut account).expect("boom!");
-        let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL, "SHA1");
+        let mut account = Account::new(0, group.id, "ccc", "secret3", LOCAL, Algorithm::SHA1);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let mut group = AccountGroup::new(0, "AAA", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).expect("boom!");
-        let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL, "SHA1");
+        let mut account = Account::new(0, group.id, "ppp", "secret3", LOCAL, Algorithm::SHA1);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let results = Database::load_account_groups(&connection, None).unwrap();
@@ -539,7 +552,7 @@ mod tests {
 
         let connection = connection.lock().expect("Failed to acquire database connection lock");
 
-        let mut account = Account::new(0, 0, "label", "secret", LOCAL, "SHA1");
+        let mut account = Account::new(0, 0, "label", "secret", LOCAL, Algorithm::SHA1);
 
         Database::save_account(&connection, &mut account).unwrap();
 
@@ -561,7 +574,7 @@ mod tests {
         let mut group = AccountGroup::new(0, "bbb", None, None, false, vec![]);
         Database::save_group(&connection, &mut group).unwrap();
 
-        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL, "SHA1");
+        let mut account = Account::new(0, group.id, "hhh", "secret3", LOCAL, Algorithm::SHA1);
         Database::save_account(&connection, &mut account).expect("boom!");
 
         let result = Database::has_groups(&connection).unwrap();
@@ -596,7 +609,7 @@ mod tests {
 
         let connection = connection.lock().expect("Failed to acquire database connection lock");
 
-        let mut account = Account::new(0, 1, "label", "secret", LOCAL, "SHA1");
+        let mut account = Account::new(0, 1, "label", "secret", LOCAL, Algorithm::SHA1);
         let _ = Database::save_account(&connection, &mut account);
 
         let result = Database::account_exists(&connection, "label", 1).unwrap();
@@ -615,8 +628,8 @@ mod tests {
 
         let connection = connection.lock().expect("Failed to acquire database connection lock");
 
-        let account1 = Account::new(0, 0, "label", "secret", LOCAL, "SHA1");
-        let account2 = Account::new(0, 0, "label2", "secret2", LOCAL, "SHA1");
+        let account1 = Account::new(0, 0, "label", "secret", LOCAL, Algorithm::SHA1);
+        let account2 = Account::new(0, 0, "label2", "secret2", LOCAL, Algorithm::SHA1);
         let mut account_group = AccountGroup::new(0, "group", None, None, false, vec![account1, account2]);
 
         Database::save_group_and_accounts(&connection, &mut account_group).expect("could not save");
