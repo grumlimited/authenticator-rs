@@ -29,6 +29,7 @@ pub struct EditAccountWindow {
     pub image_dialog: gtk::FileChooserDialog,
     pub input_secret_frame: gtk::Frame,
     pub icon_error: gtk::Label,
+    pub algorithm_dropdown: gtk::ComboBoxText,
 }
 
 impl EditAccountWindow {
@@ -57,6 +58,9 @@ impl EditAccountWindow {
             icon_error: builder
                 .object("edit_account_icon_error")
                 .expect("Missing 'edit_account_icon_error' label in UI file"),
+            algorithm_dropdown: builder
+                .object("edit_account_algorithm")
+                .expect("Missing 'edit_account_algorithm' combo box in UI file"),
         }
     }
 
@@ -192,6 +196,22 @@ impl EditAccountWindow {
         }
     }
 
+    pub fn set_algorithm_dropdown(&self, algorithm: Option<&str>) {
+        self.algorithm_dropdown.remove_all();
+        
+        // Add algorithm options
+        self.algorithm_dropdown.append(Some("SHA1"), "SHA1");
+        self.algorithm_dropdown.append(Some("SHA256"), "SHA256");
+        self.algorithm_dropdown.append(Some("SHA512"), "SHA512");
+        
+        // Set active algorithm
+        if let Some(alg) = algorithm {
+            self.algorithm_dropdown.set_active_id(Some(alg));
+        } else {
+            self.algorithm_dropdown.set_active_id(Some("SHA1")); // Default
+        }
+    }
+
     fn qrcode_action(&self) {
         let qr_button = self.qr_button.clone();
         let dialog = self.image_dialog.clone();
@@ -245,6 +265,8 @@ impl EditAccountWindow {
                                             let buffer = input_secret.buffer().expect("Text buffer missing");
                                             style_context.remove_class("error");
                                             buffer.set_text(qr_code.extract().as_str());
+                                            // Set algorithm from QR code
+                                            w.algorithm_dropdown.set_active_id(Some(qr_code.extract_algorithm().as_str()));
                                         }
                                         Invalid(qr_code) => {
                                             let buffer = input_secret.buffer().expect("Text buffer missing");
@@ -321,6 +343,7 @@ impl EditAccountWindow {
                             let secret = edit_account.input_secret.clone();
                             let account_id = edit_account.input_account_id.clone();
                             let group = edit_account.input_group.clone();
+                            let algorithm_dropdown = edit_account.algorithm_dropdown.clone();
                             let name: String = name.buffer().text();
                             let group_id: u32 = match group.active_id() {
                                 Some(id) => match id.as_str().parse::<u32>() {
@@ -347,11 +370,12 @@ impl EditAccountWindow {
                                     None => "".to_owned(),
                                 }
                             };
+                            let algorithm: String = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
 
                             let filter = gui.accounts_window.get_filter_value();
                             let account_id = account_id.buffer().text();
 
-                            Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                            Self::create_account(account_id, name, secret, group_id, connection.clone(), algorithm).await;
                             gui.tx_events
                                 .send(Action::RefreshAccounts { filter })
                                 .await
@@ -367,16 +391,16 @@ impl EditAccountWindow {
         ));
     }
 
-    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
+    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, algorithm: String) {
         let connection = connection.lock().expect("Database lock poisoned in create_account");
 
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
-                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm.as_str());
                 Database::update_account(&connection, &mut account)
             }
             Err(_) => {
-                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm.as_str());
                 Database::save_account(&connection, &mut account)
             }
         };

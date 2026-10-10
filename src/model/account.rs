@@ -21,6 +21,7 @@ pub struct Account {
     pub secret: String,
     #[serde(skip)]
     pub secret_type: SecretType,
+    pub algorithm: String,
 }
 
 #[derive(Debug, Clone)]
@@ -37,11 +38,12 @@ pub struct AccountWidget {
     pub dialog_ok_img: gtk::Image,
     totp_label: gtk::Label,
     totp_secret: String,
+    totp_algorithm: String,
 }
 
 impl AccountWidget {
     pub fn update(&mut self) {
-        match Account::generate_time_based_password(self.totp_secret.as_str()) {
+        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm.as_str()) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
@@ -54,13 +56,14 @@ impl AccountWidget {
 }
 
 impl Account {
-    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType, algorithm: &str) -> Self {
         Account {
             id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
             secret_type,
+            algorithm: algorithm.to_owned(),
         }
     }
 
@@ -153,6 +156,7 @@ impl Account {
             popover,
             totp_label,
             totp_secret: self.secret.clone(),
+            totp_algorithm: self.algorithm.clone(),
         };
 
         widget.update();
@@ -161,6 +165,10 @@ impl Account {
     }
 
     pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
+        Account::generate_time_based_password_with_algorithm(key, "SHA1")
+    }
+
+    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: &str) -> Result<String, TotpError> {
         let normalized = Account::normalize(key)?;
 
         // helper that tries base32 decode with/without a padding flag
@@ -193,9 +201,17 @@ impl Account {
 
         let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
-        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
+        // Parse algorithm from string
+        let algorithm = match algorithm.to_uppercase().as_str() {
+            "SHA1" => totp_rs::Algorithm::SHA1,
+            "SHA256" => totp_rs::Algorithm::SHA256,
+            "SHA512" => totp_rs::Algorithm::SHA512,
+            _ => totp_rs::Algorithm::SHA1, // Default to SHA1
+        };
 
-        totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
+        let totp = totp_rs::TOTP::new(algorithm, 6, 1, 30, secret)?;
+
+        totp.generate_current().map_err(TotpError::SystemTimeError)
     }
 
     /*

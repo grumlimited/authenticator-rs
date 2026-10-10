@@ -121,7 +121,7 @@ impl Backup {
                     .map(|account| {
                         let secret = account.secret.clone();
                         let secret_type = SecretType::LOCAL;
-                        Account::new(0, 0, &account.name, &secret, secret_type)
+                        Account::new(0, 0, &account.name, &secret, secret_type, "SHA1")
                     })
                     .collect::<Vec<Account>>();
 

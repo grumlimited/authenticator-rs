@@ -188,6 +188,7 @@
                     <property name="can-focus">False</property>
                     <child>
                       <object class="GtkEntry" id="edit_account_input_name">
+                        <property name="width-request">60</property>
                         <property name="height-request">35</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -240,7 +241,7 @@
                         <property name="column-spacing">25</property>
                         <child>
                           <object class="GtkLabel" id="edit_account_label_group">
-                            <property name="width-request">25</property>
+                            <property name="width-request">60</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
@@ -258,9 +259,13 @@
                         <child>
                           <object class="GtkEntry" id="edit_account_input_account_id">
                             <property name="name">edit_account_input_account_id</property>
-                            <property name="can-focus">True</property>
+                            <property name="sensitive">False</property>
+                            <property name="can-focus">False</property>
                             <property name="no-show-all">True</property>
-                            <property name="width-chars">15</property>
+                            <property name="width-chars">2</property>
+                            <property name="caps-lock-warning">False</property>
+                            <property name="primary-icon-activatable">False</property>
+                            <property name="secondary-icon-activatable">False</property>
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
@@ -270,6 +275,7 @@
                         <child>
                           <object class="GtkComboBoxText" id="edit_account_input_group">
                             <property name="name">edit_account_input_group</property>
+                            <property name="width-request">60</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="tooltip-text" translatable="yes">Group</property>
@@ -283,8 +289,41 @@
                           </packing>
                         </child>
                         <child>
+                          <object class="GtkLabel" id="edit_account_label_algorithm">
+                            <property name="width-request">60</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">start</property>
+                            <property name="margin-start">5</property>
+                            <property name="margin-end">5</property>
+                            <property name="margin-top">20</property>
+                            <property name="hexpand">True</property>
+                            <property name="label" translatable="yes">Algorithm</property>
+                            <property name="xalign">0</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="edit_account_algorithm">
+                            <property name="width-request">60</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">TOTP hash algorithm</property>
+                            <property name="margin-end">5</property>
+                            <property name="margin-top">20</property>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
                           <object class="GtkLabel" id="edit_account_label_secret">
-                            <property name="width-request">25</property>
+                            <property name="width-request">60</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="valign">start</property>
@@ -364,6 +403,7 @@
                                 <child>
                                   <object class="GtkTextView" id="edit_account_input_secret">
                                     <property name="name">edit_account_input_secret</property>
+                                    <property name="width-request">60</property>
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="tooltip-text" translatable="yes">Secret</property>
@@ -476,12 +516,6 @@
                         <child>
                           <placeholder/>
                         </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
                         <style>
                           <class name="form_container"/>
                         </style>
@@ -533,6 +567,7 @@
                     <property name="can-focus">False</property>
                     <child>
                       <object class="GtkEntry" id="add_group_input_name">
+                        <property name="width-request">60</property>
                         <property name="height-request">35</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -586,6 +621,7 @@
                         <child>
                           <object class="GtkLabel" id="add_group_url_label">
                             <property name="name">add_group_url_label</property>
+                            <property name="width-request">60</property>
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
@@ -602,6 +638,7 @@
                         <child>
                           <object class="GtkEntry" id="add_group_url_input">
                             <property name="name">add_group_url_input</property>
+                            <property name="width-request">60</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="tooltip-text" translatable="yes">Icon URL</property>

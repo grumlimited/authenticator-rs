@@ -365,6 +365,7 @@ impl AccountsWindow {
 
                                 edit_account.input_group.remove_all(); //re-added and refreshed just below
                                 edit_account.set_group_dropdown(Some(account.group_id), &groups);
+                                edit_account.set_algorithm_dropdown(Some(account.algorithm.as_str()));
 
                                 let account_id = account.id.to_string();
                                 edit_account.input_account_id.set_text(account_id.as_str());
@@ -608,6 +609,7 @@ impl AccountsWindow {
                             let edit_account = EditAccountWindow::new(&builder);
                             edit_account.edit_account_buttons_actions(&main_window, connection.clone());
                             edit_account.set_group_dropdown(group_id, &groups);
+                            edit_account.set_algorithm_dropdown(Some("SHA1")); // Default for new accounts
 
                             main_window.edit_account.replace_with(&edit_account);
 
