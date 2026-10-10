@@ -583,9 +583,9 @@ impl AccountsWindow {
                         let groups = {
                             let connection = connection.lock().expect("Database lock poisoned in display_add_account_form");
                             Database::load_account_groups(&connection, None).unwrap_or_else(|e| {
-                                    error!("Failed to load groups: {:?}", e);
-                                    Vec::new()
-                                })
+                                error!("Failed to load groups: {:?}", e);
+                                Vec::new()
+                            })
                         };
 
                         if let Err(e) = tx.send(groups).await {

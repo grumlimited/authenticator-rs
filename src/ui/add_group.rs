@@ -297,7 +297,6 @@ impl AddGroupWindow {
 
                 if let Err(e) = Database::update_group(&connection, &group) {
                     error!("Failed to update group: {:?}", e);
-                    return;
                 }
             }
             Err(_) => {

@@ -74,9 +74,9 @@ impl Exporting for MainWindow {
                     });
 
                     let all_secrets = Keyring::all_secrets().unwrap_or_else(|e| {
-                            error!("Failed to get all secrets: {:?}", e);
-                            Vec::new()
-                        });
+                        error!("Failed to get all secrets: {:?}", e);
+                        Vec::new()
+                    });
                     glib::spawn_future(clone!(
                         #[strong]
                         path,

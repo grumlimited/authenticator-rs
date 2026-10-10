@@ -195,8 +195,10 @@ impl MainWindow {
     }
 
     pub fn bind_account_filter_events(&self) {
+        let filter = &self.accounts_window.filter;
+
         // First, bind user input event to refreshing the account list
-        self.accounts_window.filter.connect_changed(clone!(
+        filter.connect_changed(clone!(
             #[strong(rename_to = gui)]
             self,
             move |_| {
@@ -204,12 +206,43 @@ impl MainWindow {
             }
         ));
 
+        // Ctrl+f to show and focus the search filter
+        self.window.connect_key_press_event(clone!(
+            #[strong]
+            filter,
+            move |_, key| {
+                if key.keyval() == gdk::keys::constants::f && key.state().intersects(gdk::ModifierType::CONTROL_MASK) {
+                    if !filter.get_visible() {
+                        filter.show();
+                    }
+                    filter.grab_focus();
+                    gtk::glib::Propagation::Stop
+                } else {
+                    gtk::glib::Propagation::Proceed
+                }
+            }
+        ));
+
+        // Esc to clear the search filter
+        filter.connect_key_press_event(clone!(
+            #[strong]
+            filter,
+            move |_, key| {
+                if key.keyval() == gdk::keys::constants::Escape {
+                    filter.set_text("");
+                    gtk::glib::Propagation::Stop
+                } else {
+                    gtk::glib::Propagation::Proceed
+                }
+            }
+        ));
+
         // then bind "x" icon to empty the filter input.
         let (tx, rx) = async_channel::bounded::<bool>(1);
 
         glib::spawn_future_local(clone!(
-            #[strong(rename_to = filter)]
-            self.accounts_window.filter,
+            #[strong]
+            filter,
             async move {
                 while rx.recv().await.is_ok() {
                     filter.set_text("");
@@ -217,7 +250,7 @@ impl MainWindow {
             }
         ));
 
-        self.accounts_window.filter.connect("icon-press", true, move |_| {
+        filter.connect("icon-press", true, move |_| {
             glib::spawn_future(clone!(
                 #[strong]
                 tx,
