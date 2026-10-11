@@ -20,6 +20,7 @@ impl TotpAlgorithm {
             "SHA1" => TotpAlgorithm(Algorithm::SHA1),
             "SHA256" => TotpAlgorithm(Algorithm::SHA256),
             "SHA512" => TotpAlgorithm(Algorithm::SHA512),
+            "STEAM" => TotpAlgorithm(Algorithm::Steam),
             _ => TotpAlgorithm(Algorithm::SHA1),
         }
     }
@@ -30,6 +31,8 @@ impl TotpAlgorithm {
             Algorithm::SHA1 => "SHA1",
             Algorithm::SHA256 => "SHA256",
             Algorithm::SHA512 => "SHA512",
+            Algorithm::Steam => "STEAM",
+            _ => "SHA1", // Non-exhaustive enum in totp-rs v6, default to SHA1
         }
     }
 }
