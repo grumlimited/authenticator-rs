@@ -513,7 +513,7 @@ impl AccountsWindow {
                                         confirm_button.hide();
                                         delete_button.show();
                                     } else {
-                                        confirm_button_label.set_text(&format!("{} ({}s)", &gettext("Confirm"), second));
+                                        confirm_button_label.set_text(&format!("{} ({}s)", gettext("Confirm"), second));
                                     }
                                 }
                             }
