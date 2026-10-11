@@ -1,7 +1,9 @@
 use crate::helpers::QrCodeResult::{Invalid, Valid};
+use crate::model::TotpAlgorithm;
 use log::warn;
 use percent_encoding::percent_decode_str;
 use rqrr::PreparedImage;
+use totp_rs::Algorithm;
 use url::Url;
 
 #[derive(PartialEq, Debug)]
@@ -18,6 +20,21 @@ pub struct QrCode {
 impl QrCode {
     pub fn new(qr_code_payload: String) -> QrCode {
         QrCode { qr_code_payload }
+    }
+
+    /// Extract the algorithm from the otpauth URL, defaults to SHA1
+    pub fn extract_algorithm(&self) -> TotpAlgorithm {
+        use crate::model::TotpAlgorithm;
+
+        if let Ok(url) = Url::parse(self.qr_code_payload.as_str()) {
+            for (k, v) in url.query_pairs() {
+                if k.eq_ignore_ascii_case("algorithm") {
+                    return TotpAlgorithm::parse(&v);
+                }
+            }
+        }
+        // Default to SHA1
+        TotpAlgorithm(Algorithm::SHA1)
     }
 
     /// Extract the `secret` parameter from the payload if present,
@@ -93,7 +110,7 @@ mod tests {
 
     #[test]
     fn extract_secret_end() {
-        let qr_code_payload = "otpauth://totp/Soomesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&issuer=Somesite&period=30&secret=ABCD";
+        let qr_code_payload = "otpauth://totp/somesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&issuer=Somesite&period=30&secret=ABCD";
         let qr_code = QrCode::new(qr_code_payload.to_string());
         let result = qr_code.extract();
         assert_eq!("ABCD", result);
@@ -101,7 +118,7 @@ mod tests {
 
     #[test]
     fn extract_secret_middle() {
-        let qr_code_payload = "otpauth://totp/Soomesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&secret=ABCD&issuer=Somesite&period=30";
+        let qr_code_payload = "otpauth://totp/somesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&secret=ABCD&issuer=Somesite&period=30";
         let qr_code = QrCode::new(qr_code_payload.to_string());
         let result = qr_code.extract();
         assert_eq!("ABCD", result);
@@ -109,7 +126,7 @@ mod tests {
 
     #[test]
     fn extract_secret_beginning() {
-        let qr_code_payload = "secret=ABCD&otpauth://totp/Soomesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&secret=ABCD&issuer=Somesite&period=30"; //non sensical
+        let qr_code_payload = "secret=ABCD&otpauth://totp/somesite:nonfunc@gmail.com?algorithm=SHA1&digits=6&secret=ABCD&issuer=Somesite&period=30"; //non sensical
         let qr_code = QrCode::new(qr_code_payload.to_string());
         let result = qr_code.extract();
         assert_eq!("ABCD", result);

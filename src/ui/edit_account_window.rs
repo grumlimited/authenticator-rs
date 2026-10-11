@@ -7,12 +7,14 @@ use gtk::{Builder, StateFlags};
 use log::{debug, error};
 use regex::Regex;
 use rusqlite::Connection;
+use totp_rs::Algorithm;
 
 use crate::helpers::QrCode;
 use crate::helpers::QrCodeResult::{Invalid, Valid};
 use crate::helpers::RepositoryError;
 use crate::helpers::{Database, Keyring, SecretType};
 use crate::main_window::{Action, Display, MainWindow};
+use crate::model::TotpAlgorithm;
 use crate::model::{Account, AccountGroup};
 use crate::ui::ValidationError;
 
@@ -29,6 +31,7 @@ pub struct EditAccountWindow {
     pub image_dialog: gtk::FileChooserDialog,
     pub input_secret_frame: gtk::Frame,
     pub icon_error: gtk::Label,
+    pub algorithm_dropdown: gtk::ComboBoxText,
 }
 
 impl EditAccountWindow {
@@ -57,6 +60,9 @@ impl EditAccountWindow {
             icon_error: builder
                 .object("edit_account_icon_error")
                 .expect("Missing 'edit_account_icon_error' label in UI file"),
+            algorithm_dropdown: builder
+                .object("edit_account_algorithm")
+                .expect("Missing 'edit_account_algorithm' combo box in UI file"),
         }
     }
 
@@ -125,11 +131,11 @@ impl EditAccountWindow {
         let stripped = Self::strip_secret(&secret_value);
         let style_context = input_secret_frame.style_context();
 
-        match Account::generate_time_based_password(stripped.as_str()) {
+        match Account::validate_secret(stripped.as_str()) {
             Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
             Ok(_) => buffer.set_text(&stripped),
             Err(error_key) => {
-                error!("{}", error_key.error());
+                error!("{}", error_key);
 
                 style_context.add_class("error");
                 return Err(ValidationError::FieldError("secret".to_owned()));
@@ -192,6 +198,23 @@ impl EditAccountWindow {
         }
     }
 
+    pub fn set_algorithm_dropdown(&self, algorithm: Option<TotpAlgorithm>) {
+        self.algorithm_dropdown.remove_all();
+
+        // Add algorithm options
+        self.algorithm_dropdown.append(Some("SHA1"), "SHA1");
+        self.algorithm_dropdown.append(Some("SHA256"), "SHA256");
+        self.algorithm_dropdown.append(Some("SHA512"), "SHA512");
+
+        // Set active algorithm
+        if let Some(alg) = algorithm {
+            let alg_str = alg.as_str();
+            self.algorithm_dropdown.set_active_id(Some(alg_str));
+        } else {
+            self.algorithm_dropdown.set_active_id(Some("SHA1")); // Default
+        }
+    }
+
     fn qrcode_action(&self) {
         let qr_button = self.qr_button.clone();
         let dialog = self.image_dialog.clone();
@@ -245,6 +268,10 @@ impl EditAccountWindow {
                                             let buffer = input_secret.buffer().expect("Text buffer missing");
                                             style_context.remove_class("error");
                                             buffer.set_text(qr_code.extract().as_str());
+                                            // Set algorithm from QR code
+                                            let algorithm = qr_code.extract_algorithm();
+                                            let algorithm_str = algorithm.as_str();
+                                            w.algorithm_dropdown.set_active_id(Some(algorithm_str));
                                         }
                                         Invalid(qr_code) => {
                                             let buffer = input_secret.buffer().expect("Text buffer missing");
@@ -321,6 +348,7 @@ impl EditAccountWindow {
                             let secret = edit_account.input_secret.clone();
                             let account_id = edit_account.input_account_id.clone();
                             let group = edit_account.input_group.clone();
+                            let algorithm_dropdown = edit_account.algorithm_dropdown.clone();
                             let name: String = name.buffer().text();
                             let group_id: u32 = match group.active_id() {
                                 Some(id) => match id.as_str().parse::<u32>() {
@@ -347,11 +375,13 @@ impl EditAccountWindow {
                                     None => "".to_owned(),
                                 }
                             };
+                            let algorithm_str: String = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
+                            let algorithm = TotpAlgorithm::parse(&algorithm_str);
 
                             let filter = gui.accounts_window.get_filter_value();
                             let account_id = account_id.buffer().text();
 
-                            Self::create_account(account_id, name, secret, group_id, connection.clone()).await;
+                            Self::create_account(account_id, name, secret, group_id, connection.clone(), algorithm.0).await;
                             gui.tx_events
                                 .send(Action::RefreshAccounts { filter })
                                 .await
@@ -367,16 +397,16 @@ impl EditAccountWindow {
         ));
     }
 
-    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>) {
+    async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, algorithm: Algorithm) {
         let connection = connection.lock().expect("Database lock poisoned in create_account");
 
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
-                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
                 Database::update_account(&connection, &mut account)
             }
             Err(_) => {
-                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING);
+                let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
                 Database::save_account(&connection, &mut account)
             }
         };

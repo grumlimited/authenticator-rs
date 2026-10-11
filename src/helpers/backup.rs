@@ -11,6 +11,7 @@ use crate::exporting::{AccountsImportExportResult, ImportType};
 use crate::helpers::RepositoryError::GAuthQrCodeError;
 use crate::helpers::{Database, Keyring, Paths, QrCode, QrCodeResult, RepositoryError, SecretType};
 use crate::model::{Account, AccountGroup};
+use totp_rs::Algorithm;
 
 pub struct Backup;
 
@@ -121,7 +122,7 @@ impl Backup {
                     .map(|account| {
                         let secret = account.secret.clone();
                         let secret_type = SecretType::LOCAL;
-                        Account::new(0, 0, &account.name, &secret, secret_type)
+                        Account::new(0, 0, &account.name, &secret, secret_type, Algorithm::SHA1)
                     })
                     .collect::<Vec<Account>>();
 

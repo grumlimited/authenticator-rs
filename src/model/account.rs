@@ -6,7 +6,9 @@ use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
 
+use crate::model::TotpAlgorithm;
 use model::account_errors::TotpError;
+use totp_rs::Algorithm;
 
 use crate::helpers::SecretType;
 use crate::{model, NAMESPACE_PREFIX};
@@ -21,6 +23,8 @@ pub struct Account {
     pub secret: String,
     #[serde(skip)]
     pub secret_type: SecretType,
+    #[serde(default)]
+    pub algorithm: TotpAlgorithm,
 }
 
 #[derive(Debug, Clone)]
@@ -37,11 +41,12 @@ pub struct AccountWidget {
     pub dialog_ok_img: gtk::Image,
     totp_label: gtk::Label,
     totp_secret: String,
+    totp_algorithm: Algorithm,
 }
 
 impl AccountWidget {
     pub fn update(&mut self) {
-        match Account::generate_time_based_password(self.totp_secret.as_str()) {
+        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
@@ -54,13 +59,14 @@ impl AccountWidget {
 }
 
 impl Account {
-    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType) -> Self {
+    pub fn new(id: u32, group_id: u32, label: &str, secret: &str, secret_type: SecretType, algorithm: Algorithm) -> Self {
         Account {
             id,
             group_id,
             label: label.to_owned(),
             secret: secret.to_owned(),
             secret_type,
+            algorithm: TotpAlgorithm(algorithm),
         }
     }
 
@@ -153,6 +159,7 @@ impl Account {
             popover,
             totp_label,
             totp_secret: self.secret.clone(),
+            totp_algorithm: self.algorithm.0,
         };
 
         widget.update();
@@ -160,8 +167,30 @@ impl Account {
         widget
     }
 
-    pub fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        let normalized = Account::normalize(key)?;
+    /*
+     * normalized is uppercase, no padding
+     */
+    fn normalize(key: &str) -> Result<String, TotpError> {
+        // Remove whitespace, strip any existing '=', and uppercase for canonical form
+        let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        let normalized = normalized.trim_end_matches("=").to_ascii_uppercase();
+
+        if normalized.is_empty() {
+            return Err(TotpError::Empty);
+        }
+
+        Ok(normalized)
+    }
+
+    /// Validate that a secret key is in a valid format
+    pub fn validate_secret(key: &str) -> Result<(), TotpError> {
+        // Just try to generate a TOTP with SHA1 - if it works, the secret is valid
+        Self::generate_time_based_password_with_algorithm(key, Algorithm::SHA1).map(|_| ())
+    }
+
+    /// Generate a time-based password with a specific algorithm (for internal use)
+    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: Algorithm) -> Result<String, TotpError> {
+        let normalized = Self::normalize(key)?;
 
         // helper that tries base32 decode with/without a padding flag
         let try_decode = |s: &str| base32::decode(Alphabet::Rfc4648 { padding: true }, s).or_else(|| base32::decode(Alphabet::Rfc4648 { padding: false }, s));
@@ -193,31 +222,23 @@ impl Account {
 
         let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
-        let totp_sha1 = totp_rs::TOTP::new(totp_rs::Algorithm::SHA1, 6, 1, 30, secret)?;
+        let totp = totp_rs::TOTP::new(algorithm, 6, 1, 30, secret)?;
 
-        totp_sha1.generate_current().map_err(TotpError::SystemTimeError)
-    }
-
-    /*
-     * normalized is uppercase, no padding
-     */
-    fn normalize(key: &str) -> Result<String, TotpError> {
-        // Remove whitespace, strip any existing '=', and uppercase for canonical form
-        let normalized = key.chars().filter(|c| !c.is_whitespace()).collect::<String>();
-        let normalized = normalized.trim_end_matches("=").to_ascii_uppercase();
-
-        if normalized.is_empty() {
-            return Err(TotpError::Empty);
-        }
-
-        Ok(normalized)
+        totp.generate_current().map_err(TotpError::SystemTimeError)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use totp_rs::Algorithm;
+
     use crate::helpers::QrCode;
+    use crate::model::account_errors::TotpError;
     use crate::model::Account;
+
+    fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
+        Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA1)
+    }
 
     #[test]
     fn pad() {
@@ -235,7 +256,7 @@ mod tests {
     #[test]
     fn legacy_short_key() {
         // legacy short key that earlier code padded to 32 for compatibility
-        let totp = Account::generate_time_based_password("AXXETN6MTQO3TJN").unwrap();
+        let totp = generate_time_based_password("AXXETN6MTQO3TJN").unwrap();
         assert_eq!(totp.len(), 6);
     }
 
@@ -243,7 +264,7 @@ mod tests {
     fn modern_regular_key() {
         // full-length 32-character base32 secret (decodes to 20 bytes)
         let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"; // repeated example to reach 32 chars
-        let totp = Account::generate_time_based_password(key).unwrap();
+        let totp = generate_time_based_password(key).unwrap();
         assert_eq!(totp.len(), 6);
     }
 
@@ -251,7 +272,7 @@ mod tests {
     fn mixed_case_key() {
         // mixed case should be normalized to uppercase
         let key = "jBsWy3DPeHpK3pXpjBsWy3DPeHpK3pXp";
-        let totp = Account::generate_time_based_password(key).unwrap();
+        let totp = generate_time_based_password(key).unwrap();
         assert_eq!(totp.len(), 6);
     }
 
@@ -259,7 +280,7 @@ mod tests {
     fn whitespace_in_key() {
         // whitespace should be ignored
         let key = " JBSWY3DPEH PK3PXP JBSWY3DPEH PK3PXP \n";
-        let totp = Account::generate_time_based_password(key).unwrap();
+        let totp = generate_time_based_password(key).unwrap();
         assert_eq!(totp.len(), 6);
     }
 
@@ -269,7 +290,23 @@ mod tests {
         let qr_code_payload = "otpauth://totp/Example:alice?secret=JBSWY3DPEHPK3PXP%3D&issuer=Example";
         let qr_code = QrCode::new(qr_code_payload.to_string());
         let extracted = qr_code.extract(); // should return with '=' at end
-        let totp = Account::generate_time_based_password(&extracted).unwrap();
+        let totp = generate_time_based_password(&extracted).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn totp_sha256() {
+        use totp_rs::Algorithm;
+        let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA256).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn totp_sha512() {
+        use totp_rs::Algorithm;
+        let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA512).unwrap();
         assert_eq!(totp.len(), 6);
     }
 }
