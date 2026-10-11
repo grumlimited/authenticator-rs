@@ -15,10 +15,10 @@ async-channel = "2.2"
 chrono = "0"
 curl = "0"
 directories = "6.0.0"
-gdk = "0.18"
-gdk-pixbuf = "0.21.2"
+gdk = "0.19"
+gdk-pixbuf = "0.22.0"
 gettext-rs = {version = "0", features = ["gettext-system"]}
-gio = "0.21.2"
+gio = "0.22.10"
 gtk-macros = "0.3"
 google_authenticator_converter = "0.2.0"
 image = "0.25.8"
@@ -36,18 +36,18 @@ strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
 thiserror = "2.0.16"
-totp-rs = "5.7.0"
+totp-rs = { version = "6.0.0", features = ["steam"] }
 uuid = { version = "1", features = ["v4"] }
 base32 = "0.5.1"
 percent-encoding = "2"
 url = "2"
 
 [dependencies.gtk]
-version = "0.18"
+version = "0.19.0"
 features = ["v3_24"]
 
 [dependencies.glib]
-version = "0.21.2"
+version = "0.22.10"
 
 [dev-dependencies]
 async-std = {version = "1", features = [] }
