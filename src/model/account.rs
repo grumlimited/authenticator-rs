@@ -225,8 +225,13 @@ impl Account {
 
         let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
-        #[allow(deprecated)]
-        let totp = totp_rs::TOTP::new(algorithm, digits, 1, 30, secret)?;
+        let totp = totp_rs::Builder::new()
+            .with_algorithm(algorithm)
+            .with_digits(digits as u8)
+            .with_skew(1)
+            .with_step_duration(30)
+            .with_secret(secret)
+            .build()?;
 
         Ok(totp.generate_current().to_string())
     }
