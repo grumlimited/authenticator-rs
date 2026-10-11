@@ -69,7 +69,9 @@ fn main() {
             );
 
             // Prepare i18n
-            setlocale(LocaleCategory::LcAll, "");
+            unsafe {
+                setlocale(LocaleCategory::LcAll, "");
+            }
             if textdomain(GETTEXT_PACKAGE).is_err() {
                 log::warn!("Failed to set textdomain");
             }
