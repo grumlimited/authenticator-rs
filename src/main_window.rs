@@ -155,7 +155,7 @@ impl MainWindow {
         let add_group = self.add_group.clone();
         self.window.connect_delete_event(move |_, _| {
             add_group.reset(); // to ensure temp files deletion
-            gtk::glib::Propagation::Proceed
+            glib::Propagation::Proceed
         });
 
         self.bind_account_filter_events();
@@ -216,9 +216,9 @@ impl MainWindow {
                         filter.show();
                     }
                     filter.grab_focus();
-                    gtk::glib::Propagation::Stop
+                    glib::Propagation::Stop
                 } else {
-                    gtk::glib::Propagation::Proceed
+                    glib::Propagation::Proceed
                 }
             }
         ));
@@ -230,9 +230,9 @@ impl MainWindow {
             move |_, key| {
                 if key.keyval() == gdk::keys::constants::Escape {
                     filter.set_text("");
-                    gtk::glib::Propagation::Stop
+                    glib::Propagation::Stop
                 } else {
-                    gtk::glib::Propagation::Proceed
+                    glib::Propagation::Proceed
                 }
             }
         ));
