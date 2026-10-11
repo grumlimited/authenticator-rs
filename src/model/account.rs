@@ -293,4 +293,20 @@ mod tests {
         let totp = generate_time_based_password(&extracted).unwrap();
         assert_eq!(totp.len(), 6);
     }
+
+    #[test]
+    fn totp_sha256() {
+        use totp_rs::Algorithm;
+        let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA256).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
+
+    #[test]
+    fn totp_sha512() {
+        use totp_rs::Algorithm;
+        let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA512).unwrap();
+        assert_eq!(totp.len(), 6);
+    }
 }
