@@ -156,7 +156,7 @@ impl AddGroupWindow {
                             debug!("filename: {:?}", filename);
                             Self::write_tmp_icon(&state, &icon_filename, &image_input, bytes.as_slice());
                         }
-                        Err(_) => warn!("Could not read file {}", &path.display()),
+                        Err(_) => warn!("Could not read file {}", path.display()),
                     }
                 }
                 _ => dialog.hide(),
@@ -407,11 +407,11 @@ impl AddGroupWindow {
 
         if icon_filepath.is_file() {
             match remove_file(&icon_filepath) {
-                Ok(_) => debug!("deleted icon_filepath: {}", &icon_filepath.display()),
+                Ok(_) => debug!("deleted icon_filepath: {}", icon_filepath.display()),
                 Err(e) => warn!("could not delete file {}: {:?}", icon_filepath.display(), e),
             }
         } else {
-            debug!("icon_filepath {} does exist. Skipping.", &icon_filepath.display())
+            debug!("icon_filepath {} does exist. Skipping.", icon_filepath.display())
         }
     }
 }

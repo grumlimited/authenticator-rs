@@ -25,6 +25,12 @@ pub struct Account {
     pub secret_type: SecretType,
     #[serde(default)]
     pub algorithm: TotpAlgorithm,
+    #[serde(default = "default_totp_digits")]
+    pub totp_digits: usize,
+}
+
+fn default_totp_digits() -> usize {
+    6
 }
 
 #[derive(Debug, Clone)]
@@ -42,11 +48,12 @@ pub struct AccountWidget {
     totp_label: gtk::Label,
     totp_secret: String,
     totp_algorithm: Algorithm,
+    totp_digits: usize,
 }
 
 impl AccountWidget {
     pub fn update(&mut self) {
-        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm) {
+        match Account::generate_time_based_password_with_algorithm(self.totp_secret.as_str(), self.totp_algorithm, self.totp_digits) {
             Ok(totp) => self.totp_label.set_label(totp.as_str()),
             Err(error_key) => {
                 warn!("Account {} {}", self.account_id, error_key.error());
@@ -67,6 +74,7 @@ impl Account {
             secret: secret.to_owned(),
             secret_type,
             algorithm: TotpAlgorithm(algorithm),
+            totp_digits: 6,
         }
     }
 
@@ -160,6 +168,7 @@ impl Account {
             totp_label,
             totp_secret: self.secret.clone(),
             totp_algorithm: self.algorithm.0,
+            totp_digits: self.totp_digits,
         };
 
         widget.update();
@@ -182,14 +191,8 @@ impl Account {
         Ok(normalized)
     }
 
-    /// Validate that a secret key is in a valid format
-    pub fn validate_secret(key: &str) -> Result<(), TotpError> {
-        // Just try to generate a TOTP with SHA1 - if it works, the secret is valid
-        Self::generate_time_based_password_with_algorithm(key, Algorithm::SHA1).map(|_| ())
-    }
-
     /// Generate a time-based password with a specific algorithm (for internal use)
-    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: Algorithm) -> Result<String, TotpError> {
+    pub fn generate_time_based_password_with_algorithm(key: &str, algorithm: Algorithm, digits: usize) -> Result<String, TotpError> {
         let normalized = Self::normalize(key)?;
 
         // helper that tries base32 decode with/without a padding flag
@@ -222,9 +225,15 @@ impl Account {
 
         let secret = secret.ok_or_else(|| TotpError::InvalidKey(key.to_string()))?;
 
-        let totp = totp_rs::TOTP::new(algorithm, 6, 1, 30, secret)?;
+        let totp = totp_rs::Builder::new()
+            .with_algorithm(algorithm)
+            .with_digits(digits as u8)
+            .with_skew(1)
+            .with_step_duration(30)
+            .with_secret(secret)
+            .build()?;
 
-        totp.generate_current().map_err(TotpError::SystemTimeError)
+        Ok(totp.generate_current().to_string())
     }
 }
 
@@ -237,7 +246,7 @@ mod tests {
     use crate::model::Account;
 
     fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
-        Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA1)
+        Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA1, 6)
     }
 
     #[test]
@@ -298,7 +307,7 @@ mod tests {
     fn totp_sha256() {
         use totp_rs::Algorithm;
         let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
-        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA256).unwrap();
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA256, 6).unwrap();
         assert_eq!(totp.len(), 6);
     }
 
@@ -306,7 +315,7 @@ mod tests {
     fn totp_sha512() {
         use totp_rs::Algorithm;
         let key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
-        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA512).unwrap();
+        let totp = Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA512, 6).unwrap();
         assert_eq!(totp.len(), 6);
     }
 }

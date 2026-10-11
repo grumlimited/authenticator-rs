@@ -112,7 +112,7 @@ impl IconParser {
     pub fn load_icon(filepath: &Path, dark_mode: bool) -> Result<Pixbuf> {
         let alpha = if dark_mode { (32, 32, 32) } else { (255, 255, 255) };
 
-        debug!("loading icon {} with alpha channels {:?}", filepath.display(), &alpha);
+        debug!("loading icon {} with alpha channels {:?}", filepath.display(), alpha);
 
         Pixbuf::from_file_at_scale(filepath, 48, 48, true)
             .map_err(|e| e.into())

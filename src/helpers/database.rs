@@ -212,7 +212,8 @@ impl Database {
     }
 
     pub fn get_account_by_label_and_group(connection: &Connection, name: &str, group_id: u32) -> Result<Option<Account>> {
-        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type, algorithm FROM accounts WHERE label = ?1 AND group_id = ?2")?;
+        let stmt =
+            connection.prepare("SELECT id, group_id, label, secret, secret_type, algorithm, totp_digits FROM accounts WHERE label = ?1 AND group_id = ?2")?;
         Self::_get_account(stmt, params![name, group_id])
     }
 
@@ -223,8 +224,15 @@ impl Database {
 
         connection
             .execute(
-                "INSERT INTO accounts (label, group_id, secret, secret_type, algorithm) VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![account.label, account.group_id, secret, account.secret_type, algorithm_str],
+                "INSERT INTO accounts (label, group_id, secret, secret_type, algorithm, totp_digits) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![
+                    account.label,
+                    account.group_id,
+                    secret,
+                    account.secret_type,
+                    algorithm_str,
+                    account.totp_digits as i64
+                ],
             )
             .map_err(RepositoryError::SqlError)?;
 
@@ -243,15 +251,23 @@ impl Database {
 
         connection
             .execute(
-                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5, algorithm = ?6 WHERE id = ?1",
-                params![account.id, account.label, secret, account.group_id, account.secret_type, algorithm_str],
+                "UPDATE accounts SET label = ?2, secret = ?3, group_id = ?4, secret_type = ?5, algorithm = ?6, totp_digits = ?7 WHERE id = ?1",
+                params![
+                    account.id,
+                    account.label,
+                    secret,
+                    account.group_id,
+                    account.secret_type,
+                    algorithm_str,
+                    account.totp_digits as i64
+                ],
             )
             .map(|_| account.id)
             .map_err(RepositoryError::SqlError)
     }
 
     pub fn get_account(connection: &Connection, account_id: u32) -> Result<Option<Account>> {
-        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type, algorithm FROM accounts WHERE id = ?1")?;
+        let stmt = connection.prepare("SELECT id, group_id, label, secret, secret_type, algorithm, totp_digits FROM accounts WHERE id = ?1")?;
         Self::_get_account(stmt, params![account_id])
     }
 
@@ -268,8 +284,10 @@ impl Database {
                 let secret_type = Self::extract_secret_type(row, 4);
                 let algorithm_str: String = row.get_unwrap(5);
                 let algorithm = TotpAlgorithm::parse(&algorithm_str);
+                let totp_digits: i64 = row.get_unwrap(6);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
+                let mut account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
+                account.totp_digits = totp_digits as usize;
 
                 Ok(account)
             })
@@ -303,8 +321,9 @@ impl Database {
     }
 
     fn get_accounts(connection: &Connection, group_id: u32, filter: Option<&str>) -> Result<Vec<Account>> {
-        let mut stmt =
-            connection.prepare("SELECT id, label, secret, secret_type, algorithm FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)")?;
+        let mut stmt = connection.prepare(
+            "SELECT id, label, secret, secret_type, algorithm, totp_digits FROM accounts WHERE group_id = ?1 AND label LIKE ?2 ORDER BY LOWER(label)",
+        )?;
 
         let label_filter = filter.map(|f| format!("%{}%", f)).unwrap_or_else(|| "%".to_owned());
 
@@ -318,10 +337,12 @@ impl Database {
                 let secret_type = Self::extract_secret_type(row, 3);
                 let algorithm_str: String = row.get_unwrap(4);
                 let algorithm = TotpAlgorithm::parse(&algorithm_str);
+                let totp_digits: i64 = row.get_unwrap(5);
 
                 let secret: String = row.get_unwrap(2);
 
-                let account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
+                let mut account = Account::new(id, group_id, label.as_str(), secret.as_str(), secret_type?, algorithm.0);
+                account.totp_digits = totp_digits as usize;
                 Ok(account)
             })?
             .collect::<rusqlite::Result<Vec<Account>>>();
@@ -499,6 +520,7 @@ mod tests {
                 secret: "secret3".to_owned(),
                 secret_type: LOCAL,
                 algorithm: TotpAlgorithm(totp_rs::Algorithm::SHA1),
+                totp_digits: 6,
             }],
         );
         let groups = Database::load_account_groups(&connection, None).unwrap();

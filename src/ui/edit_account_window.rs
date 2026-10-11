@@ -79,6 +79,7 @@ impl EditAccountWindow {
         let name = self.input_name.clone();
         let secret = self.input_secret.clone();
         let input_secret_frame = self.input_secret_frame.clone();
+        let algorithm_dropdown = self.algorithm_dropdown.clone();
 
         fn highlight_name_error(name: &gtk::Entry) {
             name.set_primary_icon_name(Some("dialog-error"));
@@ -131,7 +132,15 @@ impl EditAccountWindow {
         let stripped = Self::strip_secret(&secret_value);
         let style_context = input_secret_frame.style_context();
 
-        match Account::validate_secret(stripped.as_str()) {
+        // Get the selected algorithm and digits from the dropdown
+        let algorithm_str = algorithm_dropdown.active_id().map(|s| s.to_string()).unwrap_or_else(|| "SHA1".to_string());
+        let algorithm = TotpAlgorithm::parse(&algorithm_str);
+        let digits = match algorithm.0 {
+            Algorithm::Steam => 5,
+            _ => 6,
+        };
+
+        match Account::generate_time_based_password_with_algorithm(stripped.as_str(), algorithm.0, digits) {
             Ok(_) if style_context.has_class("error") => buffer.set_text(&secret_value),
             Ok(_) => buffer.set_text(&stripped),
             Err(error_key) => {
@@ -202,9 +211,10 @@ impl EditAccountWindow {
         self.algorithm_dropdown.remove_all();
 
         // Add algorithm options
-        self.algorithm_dropdown.append(Some("SHA1"), "SHA1");
-        self.algorithm_dropdown.append(Some("SHA256"), "SHA256");
-        self.algorithm_dropdown.append(Some("SHA512"), "SHA512");
+        self.algorithm_dropdown.append(Some("SHA1"), "SHA-1");
+        self.algorithm_dropdown.append(Some("SHA256"), "SHA-256");
+        self.algorithm_dropdown.append(Some("SHA512"), "SHA-512");
+        self.algorithm_dropdown.append(Some("STEAM"), "Steam");
 
         // Set active algorithm
         if let Some(alg) = algorithm {
@@ -400,13 +410,21 @@ impl EditAccountWindow {
     async fn create_account(account_id: String, name: String, secret: String, group_id: u32, connection: Arc<Mutex<Connection>>, algorithm: Algorithm) {
         let connection = connection.lock().expect("Database lock poisoned in create_account");
 
+        // Set totp_digits based on algorithm (STEAM = 5, others = 6)
+        let totp_digits = match algorithm {
+            Algorithm::Steam => 5,
+            _ => 6,
+        };
+
         let db_result: Result<u32, RepositoryError> = match account_id.parse() {
             Ok(account_id) => {
                 let mut account = Account::new(account_id, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
+                account.totp_digits = totp_digits;
                 Database::update_account(&connection, &mut account)
             }
             Err(_) => {
                 let mut account = Account::new(0, group_id, name.as_str(), secret.as_str(), SecretType::KEYRING, algorithm);
+                account.totp_digits = totp_digits;
                 Database::save_account(&connection, &mut account)
             }
         };
