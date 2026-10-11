@@ -1,3 +1,7 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
 use crate::main_window::{Action, Display, MainWindow};
 use crate::model::{Account, AccountGroup, AccountGroupWidget, AccountWidget};
@@ -26,6 +30,8 @@ pub struct AccountsWindow {
     pub filter: gtk::Entry,
     pub progress_bar: gtk::ProgressBar,
     pub widgets: Arc<Mutex<Vec<AccountGroupWidget>>>,
+    // HashMap to track account widgets by account ID for TOTP updates
+    pub account_widgets: Rc<RefCell<HashMap<u32, AccountWidget>>>,
 }
 
 impl AccountsWindow {
@@ -44,6 +50,7 @@ impl AccountsWindow {
             progress_bar,
             #[allow(clippy::arc_with_non_send_sync)]
             widgets: Arc::new(Mutex::new(vec![])),
+            account_widgets: Rc::new(RefCell::new(HashMap::new())),
         }
     }
 
@@ -119,6 +126,10 @@ impl AccountsWindow {
                 {
                     let accounts_container = gui.accounts_window.accounts_container.clone();
                     let mut m_widgets = gui.accounts_window.widgets.lock().expect("Widgets lock poisoned");
+                    let mut account_widgets = gui.accounts_window.account_widgets.borrow_mut();
+
+                    // Clear the hashmap
+                    account_widgets.clear();
 
                     // empty list of accounts first
                     accounts_container.foreach(|e| accounts_container.remove(e));
@@ -127,6 +138,13 @@ impl AccountsWindow {
                         .iter()
                         .map(|group| group.widget(gui.state.clone(), gui.accounts_window.get_filter_value()))
                         .collect();
+
+                    // Populate the account_widgets hashmap
+                    for group_widget in m_widgets.iter() {
+                        for account_widget in group_widget.account_widgets.borrow().iter() {
+                            account_widgets.insert(account_widget.account_id, account_widget.clone());
+                        }
+                    }
 
                     m_widgets
                         .iter()

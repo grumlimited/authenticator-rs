@@ -41,14 +41,6 @@ pub struct AccountGroupWidget {
     pub account_widgets: RefCell<Vec<AccountWidget>>,
 }
 
-impl AccountGroupWidget {
-    pub fn update(&self) {
-        let account_widgets = self.account_widgets.clone();
-        let mut account_widgets = account_widgets.borrow_mut();
-        account_widgets.iter_mut().for_each(|account| account.update());
-    }
-}
-
 impl AccountGroup {
     pub fn new(id: u32, name: &str, icon: Option<&str>, url: Option<&str>, collapsed: bool, entries: Vec<Account>) -> Self {
         AccountGroup {
