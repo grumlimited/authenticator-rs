@@ -13,6 +13,17 @@ but definitely in the rough...
 
 ## Features
 
+### Multiple TOTP Algorithms
+
+Supports multiple TOTP hash algorithms for generating one-time passwords:
+
+- **SHA1** - The most widely supported algorithm (default)
+- **SHA256** - More secure, supported by many services
+- **SHA512** - Most secure, supported by some services
+- **STEAM** - Steam Guard compatible algorithm (generates 5-digit codes)
+
+Each account can use a different algorithm. The STEAM algorithm automatically uses 5-digit codes as required by Steam Guard.
+
 ### Importing and exporting - including google authenticator exports
 
 - Using `yaml` format:
@@ -38,6 +49,9 @@ but definitely in the rough...
 [<img src="./data/screenshots/screenshot2.png" width="400" />](./data/screenshots/screenshot2.png)
 
 ### Group and account editing
+
+When adding or editing an account, you can select the TOTP algorithm from the dropdown menu. The STEAM algorithm is automatically configured for Steam Guard compatibility.
+
 [<img src="./data/screenshots/screenshot3.png" width="400" />](./data/screenshots/screenshot3.png)
 [<img src="./data/screenshots/screenshot4.png" width="400" />](./data/screenshots/screenshot4.png)
 
