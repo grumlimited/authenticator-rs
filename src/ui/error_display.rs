@@ -1,5 +1,5 @@
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct ErrorsWindow {

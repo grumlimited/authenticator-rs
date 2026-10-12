@@ -7,7 +7,7 @@ readme = "README.md"
 homepage = "https://github.com/grumlimited/authenticator-rs/"
 repository = "https://github.com/grumlimited/authenticator-rs/"
 authors = ["Romain Gallet <1898244+gr211@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 anyhow = "1"

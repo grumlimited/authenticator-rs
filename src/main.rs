@@ -10,7 +10,7 @@ use rusqlite::Connection;
 
 use main_window::MainWindow;
 
-use crate::helpers::{runner, Database, Paths};
+use crate::helpers::{Database, Paths, runner};
 use crate::main_window::Action;
 
 mod exporting;

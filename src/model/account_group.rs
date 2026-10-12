@@ -6,10 +6,10 @@ use gtk_macros::*;
 use log::error;
 use serde::{Deserialize, Serialize};
 
+use crate::NAMESPACE_PREFIX;
 use crate::helpers::{IconParser, Paths};
 use crate::main_window::State;
 use crate::model::{Account, AccountWidget};
-use crate::NAMESPACE_PREFIX;
 
 #[derive(Debug, Clone, Eq, Default, Serialize, Deserialize, PartialEq)]
 pub struct AccountGroup {

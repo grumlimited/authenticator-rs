@@ -2,18 +2,18 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::NAMESPACE_PREFIX;
 use crate::helpers::{Database, IconParser, Keyring, Paths, RepositoryError};
 use crate::main_window::{Action, Display, MainWindow};
 use crate::model::{Account, AccountGroup, AccountGroupWidget, AccountWidget};
 use crate::ui::{AddGroupWindow, EditAccountWindow};
-use crate::NAMESPACE_PREFIX;
 use async_channel::Sender;
-use chrono::prelude::*;
 use chrono::Local;
+use chrono::prelude::*;
 use gettextrs::*;
 use glib::clone;
-use gtk::prelude::*;
 use gtk::Builder;
+use gtk::prelude::*;
 use gtk_macros::*;
 use log::{debug, error, warn};
 use rusqlite::Connection;
@@ -199,9 +199,15 @@ impl AccountsWindow {
         for group_widgets in widgets_list.iter() {
             let group_id = group_widgets.id;
 
-            group_widgets
-                .add_account_button
-                .connect_clicked(self.display_add_account_form(connection.clone(), &group_widgets.popover, gui, Some(group_id)));
+            group_widgets.add_account_button.connect_clicked(clone!(
+                #[strong]
+                gui,
+                #[strong]
+                connection,
+                #[strong(rename_to = popover)]
+                group_widgets.popover,
+                move |button| gui.accounts_window.display_add_account_form(connection.clone(), &popover, &gui, Some(group_id))(button)
+            ));
 
             group_widgets.delete_button.connect_clicked(clone!(
                 #[strong]
@@ -221,13 +227,29 @@ impl AccountsWindow {
                 }
             ));
 
-            group_widgets
-                .collapse_button
-                .connect_clicked(self.toggle_group_collapse(connection.clone(), gui, &group_widgets.popover, group_id));
+            group_widgets.collapse_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong(rename_to = account_window)]
+                self,
+                #[strong]
+                group_widgets,
+                #[strong]
+                gui,
+                move |button| account_window.toggle_group_collapse(connection.clone(), &gui, &group_widgets.popover, group_id)(button)
+            ));
 
-            group_widgets
-                .expand_button
-                .connect_clicked(self.toggle_group_collapse(connection.clone(), gui, &group_widgets.popover, group_id));
+            group_widgets.expand_button.connect_clicked(clone!(
+                #[strong]
+                connection,
+                #[strong(rename_to = account_window)]
+                self,
+                #[strong]
+                group_widgets,
+                #[strong]
+                gui,
+                move |button| account_window.toggle_group_collapse(connection.clone(), &gui, &group_widgets.popover, group_id)(button)
+            ));
 
             group_widgets.edit_button.connect_clicked(clone!(
                 #[strong]
@@ -591,7 +613,7 @@ impl AccountsWindow {
             main_window,
             #[strong]
             popover,
-            move |_: &gtk::Button| {
+            move |_| {
                 let (tx, rx) = async_channel::bounded::<Vec<AccountGroup>>(1);
 
                 glib::spawn_future_local(clone!(
