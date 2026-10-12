@@ -193,3 +193,15 @@ msgstr "Algorytm"
 
 msgid "Save"
 msgstr "Zapisz"
+
+msgid "Dark Theme"
+msgstr "Ciemny motyw"
+
+msgid "Whether the application should be dark theme friendly."
+msgstr "Czy aplikacja powinna być przyjazna dla ciemnych motywów."
+
+msgid "Search bar visible"
+msgstr "Pasek wyszukiwania widoczny"
+
+msgid "Whether the search bar is visible by default."
+msgstr "Czy pasek wyszukiwania jest domyślnie widoczny."

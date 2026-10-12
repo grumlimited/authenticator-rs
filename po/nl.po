@@ -193,3 +193,15 @@ msgstr "Algoritme"
 
 msgid "Save"
 msgstr "Opslaan"
+
+msgid "Dark Theme"
+msgstr "Donker thema"
+
+msgid "Whether the application should be dark theme friendly."
+msgstr "Of de applicatie vriendelijk moet zijn voor donkere thema's."
+
+msgid "Search bar visible"
+msgstr "Zoekbalk zichtbaar"
+
+msgid "Whether the search bar is visible by default."
+msgstr "Of de zoekbalk standaard zichtbaar is."
