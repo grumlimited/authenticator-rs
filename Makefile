@@ -43,6 +43,12 @@ release-version:
 install-po: # dev only - run with sudo
 	msgfmt po/fr.po -o $(sharedir)/locale/fr/LC_MESSAGES/authenticator-rs.mo
 	msgfmt po/en_GB.po -o $(sharedir)/locale/en_GB/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/de.po -o $(sharedir)/locale/de/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/es.po -o $(sharedir)/locale/es/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/it.po -o $(sharedir)/locale/it/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/pt.po -o $(sharedir)/locale/pt/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/nl.po -o $(sharedir)/locale/nl/LC_MESSAGES/authenticator-rs.mo
+	msgfmt po/pl.po -o $(sharedir)/locale/pl/LC_MESSAGES/authenticator-rs.mo
 
 install-gresource: gresource
 	# Install gResource

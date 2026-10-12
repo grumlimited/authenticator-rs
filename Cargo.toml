@@ -6,7 +6,7 @@ description = "authenticator-rs"
 readme = "README.md"
 homepage = "https://github.com/grumlimited/authenticator-rs/"
 repository = "https://github.com/grumlimited/authenticator-rs/"
-authors = ["Romain Gallet <romain.gallet at gmail com>"]
+authors = ["Romain Gallet <1898244+gr211@users.noreply.github.com>"]
 edition = "2021"
 
 [dependencies]
@@ -21,7 +21,7 @@ gettext-rs = {version = "0", features = ["gettext-system"]}
 gio = "0.22.10"
 gtk-macros = "0.3"
 google_authenticator_converter = "0.2.0"
-image = "0.25.8"
+image = "0.25"
 log = "0"
 log4rs = "1"
 refinery = { version = "0", features = ["rusqlite"]}
@@ -35,8 +35,8 @@ serde_yaml = "0"
 strum = "0"
 strum_macros = "0"
 tempfile-fast = "0"
-thiserror = "2.0.16"
-totp-rs = { version = "6.0.0", features = ["steam"] }
+thiserror = "2.0"
+totp-rs = { version = "6", features = ["steam"] }
 uuid = { version = "1", features = ["v4"] }
 base32 = "0.5.1"
 percent-encoding = "2"

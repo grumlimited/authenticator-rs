@@ -1,8 +1,6 @@
 # French translation for authenticator-rs.
-# Copyright (C) 2019 icon-library's COPYRIGHT HOLDER
 # This file is distributed under the same license as the authenticator-rs package.
-# (null) <>, 2020.
-# Romain Gallet <rgallet@grumlimited.co.uk>, 2020.
+# Romain Gallet <1898244+gr211@users.noreply.github.com>, 2020.
 #
 msgid ""
 msgstr ""
@@ -15,7 +13,7 @@ msgstr ""
 "X-Generator: Gtranslator 3.36.0\n"
 "Language-Team: fr <>\n"
 "Language: fr\n"
-"Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
+"Last-Translator: Romain Gallet <1898244+gr211@users.noreply.github.com>\n"
 
 msgid "A Two-Factor Authentication application"
 msgstr "Générateur de code d'authentification à deux facteurs"
@@ -187,3 +185,31 @@ msgstr "Un groupe existe avec ce nom"
 
 msgid "Account name already exists"
 msgstr "Un compte existe avec ce nom"
+
+msgid "Algorithm"
+msgstr "Algorithme"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Dark Theme"
+msgstr "Thème sombre"
+
+msgid "Whether the application should be dark theme friendly."
+msgstr "Si l'application doit être compatible avec les thèmes sombres."
+
+msgid "Search bar visible"
+msgstr "Barre de recherche visible"
+
+msgid "Whether the search bar is visible by default."
+msgstr "Si la barre de recherche est visible par défaut."
+
+msgid "authenticator-rs."
+msgstr "authenticator-rs."
+
+msgid "Simple application that generates a two-factor authentication code, created for GNOME."
+msgstr "Application simple qui génère un code d'authentification à deux facteurs, créée pour GNOME."
+
+msgid "Rust version of its more feature complete cousin Authenticator"
+msgstr "Version Rust de son cousin plus complet Authenticator"
+
