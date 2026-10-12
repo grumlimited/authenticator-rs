@@ -187,3 +187,6 @@ msgstr "Un groupe existe avec ce nom"
 
 msgid "Account name already exists"
 msgstr "Un compte existe avec ce nom"
+
+msgid "Algorithm"
+msgstr "Algorithme"
