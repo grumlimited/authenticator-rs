@@ -20,3 +20,4 @@ data/resources/gtk/ui/error_popup.ui
 data/resources/gtk/ui/main.ui
 data/resources/gtk/ui/system_menu.ui
 data/uk.co.grumlimited.authenticator-rs.gschema.xml
+data/uk.co.grumlimited.authenticator-rs.appdata.xml

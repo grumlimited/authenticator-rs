@@ -205,3 +205,13 @@ msgstr "Barra di ricerca visibile"
 
 msgid "Whether the search bar is visible by default."
 msgstr "Se la barra di ricerca è visibile per impostazione predefinita."
+
+msgid "authenticator-rs."
+msgstr "authenticator-rs."
+
+msgid "Simple application that generates a two-factor authentication code, created for GNOME."
+msgstr "Applicazione semplice che genera un codice di autenticazione a due fattori, creata per GNOME."
+
+msgid "Rust version of its more feature complete cousin Authenticator"
+msgstr "Versione Rust del suo cugino più completo Authenticator"
+

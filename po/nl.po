@@ -205,3 +205,13 @@ msgstr "Zoekbalk zichtbaar"
 
 msgid "Whether the search bar is visible by default."
 msgstr "Of de zoekbalk standaard zichtbaar is."
+
+msgid "authenticator-rs."
+msgstr "authenticator-rs."
+
+msgid "Simple application that generates a two-factor authentication code, created for GNOME."
+msgstr "Eenvoudige applicatie die een twee-factor authenticatiecode genereert, gemaakt voor GNOME."
+
+msgid "Rust version of its more feature complete cousin Authenticator"
+msgstr "Rust-versie van zijn completere neef Authenticator"
+

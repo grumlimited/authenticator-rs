@@ -205,3 +205,13 @@ msgstr "Pasek wyszukiwania widoczny"
 
 msgid "Whether the search bar is visible by default."
 msgstr "Czy pasek wyszukiwania jest domyślnie widoczny."
+
+msgid "authenticator-rs."
+msgstr "authenticator-rs."
+
+msgid "Simple application that generates a two-factor authentication code, created for GNOME."
+msgstr "Prosta aplikacja generująca kod uwierzytelniania dwuskładnikowego, stworzona dla GNOME."
+
+msgid "Rust version of its more feature complete cousin Authenticator"
+msgstr "Wersja w Rust bardziej rozbudowanego kuzyna Authenticator"
+
