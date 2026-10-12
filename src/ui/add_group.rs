@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fs;
-use std::fs::{remove_file, File};
+use std::fs::{File, remove_file};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

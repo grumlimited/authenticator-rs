@@ -1,6 +1,6 @@
 use log::{debug, warn};
 use rusqlite::types::ToSqlOutput;
-use rusqlite::{named_params, params, Connection, OpenFlags, OptionalExtension, Params, Row, Statement, ToSql};
+use rusqlite::{Connection, OpenFlags, OptionalExtension, Params, Row, Statement, ToSql, named_params, params};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -8,9 +8,9 @@ use std::string::ToString;
 use strum_macros::Display;
 use strum_macros::EnumString;
 
-use crate::helpers::repository_error::RepositoryError;
 use crate::helpers::Paths;
 use crate::helpers::SecretType::{KEYRING, LOCAL};
+use crate::helpers::repository_error::RepositoryError;
 use crate::model::{Account, AccountGroup};
 
 #[derive(Debug, Clone)]
@@ -364,8 +364,8 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use totp_rs::Algorithm;
 
-    use crate::helpers::runner;
     use crate::helpers::SecretType::LOCAL;
+    use crate::helpers::runner;
     use crate::model::{Account, AccountGroup, TotpAlgorithm};
 
     use super::Database;

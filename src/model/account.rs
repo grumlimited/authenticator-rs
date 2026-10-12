@@ -12,7 +12,7 @@ use model::account_errors::TotpError;
 use totp_rs::Algorithm;
 
 use crate::helpers::SecretType;
-use crate::{model, NAMESPACE_PREFIX};
+use crate::{NAMESPACE_PREFIX, model};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Account {
@@ -305,8 +305,8 @@ mod tests {
     use totp_rs::Algorithm;
 
     use crate::helpers::QrCode;
-    use crate::model::account_errors::TotpError;
     use crate::model::Account;
+    use crate::model::account_errors::TotpError;
 
     fn generate_time_based_password(key: &str) -> Result<String, TotpError> {
         Account::generate_time_based_password_with_algorithm(key, Algorithm::SHA1, 6)

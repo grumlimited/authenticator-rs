@@ -9,11 +9,11 @@ use gtk_macros::*;
 use log::error;
 use rusqlite::Connection;
 
+use crate::NAMESPACE_PREFIX;
 use crate::helpers::Backup;
 use crate::helpers::{Keyring, RepositoryError};
 use crate::main_window::Display;
 use crate::main_window::MainWindow;
-use crate::NAMESPACE_PREFIX;
 
 pub type AccountsImportExportResult = Result<(), RepositoryError>;
 type PopupButtonClosure = Box<dyn Fn(&[gtk::glib::Value]) -> Option<gtk::glib::Value>>;

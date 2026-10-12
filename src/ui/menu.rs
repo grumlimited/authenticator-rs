@@ -205,11 +205,19 @@ impl Menus for MainWindow {
             action_menu,
             move |_, _| {
                 action_menu.clicked();
-                gtk::glib::Propagation::Stop
+                glib::Propagation::Stop
             }
         ));
 
-        add_account_button.connect_clicked(self.accounts_window.display_add_account_form(connection, &popover, self, None));
+        add_account_button.connect_clicked(clone!(
+            #[strong(rename_to = gui)]
+            self,
+            #[strong]
+            connection,
+            #[strong]
+            popover,
+            move |button| gui.accounts_window.display_add_account_form(connection.clone(), &popover, &gui, None)(button)
+        ));
 
         action_menu
     }
