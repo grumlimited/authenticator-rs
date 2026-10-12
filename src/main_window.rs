@@ -271,15 +271,6 @@ impl MainWindow {
 
                 AccountsWindow::progress_bar_fraction_for(&gui.accounts_window.progress_bar, seconds as u32);
 
-                // Update TOTP codes on 0 and 30 seconds (every 30s)
-                if seconds.is_multiple_of(30) {
-                    // Use the account_widgets hashmap to update TOTP codes directly
-                    let mut account_widgets = gui.accounts_window.account_widgets.borrow_mut();
-                    for widget in account_widgets.values_mut() {
-                        widget.update();
-                    }
-                }
-
                 glib::ControlFlow::Continue
             }
         );

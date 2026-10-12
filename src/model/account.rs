@@ -5,6 +5,7 @@ use gtk::prelude::*;
 use gtk_macros::*;
 use log::warn;
 use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::model::TotpAlgorithm;
 use model::account_errors::TotpError;
@@ -33,7 +34,7 @@ fn default_totp_digits() -> usize {
     6
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AccountWidget {
     pub account_id: u32,
     pub event_grid: gtk::EventBox,
@@ -49,6 +50,29 @@ pub struct AccountWidget {
     totp_secret: String,
     totp_algorithm: Algorithm,
     totp_digits: usize,
+    timer: Option<glib::SourceId>,
+}
+
+impl Clone for AccountWidget {
+    fn clone(&self) -> Self {
+        Self {
+            account_id: self.account_id,
+            event_grid: self.event_grid.clone(),
+            edit_button: self.edit_button.clone(),
+            delete_button: self.delete_button.clone(),
+            confirm_button: self.confirm_button.clone(),
+            confirm_button_label: self.confirm_button_label.clone(),
+            copy_button: self.copy_button.clone(),
+            popover: self.popover.clone(),
+            edit_copy_img: self.edit_copy_img.clone(),
+            dialog_ok_img: self.dialog_ok_img.clone(),
+            totp_label: self.totp_label.clone(),
+            totp_secret: self.totp_secret.clone(),
+            totp_algorithm: self.totp_algorithm,
+            totp_digits: self.totp_digits,
+            timer: None, // Don't clone the timer
+        }
+    }
 }
 
 impl AccountWidget {
@@ -62,6 +86,43 @@ impl AccountWidget {
                 context.add_class("error");
             }
         }
+    }
+
+    /// Start the per-account timer, aligned to 30-second boundaries (0s and 30s of each minute)
+    pub fn start_timer(&mut self) {
+        // Disconnect any existing timer
+        self.stop_timer();
+
+        // Update immediately to set current value
+        self.update();
+
+        let mut timer_widget = self.clone();
+
+        // Timer fires every second, sends message at 0s and 30s boundaries
+        let timer_id = glib::timeout_add_seconds_local(1, move || {
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+            if now.is_multiple_of(30) {
+                timer_widget.update();
+            }
+
+            glib::ControlFlow::Continue
+        });
+
+        self.timer = Some(timer_id);
+    }
+
+    /// Stop the timer if it exists
+    pub fn stop_timer(&mut self) {
+        if let Some(timer_id) = self.timer.take() {
+            timer_id.remove();
+        }
+    }
+}
+
+impl Drop for AccountWidget {
+    fn drop(&mut self) {
+        self.stop_timer();
     }
 }
 
@@ -169,9 +230,11 @@ impl Account {
             totp_secret: self.secret.clone(),
             totp_algorithm: self.algorithm.0,
             totp_digits: self.totp_digits,
+            timer: None,
         };
 
         widget.update();
+        widget.start_timer();
 
         widget
     }
