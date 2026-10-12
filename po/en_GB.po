@@ -190,3 +190,6 @@ msgstr "Account name already exists"
 
 msgid "Algorithm"
 msgstr "Algorithm"
+
+msgid "Save"
+msgstr "Save"

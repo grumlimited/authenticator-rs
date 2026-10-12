@@ -1,0 +1,195 @@
+# Portuguese translation for authenticator-rs.
+# Copyright (C) 2019 icon-library's COPYRIGHT HOLDER
+# This file is distributed under the same license as the authenticator-rs package.
+# (null) <>, 2020.
+# Romain Gallet <rgallet@grumlimited.co.uk>, 2020.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Project-Id-Version: authenticator-rs\n"
+"PO-Revision-Date: 2026-10-12 22:45+0200\n"
+"X-Generator: Manual\n"
+"Language-Team: pt <>\n"
+"Language: pt\n"
+"Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
+
+msgid "A Two-Factor Authentication application"
+msgstr "Um aplicativo de autenticação de dois fatores"
+
+msgid "About"
+msgstr "Sobre"
+
+msgid "Account name"
+msgstr "Nome da conta"
+
+msgid "Accounts"
+msgstr "Contas"
+
+msgid "account"
+msgstr "conta"
+
+msgid "Action menu"
+msgstr "Menu de ações"
+
+msgid "Add account"
+msgstr "Adicionar conta"
+
+msgid "Add group"
+msgstr "Adicionar grupo"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Close"
+msgstr "Fechar"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Could not import accounts!"
+msgstr "Não foi possível importar as contas!"
+
+msgid "Could not export accounts!"
+msgstr "Não foi possível exportar as contas!"
+
+msgid "Could not save accounts!"
+msgstr "Não foi possível salvar as contas!"
+
+msgid "Dark mode"
+msgstr "Modo escuro"
+
+msgid "Delete"
+msgstr "Excluir"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Edit account"
+msgstr "Editar conta"
+
+msgid "empty"
+msgstr "segredo vazio"
+
+msgid "error"
+msgstr "Erro!"
+
+msgid "Export accounts"
+msgstr "Exportar contas"
+
+msgid "Group"
+msgstr "Grupo"
+
+msgid "Group icon"
+msgstr "Ícone do grupo"
+
+msgid "hostname, eg. github.com"
+msgstr "nome do host, ex. github.com"
+
+msgid "Icon"
+msgstr "Ícone"
+
+msgid "Icon URL"
+msgstr "URL do ícone"
+
+msgid "Import YAML"
+msgstr "Importar YAML"
+
+msgid "import_button_yaml_tootlip"
+msgstr "Importar contas de um arquivo YAML"
+
+msgid "Import GAuth"
+msgstr "Importar GAuth"
+
+msgid "import_button_gauth_tootlip"
+msgstr "Importar contas de um arquivo de exportação do Google Authenticator"
+
+msgid "Export YAML"
+msgstr "Exportar YAML"
+
+msgid "export_button_yaml_tootlip"
+msgstr "Exportar contas para um arquivo YAML"
+
+msgid "keyring_locked"
+msgstr "O chaveiro do GNOME está bloqueado."
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "Reload"
+msgstr "Recarregar"
+
+msgid "Ok"
+msgstr "Ok"
+
+msgid "Secret"
+msgstr "Segredo"
+
+msgid "Settings"
+msgstr "Configurações"
+
+msgid "System menu"
+msgstr "Menu do sistema"
+
+msgid "Turns on dark-theme friendly features"
+msgstr "Ativa recursos compatíveis com temas escuros"
+
+msgid "filter accounts"
+msgstr "filtrar contas"
+
+msgid "filter"
+msgstr "filtrar contas"
+
+msgid "Invalid QR code"
+msgstr "Código QR inválido"
+
+msgid "Processing QR code"
+msgstr "Processando código QR..."
+
+msgid "about"
+msgstr "Este programa é fornecido sem qualquer garantia.\n\nPara mais detalhes, consulte a <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">Licença Pública Geral GNU, versão 3</a> ou posterior."
+
+msgid "Confirm"
+msgstr "Confirmar"
+
+msgid "Click + to add accounts"
+msgstr "Clique em + para adicionar contas"
+
+msgid "New account"
+msgstr "Nova conta"
+
+msgid "use QR code"
+msgstr "usar código QR"
+
+msgid "Collapse"
+msgstr "Recolher"
+
+msgid "Expand"
+msgstr "Expandir"
+
+msgid "New group"
+msgstr "Novo grupo"
+
+msgid "Edit group"
+msgstr "Editar grupo"
+
+msgid "Name of group"
+msgstr "Nome do grupo"
+
+msgid "Name of account"
+msgstr "Nome da conta"
+
+msgid "Group name already exists"
+msgstr "O nome do grupo já existe"
+
+msgid "Account name already exists"
+msgstr "O nome da conta já existe"
+
+msgid "Algorithm"
+msgstr "Algoritmo"
+
+msgid "Save"
+msgstr "Salvar"

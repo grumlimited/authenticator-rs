@@ -1,0 +1,195 @@
+# Dutch translation for authenticator-rs.
+# Copyright (C) 2019 icon-library's COPYRIGHT HOLDER
+# This file is distributed under the same license as the authenticator-rs package.
+# (null) <>, 2020.
+# Romain Gallet <rgallet@grumlimited.co.uk>, 2020.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Project-Id-Version: authenticator-rs\n"
+"PO-Revision-Date: 2026-10-12 22:45+0200\n"
+"X-Generator: Manual\n"
+"Language-Team: nl <>\n"
+"Language: nl\n"
+"Last-Translator: Romain Gallet <rgallet@grumlimited.co.uk>\n"
+
+msgid "A Two-Factor Authentication application"
+msgstr "Een twee-factor authenticatie applicatie"
+
+msgid "About"
+msgstr "Over"
+
+msgid "Account name"
+msgstr "Accountnaam"
+
+msgid "Accounts"
+msgstr "Accounts"
+
+msgid "account"
+msgstr "account"
+
+msgid "Action menu"
+msgstr "Actiemenu"
+
+msgid "Add account"
+msgstr "Account toevoegen"
+
+msgid "Add group"
+msgstr "Groep toevoegen"
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "Close"
+msgstr "Sluiten"
+
+msgid "Copy"
+msgstr "Kopiëren"
+
+msgid "Could not import accounts!"
+msgstr "Accounts konden niet worden geïmporteerd!"
+
+msgid "Could not export accounts!"
+msgstr "Accounts konden niet worden geëxporteerd!"
+
+msgid "Could not save accounts!"
+msgstr "Accounts konden niet worden opgeslagen!"
+
+msgid "Dark mode"
+msgstr "Donkere modus"
+
+msgid "Delete"
+msgstr "Verwijderen"
+
+msgid "Edit"
+msgstr "Bewerken"
+
+msgid "Edit account"
+msgstr "Account bewerken"
+
+msgid "empty"
+msgstr "leeg geheim"
+
+msgid "error"
+msgstr "Fout!"
+
+msgid "Export accounts"
+msgstr "Accounts exporteren"
+
+msgid "Group"
+msgstr "Groep"
+
+msgid "Group icon"
+msgstr "Groepspictogram"
+
+msgid "hostname, eg. github.com"
+msgstr "hostnaam, bijv. github.com"
+
+msgid "Icon"
+msgstr "Pictogram"
+
+msgid "Icon URL"
+msgstr "Pictogram URL"
+
+msgid "Import YAML"
+msgstr "YAML importeren"
+
+msgid "import_button_yaml_tootlip"
+msgstr "Accounts importeren uit een YAML-bestand"
+
+msgid "Import GAuth"
+msgstr "GAuth importeren"
+
+msgid "import_button_gauth_tootlip"
+msgstr "Accounts importeren uit een Google Authenticator exportbestand"
+
+msgid "Export YAML"
+msgstr "YAML exporteren"
+
+msgid "export_button_yaml_tootlip"
+msgstr "Accounts exporteren naar een YAML-bestand"
+
+msgid "keyring_locked"
+msgstr "GNOME sleutelhanger is vergrendeld."
+
+msgid "Name"
+msgstr "Naam"
+
+msgid "Reload"
+msgstr "Herladen"
+
+msgid "Ok"
+msgstr "Ok"
+
+msgid "Secret"
+msgstr "Geheim"
+
+msgid "Settings"
+msgstr "Instellingen"
+
+msgid "System menu"
+msgstr "Systeemmenu"
+
+msgid "Turns on dark-theme friendly features"
+msgstr "Schakelt functies voor donkere thema's in"
+
+msgid "filter accounts"
+msgstr "accounts filteren"
+
+msgid "filter"
+msgstr "accounts filteren"
+
+msgid "Invalid QR code"
+msgstr "Ongeldige QR-code"
+
+msgid "Processing QR code"
+msgstr "QR-code wordt verwerkt..."
+
+msgid "about"
+msgstr "Dit programma wordt geleverd zonder enige garantie.\n\nZie de <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GNU General Public Licence, versie 3</a> of later voor details."
+
+msgid "Confirm"
+msgstr "Bevestigen"
+
+msgid "Click + to add accounts"
+msgstr "Klik op + om accounts toe te voegen"
+
+msgid "New account"
+msgstr "Nieuw account"
+
+msgid "use QR code"
+msgstr "QR-code gebruiken"
+
+msgid "Collapse"
+msgstr "Inklappen"
+
+msgid "Expand"
+msgstr "Uitklappen"
+
+msgid "New group"
+msgstr "Nieuwe groep"
+
+msgid "Edit group"
+msgstr "Groep bewerken"
+
+msgid "Name of group"
+msgstr "Naam van groep"
+
+msgid "Name of account"
+msgstr "Naam van account"
+
+msgid "Group name already exists"
+msgstr "Groepsnaam bestaat al"
+
+msgid "Account name already exists"
+msgstr "Accountnaam bestaat al"
+
+msgid "Algorithm"
+msgstr "Algoritme"
+
+msgid "Save"
+msgstr "Opslaan"
